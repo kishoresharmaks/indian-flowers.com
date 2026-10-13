@@ -38,3 +38,15 @@ next-env.d.ts
 /licensing-server
 licensing-server/
 .env.local
+
+# Documentation, specs, and internal notes (production files only)
+*.md
+docs/
+
+# AI agent configurations, skills, and prompt files
+.agents/
+.claude/
+AGENTS.md
+prompt.md
+UI.md
+DEPLOYMENT.md
