@@ -47,8 +47,9 @@ const config: Config = {
         focus: "#2368D8",
       },
       fontFamily: {
-        sans: ["var(--font-body)", "var(--font-dm-sans)", "system-ui", "sans-serif"],
-        serif: ["var(--font-heading)", "var(--font-dm-serif-display)", "Georgia", "serif"],
+        sans: ["var(--font-plus-jakarta)", "var(--font-body)", "system-ui", "-apple-system", "sans-serif"],
+        serif: ["var(--font-plus-jakarta)", "var(--font-heading)", "system-ui", "sans-serif"],
+        heading: ["var(--font-plus-jakarta)", "sans-serif"],
       },
     },
   },

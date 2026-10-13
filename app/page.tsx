@@ -564,7 +564,7 @@ export default function CustomerStore() {
               <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-[#C85A78] block">
                 Bestsellers
               </span>
-              <h2 className="font-serif text-[26px] sm:text-[36px] lg:text-[40px] font-normal text-gray-900 mt-1 leading-[1.2]">
+              <h2 className="text-[24px] sm:text-[32px] lg:text-[36px] font-bold tracking-[-0.03em] text-gray-900 mt-1 leading-[1.2]">
                 Popular Flowers &amp; Garlands
               </h2>
               <p className="text-sm sm:text-base text-gray-500 mt-1 font-normal max-w-[42ch]">
@@ -654,7 +654,7 @@ export default function CustomerStore() {
               </div>
 
               <div className="space-y-2.5 text-center sm:text-left flex-1">
-                <h3 className="font-serif text-[22px] sm:text-[32px] lg:text-[36px] font-normal text-gray-900 leading-[1.25]">
+                <h3 className="text-[20px] sm:text-[26px] lg:text-[30px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.25]">
                   Wedding Garlands
                 </h3>
                 <span className="text-[11px] font-medium uppercase tracking-wider text-[#A0522D] block">
@@ -682,7 +682,7 @@ export default function CustomerStore() {
             {/* Banner 2: Pooja Flowers & Temple Decoration */}
             <div className="rounded-2xl overflow-hidden bg-[#FBF2F4] border border-[#F5E0E5]/80 p-5 sm:p-8 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 group hover:shadow-md transition-shadow">
               <div className="space-y-2.5 text-center sm:text-left flex-1 order-2 sm:order-1">
-                <h3 className="font-serif text-[22px] sm:text-[32px] lg:text-[36px] font-normal text-gray-900 leading-[1.25]">
+                <h3 className="text-[20px] sm:text-[26px] lg:text-[30px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.25]">
                   Pooja Flowers &amp; Temple Decoration
                 </h3>
                 <p className="text-sm sm:text-[15px] text-gray-600 leading-relaxed font-normal">
@@ -723,7 +723,7 @@ export default function CustomerStore() {
             <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#C85A78]">
               WHY CHOOSE INDIAN-FLOWERS.COM
             </span>
-            <h2 className="font-serif text-[26px] sm:text-[34px] lg:text-[38px] font-normal text-gray-900 leading-[1.2] px-2">
+            <h2 className="text-[24px] sm:text-[30px] lg:text-[36px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.2] px-2">
               Your Trusted Flower Partner in the USA
             </h2>
           </div>
@@ -799,7 +799,7 @@ export default function CustomerStore() {
               <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-[#C85A78] block">
                 CUSTOMER REVIEWS
               </span>
-              <h2 className="font-serif text-[26px] sm:text-[36px] lg:text-[40px] font-normal text-gray-900 mt-1 leading-[1.2]">
+              <h2 className="text-[24px] sm:text-[32px] lg:text-[36px] font-bold tracking-[-0.03em] text-gray-900 mt-1 leading-[1.2]">
                 What Our Customers Say
               </h2>
             </div>
@@ -876,7 +876,7 @@ export default function CustomerStore() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl bg-[#F4F8F4] border border-emerald-100/80 p-5 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
             <div className="space-y-1 text-center md:text-left">
-              <h3 className="font-serif text-[22px] sm:text-[30px] font-normal text-gray-900 leading-[1.25]">
+              <h3 className="text-[20px] sm:text-[26px] lg:text-[28px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.25]">
                 Get Flower Updates &amp; Special Offers
               </h3>
               <p className="text-sm text-gray-600 font-normal">
@@ -921,7 +921,7 @@ export default function CustomerStore() {
                   <Flower2 className="w-5 h-5 text-emerald-300" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-lg font-normal text-white leading-tight">
+                  <h3 className="text-lg font-bold tracking-tight text-white leading-tight">
                     Indian-Flowers.com
                   </h3>
                   <span className="text-[10px] text-emerald-300 font-medium tracking-wide uppercase">
@@ -1151,7 +1151,7 @@ export default function CustomerStore() {
 
             <div className="space-y-5">
               <div>
-                <h3 className="text-xl font-serif font-normal text-[#0B3B24]">Track Your Order</h3>
+                <h3 className="text-xl font-bold tracking-tight text-[#0B3B24]">Track Your Order</h3>
                 <p className="text-xs text-gray-500 mt-1 font-normal">
                   Enter your order number (e.g. ORD-1001) or phone number to check live status.
                 </p>
@@ -1217,7 +1217,7 @@ export default function CustomerStore() {
 
             <div className="space-y-5">
               <div>
-                <h3 className="font-serif text-2xl font-normal text-[#0B3B24]">Checkout</h3>
+                <h3 className="text-2xl font-bold tracking-tight text-[#0B3B24]">Checkout</h3>
                 <p className="text-xs text-gray-500 mt-1 font-normal">
                   Deliver fresh Indian flowers to your doorstep in the United States.
                 </p>
@@ -1475,7 +1475,7 @@ export default function CustomerStore() {
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <h3 className="font-serif text-2xl font-normal text-gray-900">
+            <h3 className="text-2xl font-bold tracking-tight text-gray-900">
               Order Confirmed!
             </h3>
             <p className="text-xs text-gray-600 font-normal">

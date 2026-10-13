@@ -153,7 +153,7 @@ export default function ProductQuickViewModal({
               <span className="text-[11px] font-semibold uppercase tracking-widest text-emerald-800 block">
                 Direct From Trusted Growers
               </span>
-              <h2 className="font-serif text-2xl sm:text-3xl text-gray-900 leading-snug font-normal">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl text-gray-900 leading-snug font-bold tracking-[-0.03em]">
                 {product.name}
               </h2>
 

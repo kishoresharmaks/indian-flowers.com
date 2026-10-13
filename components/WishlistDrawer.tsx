@@ -49,7 +49,7 @@ export default function WishlistDrawer({
               <Heart className="w-5 h-5 fill-current" />
             </div>
             <div>
-              <h2 className="font-serif text-xl font-normal text-[#134633]">My Wishlist</h2>
+              <h2 className="text-xl font-bold tracking-tight text-[#134633]">My Wishlist</h2>
               <span className="text-xs text-gray-500 font-normal">
                 {items.length} {items.length === 1 ? 'item saved' : 'items saved'}
               </span>
@@ -72,7 +72,7 @@ export default function WishlistDrawer({
                 <Heart className="w-8 h-8" />
               </div>
               <div className="space-y-1">
-                <h3 className="font-serif text-xl font-normal text-gray-900">Your Wishlist is Empty</h3>
+                <h3 className="text-xl font-bold tracking-tight text-gray-900">Your Wishlist is Empty</h3>
                 <p className="text-xs text-gray-500 max-w-xs leading-relaxed font-normal">
                   Tap the heart icon on any garlands, jasmine strands, or pooja essentials to save them for your upcoming ceremonies.
                 </p>

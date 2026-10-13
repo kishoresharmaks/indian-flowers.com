@@ -63,64 +63,68 @@ export const COLOR_TOKENS = {
 
 export const TYPOGRAPHY_TOKENS = {
   fontFamily: {
-    sans: 'var(--font-dm-sans), system-ui, sans-serif',
-    serif: 'var(--font-dm-serif-display), Georgia, serif',
+    sans: 'var(--font-plus-jakarta), system-ui, sans-serif',
+    serif: 'var(--font-plus-jakarta), system-ui, sans-serif',
+    heading: 'var(--font-plus-jakarta), sans-serif',
   },
 
   // Size and weight per role
   scale: {
-    // Hero heading: DM Serif Display, 56–64px
+    // Hero heading: Plus Jakarta Sans, 44–52px (desktop), 32–38px (mobile)
     heroHeading: {
-      desktop: "56–64px",
-      desktopMin: "56px",
-      desktopMax: "64px",
-      mobile: "36–44px",
-      weight: 400,
-      lineHeight: "1.08–1.12",
-      fontFamily: "serif",
+      desktop: "44–52px",
+      desktopMin: "44px",
+      desktopMax: "52px",
+      mobile: "32–38px",
+      weight: 700,
+      lineHeight: "1.15",
+      letterSpacing: "-0.035em",
+      fontFamily: "sans",
     },
 
-    // Section headings: DM Serif Display, 32–40px
+    // Section headings: Plus Jakarta Sans, 28–36px
     sectionHeading: {
-      desktop: "32–40px",
-      desktopMin: "32px",
-      desktopMax: "40px",
-      mobile: "26–30px",
-      weight: 400,
-      lineHeight: "1.15–1.25",
-      fontFamily: "serif",
-    },
-
-    // Promotional headings: DM Serif Display, 28–36px
-    promotionalHeading: {
       desktop: "28–36px",
       desktopMin: "28px",
       desktopMax: "36px",
-      mobile: "22–26px",
-      weight: 400,
-      lineHeight: "1.2–1.3",
-      fontFamily: "serif",
+      mobile: "24–28px",
+      weight: 700,
+      lineHeight: "1.2",
+      letterSpacing: "-0.03em",
+      fontFamily: "sans",
     },
 
-    // Product names: DM Sans, 14–16px
+    // Promotional headings: Plus Jakarta Sans, 24–30px
+    promotionalHeading: {
+      desktop: "24–30px",
+      desktopMin: "24px",
+      desktopMax: "30px",
+      mobile: "20–24px",
+      weight: 700,
+      lineHeight: "1.25",
+      fontFamily: "sans",
+    },
+
+    // Product names: Plus Jakarta Sans, 14–16px (0.95rem)
     productName: {
       desktop: "14–16px",
       mobile: "13–15px",
       weight: 600,
-      lineHeight: "1.35–1.45",
+      lineHeight: "1.45",
+      letterSpacing: "-0.015em",
       fontFamily: "sans",
     },
 
-    // Body descriptions: DM Sans, 14–16px
+    // Body descriptions: Plus Jakarta Sans, 14–16px
     bodyDescription: {
       desktop: "14–16px",
       mobile: "13–15px",
       weight: 400,
-      lineHeight: "1.5–1.65",
+      lineHeight: "1.65–1.7",
       fontFamily: "sans",
     },
 
-    // Navigation: DM Sans, 13–15px
+    // Navigation: Plus Jakarta Sans, 13–15px
     navigation: {
       desktop: "13–15px",
       mobile: "13–14px",
@@ -129,7 +133,7 @@ export const TYPOGRAPHY_TOKENS = {
       fontFamily: "sans",
     },
 
-    // Product prices: DM Sans, 16–18px
+    // Product prices: Plus Jakarta Sans, 16–18px (tabular nums)
     productPrice: {
       desktop: "16–18px",
       mobile: "15–17px",
@@ -138,7 +142,7 @@ export const TYPOGRAPHY_TOKENS = {
       fontFamily: "sans",
     },
 
-    // Buttons: DM Sans 600, 14–15px
+    // Buttons: Plus Jakarta Sans 600, 14–15px
     button: {
       desktop: "14–15px",
       mobile: "13–14px",
@@ -147,7 +151,7 @@ export const TYPOGRAPHY_TOKENS = {
       fontFamily: "sans",
     },
 
-    // Labels / badges: DM Sans 500–600, 11–13px
+    // Labels / badges: Plus Jakarta Sans 500–600, 11–13px
     labelBadge: {
       desktop: "11–13px",
       mobile: "10–12px",

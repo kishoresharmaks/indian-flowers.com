@@ -61,7 +61,7 @@ export default function CartDrawer({
       >
         {/* Header */}
         <div className="border-b border-border p-4 flex items-center justify-between">
-          <h2 className="text-lg font-serif font-normal text-text">Shopping Cart</h2>
+          <h2 className="text-lg font-bold tracking-tight text-[#111827]">Shopping Cart</h2>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-ivory transition-colors"

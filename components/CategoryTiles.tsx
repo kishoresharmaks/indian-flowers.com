@@ -78,7 +78,7 @@ export default function CategoryTiles({
                 </div>
 
                 <span
-                  className={`mt-2 text-[11px] sm:text-[13px] leading-tight max-w-[5.5rem] sm:max-w-[100px] line-clamp-2 transition-colors ${
+                  className={`mt-2 category-label text-[11px] sm:text-[13px] leading-tight max-w-[5.5rem] sm:max-w-[100px] line-clamp-2 transition-colors ${
                     isSelected
                       ? 'text-[#0B3B24] font-semibold'
                       : 'text-gray-700 font-medium group-hover:text-[#0B3B24]'

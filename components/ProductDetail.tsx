@@ -111,7 +111,7 @@ export default function ProductDetail({
                 <span className="text-xs uppercase tracking-widest font-medium text-brand-700">
                   {product.category || 'General'}
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-serif font-normal text-text leading-tight">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[-0.03em] text-[#111827] leading-tight">
                   {product.name}
                 </h1>
                 <div className="flex items-center gap-2 pt-2">
@@ -127,7 +127,7 @@ export default function ProductDetail({
               {/* Price Block */}
               <div className="p-6 rounded-2xl bg-[#FAF6F0] border border-amber-100/70 space-y-3">
                 <div className="flex items-baseline gap-3">
-                  <span className="text-3xl sm:text-4xl font-semibold text-brand-900 tabular-nums">
+                  <span className="product-price text-3xl sm:text-4xl font-bold text-brand-900">
                     {formatCurrency(displayPrice)}
                   </span>
                   {displayMrp > displayPrice && (

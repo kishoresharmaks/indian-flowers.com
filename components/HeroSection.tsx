@@ -124,12 +124,12 @@ export default function HeroSection({
               )}
 
               {/* Headline */}
-              <h1 className="font-serif text-[36px] sm:text-5xl lg:text-[60px] font-normal text-gray-900 leading-[1.1] tracking-tight">
+              <h1 className="text-[32px] sm:text-[42px] lg:text-[50px] font-bold text-gray-900 leading-[1.15] tracking-[-0.035em]">
                 {slide.title}
               </h1>
 
               {/* Subheading / Description */}
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed max-w-lg font-normal">
+              <p className="text-sm sm:text-base text-gray-600 leading-[1.7] max-w-lg font-normal">
                 {slide.description}
               </p>
 
@@ -137,7 +137,7 @@ export default function HeroSection({
               <div className="pt-2 sm:pt-4">
                 <button
                   onClick={onShopClick}
-                  className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full bg-[#0B3B24] hover:bg-[#134633] text-white font-medium text-sm sm:text-[15px] tracking-wide shadow-sm hover:shadow transition-all hover:translate-x-0.5 active:scale-95"
+                  className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full bg-[#0B3B24] hover:bg-[#134633] text-white font-semibold text-sm sm:text-[15px] tracking-[0.02em] shadow-sm hover:shadow transition-all hover:translate-x-0.5 active:scale-95"
                 >
                   <span>{slide.ctaText || 'Shop Fresh Flowers'}</span>
                   <ArrowRight className="w-4 h-4" />
@@ -149,13 +149,13 @@ export default function HeroSection({
             <div className="hidden lg:flex items-center justify-center relative pr-8">
               <div className="w-44 h-44 rounded-full bg-[#0B3B24] text-white p-6 shadow-xl flex items-center justify-center text-center border-4 border-white/90 transform hover:rotate-6 transition-transform">
                 <div className="space-y-1">
-                  <span className="font-serif text-sm font-normal leading-snug block">
+                  <span className="text-sm font-bold leading-snug block tracking-tight">
                     Fresh Flowers
                   </span>
                   <span className="text-xs text-emerald-200 block font-normal">
                     for Weddings, Festivals &amp;
                   </span>
-                  <span className="font-serif text-xs font-normal italic block text-amber-200">
+                  <span className="text-xs font-semibold block text-amber-200">
                     Every Occasion
                   </span>
                 </div>

@@ -92,7 +92,7 @@ export default function CustomOrderSection() {
           <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.12em] text-[#C85A78]">
             Bespoke Ceremonies & Celebrations
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl text-[#0B3B24] font-normal tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl text-[#0B3B24] font-bold tracking-[-0.03em]">
             Custom Floral & Wedding Orders
           </h2>
           <p className="text-xs sm:text-sm text-gray-600 font-normal leading-relaxed">
@@ -104,7 +104,7 @@ export default function CustomOrderSection() {
           {/* Left Column: Why Choose Us & Trust Badges */}
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-amber-100/80 shadow-xs space-y-5">
-              <h3 className="font-serif text-xl sm:text-2xl text-[#134633] font-normal">
+              <h3 className="text-xl sm:text-2xl text-[#134633] font-bold tracking-tight">
                 How Custom Orders Work
               </h3>
 
@@ -199,7 +199,7 @@ export default function CustomOrderSection() {
                   <div className="w-16 h-16 rounded-full bg-emerald-50 text-[#0B3B24] border border-emerald-100 flex items-center justify-center mx-auto">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h3 className="font-serif text-2xl font-normal text-gray-900">
+                  <h3 className="text-2xl font-bold tracking-tight text-gray-900">
                     Custom Order Request Received!
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto font-normal leading-relaxed">
@@ -219,7 +219,7 @@ export default function CustomOrderSection() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="border-b border-gray-100 pb-3">
-                    <h3 className="font-serif text-xl sm:text-2xl text-[#134633] font-normal">
+                    <h3 className="text-xl sm:text-2xl text-[#134633] font-bold tracking-tight">
                       Request a Custom Floral Consultation
                     </h3>
                     <p className="text-xs text-gray-500 font-normal mt-0.5">

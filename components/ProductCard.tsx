@@ -132,7 +132,7 @@ export default function ProductCard({
 
       <div className="flex flex-1 flex-col p-3 sm:p-4">
         <Link href={`/product/${product._id}`} onClick={openProduct} className="block">
-          <h3 className="text-[13px] sm:text-[15px] font-semibold leading-[1.4] text-[#111827] line-clamp-2 min-h-[2.5em] group-hover:text-[#0B3B24] transition-colors">
+          <h3 className="product-title text-[#111827] line-clamp-2 min-h-[2.5em] group-hover:text-[#0B3B24] transition-colors">
             {product.name}
           </h3>
         </Link>
@@ -144,7 +144,7 @@ export default function ProductCard({
         </div>
 
         <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-          <span className="text-[15px] sm:text-[17px] font-bold tabular-nums leading-none text-[#111827]">
+          <span className="product-price text-[15px] sm:text-[17px] leading-none text-[#111827]">
             {formatCurrency(currentPrice)}
           </span>
           {originalPrice > currentPrice && (

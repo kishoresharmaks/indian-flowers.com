@@ -185,7 +185,7 @@ export default function Header({
               </div>
 
               <div className="min-w-0">
-                <span className="font-serif text-[17px] sm:text-2xl font-normal text-[#134633] tracking-tight block leading-none truncate max-w-[11.5rem] sm:max-w-none">
+                <span className="text-[17px] sm:text-2xl font-bold text-[#134633] tracking-[-0.03em] block leading-none truncate max-w-[11.5rem] sm:max-w-none">
                   Indian-Flowers.com
                 </span>
                 <span className="hidden sm:block text-[10px] sm:text-[11px] text-gray-500 font-normal mt-1 tracking-wide">
@@ -329,7 +329,7 @@ export default function Header({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <span className="font-serif text-lg font-normal text-[#134633]">Menu</span>
+              <span className="text-lg font-bold tracking-tight text-[#134633]">Menu</span>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-1 rounded-lg text-gray-500 hover:bg-gray-100"
