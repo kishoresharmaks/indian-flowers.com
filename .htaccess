@@ -1,0 +1,23 @@
+# Disable Directory Indexing
+DirectoryIndex disabled
+
+# Enable Rewrite Engine for LiteSpeed / Apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Handle WebSockets Upgrades
+    RewriteCond %{HTTP:Upgrade} =websocket [NC]
+    RewriteRule ^(.*)$ ws://127.0.0.1:3000/$1 [P,L]
+
+    # LiteSpeed / Apache Reverse Proxy to Node.js on Port 3000
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
+</IfModule>
+
+# Set Proxy Headers for Web Server
+<IfModule mod_headers.c>
+    Header set X-Forwarded-Proto "https"
+    Header set X-Forwarded-Port "443"
+</IfModule>

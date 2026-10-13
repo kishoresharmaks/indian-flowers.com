@@ -1,0 +1,15 @@
+name: Keep Render Service Alive 24/7
+
+on:
+  schedule:
+    # Runs every 10 minutes automatically
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Web Service
+        run: |
+          curl -s https://beeshubfarmland.onrender.com/api/health || echo "Ping failed"

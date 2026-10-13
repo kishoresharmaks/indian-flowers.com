@@ -1,0 +1,73 @@
+import { NextRequest, NextResponse } from 'next/server';
+import connectToDatabase from '@/lib/db';
+import Settings from '@/models/Settings';
+import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+import { STORE_CURRENCY, STORE_LOCALE } from '@/lib/currency';
+
+export async function GET() {
+  try {
+    await connectToDatabase();
+    let settings = await Settings.findOne({ key: 'global' }).lean();
+    if (!settings) {
+      const created = await Settings.create({
+        key: 'global',
+        enableUPI: true,
+        enableCOD: true,
+        currency: STORE_CURRENCY,
+        locale: STORE_LOCALE,
+      });
+      settings = created.toObject();
+    } else if (settings.currency !== STORE_CURRENCY || settings.locale !== STORE_LOCALE) {
+      await Settings.updateOne(
+        { key: 'global' },
+        { $set: { currency: STORE_CURRENCY, locale: STORE_LOCALE } }
+      );
+      settings = await Settings.findOne({ key: 'global' }).lean();
+    }
+    return NextResponse.json(
+      { success: true, data: settings },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, message: error.message || 'Failed to fetch settings' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
+    await connectToDatabase();
+    const body = await request.json();
+    const { enableUPI, enableCOD } = body;
+
+    const updateFields: any = {};
+    if (typeof enableUPI === 'boolean') updateFields.enableUPI = enableUPI;
+    if (typeof enableCOD === 'boolean') updateFields.enableCOD = enableCOD;
+    updateFields.currency = STORE_CURRENCY;
+    updateFields.locale = STORE_LOCALE;
+    for (const field of ['siteName', 'tagline', 'businessName', 'domain', 'contactEmail', 'contactPhone', 'currency', 'locale', 'timezone']) {
+      if (field === 'currency' || field === 'locale') continue;
+      if (typeof body[field] === 'string') updateFields[field] = body[field].trim().slice(0, field === 'tagline' ? 180 : 254);
+    }
+
+    const settings = await Settings.findOneAndUpdate(
+      { key: 'global' },
+      { $set: updateFields },
+      { new: true, upsert: true }
+    );
+
+    return NextResponse.json({ success: true, data: settings });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, message: error.message || 'Failed to update settings' },
+      { status: 500 }
+    );
+  }
+}
