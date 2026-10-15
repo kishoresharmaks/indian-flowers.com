@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Banner from '@/models/Banner';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     await connectToDatabase();
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
   try {
     await connectToDatabase();
     const body = await request.json();
-    const { title, eyebrow, description, ctaText, image, link, badgeText, order } = body;
+    const { title, eyebrow, description, ctaText, image, mobileImage, link, badgeText, order } = body;
 
     if (!title || !image) {
       return NextResponse.json(
@@ -48,6 +50,7 @@ export async function POST(request: Request) {
       description: description || '',
       ctaText: ctaText || 'Shop Now',
       image,
+      mobileImage: mobileImage || '',
       link: link || '',
       badgeText: badgeText || '',
       order: order || 0,

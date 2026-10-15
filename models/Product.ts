@@ -17,7 +17,9 @@ export interface IProduct extends Document {
   price: number;
   discount?: number;
   quantity: number;
-  gst: number;
+  isTaxable?: boolean;
+  taxCode?: string;
+  gst?: number;
   category?: string;
   rating?: number;
   reviewsCount?: number;
@@ -51,7 +53,9 @@ const ProductSchema: Schema = new Schema(
     price: { type: Number, required: true, min: 0 },
     discount: { type: Number, default: 0 },
     quantity: { type: Number, required: true, min: 0, default: 1 },
-    gst: { type: Number, required: true, min: 0, default: 0 },
+    isTaxable: { type: Boolean, default: true },
+    taxCode: { type: String, default: '' },
+    gst: { type: Number, min: 0, default: 0 },
     category: { type: String, default: 'General' },
     rating: { type: Number, default: 4.8 },
     reviewsCount: { type: Number, default: 50 },

@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   Heart,
   Truck,
-  Sparkles,
 } from 'lucide-react';
 
 export default function CustomOrderSection() {

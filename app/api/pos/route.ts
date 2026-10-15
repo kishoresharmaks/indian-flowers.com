@@ -6,6 +6,7 @@ import Party from '@/models/Party';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 import { captureServerEvent, captureServerException } from '@/lib/telemetry';
 import { formatCurrency } from '@/lib/currency';
+import { calculateSalesTax } from '@/lib/tax';
 
 export async function POST(request: NextRequest) {
   if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
@@ -50,8 +51,8 @@ export async function POST(request: NextRequest) {
 
     // 2. Fetch Authoritative Products & Perform Server-Side Recalculations
     const verifiedItems: any[] = [];
-    let calculatedSubtotal = 0;
-    let calculatedTotalGst = 0;
+    const taxItems: any[] = [];
+    let calculatedSubtotalCents = 0;
 
     for (const rawItem of items) {
       const product = await Product.findById(rawItem.productId).lean();
@@ -74,12 +75,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const lineSubtotal = itemPrice * qty;
-      const gstPercentage = product.gst !== undefined ? product.gst : 0;
-      const lineGst = Math.round(lineSubtotal * (gstPercentage / 100));
+      const lineSubtotalCents = Math.round(Number(itemPrice) * 100) * qty;
+      calculatedSubtotalCents += lineSubtotalCents;
 
-      calculatedSubtotal += lineSubtotal;
-      calculatedTotalGst += lineGst;
+      const isTaxable = product.isTaxable !== false;
 
       verifiedItems.push({
         productId: String(product._id),
@@ -87,24 +86,57 @@ export async function POST(request: NextRequest) {
         variantName,
         price: itemPrice,
         quantity: qty,
-        gst: gstPercentage,
+        isTaxable,
+        taxCode: product.taxCode || '',
+        gst: 0,
         image: product.image,
+      });
+
+      taxItems.push({
+        productId: String(product._id),
+        name: product.name,
+        variantName,
+        quantity: qty,
+        unitPrice: itemPrice,
+        lineSubtotal: lineSubtotalCents / 100,
+        isTaxable,
       });
     }
 
+    const calculatedSubtotal = calculatedSubtotalCents / 100;
+
     // 3. Server-side Discount Recalculation
-    let discountAmount = 0;
+    let discountAmountCents = 0;
     const numericDiscountValue = Math.max(0, Number(discountValue || 0));
 
     if (discountType === 'PERCENTAGE') {
-      discountAmount = Math.round(calculatedSubtotal * (numericDiscountValue / 100));
+      discountAmountCents = Math.round(calculatedSubtotalCents * (numericDiscountValue / 100));
     } else {
-      discountAmount = Math.round(numericDiscountValue);
+      discountAmountCents = Math.round(numericDiscountValue * 100);
     }
     // Cap discount to not exceed subtotal
-    discountAmount = Math.min(discountAmount, calculatedSubtotal);
+    discountAmountCents = Math.min(discountAmountCents, calculatedSubtotalCents);
+    const discountAmount = discountAmountCents / 100;
 
-    const calculatedFinalTotal = Math.max(0, calculatedSubtotal + calculatedTotalGst - discountAmount);
+    // 4. US Sales Tax Calculation for Counter Sale
+    const taxResult = await calculateSalesTax({
+      shippingAddress: {
+        streetAddress: 'Counter POS Sale',
+        city: 'Storefront',
+        state: process.env.NEXT_PUBLIC_COMPANY_STATE || 'CA',
+        zipCode: process.env.NEXT_PUBLIC_COMPANY_ZIP || '94538',
+        country: 'US',
+      },
+      items: taxItems,
+      discountAmount,
+    });
+
+    const calculatedTotalTax = taxResult.taxAmount || 0;
+    const calculatedFinalTotalCents = Math.max(
+      0,
+      calculatedSubtotalCents - discountAmountCents + Math.round(calculatedTotalTax * 100)
+    );
+    const calculatedFinalTotal = calculatedFinalTotalCents / 100;
 
     // 4. Server-side CASH / UPI Payment Validation
     let finalCashReceived = 0;
@@ -215,11 +247,18 @@ export async function POST(request: NextRequest) {
       customerName: customerName.trim() || 'Walk-in Guest',
       customerPhone: customerPhone.trim() || '0000000000',
       customerEmail: customerEmail.trim() === 'pos@beeshubfarmland.com' ? '' : customerEmail.trim(),
+      streetAddress: 'Counter POS Sale',
+      city: 'Storefront',
+      state: process.env.NEXT_PUBLIC_COMPANY_STATE || 'CA',
+      zipCode: process.env.NEXT_PUBLIC_COMPANY_ZIP || '94538',
+      country: 'US',
       shippingAddress: 'Nexus Ecom Counter Sale',
-      pincode: '629501',
+      pincode: '94538',
       items: verifiedItems,
       subtotal: calculatedSubtotal,
-      totalGst: calculatedTotalGst,
+      totalTax: calculatedTotalTax,
+      totalGst: 0,
+      taxSnapshot: taxResult,
       discountType,
       discountValue: numericDiscountValue,
       discountAmount,

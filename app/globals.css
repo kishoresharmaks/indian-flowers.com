@@ -13,10 +13,12 @@
   --color-muted: #68736D;
 }
 
-html {
+html, body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body, button, input, select, textarea {
@@ -26,7 +28,6 @@ body, button, input, select, textarea {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  overflow-x: hidden;
 }
 
 h1,
@@ -67,20 +68,19 @@ nav, button {
   font-weight: 500;
 }
 
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Remove Browser Window Scrolling Animation Line */
+html,
+body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
-::-webkit-scrollbar-track {
-  background: #F9FAFB;
-}
-::-webkit-scrollbar-thumb {
-  background: #E5E7EB;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+  background: transparent;
 }
 
 @layer utilities {

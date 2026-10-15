@@ -26,7 +26,7 @@ export default function POSReceipt({ order, onClose, onNewSale }: POSReceiptProp
       ? order.items.map((it: any) => `• ${it.name}${it.variantName ? ` (${it.variantName})` : ''} x ${it.quantity} = ${formatCurrency(it.price * it.quantity)}`).join('\n')
       : '';
 
-    const text = `🌿 *BEES HUB FARMLAND PRIVATE LIMITED*
+    const text = `🌸 *INDIAN-FLOWERS.COM*
 🧾 *TAX INVOICE / POS RECEIPT*
 
 📄 *Invoice No:* ${order.invoiceNumber || order.orderId}
@@ -40,14 +40,14 @@ ${itemsText}
 
 ──────────────────
 💰 *Subtotal:* ${formatCurrency(order.subtotal || 0)}
-🏛️ *GST Tax:* ${formatCurrency(order.totalGst || 0)}
+🏛️ *Sales Tax:* ${formatCurrency(order.totalTax !== undefined ? order.totalTax : order.totalGst || 0)}
 ${order.discountAmount ? `🏷️ *Discount:* -${formatCurrency(order.discountAmount)}\n` : ''}💵 *Grand Total:* ${formatCurrency(order.totalAmount || 0)}
 💳 *Payment Mode:* ${order.paymentMethod}
 ${order.paymentMethod === 'CASH' ? `💵 *Cash Received:* ${formatCurrency(order.cashReceived || 0)}\n🪙 *Change Returned:* ${formatCurrency(order.changeReturned || 0)}\n` : ''}
-Thank you for shopping with BeesHub Farmland!
-Visit: https://beeshubfarmland.com`;
+Thank you for shopping with Indian-Flowers.com!
+Visit: https://indian-flowers.com`;
 
-    const targetPhone = phone.length === 10 ? `91${phone}` : phone;
+    const targetPhone = phone.length === 10 ? `1${phone}` : phone;
     return `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
   };
 
@@ -122,13 +122,20 @@ Visit: https://beeshubfarmland.com`;
         <div className="p-6 space-y-4 font-mono text-xs text-black" id="pos-thermal-receipt">
           {/* Header Branding */}
           <div className="text-center space-y-1 pb-3 border-b border-dashed border-gray-300">
-            <h2 className="font-bold text-sm uppercase tracking-tight">BEES HUB FARMLAND PVT LTD</h2>
-            <p className="text-[10px] text-gray-600 leading-tight">
-              2/26-1, Muhilanvilai, Monikettipottal, Nagercoil, Kanyakumari - 629501
+            <h2 className="font-bold text-sm uppercase tracking-tight">
+              {process.env.NEXT_PUBLIC_COMPANY_NAME || 'INDIAN FLOWERS'}
+            </h2>
+            {process.env.NEXT_PUBLIC_COMPANY_ADDRESS ? (
+              <p className="text-[10px] text-gray-600 leading-tight">
+                {process.env.NEXT_PUBLIC_COMPANY_ADDRESS}
+              </p>
+            ) : null}
+            <p className="text-[10px] text-gray-600">
+              {process.env.NEXT_PUBLIC_COMPANY_PHONE ? `Phone: ${process.env.NEXT_PUBLIC_COMPANY_PHONE}` : 'Indian-Flowers.com'}
+              {process.env.NEXT_PUBLIC_COMPANY_EIN ? ` | EIN: ${process.env.NEXT_PUBLIC_COMPANY_EIN}` : ''}
             </p>
-            <p className="text-[10px] text-gray-600">GSTIN: 33AAOCB0453D1Z3 | Phone: +91 95787 84431</p>
             <span className="inline-block mt-1 px-2 py-0.5 rounded bg-gray-100 font-bold text-[10px] uppercase">
-              POS TAX INVOICE
+              POS RECEIPT
             </span>
           </div>
 
@@ -179,8 +186,8 @@ Visit: https://beeshubfarmland.com`;
               <span>{formatCurrency(order.subtotal || 0)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>GST Tax:</span>
-              <span>{formatCurrency(order.totalGst || 0)}</span>
+              <span>Sales Tax:</span>
+              <span>{formatCurrency(order.totalTax !== undefined ? order.totalTax : order.totalGst || 0)}</span>
             </div>
             {order.discountAmount > 0 && (
               <div className="flex justify-between text-emerald-600 font-semibold">
@@ -222,8 +229,8 @@ Visit: https://beeshubfarmland.com`;
 
           {/* Footer note */}
           <div className="text-center text-[10px] text-gray-500 pt-2 border-t border-dashed border-gray-300">
-            <p>Thank you for shopping with BeesHub Farmland!</p>
-            <p>100% Pure Organic & Certified Produce | GSTIN: 33AAOCB0453D1Z3</p>
+            <p>Thank you for shopping with Indian-Flowers.com!</p>
+            <p>Fresh Authentic Indian Flowers Delivered Across USA</p>
           </div>
         </div>
 

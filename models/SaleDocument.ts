@@ -6,9 +6,13 @@ export interface ISaleDocItem {
   variantName?: string;
   price: number;
   quantity: number;
-  gst: number;
+  isTaxable?: boolean;
+  taxCode?: string;
+  taxRate?: number;
+  lineTax?: number;
+  gst?: number;
   lineSubtotal: number;
-  lineGst: number;
+  lineGst?: number;
   lineTotal: number;
 }
 
@@ -22,7 +26,9 @@ export interface ISaleDocument extends Document {
   billingAddress?: string;
   items: ISaleDocItem[];
   subtotal: number;
-  totalGst: number;
+  totalTax?: number;
+  totalGst?: number;
+  taxSnapshot?: any;
   discountType?: 'FLAT' | 'PERCENTAGE';
   discountValue?: number;
   discountAmount?: number;
@@ -44,9 +50,13 @@ const SaleDocItemSchema = new Schema({
   variantName: { type: String, default: '' },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
+  isTaxable: { type: Boolean, default: true },
+  taxCode: { type: String, default: '' },
+  taxRate: { type: Number, default: 0 },
+  lineTax: { type: Number, default: 0 },
   gst: { type: Number, default: 0 },
   lineSubtotal: { type: Number, required: true },
-  lineGst: { type: Number, required: true },
+  lineGst: { type: Number, default: 0 },
   lineTotal: { type: Number, required: true },
 });
 
@@ -66,7 +76,9 @@ const SaleDocumentSchema: Schema = new Schema(
     billingAddress: { type: String, default: '' },
     items: [SaleDocItemSchema],
     subtotal: { type: Number, required: true },
-    totalGst: { type: Number, required: true },
+    totalTax: { type: Number, default: 0 },
+    totalGst: { type: Number, default: 0 },
+    taxSnapshot: { type: Schema.Types.Mixed },
     discountType: { type: String, enum: ['FLAT', 'PERCENTAGE'], default: 'FLAT' },
     discountValue: { type: Number, default: 0 },
     discountAmount: { type: Number, default: 0 },

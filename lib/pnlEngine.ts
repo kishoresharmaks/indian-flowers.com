@@ -7,7 +7,7 @@ import Order from '@/models/Order';
 export interface PnLSummary {
   startDate?: string;
   endDate?: string;
-  grossSalesRevenue: number; // Sale Invoices + POS Sales - Sale Returns
+  grossSalesRevenue: number; // Pure sales subtotal excluding sales tax liability
   onlineStoreSales: number;
   posCounterSales: number;
   salesReturnTotal: number;
@@ -25,6 +25,11 @@ export interface PnLSummary {
   netProfit: number;
   isProfit: boolean;
 
+  // US Sales Tax Liability (Collected on behalf of state taxing authorities)
+  salesTaxCollected: number;
+  salesTaxPayable: number;
+
+  // Backward-compatible properties for legacy components
   outputGstCollected: number;
   inputGstCredit: number;
   netGstPayable: number;
@@ -48,22 +53,26 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
     }
   }
 
-  // 1. Sales Calculation
+  // 1. Sales Calculation (Net of Sales Tax, as sales tax is a liability, not revenue)
   const saleDocs = await SaleDocument.find(queryFilter).lean();
   let b2bSaleInvoiceTotal = 0;
   let salesReturnTotal = 0;
-  let saleOutputGst = 0;
+  let totalSalesTax = 0;
 
   for (const doc of saleDocs) {
+    const docTax = doc.totalTax || doc.totalGst || 0;
+    const docSubtotal = doc.subtotal !== undefined ? doc.subtotal : Math.max(0, (doc.grandTotal || 0) - docTax);
+
     if (doc.docType === 'SALE_INVOICE') {
-      b2bSaleInvoiceTotal += doc.grandTotal || 0;
-      saleOutputGst += doc.totalGst || 0;
+      b2bSaleInvoiceTotal += docSubtotal;
+      totalSalesTax += docTax;
     } else if (doc.docType === 'SALE_RETURN') {
-      salesReturnTotal += doc.grandTotal || 0;
+      salesReturnTotal += docSubtotal;
+      totalSalesTax = Math.max(0, totalSalesTax - docTax);
     }
   }
 
-  // Also include storefront e-commerce orders & POS sales from Order collection
+  // Include storefront e-commerce orders & POS sales from Order collection
   const orderFilter: any = { status: { $ne: 'Cancelled' } };
   if (startDate || endDate) {
     orderFilter.createdAt = queryFilter.createdAt;
@@ -74,12 +83,15 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
   let posCounterSales = 0;
 
   for (const ord of allOrders) {
+    const ordTax = ord.totalTax || ord.taxSnapshot?.taxAmount || ord.totalGst || 0;
+    const ordSubtotal = ord.subtotal !== undefined ? ord.subtotal : Math.max(0, (ord.totalAmount || 0) - ordTax);
+
     if (ord.orderType === 'POS') {
-      posCounterSales += ord.totalAmount || 0;
+      posCounterSales += ordSubtotal;
     } else {
-      onlineStoreSales += ord.totalAmount || 0;
+      onlineStoreSales += ordSubtotal;
     }
-    saleOutputGst += ord.totalGst || 0;
+    totalSalesTax += ordTax;
   }
 
   const grossSalesRevenue = b2bSaleInvoiceTotal + onlineStoreSales + posCounterSales;
@@ -89,14 +101,15 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
   const purchaseDocs = await PurchaseDocument.find(queryFilter).lean();
   let purchaseBillTotal = 0;
   let purchaseReturnTotal = 0;
-  let purchaseInputGst = 0;
 
   for (const doc of purchaseDocs) {
+    const docTax = doc.totalTax || doc.totalGst || 0;
+    const docSubtotal = doc.subtotal !== undefined ? doc.subtotal : Math.max(0, (doc.grandTotal || 0) - docTax);
+
     if (doc.docType === 'PURCHASE_BILL') {
-      purchaseBillTotal += doc.grandTotal || 0;
-      purchaseInputGst += doc.totalGst || 0;
+      purchaseBillTotal += docSubtotal;
     } else if (doc.docType === 'PURCHASE_RETURN') {
-      purchaseReturnTotal += doc.grandTotal || 0;
+      purchaseReturnTotal += docSubtotal;
     }
   }
 
@@ -129,27 +142,30 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
   const netProfit = grossProfit - totalExpenses;
   const isProfit = netProfit >= 0;
 
-  // 5. Net GST Payable (Output GST - Input Tax Credit)
-  const netGstPayable = Math.max(0, saleOutputGst - purchaseInputGst);
+  // 5. Sales Tax Liability (Separated from revenue, payable to taxing jurisdictions)
+  const salesTaxLiability = Math.round(totalSalesTax * 100) / 100;
 
   return {
     startDate,
     endDate,
-    grossSalesRevenue,
-    onlineStoreSales,
-    posCounterSales,
-    salesReturnTotal,
-    netSalesRevenue,
-    purchaseBillTotal,
-    purchaseReturnTotal,
-    costOfGoodsSold,
-    grossProfit,
-    totalExpenses,
+    grossSalesRevenue: Math.round(grossSalesRevenue * 100) / 100,
+    onlineStoreSales: Math.round(onlineStoreSales * 100) / 100,
+    posCounterSales: Math.round(posCounterSales * 100) / 100,
+    salesReturnTotal: Math.round(salesReturnTotal * 100) / 100,
+    netSalesRevenue: Math.round(netSalesRevenue * 100) / 100,
+    purchaseBillTotal: Math.round(purchaseBillTotal * 100) / 100,
+    purchaseReturnTotal: Math.round(purchaseReturnTotal * 100) / 100,
+    costOfGoodsSold: Math.round(costOfGoodsSold * 100) / 100,
+    grossProfit: Math.round(grossProfit * 100) / 100,
+    totalExpenses: Math.round(totalExpenses * 100) / 100,
     expenseByCategory,
-    netProfit,
+    netProfit: Math.round(netProfit * 100) / 100,
     isProfit,
-    outputGstCollected: saleOutputGst,
-    inputGstCredit: purchaseInputGst,
-    netGstPayable,
+    salesTaxCollected: salesTaxLiability,
+    salesTaxPayable: salesTaxLiability,
+    // Backward compatibility
+    outputGstCollected: salesTaxLiability,
+    inputGstCredit: 0,
+    netGstPayable: salesTaxLiability,
   };
 }

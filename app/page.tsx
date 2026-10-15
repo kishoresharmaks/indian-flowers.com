@@ -3,15 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/currency';
+import { US_STATES } from '@/lib/tax';
 import Header from '@/components/Header';
 import HeroSection, { HeroSlide } from '@/components/HeroSection';
-import CategoryTiles, { CategoryItem } from '@/components/CategoryTiles';
+import CategoryCarousel, { CategoryItem } from '@/components/CategoryCarousel';
+import ProductCarousel from '@/components/ProductCarousel';
+import FloralCornerDecorations from '@/components/FloralCornerDecorations';
 import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
 import ProductQuickViewModal from '@/components/ProductQuickViewModal';
 import AddedToCartPopup, { AddedItemDetails } from '@/components/AddedToCartPopup';
 import CartDrawer from '@/components/CartDrawer';
 import WishlistDrawer from '@/components/WishlistDrawer';
 import CustomOrderSection from '@/components/CustomOrderSection';
+import FloatingCartBar from '@/components/FloatingCartBar';
 import {
   ShoppingBag,
   Search,
@@ -30,6 +34,7 @@ import {
   Headphones,
   Heart,
   Flower2,
+  Sparkles,
   Check,
   CreditCard,
   Lock,
@@ -41,6 +46,7 @@ import {
   Facebook,
   Instagram,
   Youtube,
+  Loader2,
 } from 'lucide-react';
 
 interface CartItem {
@@ -76,6 +82,8 @@ interface TrackedOrder {
   createdAt: string;
 }
 
+
+
 export default function CustomerStore() {
   // Dynamic State sourced 100% from MongoDB
   const [products, setProducts] = useState<Product[]>([]);
@@ -92,7 +100,7 @@ export default function CustomerStore() {
 
   // Filter & Search State
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('Fresh Flower Strings & Jasmine');
 
   // Modals & Drawers State
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -101,11 +109,19 @@ export default function CustomerStore() {
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<any | null>(null);
 
   // Added To Cart Popup Notification State
   const [addedItemDetails, setAddedItemDetails] = useState<AddedItemDetails | null>(null);
   const [isAddedPopupOpen, setIsAddedPopupOpen] = useState(false);
+
+  // Automatically dismiss added-to-cart popup whenever cart, checkout, or wishlist is opened
+  useEffect(() => {
+    if (isCartOpen || isCheckoutOpen || isWishlistOpen) {
+      setIsAddedPopupOpen(false);
+    }
+  }, [isCartOpen, isCheckoutOpen, isWishlistOpen]);
 
   // Order Tracking Modal State
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
@@ -119,18 +135,30 @@ export default function CustomerStore() {
     customerName: '',
     customerPhone: '',
     customerEmail: '',
+    streetAddress: '',
+    aptSuite: '',
+    city: '',
+    state: 'CA',
+    zipCode: '',
+    country: 'US',
     shippingAddress: '',
     pincode: '',
     paymentMethod: 'COD',
     transactionId: '',
     notes: '',
   });
+  const [checkoutTaxResult, setCheckoutTaxResult] = useState<any>(null);
+  const [checkoutTaxAmount, setCheckoutTaxAmount] = useState<number>(0);
+  const [calculatingTax, setCalculatingTax] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
 
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [formError, setFormError] = useState('');
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [newsletterMessage, setNewsletterMessage] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'success' | 'already' | 'error'>('idle');
 
   // Restore Cart on Mount
   useEffect(() => {
@@ -229,12 +257,12 @@ export default function CustomerStore() {
     fetchSettings();
   }, []);
 
-  // 2. Fetch Categories from DB
+  // 2. Fetch Categories directly from DB
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
-        const res = await fetch('/api/categories');
+        const res = await fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
           setCategories(data.data);
@@ -295,15 +323,14 @@ export default function CustomerStore() {
     fetchReviews();
   }, []);
 
-  // 5. Fetch Dynamic Products from DB based on Search Query & Category
+  // 5. Fetch Dynamic Products directly from MongoDB based on Search Query
   const fetchProducts = async () => {
     try {
       setLoadingProducts(true);
       const url = new URL('/api/products', window.location.origin);
       if (searchQuery.trim()) url.searchParams.append('search', searchQuery.trim());
-      if (selectedCategory !== 'All') url.searchParams.append('category', selectedCategory);
 
-      const res = await fetch(url.toString());
+      const res = await fetch(url.toString(), { cache: 'no-store' });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setProducts(data.data);
@@ -320,7 +347,86 @@ export default function CustomerStore() {
 
   useEffect(() => {
     fetchProducts();
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery]);
+
+  const displayedCategories = categories;
+
+  const getProductsForCategory = (categoryName: string) => {
+    const catLower = categoryName.trim().toLowerCase();
+    return products.filter(
+      (p) => (p.category || '').trim().toLowerCase() === catLower
+    );
+  };
+
+  const getCategoryMeta = (catName: string) => {
+    const lower = catName.trim().toLowerCase();
+    if (lower.includes('string') || lower.includes('jasmine')) {
+      return {
+        eyebrow: 'FRESH INDIAN FLOWERS',
+        description: 'Premium authentic floral blooms delivered fresh across the United States',
+      };
+    }
+    if (lower.includes('garland') || lower.includes('wedding') || lower.includes('temple')) {
+      return {
+        eyebrow: 'CEREMONIAL & BRIDAL JAI MALAS',
+        description: 'Exquisite handcrafted rose petal, jasmine, and gold-trimmed garlands for wedding ceremonies',
+      };
+    }
+    if (lower.includes('loose') || lower.includes('daily pooja')) {
+      return {
+        eyebrow: 'FRESH LOOSE BLOOMS',
+        description: 'Handpicked fresh blossoms for daily rituals, temple offerings and sacred floral decor',
+      };
+    }
+    if (lower.includes('leaf') || lower.includes('leaves') || lower.includes('greenery')) {
+      return {
+        eyebrow: 'SACRED PUJA LEAVES & GREENERY',
+        description: 'Fresh auspicious betel leaves, mango leaf thoranams, and banana leaves delivered fresh across USA',
+      };
+    }
+    if (lower.includes('kit') || lower.includes('pooja item')) {
+      return {
+        eyebrow: 'WORSHIP & ARCHANA ESSENTIALS',
+        description: 'Complete daily puja samagri boxes, brass lamps, and ritual essentials for home altars',
+      };
+    }
+    if (lower.includes('bouquet') || lower.includes('arrangement')) {
+      return {
+        eyebrow: 'CELEBRATION FLORAL ARRANGEMENTS',
+        description: 'Curated premium fresh flower bouquets and blessing gift sets for auspicious occasions',
+      };
+    }
+    return {
+      eyebrow: 'FRESH INDIAN FLOWERS',
+      description: 'Premium authentic floral blooms delivered fresh across the United States',
+    };
+  };
+
+  const handleSelectCategory = (catName: string) => {
+    setSelectedCategory(catName);
+    if (catName === 'All') {
+      const el = document.getElementById('products-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    const slug = catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const el = document.getElementById(`category-${slug}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      const fallbackEl = document.getElementById('products-section');
+      if (fallbackEl) fallbackEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const filteredSearchProducts = searchQuery.trim()
+    ? products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : [];
 
   // Cart Management
   const addToCart = (product: Product, variant?: ProductVariant, quantity: number = 1) => {
@@ -373,8 +479,70 @@ export default function CustomerStore() {
       sum + (item.selectedVariant ? item.selectedVariant.price : item.product.price) * item.quantity,
     0
   );
-  const cartGrandTotal = cartSubtotal;
+  const cartGrandTotal = Number((cartSubtotal + (checkoutTaxAmount || 0)).toFixed(2));
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Recalculate US Sales Tax dynamically whenever destination state, zip, or cart items change
+  useEffect(() => {
+    if (!isCheckoutOpen || cart.length === 0) {
+      setCheckoutTaxResult(null);
+      setCheckoutTaxAmount(0);
+      return;
+    }
+
+    const controller = new AbortController();
+    const calculateTaxAsync = async () => {
+      try {
+        setCalculatingTax(true);
+        const res = await fetch('/api/checkout/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            shippingAddress: {
+              streetAddress: checkoutForm.streetAddress || 'General Delivery',
+              aptSuite: checkoutForm.aptSuite || '',
+              city: checkoutForm.city || 'City',
+              state: checkoutForm.state || 'CA',
+              zipCode: checkoutForm.zipCode || '94538',
+              country: 'US',
+            },
+            items: cart.map((item) => ({
+              productId: item.product._id,
+              name: item.selectedVariant
+                ? `${item.product.name} (${item.selectedVariant.name})`
+                : item.product.name,
+              variantName: item.selectedVariant?.name || '',
+              price: item.selectedVariant ? item.selectedVariant.price : item.product.price,
+              quantity: item.quantity,
+              isTaxable: item.product.isTaxable !== false,
+            })),
+            discountAmount: 0,
+            shippingFee: 0,
+          }),
+          signal: controller.signal,
+        });
+
+        const data = await res.json();
+        if (data.success && data.data) {
+          setCheckoutTaxResult(data.data.taxSnapshot);
+          setCheckoutTaxAmount(Number(data.data.taxAmount) || 0);
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Tax calculation error:', err);
+        }
+      } finally {
+        setCalculatingTax(false);
+      }
+    };
+
+    const timeoutId = setTimeout(calculateTaxAsync, 250);
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [isCheckoutOpen, cart, checkoutForm.state, checkoutForm.zipCode]);
 
   // Search tracking
   const handleSearchTracking = async (e: React.FormEvent) => {
@@ -399,7 +567,7 @@ export default function CustomerStore() {
     }
   };
 
-  const shippingAddressValid = (addr: string) => Boolean(addr && addr.trim().length > 3);
+  const streetAddressValid = (addr: string) => Boolean(addr && addr.trim().length >= 3);
 
   // Place Order into MongoDB
   const handlePlaceOrder = async (e: React.FormEvent) => {
@@ -410,10 +578,12 @@ export default function CustomerStore() {
       !checkoutForm.customerName ||
       !checkoutForm.customerPhone ||
       !checkoutForm.customerEmail ||
-      !shippingAddressValid(checkoutForm.shippingAddress) ||
-      !checkoutForm.pincode
+      !streetAddressValid(checkoutForm.streetAddress) ||
+      !checkoutForm.city ||
+      !checkoutForm.state ||
+      !checkoutForm.zipCode
     ) {
-      setFormError('Please fill in all required shipping details.');
+      setFormError('Please fill in all required shipping address fields (Street, City, State, and ZIP).');
       return;
     }
 
@@ -439,12 +609,22 @@ export default function CustomerStore() {
 
     try {
       setSubmittingOrder(true);
+      const fullShippingAddress = `${checkoutForm.streetAddress}${
+        checkoutForm.aptSuite ? ', ' + checkoutForm.aptSuite : ''
+      }, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zipCode}`;
+
       const payload = {
-        customerName: checkoutForm.customerName,
-        customerPhone: checkoutForm.customerPhone,
-        customerEmail: checkoutForm.customerEmail,
-        shippingAddress: checkoutForm.shippingAddress,
-        pincode: checkoutForm.pincode,
+        customerName: checkoutForm.customerName.trim(),
+        customerPhone: checkoutForm.customerPhone.trim(),
+        customerEmail: checkoutForm.customerEmail.trim(),
+        streetAddress: checkoutForm.streetAddress.trim(),
+        aptSuite: (checkoutForm.aptSuite || '').trim(),
+        city: checkoutForm.city.trim(),
+        state: checkoutForm.state.trim().toUpperCase(),
+        zipCode: checkoutForm.zipCode.trim(),
+        country: 'US',
+        shippingAddress: fullShippingAddress,
+        pincode: checkoutForm.zipCode.trim(),
         paymentMethod: currentMethod,
         transactionId: currentMethod === 'UPI' ? checkoutForm.transactionId.trim() : '',
         items: cart.map((item) => ({
@@ -452,9 +632,10 @@ export default function CustomerStore() {
           name: item.selectedVariant
             ? `${item.product.name} (${item.selectedVariant.name})`
             : item.product.name,
+          variantName: item.selectedVariant?.name || '',
           price: item.selectedVariant ? item.selectedVariant.price : item.product.price,
           quantity: item.quantity,
-          gst: 0,
+          isTaxable: item.product.isTaxable !== false,
           image: item.product.image,
         })),
         totalAmount: cartGrandTotal,
@@ -484,13 +665,45 @@ export default function CustomerStore() {
     }
   };
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newsletterEmail) return;
-    setNewsletterSubscribed(true);
-    setTimeout(() => {
-      setNewsletterEmail('');
-    }, 2500);
+    const cleanEmail = (newsletterEmail || '').trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setNewsletterStatus('error');
+      setNewsletterMessage('Please enter a valid email address.');
+      return;
+    }
+
+    setNewsletterLoading(true);
+    setNewsletterMessage('');
+    try {
+      const res = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, source: 'storefront_footer' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewsletterStatus(data.alreadySubscribed ? 'already' : 'success');
+        setNewsletterMessage(data.message || 'Thank you for subscribing!');
+        setNewsletterSubscribed(true);
+        setTimeout(() => {
+          setNewsletterEmail('');
+          setNewsletterSubscribed(false);
+          setNewsletterStatus('idle');
+          setNewsletterMessage('');
+        }, 4500);
+      } else {
+        setNewsletterStatus('error');
+        setNewsletterMessage(data.message || 'Unable to subscribe right now. Please try again.');
+      }
+    } catch (err) {
+      console.error('Newsletter error:', err);
+      setNewsletterStatus('error');
+      setNewsletterMessage('Network error. Please check your internet connection.');
+    } finally {
+      setNewsletterLoading(false);
+    }
   };
 
   const contactPhone = storeSettings?.contactPhone || '+1 (510) 579-5199';
@@ -514,201 +727,256 @@ export default function CustomerStore() {
     setTimeout(() => setCopiedUpi(false), 2000);
   };
 
+    const weddingCategory = categories.find((c) =>
+    c.name.toLowerCase().includes('wedding')
+  );
+  const poojaCategory = categories.find(
+    (c) => c.name.toLowerCase().includes('loose') || c.name.toLowerCase().includes('pooja')
+  );
+
   return (
     <div className={`min-h-[100dvh] flex flex-col justify-between bg-white text-gray-900 font-sans ${cartItemCount > 0 ? 'pb-24 sm:pb-0' : ''}`}>
       {/* 1. TOP NAVBAR & PAGE LINKS (Retrieved from DB Categories) */}
       <Header
         cartItemCount={cartItemCount}
-        onCartClick={() => setIsCartOpen(true)}
+        onCartClick={() => {
+          setIsAddedPopupOpen(false);
+          setIsCartOpen(true);
+        }}
         wishlistCount={wishlist.length}
-        onWishlistClick={() => setIsWishlistOpen(true)}
+        onWishlistClick={() => {
+          setIsAddedPopupOpen(false);
+          setIsWishlistOpen(true);
+        }}
         onTrackClick={() => setIsTrackModalOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         categories={categories}
         selectedCategory={selectedCategory}
-        onSelectCategory={(cat) => {
-          setSelectedCategory(cat);
-          const el = document.getElementById('products-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
+        onSelectCategory={handleSelectCategory}
+        onMenuToggle={setIsMobileNavOpen}
+        storeName={storeSettings?.siteName || 'Indian-Flowers.com'}
+        storeTagline={storeSettings?.tagline || 'Indian Flowers for Every Occasion'}
+        storePhone={storeSettings?.contactPhone || storeSettings?.phone || '+1 (510) 579-5199'}
+        storeEmail={storeSettings?.contactEmail || storeSettings?.email || 'support@indian-flowers.com'}
       />
 
       {/* 2. IMAGE SLIDER HERO (Retrieved from DB Banners) */}
       <HeroSection
         slides={banners}
         loading={loadingBanners}
-        onShopClick={() => {
-          const el = document.getElementById('products-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
+        onShopClick={() => handleSelectCategory('All')}
       />
 
-      {/* 3. CATEGORIES SECTION (Retrieved from DB Categories) */}
-      <CategoryTiles
-        categories={categories}
-        loading={loadingCategories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={(cat) => {
-          setSelectedCategory(cat);
-          const el = document.getElementById('products-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
-      />
+      {/* 3. UNIFIED BOTANICAL CATALOG SECTION ENCLOSING ALL CATEGORIES */}
+      <section
+        id="products-section"
+        className="relative w-full bg-gradient-to-b from-[#FAF7F2] via-[#FFFDF9] via-[#FAF7F2] to-[#FAF6F0] overflow-hidden pt-4 pb-14 sm:pt-6 sm:pb-20 border-b border-stone-200/60"
+      >
+        {/* Continuous Floral Decorations Framing the Entire Catalog Section */}
+        <FloralCornerDecorations />
 
-      {/* 4. BESTSELLERS / POPULAR PRODUCTS SECTION (Retrieved from DB Products) */}
-      <section id="products-section" className="py-10 sm:py-14 bg-white border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
-            <div>
-              <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-[#C85A78] block">
-                Bestsellers
-              </span>
-              <h2 className="text-[24px] sm:text-[32px] lg:text-[36px] font-bold tracking-[-0.03em] text-gray-900 mt-1 leading-[1.2]">
-                Popular Flowers &amp; Garlands
-              </h2>
-              <p className="text-sm sm:text-base text-gray-500 mt-1 font-normal max-w-[42ch]">
-                Handpicked favourites for your special occasions
-              </p>
-            </div>
+        {/* Content Container (z-10 above decorations) */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Horizontal Category Carousel */}
+          <CategoryCarousel
+            categories={categories}
+            loading={loadingCategories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={handleSelectCategory}
+          />
 
-            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
-              {selectedCategory !== 'All' && (
-                <button
-                  onClick={() => setSelectedCategory('All')}
-                  className="shrink-0 px-3.5 py-1.5 rounded-full border border-gray-200 text-xs text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors font-normal"
-                >
-                  Clear filter
-                </button>
-              )}
-              <button
-                onClick={() => setSelectedCategory('All')}
-                className="inline-flex shrink-0 items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 hover:border-[#0B3B24] text-xs sm:text-sm font-semibold text-gray-700 hover:text-[#0B3B24] transition-colors"
-              >
-                <span>View all</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {loadingProducts ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-2xl border border-[#E3E7E1] overflow-hidden flex flex-col animate-pulse"
-                >
-                  <div className="aspect-[4/5] sm:aspect-square bg-[#FAF6F0] w-full" />
-                  <div className="p-3 sm:p-4 space-y-2">
-                    <div className="h-3 bg-gray-200 rounded-sm w-3/4" />
-                    <div className="h-4 bg-gray-200 rounded-sm w-1/2" />
-                    <div className="h-11 bg-gray-100 rounded-xl w-full mt-2" />
+          {searchQuery.trim() ? (
+            /* Search Results Section */
+            <div className="py-8 sm:py-12 border-t border-amber-200/40">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+                  <div>
+                    <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-[#C85A78] block">
+                      SEARCH RESULTS
+                    </span>
+                    <h2 className="text-[24px] sm:text-[30px] lg:text-[34px] font-bold tracking-[-0.03em] text-[#0B3B24] mt-1 leading-[1.2]">
+                      Results for &ldquo;{searchQuery}&rdquo;
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-500 mt-1 font-normal">
+                      Showing matching flowers and garlands
+                    </p>
                   </div>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="px-4 py-2 rounded-full border border-gray-300 hover:border-[#0B3B24] text-xs font-semibold text-gray-700 hover:text-[#0B3B24] bg-white transition-colors self-start sm:self-auto shadow-2xs"
+                  >
+                    Clear search
+                  </button>
                 </div>
-              ))}
-            </div>
-          ) : products.length === 0 ? (
-            <div className="py-16 text-center bg-[#FAF6F0] rounded-2xl p-8 max-w-md mx-auto">
-              <p className="text-gray-600 text-sm font-normal">
-                No flowers found {selectedCategory !== 'All' ? `in "${selectedCategory}"` : ''}.
-              </p>
-              <button
-                onClick={() => {
-                  setSelectedCategory('All');
-                  setSearchQuery('');
-                }}
-                className="mt-4 px-4 py-2 rounded-full bg-[#0B3B24] text-white text-xs font-medium"
-              >
-                Show All Products
-              </button>
+
+                {filteredSearchProducts.length === 0 ? (
+                  <div className="py-16 text-center bg-white/80 rounded-2xl p-8 max-w-md mx-auto border border-stone-200/80 shadow-xs">
+                    <p className="text-gray-600 text-sm font-normal">
+                      No flowers found matching &ldquo;{searchQuery}&rdquo;.
+                    </p>
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="mt-4 px-4 py-2 rounded-full bg-[#0B3B24] text-white text-xs font-medium"
+                    >
+                      Clear Search &amp; View All Categories
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                    {filteredSearchProducts.map((product) => (
+                      <ProductCard
+                        key={product._id}
+                        product={product}
+                        isWishlisted={wishlist.some((w) => w._id === product._id)}
+                        onToggleWishlist={handleToggleWishlist}
+                        onAddToCart={(prod, v) => addToCart(prod, v, 1)}
+                        onProductClick={(prod) => setSelectedProduct(prod)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-              {products.map((product) => (
-                <ProductCard
-                  key={product._id}
-                  product={product}
-                  isWishlisted={wishlist.some((w) => w._id === product._id)}
-                  onToggleWishlist={handleToggleWishlist}
-                  onAddToCart={(prod, v) => addToCart(prod, v, 1)}
-                  onProductClick={(prod) => setSelectedProduct(prod)}
-                />
-              ))}
+            /* ALL CATEGORIES RENDERED DOWN BY DOWN INSIDE THIS COMMON BOTANICAL CONTAINER */
+            <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-4">
+              {categories.map((category, idx) => {
+                const catProducts = getProductsForCategory(category.name);
+                if (catProducts.length === 0 && !loadingProducts) return null;
+                const meta = getCategoryMeta(category.name);
+                const slug = category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+                return (
+                  <div
+                    key={category._id || category.name}
+                    id={`category-${slug}`}
+                    className="scroll-mt-24 sm:scroll-mt-28"
+                  >
+                    {idx > 0 && (
+                      <div className="flex items-center justify-center my-6 sm:my-8 px-4" aria-hidden="true">
+                        <div className="h-px bg-gradient-to-r from-transparent via-amber-300/40 to-amber-200/70 flex-1 max-w-xs sm:max-w-md" />
+                        <div className="mx-3 sm:mx-4 flex items-center gap-1.5 text-amber-600/70">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500/80" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C12 2 9 6.5 9 10C9 12.21 10.34 14.1 12 14.73C13.66 14.1 15 12.21 15 10C15 6.5 12 2 12 2Z" opacity="0.9" />
+                            <path d="M7.5 7.5C7.5 7.5 5 11 5.5 13.5C5.85 15.24 7.23 16.59 9 17C8.17 15.5 8 13.5 8.5 11.5C8.85 10.1 7.5 7.5 7.5 7.5Z" opacity="0.75" />
+                            <path d="M16.5 7.5C16.5 7.5 19 11 18.5 13.5C18.15 15.24 16.77 16.59 15 17C15.83 15.5 16 13.5 15.5 11.5C15.15 10.1 16.5 7.5 16.5 7.5Z" opacity="0.75" />
+                            <circle cx="12" cy="18.5" r="1.5" />
+                          </svg>
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
+                        </div>
+                        <div className="h-px bg-gradient-to-l from-transparent via-amber-300/40 to-amber-200/70 flex-1 max-w-xs sm:max-w-md" />
+                      </div>
+                    )}
+                    <ProductCarousel
+                      products={catProducts}
+                      eyebrow={meta.eyebrow}
+                      title={category.name}
+                      subtitle={meta.description}
+                      wishlist={wishlist}
+                      onToggleWishlist={handleToggleWishlist}
+                      onAddToCart={(prod, v) => addToCart(prod, v, 1)}
+                      onProductClick={(prod) => setSelectedProduct(prod)}
+                      loading={loadingProducts}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </section>
 
-      {/* 5. OCCASION FEATURE DUAL BANNERS */}
-      <section className="py-8 sm:py-12 bg-white">
+      {/* 5. OCCASION FEATURE DUAL BANNERS (CREATIVE BORDERLESS EDITORIAL CARDS WITH SEAMLESS PHOTO BLENDING) */}
+      <section className="py-10 sm:py-16 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {/* Banner 1: Wedding Garlands */}
-            <div className="rounded-2xl overflow-hidden bg-[#FBF0E8] border border-[#F3DFD1]/80 p-5 sm:p-8 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 group hover:shadow-md transition-shadow">
-              <div className="w-full max-w-[11rem] aspect-square sm:w-44 sm:h-44 sm:max-w-none rounded-xl overflow-hidden shrink-0 shadow-xs">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-7">
+            {/* Banner 1: Wedding & Temple Garlands */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FAF5ED] via-[#F5ECE1] to-[#EFE2D4] p-6 sm:p-8 lg:p-9 min-h-[280px] sm:min-h-[310px] flex flex-col justify-between group shadow-xs hover:shadow-[0_20px_48px_rgba(11,59,36,0.08)] transition-all duration-500">
+              {/* Photo Canvas seamlessly blended into background without borders */}
+              <div className="absolute right-0 top-0 bottom-0 w-7/12 sm:w-1/2 lg:w-7/12 pointer-events-none overflow-hidden [mask-image:linear-gradient(to_left,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_left,black_40%,transparent_100%)]">
                 <img
-                  src="https://images.unsplash.com/photo-1607344645866-009c320c5ab8?auto=format&fit=crop&w=600&q=80"
-                  alt="Wedding Garlands"
-                  className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500"
+                  src={weddingCategory?.image || "/images/categories/cat-wedding-garlands.jpg"}
+                  alt="Wedding & Temple Garlands"
+                  className="w-full h-full object-cover object-center scale-100 group-hover:scale-106 transition-transform duration-700 ease-out"
                 />
+                {/* Secondary atmospheric gradient washes for ultra-smooth edge feathering */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#FAF5ED] via-[#FAF5ED]/85 via-45% to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-[#FAF5ED]/70 to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#EFE2D4]/70 to-transparent pointer-events-none" />
               </div>
 
-              <div className="space-y-2.5 text-center sm:text-left flex-1">
-                <h3 className="text-[20px] sm:text-[26px] lg:text-[30px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.25]">
-                  Wedding Garlands
-                </h3>
-                <span className="text-[11px] font-medium uppercase tracking-wider text-[#A0522D] block">
-                  Traditional &amp; Custom Designs
-                </span>
-                <p className="text-sm sm:text-[15px] text-gray-600 leading-relaxed font-normal">
-                  Make your special day more beautiful with our handcrafted garlands.
-                </p>
-                <div className="pt-2">
+              {/* Text & Action Content on Left Canvas */}
+              <div className="relative z-10 max-w-[68%] sm:max-w-[58%] lg:max-w-[56%] flex flex-col justify-between h-full space-y-3">
+                <div className="space-y-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-600/10 text-amber-900 text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase self-start">
+                    <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
+                    <span>Traditional &amp; Custom</span>
+                  </span>
+
+                  <h3 className="text-[21px] sm:text-[25px] lg:text-[28px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.2]">
+                    Wedding &amp; Temple Garlands
+                  </h3>
+
+                  <p className="text-[12.5px] sm:text-[13.5px] text-stone-600 leading-relaxed font-normal">
+                    Handcrafted rose petal Jai Malas, fragrant jasmine, and gold-trimmed garlands designed for sacred celebrations.
+                  </p>
+                </div>
+
+                <div className="pt-2 sm:pt-4">
                   <button
-                    onClick={() => {
-                      setSelectedCategory('Wedding Garlands');
-                      const el = document.getElementById('products-section');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#0B3B24] hover:bg-[#134633] text-white text-xs sm:text-sm font-medium shadow-xs transition-colors"
+                    onClick={() => handleSelectCategory(weddingCategory?.name || 'Wedding & Temple Garlands')}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0B3B24] hover:bg-[#134633] active:bg-[#072718] text-white text-xs sm:text-[13px] font-semibold tracking-wide shadow-[0_4px_16px_rgba(11,59,36,0.22)] hover:shadow-[0_6px_22px_rgba(11,59,36,0.32)] transition-all hover:translate-x-0.5 active:scale-95 group/btn"
                   >
                     <span>Explore Wedding Garlands</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Banner 2: Pooja Flowers & Temple Decoration */}
-            <div className="rounded-2xl overflow-hidden bg-[#FBF2F4] border border-[#F5E0E5]/80 p-5 sm:p-8 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 group hover:shadow-md transition-shadow">
-              <div className="space-y-2.5 text-center sm:text-left flex-1 order-2 sm:order-1">
-                <h3 className="text-[20px] sm:text-[26px] lg:text-[30px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.25]">
-                  Pooja Flowers &amp; Temple Decoration
-                </h3>
-                <p className="text-sm sm:text-[15px] text-gray-600 leading-relaxed font-normal">
-                  Fresh flowers, leaves and pooja items for your spiritual needs.
-                </p>
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      setSelectedCategory('Pooja Items');
-                      const el = document.getElementById('products-section');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#0B3B24] hover:bg-[#134633] text-white text-xs sm:text-sm font-medium shadow-xs transition-colors"
-                  >
-                    <span>Shop Pooja Items</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+            {/* Banner 2: Pooja Flowers & Temple Decor */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FDF5F2] via-[#F8ECE7] to-[#F1DDD7] p-6 sm:p-8 lg:p-9 min-h-[280px] sm:min-h-[310px] flex flex-col justify-between group shadow-xs hover:shadow-[0_20px_48px_rgba(11,59,36,0.08)] transition-all duration-500">
+              {/* Photo Canvas seamlessly blended into background without borders */}
+              <div className="absolute right-0 top-0 bottom-0 w-7/12 sm:w-1/2 lg:w-7/12 pointer-events-none overflow-hidden [mask-image:linear-gradient(to_left,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_left,black_40%,transparent_100%)]">
+                <img
+                  src={poojaCategory?.image || "/images/categories/cat-loose-pooja.jpg"}
+                  alt="Pooja Flowers & Temple Decor"
+                  className="w-full h-full object-cover object-center scale-100 group-hover:scale-106 transition-transform duration-700 ease-out"
+                />
+                {/* Secondary atmospheric gradient washes for ultra-smooth edge feathering */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#FDF5F2] via-[#FDF5F2]/85 via-45% to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-[#FDF5F2]/70 to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#F1DDD7]/70 to-transparent pointer-events-none" />
               </div>
 
-              <div className="w-full max-w-[11rem] aspect-square sm:w-44 sm:h-44 sm:max-w-none rounded-xl overflow-hidden shrink-0 shadow-xs order-1 sm:order-2">
-                <img
-                  src="https://images.unsplash.com/photo-1605647540924-852290f6b0d5?auto=format&fit=crop&w=600&q=80"
-                  alt="Pooja Flowers & Diya"
-                  className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500"
-                />
+              {/* Text & Action Content on Left Canvas */}
+              <div className="relative z-10 max-w-[66%] sm:max-w-[58%] lg:max-w-[56%] flex flex-col justify-between h-full space-y-3">
+                <div className="space-y-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600/10 text-rose-900 text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase self-start">
+                    <Flower2 className="w-3 h-3 text-[#C85A78] shrink-0" />
+                    <span>Daily Worship &amp; Decor</span>
+                  </span>
+
+                  <h3 className="text-[21px] sm:text-[25px] lg:text-[28px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.2]">
+                    Pooja Flowers &amp; Temple Decor
+                  </h3>
+
+                  <p className="text-[12.5px] sm:text-[13.5px] text-stone-600 leading-relaxed font-normal">
+                    Fresh sacred blossoms, holy tulsi, and festive loose marigolds curated for your daily home puja rituals.
+                  </p>
+                </div>
+
+                <div className="pt-2 sm:pt-4">
+                  <button
+                    onClick={() => handleSelectCategory(poojaCategory?.name || 'Loose Flowers for Daily Pooja')}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0B3B24] hover:bg-[#134633] active:bg-[#072718] text-white text-xs sm:text-[13px] font-semibold tracking-wide shadow-[0_4px_16px_rgba(11,59,36,0.22)] hover:shadow-[0_6px_22px_rgba(11,59,36,0.32)] transition-all hover:translate-x-0.5 active:scale-95 group/btn"
+                  >
+                    <span>Shop Pooja Essentials</span>
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -871,41 +1139,95 @@ export default function CustomerStore() {
         </div>
       </section>
 
-      {/* 8. NEWSLETTER SIGNUP BANNER */}
-      <section className="py-10 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl bg-[#F4F8F4] border border-emerald-100/80 p-5 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
-            <div className="space-y-1 text-center md:text-left">
-              <h3 className="text-[20px] sm:text-[26px] lg:text-[28px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.25]">
+      {/* 8. NEWSLETTER SIGNUP BANNER WITH AUTHENTIC FLORAL & BOTANICAL GARLANDS */}
+      <section className="relative py-12 sm:py-16 md:py-20 lg:py-24 bg-white overflow-hidden border-t border-gray-100">
+        {/* Background Traditional Indian Floral Garlands Framing Bottom (Mango Leaves + Marigolds + Jasmine + Rose Petals) */}
+        <div className="absolute inset-0 pointer-events-none select-none z-0">
+          {/* Bottom Left Garland (Mango leaves, yellow & orange marigolds, jasmine strands, rose petals) */}
+          <img
+            src="/decorations/floral-left.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute bottom-0 left-0 w-36 sm:w-56 md:w-72 lg:w-96 xl:w-[440px] pointer-events-none select-none object-contain object-bottom-left opacity-95 transition-opacity"
+            loading="lazy"
+          />
+
+          {/* Bottom Right Garland (Mango leaves, marigold blossoms, fragrant jasmine, red roses) */}
+          <img
+            src="/decorations/floral-right.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute bottom-0 right-0 w-36 sm:w-56 md:w-72 lg:w-96 xl:w-[440px] pointer-events-none select-none object-contain object-bottom-right opacity-95 transition-opacity"
+            loading="lazy"
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pb-6 sm:pb-3 md:pb-0">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 lg:gap-10 max-w-5xl mx-auto">
+            <div className="space-y-1.5 text-center lg:text-left">
+              <h3 className="text-[20px] sm:text-[24px] md:text-[28px] lg:text-[30px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.25]">
                 Get Flower Updates &amp; Special Offers
               </h3>
-              <p className="text-sm text-gray-600 font-normal">
+              <p className="text-xs sm:text-sm text-gray-600 font-normal max-w-md mx-auto lg:mx-0">
                 Subscribe to our newsletter and be the first to know about new arrivals, seasonal offers and more.
               </p>
             </div>
 
-            <form
-              onSubmit={handleNewsletterSubmit}
-              className="flex w-full md:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-md shrink-0"
-            >
-              <div className="relative flex-1">
-                <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  required
-                  placeholder="Enter your email address"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0B3B24] font-normal"
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-5 py-2.5 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-medium text-xs sm:text-sm whitespace-nowrap shadow-2xs transition-colors"
+            <div className="w-full sm:w-auto max-w-md shrink-0 flex flex-col items-stretch">
+              <form
+                onSubmit={handleNewsletterSubmit}
+                className="flex w-full flex-col sm:flex-row items-stretch sm:items-center gap-2.5"
               >
-                {newsletterSubscribed ? 'Subscribed!' : 'Subscribe'}
-              </button>
-            </form>
+                <div className="relative flex-1 min-w-[240px] sm:min-w-[280px]">
+                  <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    disabled={newsletterLoading}
+                    placeholder="Enter your email address"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 sm:py-3.5 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0B3B24] focus:ring-1 focus:ring-[#0B3B24] font-normal shadow-2xs disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={newsletterLoading || newsletterSubscribed}
+                  className="w-full sm:w-auto px-6 py-3 sm:py-3.5 rounded-xl bg-[#0B3B24] hover:bg-[#134633] disabled:bg-[#0B3B24]/80 text-white font-semibold text-xs sm:text-sm whitespace-nowrap shadow-xs transition-colors cursor-pointer flex items-center justify-center min-w-[120px]"
+                >
+                  {newsletterLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin text-white" />
+                      <span>Subscribing...</span>
+                    </>
+                  ) : newsletterSubscribed ? (
+                    <>
+                      <Check className="w-4 h-4 mr-1.5 text-emerald-300" />
+                      <span>Subscribed!</span>
+                    </>
+                  ) : (
+                    'Subscribe'
+                  )}
+                </button>
+              </form>
+
+              {newsletterMessage && (
+                <div
+                  className={`mt-2.5 flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-lg border transition-all ${
+                    newsletterStatus === 'error'
+                      ? 'bg-rose-50 text-rose-800 border-rose-200'
+                      : 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                  }`}
+                >
+                  {newsletterStatus === 'error' ? (
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  )}
+                  <span>{newsletterMessage}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -1124,13 +1446,19 @@ export default function CustomerStore() {
 
       {/* PROPER RESPONSIVE ADDED TO CART NOTIFICATION POPUP (BOTH LARGE & SMALL SCREENS) */}
       <AddedToCartPopup
-        isOpen={isAddedPopupOpen}
+        isOpen={isAddedPopupOpen && !isCartOpen && !isCheckoutOpen && !isWishlistOpen}
         onClose={() => setIsAddedPopupOpen(false)}
         item={addedItemDetails}
         cartSubtotal={cartSubtotal}
         cartItemCount={cartItemCount}
-        onViewCart={() => setIsCartOpen(true)}
-        onCheckout={() => setIsCheckoutOpen(true)}
+        onViewCart={() => {
+          setIsAddedPopupOpen(false);
+          setIsCartOpen(true);
+        }}
+        onCheckout={() => {
+          setIsAddedPopupOpen(false);
+          setIsCheckoutOpen(true);
+        }}
       />
 
       {/* ORDER TRACKING MODAL */}
@@ -1275,30 +1603,89 @@ export default function CustomerStore() {
 
                 <div>
                   <label className="text-xs font-medium text-gray-700 block mb-1">
-                    US Street Address *
+                    Street Address *
                   </label>
-                  <textarea
+                  <input
+                    type="text"
                     required
-                    rows={2}
-                    placeholder="Apartment, suite, street address"
-                    value={checkoutForm.shippingAddress}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, shippingAddress: e.target.value })}
+                    placeholder="e.g. 123 Mission Blvd"
+                    value={checkoutForm.streetAddress}
+                    onChange={(e) => setCheckoutForm({ ...checkoutForm, streetAddress: e.target.value })}
                     className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
                   />
                 </div>
 
                 <div>
                   <label className="text-xs font-medium text-gray-700 block mb-1">
-                    ZIP Code *
+                    Apartment, Suite, Unit (Optional)
                   </label>
                   <input
                     type="text"
-                    required
-                    placeholder="e.g. 94538"
-                    value={checkoutForm.pincode}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, pincode: e.target.value })}
+                    placeholder="Apt 4B, Suite 200, etc."
+                    value={checkoutForm.aptSuite}
+                    onChange={(e) => setCheckoutForm({ ...checkoutForm, aptSuite: e.target.value })}
                     className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                      City *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Fremont"
+                      value={checkoutForm.city}
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, city: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                      State *
+                    </label>
+                    <select
+                      required
+                      value={checkoutForm.state}
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, state: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal bg-white"
+                    >
+                      {Object.entries(US_STATES).map(([code, name]) => (
+                        <option key={code} value={code}>
+                          {code} — {name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                      ZIP Code *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 94538"
+                      value={checkoutForm.zipCode}
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, zipCode: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                      Country
+                    </label>
+                    <input
+                      type="text"
+                      disabled
+                      value="United States (US)"
+                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm bg-gray-50 text-gray-600 font-normal cursor-not-allowed"
+                    />
+                  </div>
                 </div>
 
                 {/* REAL BACKEND PAYMENT OPTIONS (SOURCED DIRECTLY FROM DATABASE SETTINGS) */}
@@ -1443,9 +1830,23 @@ export default function CustomerStore() {
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-gray-100 flex justify-between items-center text-xs">
-                  <span className="text-gray-500 font-normal">Order Total (USD):</span>
-                  <span className="text-lg font-semibold text-gray-900 tabular-nums">{formatCurrency(cartGrandTotal)}</span>
+                <div className="pt-2 border-t border-gray-100 space-y-1.5 text-xs">
+                  <div className="flex justify-between items-center text-gray-600 font-normal">
+                    <span>Subtotal:</span>
+                    <span className="tabular-nums font-medium text-gray-900">{formatCurrency(cartSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-gray-600 font-normal">
+                    <span>
+                      Estimated Sales Tax{checkoutTaxResult?.effectiveRate ? ` (${(checkoutTaxResult.effectiveRate * 100).toFixed(1)}%)` : ''}:
+                    </span>
+                    <span className="tabular-nums font-medium text-gray-900">
+                      {calculatingTax ? 'Calculating...' : formatCurrency(checkoutTaxAmount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1.5 border-t border-gray-100">
+                    <span className="text-gray-700 font-semibold">Order Total (USD):</span>
+                    <span className="text-lg font-bold text-[#0B3B24] tabular-nums">{formatCurrency(cartGrandTotal)}</span>
+                  </div>
                 </div>
 
                 <button
@@ -1521,25 +1922,18 @@ export default function CustomerStore() {
         </div>
       )}
 
-      {/* FLOATING CART BAR (WHEN CART HAS ITEMS) */}
-      {cartItemCount > 0 && !isCartOpen && !isCheckoutOpen && (
-        <div className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-6 sm:bottom-6 z-40">
-          <button
-            onClick={() => setIsCartOpen(true)}
-            className="flex w-full sm:w-auto items-center justify-center gap-3 bg-[#0B3B24] hover:bg-[#072718] text-white px-5 py-3.5 rounded-full shadow-2xl border border-white/20 transition-colors active:scale-[0.98]"
-          >
-            <div className="relative">
-              <ShoppingBag className="w-5 h-5" />
-              <span className="absolute -top-1.5 -right-2 bg-[#E0533C] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {cartItemCount}
-              </span>
-            </div>
-            <span className="text-sm font-semibold">
-              View cart ({formatCurrency(cartGrandTotal)})
-            </span>
-          </button>
-        </div>
-      )}
+      {/* FLOATING CART BAR (WITH USER PROVIDED FLORAL BASKET ASSET) */}
+      <FloatingCartBar
+        cartItemCount={cartItemCount}
+        cartGrandTotal={cartGrandTotal}
+        onOpenCart={() => {
+          setIsAddedPopupOpen(false);
+          setIsCartOpen(true);
+        }}
+        isCartOpen={isCartOpen}
+        isCheckoutOpen={isCheckoutOpen}
+        isMobileMenuOpen={isMobileNavOpen}
+      />
     </div>
   );
 }

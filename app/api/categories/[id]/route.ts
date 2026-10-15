@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Category from '@/models/Category';
 
+export const dynamic = 'force-dynamic';
+
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
@@ -38,7 +40,8 @@ export async function PUT(
   try {
     await connectToDatabase();
     const { id } = params;
-    const { name } = await request.json();
+    const body = await request.json();
+    const { name, image, order } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -47,9 +50,13 @@ export async function PUT(
       );
     }
 
+    const updateData: any = { name: name.trim() };
+    if (image !== undefined) updateData.image = image;
+    if (order !== undefined) updateData.order = order;
+
     const updated = await Category.findByIdAndUpdate(
       id,
-      { name: name.trim() },
+      updateData,
       { new: true }
     );
 

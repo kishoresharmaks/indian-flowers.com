@@ -6,6 +6,7 @@ export interface IBanner extends Document {
   description?: string;
   ctaText?: string;
   image: string;
+  mobileImage?: string;
   link?: string;
   badgeText?: string;
   order?: number;
@@ -21,6 +22,7 @@ const BannerSchema: Schema = new Schema(
     description: { type: String, default: '' },
     ctaText: { type: String, default: 'Shop Now' },
     image: { type: String, required: true },
+    mobileImage: { type: String, default: '' },
     link: { type: String, default: '' },
     badgeText: { type: String, default: '' },
     order: { type: Number, default: 0 },

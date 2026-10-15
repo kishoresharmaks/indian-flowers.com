@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, X, ShoppingBag, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 import { Product, ProductVariant } from '@/components/ProductCard';
 
 export interface AddedItemDetails {
@@ -31,6 +32,7 @@ export default function AddedToCartPopup({
   onCheckout,
 }: AddedToCartPopupProps) {
   const [isPaused, setIsPaused] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   // Auto-dismiss after 4.5 seconds
   useEffect(() => {
@@ -43,6 +45,11 @@ export default function AddedToCartPopup({
     return () => clearTimeout(timer);
   }, [isOpen, isPaused, onClose]);
 
+  // Reset img error on item change
+  useEffect(() => {
+    setImgError(false);
+  }, [item?.product?._id]);
+
   if (!isOpen || !item) return null;
 
   const unitPrice = item.variant ? item.variant.price : item.product.price;
@@ -50,11 +57,11 @@ export default function AddedToCartPopup({
 
   return (
     <div
-      className="fixed top-4 inset-x-3 sm:top-6 sm:right-6 sm:left-auto sm:inset-x-auto sm:w-[410px] z-50 transition-all duration-300"
+      className="fixed top-[140px] sm:top-[148px] md:top-[154px] right-3 sm:right-6 left-3 sm:left-auto sm:w-[390px] z-40 transition-all duration-300 pointer-events-auto"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden ring-1 ring-black/5 p-4 sm:p-5 relative animate-in fade-in slide-in-from-top-4 sm:slide-in-from-right-4 duration-300">
+      <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.14)] border border-gray-200/90 overflow-hidden ring-1 ring-black/5 p-4 sm:p-5 relative animate-in fade-in slide-in-from-top-3 sm:slide-in-from-right-4 duration-300">
         {/* Header Row */}
         <div className="flex items-center justify-between pb-3 border-b border-gray-100">
           <div className="flex items-center gap-2">
@@ -78,11 +85,16 @@ export default function AddedToCartPopup({
         {/* Item Summary Row */}
         <div className="py-3.5 flex items-center gap-3.5">
           {/* Thumbnail */}
-          <div className="w-16 h-16 rounded-xl overflow-hidden bg-[#FAF6F0] border border-amber-100/70 shrink-0">
+          <div className="w-16 h-16 rounded-xl overflow-hidden bg-[#FAF6F0] border border-amber-100/70 shrink-0 relative flex items-center justify-center">
             <img
-              src={item.product.image}
+              src={
+                imgError || !item.product.image
+                  ? DEFAULT_FLORAL_PLACEHOLDER
+                  : item.product.image
+              }
               alt={item.product.name}
               className="w-full h-full object-cover"
+              onError={() => setImgError(true)}
             />
           </div>
 

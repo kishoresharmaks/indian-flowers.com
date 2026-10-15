@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { TaxSnapshot } from '@/lib/tax/types';
 
 export interface IOrderItem {
   productId: string;
@@ -6,7 +7,9 @@ export interface IOrderItem {
   variantName?: string;
   price: number;
   quantity: number;
-  gst: number;
+  isTaxable?: boolean;
+  taxCode?: string;
+  gst?: number; // Kept for backward compatibility with historical records
   image?: string;
 }
 
@@ -17,11 +20,21 @@ export interface IOrder extends Document {
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
+  // US Address components
+  streetAddress?: string;
+  aptSuite?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
   shippingAddress: string;
-  pincode: string;
+  pincode?: string; // Kept for backward compatibility with historical Indian orders
   items: IOrderItem[];
   subtotal: number;
-  totalGst: number;
+  shippingFee?: number;
+  totalTax: number;       // US Sales Tax
+  totalGst?: number;      // Historical Indian GST
+  taxSnapshot?: TaxSnapshot; // Durable tax calculation snapshot for invoices & audits
   totalAmount: number;
   discountType?: 'FLAT' | 'PERCENTAGE';
   discountValue?: number;
@@ -44,6 +57,8 @@ const OrderItemSchema = new Schema({
   variantName: { type: String, default: '' },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
+  isTaxable: { type: Boolean, default: true },
+  taxCode: { type: String, default: '' },
   gst: { type: Number, default: 0 },
   image: { type: String },
 });
@@ -61,11 +76,21 @@ const OrderSchema: Schema = new Schema(
     customerName: { type: String, required: true, trim: true },
     customerPhone: { type: String, required: true, trim: true },
     customerEmail: { type: String, default: '', trim: true },
+    // Structured US Address fields
+    streetAddress: { type: String, default: '' },
+    aptSuite: { type: String, default: '' },
+    city: { type: String, default: '' },
+    state: { type: String, default: '' },
+    zipCode: { type: String, default: '' },
+    country: { type: String, default: 'US' },
     shippingAddress: { type: String, required: true },
-    pincode: { type: String, required: true },
+    pincode: { type: String, default: '' }, // relaxed from required for historical compatibility
     items: [OrderItemSchema],
     subtotal: { type: Number, required: true },
-    totalGst: { type: Number, required: true },
+    shippingFee: { type: Number, default: 0 },
+    totalTax: { type: Number, default: 0 },
+    totalGst: { type: Number, default: 0 }, // relaxed from required for historical compatibility
+    taxSnapshot: { type: Schema.Types.Mixed },
     totalAmount: { type: Number, required: true },
     discountType: { type: String, enum: ['FLAT', 'PERCENTAGE'] },
     discountValue: { type: Number, default: 0 },
@@ -73,7 +98,7 @@ const OrderSchema: Schema = new Schema(
     paymentMethod: {
       type: String,
       enum: ['CreditCard', 'COD', 'ApplePay', 'PayPal', 'UPI', 'CASH'],
-      default: 'CreditCard',
+      default: 'COD',
     },
     paymentStatus: {
       type: String,
@@ -96,6 +121,8 @@ const OrderSchema: Schema = new Schema(
 
 OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ orderType: 1, createdAt: -1 });
+OrderSchema.index({ zipCode: 1 });
+OrderSchema.index({ state: 1 });
 
 const Order: Model<IOrder> =
   mongoose.models.Order || mongoose.model<IOrder>('Order', OrderSchema);

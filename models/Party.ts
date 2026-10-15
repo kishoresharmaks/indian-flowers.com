@@ -6,7 +6,8 @@ export interface IParty extends Document {
   phone: string;
   email?: string;
   address?: string;
-  gstin?: string;
+  taxId?: string; // US Federal EIN or State Sales Tax ID / Resale Certificate
+  gstin?: string; // Legacy Indian GSTIN
   openingBalance: number;
   currentBalance: number; // positive = receivables (customer owes us), negative = payables (we owe vendor)
   createdAt: Date;
@@ -25,6 +26,7 @@ const PartySchema: Schema = new Schema(
     phone: { type: String, required: true, trim: true },
     email: { type: String, default: '', trim: true },
     address: { type: String, default: '' },
+    taxId: { type: String, default: '', trim: true },
     gstin: { type: String, default: '', uppercase: true, trim: true },
     openingBalance: { type: Number, default: 0 },
     currentBalance: { type: Number, default: 0 },

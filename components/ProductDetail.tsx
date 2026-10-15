@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ShoppingBag, Heart, Share2, Truck, CheckCircle2, MessageCircle, Star } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 
 interface ProductVariant {
   _id?: string;
@@ -80,7 +81,7 @@ export default function ProductDetail({
                 onError={(e) => {
                   (e.target as HTMLElement).setAttribute(
                     'src',
-                    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80'
+                    DEFAULT_FLORAL_PLACEHOLDER
                   );
                 }}
               />

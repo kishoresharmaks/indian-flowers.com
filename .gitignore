@@ -1,52 +1,91 @@
-# dependencies
+# ==============================================================================
+# .gitignore — Production Delivery Only for Indian-Flowers.com
+# Only files essential to running the production Next.js storefront and CMS
+# are tracked. All AI agents, skills, tests, documentation, and secrets are excluded.
+# ==============================================================================
+
+# 1. AI Agents, Skills, and Automation Configurations
+.agents/
+.claude/
+.gemini/
+skills/
+.skills/
+skills-lock.json
+AGENTS.md
+prompt*.md
+UI*.md
+DEPLOYMENT*.md
+COMPLETE_INSTALLATION.md
+posthog-self-driving-report.md
+
+# 2. Documentation, Specifications & Internal Notes
+*.md
+docs/
+*.docx
+*.pdf
+*.csv
+*.xlsx
+
+# 3. Test Scripts, Debugging Tools & Verification Artifacts
+scripts/
+tests/
+*.py
+*.ps1
+*.sh
+*.bat
+inspect_screenshot*.png
+*screenshot*.png
+desktop_*.png
+mobile_*.png
+banners_*.png
+
+# 4. Environment Variables, API Keys & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+*.env.*
+env.txt
+secrets/
+
+# 5. Dependencies & Package Managers
+node_modules/
 /node_modules
 /.pnp
 .pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# local env files
-.env*.local
-.env
-env.txt
-*.env
-
-# vercel
-.vercel
-
-# typescript
+# 6. Build Outputs, Cache & Compilation
+.next/
+/.next/
+out/
+/out/
+build/
+/build/
+dist/
 *.tsbuildinfo
 next-env.d.ts
+.vercel
 
-# archives
+# 7. Archives & Compressed Files
 *.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
 
-# standalone licensing server repo
-/licensing-server
+# 8. Standalone Licensing Server Repository (Strict Separation)
 licensing-server/
-.env.local
+/licensing-server
 
-# Documentation, specs, and internal notes (production files only)
-*.md
-docs/
-
-# AI agent configurations, skills, and prompt files
-.agents/
-.claude/
-AGENTS.md
-prompt.md
-UI.md
-DEPLOYMENT.md
+# 9. Operating System & IDE Artifacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

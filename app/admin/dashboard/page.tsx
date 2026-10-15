@@ -37,6 +37,9 @@ import {
   Flower2,
   Calendar,
   Search,
+  Download,
+  Users,
+  ArrowRight,
 } from 'lucide-react';
 import POSCounter from './components/pos/POSCounter';
 import SubscriptionTab from '@/components/licensing/SubscriptionTab';
@@ -47,8 +50,14 @@ import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
 interface BannerItem {
   _id: string;
   title: string;
+  eyebrow?: string;
+  description?: string;
+  ctaText?: string;
   image: string;
   link?: string;
+  badgeText?: string;
+  order?: number;
+  active?: boolean;
   createdAt: string;
 }
 
@@ -79,6 +88,8 @@ interface Product {
 interface CategoryItem {
   _id: string;
   name: string;
+  image?: string;
+  order?: number;
   createdAt: string;
 }
 
@@ -99,11 +110,17 @@ interface Order {
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   shippingAddress: string;
-  pincode: string;
+  pincode?: string;
   items: OrderItem[];
   subtotal: number;
-  totalGst: number;
+  totalTax?: number;
+  totalGst?: number;
+  taxSnapshot?: any;
   totalAmount: number;
   discountType?: 'FLAT' | 'PERCENTAGE';
   discountValue?: number;
@@ -135,12 +152,20 @@ interface CustomOrderInquiry {
   createdAt: string;
 }
 
+interface SubscriberItem {
+  _id: string;
+  email: string;
+  status: 'active' | 'unsubscribed';
+  source?: string;
+  createdAt: string;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'products' | 'categories' | 'orders' | 'banners' | 'settings' | 'pos' | 'subscription' | 'customOrders'
+    'products' | 'categories' | 'orders' | 'banners' | 'settings' | 'pos' | 'subscription' | 'customOrders' | 'subscribers'
   >('products');
   const [licenseState, setLicenseState] = useState<IClientLicenseState | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -212,10 +237,15 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [newCatName, setNewCatName] = useState('');
+  const [newCatImage, setNewCatImage] = useState('');
+  const [newCatImagePreview, setNewCatImagePreview] = useState('');
   const [isSubmittingCat, setIsSubmittingCat] = useState(false);
   const [catError, setCatError] = useState('');
   const [editingCategory, setEditingCategory] = useState<CategoryItem | null>(null);
   const [editCatName, setEditCatName] = useState('');
+  const [editCatImage, setEditCatImage] = useState('');
+  const [editCatImagePreview, setEditCatImagePreview] = useState('');
+  const [isEditCatModalOpen, setIsEditCatModalOpen] = useState(false);
 
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -227,12 +257,28 @@ export default function AdminDashboard() {
   // Banners State
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [loadingBanners, setLoadingBanners] = useState(true);
+  const [newBannerEyebrow, setNewBannerEyebrow] = useState('');
   const [newBannerTitle, setNewBannerTitle] = useState('');
-  const [newBannerImage, setNewBannerImage] = useState('');
+  const [newBannerDesc, setNewBannerDesc] = useState('');
+  const [newBannerCta, setNewBannerCta] = useState('');
   const [newBannerLink, setNewBannerLink] = useState('');
+  const [newBannerImage, setNewBannerImage] = useState('');
+  const [newBannerOrder, setNewBannerOrder] = useState<number | string>(1);
   const [bannerImagePreview, setBannerImagePreview] = useState('');
   const [isSubmittingBanner, setIsSubmittingBanner] = useState(false);
   const [bannerError, setBannerError] = useState('');
+
+  // Edit Banner Modal State
+  const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null);
+  const [editBannerEyebrow, setEditBannerEyebrow] = useState('');
+  const [editBannerTitle, setEditBannerTitle] = useState('');
+  const [editBannerDesc, setEditBannerDesc] = useState('');
+  const [editBannerCta, setEditBannerCta] = useState('');
+  const [editBannerLink, setEditBannerLink] = useState('');
+  const [editBannerImage, setEditBannerImage] = useState('');
+  const [editBannerImagePreview, setEditBannerImagePreview] = useState('');
+  const [editBannerOrder, setEditBannerOrder] = useState<number | string>(1);
+  const [isEditBannerModalOpen, setIsEditBannerModalOpen] = useState(false);
 
   // Settings State
   const [paymentSettings, setPaymentSettings] = useState({ enableUPI: true, enableCOD: true, siteName: '', businessName: '', tagline: '', domain: '', contactEmail: '', contactPhone: '' });
@@ -247,6 +293,12 @@ export default function AdminDashboard() {
   const [customOrderStatusFilter, setCustomOrderStatusFilter] = useState('All');
   const [customOrderSearch, setCustomOrderSearch] = useState('');
 
+  // Newsletter Subscribers State
+  const [subscribers, setSubscribers] = useState<SubscriberItem[]>([]);
+  const [loadingSubscribers, setLoadingSubscribers] = useState(true);
+  const [subscriberSearch, setSubscriberSearch] = useState('');
+  const [isDeletingSubscriber, setIsDeletingSubscriber] = useState<string | null>(null);
+
   // Fetch License & Subscription Status
   const fetchLicenseStatus = async () => {
     try {
@@ -260,6 +312,67 @@ export default function AdminDashboard() {
     }
   };
 
+  // Fetch Subscribers
+  const fetchSubscribers = async (forceSpinner: boolean = false) => {
+    try {
+      if (forceSpinner || subscribers.length === 0) {
+        setLoadingSubscribers(true);
+      }
+      const res = await fetch(`/api/newsletter/subscribe?t=${Date.now()}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setSubscribers(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch subscribers:', err);
+    } finally {
+      setLoadingSubscribers(false);
+    }
+  };
+
+  // Delete Subscriber
+  const handleDeleteSubscriber = async (id: string, email: string) => {
+    if (!confirm(`Are you sure you want to remove "${email}" from the newsletter list?`)) return;
+    try {
+      setIsDeletingSubscriber(id);
+      const res = await fetch(`/api/newsletter/subscribe?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setSubscribers((prev) => prev.filter((s) => s._id !== id));
+      } else {
+        alert(data.message || 'Failed to remove subscriber.');
+      }
+    } catch (err) {
+      console.error('Error deleting subscriber:', err);
+      alert('Network error while deleting subscriber.');
+    } finally {
+      setIsDeletingSubscriber(null);
+    }
+  };
+
+  // Export Subscribers to CSV
+  const handleExportSubscribersCSV = () => {
+    if (subscribers.length === 0) {
+      alert('No subscribers to export.');
+      return;
+    }
+    const headers = ['Email', 'Status', 'Source', 'Subscribed At'];
+    const rows = subscribers.map((s) => [
+      `"${s.email.replace(/"/g, '""')}"`,
+      `"${s.status}"`,
+      `"${(s.source || 'storefront_footer').replace(/"/g, '""')}"`,
+      `"${new Date(s.createdAt).toLocaleString()}"`,
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `indian_flowers_subscribers_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Fetch All Dashboard Data
   const fetchAllData = async () => {
     try {
@@ -271,6 +384,7 @@ export default function AdminDashboard() {
         fetchBanners(),
         fetchSettings(),
         fetchCustomOrders(),
+        fetchSubscribers(),
         fetchLicenseStatus(),
       ]);
     } catch (e) {
@@ -394,9 +508,11 @@ export default function AdminDashboard() {
   };
 
   // Fetch Custom Order Inquiries
-  const fetchCustomOrders = async () => {
+  const fetchCustomOrders = async (forceSpinner: boolean = false) => {
     try {
-      setLoadingCustomOrders(true);
+      if (forceSpinner || customOrders.length === 0) {
+        setLoadingCustomOrders(true);
+      }
       const res = await fetch(`/api/custom-orders?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
@@ -481,7 +597,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressedBase64 = await compressImage(file, 1200, 0.85);
+        const compressedBase64 = await compressImage(file, 1600, 0.85);
         setNewBannerImage(compressedBase64);
         setBannerImagePreview(compressedBase64);
       } catch (err) {
@@ -490,12 +606,38 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     }
   };
 
+  const handleEditBannerImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 1600, 0.85);
+        setEditBannerImage(compressedBase64);
+        setEditBannerImagePreview(compressedBase64);
+      } catch (err) {
+        console.error('Edit banner image compression failed', err);
+      }
+    }
+  };
+
+  const handleOpenEditBanner = (b: BannerItem) => {
+    setEditingBanner(b);
+    setEditBannerEyebrow(b.eyebrow || '');
+    setEditBannerTitle(b.title || '');
+    setEditBannerDesc(b.description || '');
+    setEditBannerCta(b.ctaText || 'Shop Now');
+    setEditBannerLink(b.link || '');
+    setEditBannerImage(b.image || '');
+    setEditBannerImagePreview(b.image || '');
+    setEditBannerOrder(b.order ?? 1);
+    setIsEditBannerModalOpen(true);
+  };
+
   // Add New Hero Banner
   const handleAddBanner = async (e: React.FormEvent) => {
     e.preventDefault();
     setBannerError('');
     if (!newBannerTitle.trim() || !newBannerImage) {
-      setBannerError('Please enter a banner title and upload an image.');
+      setBannerError('Please enter a banner title and provide an image.');
       return;
     }
 
@@ -506,16 +648,24 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: newBannerTitle.trim(),
+          eyebrow: newBannerEyebrow.trim(),
+          description: newBannerDesc.trim(),
+          ctaText: newBannerCta.trim() || 'Shop Now',
           image: newBannerImage,
           link: newBannerLink.trim(),
+          order: Number(newBannerOrder) || (banners.length + 1),
         }),
       });
 
       const data = await res.json();
       if (data.success) {
         setNewBannerTitle('');
+        setNewBannerEyebrow('');
+        setNewBannerDesc('');
+        setNewBannerCta('');
         setNewBannerImage('');
         setNewBannerLink('');
+        setNewBannerOrder(banners.length + 2);
         setBannerImagePreview('');
         fetchBanners();
       } else {
@@ -523,6 +673,46 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       }
     } catch (err: any) {
       setBannerError('Network error while adding banner');
+    } finally {
+      setIsSubmittingBanner(false);
+    }
+  };
+
+  // Save Edited Hero Banner
+  const handleSaveEditedBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBanner || !editBannerTitle.trim() || !editBannerImage) {
+      alert('Banner title and image are required.');
+      return;
+    }
+
+    try {
+      setIsSubmittingBanner(true);
+      const res = await fetch(`/api/banners/${editingBanner._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editBannerTitle.trim(),
+          eyebrow: editBannerEyebrow.trim(),
+          description: editBannerDesc.trim(),
+          ctaText: editBannerCta.trim() || 'Shop Now',
+          link: editBannerLink.trim(),
+          image: editBannerImage,
+          order: Number(editBannerOrder) || 1,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setIsEditBannerModalOpen(false);
+        setEditingBanner(null);
+        fetchBanners();
+      } else {
+        alert(data.message || 'Failed to update banner');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error while updating banner');
     } finally {
       setIsSubmittingBanner(false);
     }
@@ -638,6 +828,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           fetchBanners();
           fetchSettings();
           fetchLicenseStatus();
+          fetchCustomOrders(true);
+          fetchSubscribers(true);
         } else {
           router.replace('/admin/login');
         }
@@ -652,10 +844,19 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   }, [router]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (activeTab === 'settings') {
       fetchSettings();
+    } else if (activeTab === 'subscribers') {
+      fetchSubscribers(false);
+    } else if (activeTab === 'customOrders') {
+      fetchCustomOrders(false);
+    } else if (activeTab === 'orders') {
+      fetchOrders();
+    } else if (activeTab === 'products') {
+      fetchProducts();
     }
-  }, [activeTab]);
+  }, [activeTab, isAuthenticated]);
 
   // Handle Product Image Upload & Canvas Compression
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -819,6 +1020,41 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     }
   };
 
+  // Category Image File Upload Handlers
+  const handleNewCatImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 400, 0.85);
+        setNewCatImage(compressedBase64);
+        setNewCatImagePreview(compressedBase64);
+      } catch (err) {
+        console.error('Category image compression failed', err);
+      }
+    }
+  };
+
+  const handleEditCatImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 400, 0.85);
+        setEditCatImage(compressedBase64);
+        setEditCatImagePreview(compressedBase64);
+      } catch (err) {
+        console.error('Edit category image compression failed', err);
+      }
+    }
+  };
+
+  const handleOpenEditCategory = (cat: CategoryItem) => {
+    setEditingCategory(cat);
+    setEditCatName(cat.name);
+    setEditCatImage(cat.image || '');
+    setEditCatImagePreview(cat.image || '');
+    setIsEditCatModalOpen(true);
+  };
+
   // Add Category
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -830,11 +1066,16 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       const res = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCatName.trim() }),
+        body: JSON.stringify({
+          name: newCatName.trim(),
+          image: newCatImage.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (data.success) {
         setNewCatName('');
+        setNewCatImage('');
+        setNewCatImagePreview('');
         fetchCategories();
       } else {
         setCatError(data.message || 'Failed to add category');
@@ -847,24 +1088,35 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   };
 
   // Edit Category
-  const handleSaveEditedCategory = async (id: string) => {
-    if (!editCatName.trim()) return;
+  const handleSaveEditedCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory || !editCatName.trim()) return;
     try {
-      const res = await fetch(`/api/categories/${id}`, {
+      setIsSubmittingCat(true);
+      const res = await fetch(`/api/categories/${editingCategory._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editCatName.trim() }),
+        body: JSON.stringify({
+          name: editCatName.trim(),
+          image: editCatImage,
+        }),
       });
       const data = await res.json();
       if (data.success) {
+        setIsEditCatModalOpen(false);
         setEditingCategory(null);
         setEditCatName('');
+        setEditCatImage('');
+        setEditCatImagePreview('');
         fetchCategories();
       } else {
         alert(data.message || 'Failed to update category');
       }
     } catch (err) {
       console.error(err);
+      alert('Error updating category');
+    } finally {
+      setIsSubmittingCat(false);
     }
   };
 
@@ -1104,6 +1356,21 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
             <button
               onClick={() => {
+                setActiveTab('subscribers');
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full p-3 rounded-xl bg-[#F4F8F4] text-[#0B3B24] border border-emerald-200 font-extrabold text-xs flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-[#0B3B24]" /> Newsletter Subscribers ({subscribers.length})
+              </span>
+              <span className="text-[10px] uppercase font-black bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded">
+                Email
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
                 handleOptimizeExistingDatabaseImages();
                 setIsMobileMenuOpen(false);
               }}
@@ -1276,6 +1543,16 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
               <ImageIcon className="w-4 h-4" /> Banners ({banners.length})
             </button>
             <button
+              onClick={() => setActiveTab('subscribers')}
+              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
+                activeTab === 'subscribers'
+                  ? 'border-[#0B3B24] text-[#0B3B24] bg-[#F4F8F4] sm:bg-transparent rounded-t-xl sm:rounded-none'
+                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
+              }`}
+            >
+              <Mail className="w-4 h-4 text-[#0B3B24]" /> Subscribers ({subscribers.length})
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
                 activeTab === 'settings'
@@ -1361,7 +1638,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         <th className="py-4 px-6">MRP</th>
                         <th className="py-4 px-6">Selling Price</th>
                         <th className="py-4 px-6">Discount</th>
-                        <th className="py-4 px-6">GST</th>
+                        <th className="py-4 px-6">Tax Status</th>
                         <th className="py-4 px-6">Stock Quantity</th>
                         <th className="py-4 px-6 text-right">Actions</th>
                       </tr>
@@ -1400,7 +1677,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             {p.discount}% OFF
                           </td>
                           <td className="py-4 px-6 font-bold text-[#163B5C] text-xs">
-                            {p.gst}%
+                            {Number(p.gst) === 0 ? 'Exempt' : 'Taxable'}
                           </td>
                           <td className="py-4 px-6">
                             <span
@@ -1473,10 +1750,18 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
         {/* Categories Management View */}
         {activeTab === 'categories' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fadeIn">
             {/* Create Category Card */}
-            <div className="bg-white rounded-2xl border border-[#E8EDF2] p-6 space-y-4 shadow-sm max-w-xl">
-              <h3 className="text-lg font-bold text-[#163B5C]">Create New Category</h3>
+            <div className="bg-white rounded-2xl border border-[#E8EDF2] p-6 space-y-4 shadow-sm max-w-2xl">
+              <div>
+                <h3 className="text-lg font-bold text-[#163B5C] flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-[#ED3500]" />
+                  <span>Create New Category</span>
+                </h3>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  Category names and images are displayed in the circular category section on the front page.
+                </p>
+              </div>
 
               {catError && (
                 <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
@@ -1484,27 +1769,80 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 </div>
               )}
 
-              <form onSubmit={handleAddCategory} className="flex gap-3">
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Pure Honey, Organic Spices, Dried Fruits..."
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
-                />
-                <button
-                  type="submit"
-                  disabled={isSubmittingCat}
-                  className="px-5 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#ED3500]/20 flex items-center gap-2"
-                >
-                  {isSubmittingCat ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  Add Category
-                </button>
+              <form onSubmit={handleAddCategory} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                    Category Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Loose Flowers, Garland Strings, Sacred Leaves..."
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                  />
+                </div>
+
+                {/* Category Image Upload */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                    Category Image (Front Page Circle Tile)
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <label className="flex-1 w-full border-2 border-dashed border-[#E8EDF2] hover:border-[#ED3500] rounded-2xl p-4 text-center cursor-pointer bg-[#FFFCFB] transition-colors">
+                      <Upload className="w-5 h-5 text-[#ED3500] mx-auto mb-1" />
+                      <span className="text-xs font-bold text-[#163B5C] block">
+                        {newCatImagePreview ? 'Change Category Image' : 'Upload Category Image'}
+                      </span>
+                      <span className="text-[10px] text-[#64748B]">Auto-optimized for circular display (PNG, JPG, WEBP)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleNewCatImageChange}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {newCatImagePreview && (
+                      <div className="relative group shrink-0">
+                        <div className="w-20 h-20 rounded-full border-2 border-[#ED3500] overflow-hidden bg-[#FFF8F5] shadow-xs">
+                          <img
+                            src={newCatImagePreview}
+                            alt="Category Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewCatImage('');
+                            setNewCatImagePreview('');
+                          }}
+                          className="absolute -top-1 -right-1 p-1 rounded-full bg-rose-600 text-white shadow-xs hover:bg-rose-700 transition-colors"
+                          title="Remove image"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-1 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingCat || !newCatName.trim()}
+                    className="px-6 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#ED3500]/20 flex items-center gap-2 disabled:opacity-50 transition-all"
+                  >
+                    {isSubmittingCat ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    Add Category
+                  </button>
+                </div>
               </form>
             </div>
 
-            {/* Category List with Edit Option */}
+            {/* Category List with Image Preview & Edit Modal */}
             {loadingCategories ? (
               <div className="py-10 text-center">
                 <RefreshCw className="w-6 h-6 text-[#ED3500] animate-spin mx-auto" />
@@ -1516,65 +1854,72 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 <p className="text-xs text-[#64748B]">Add categories above to organize your products.</p>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-[#E8EDF2] overflow-hidden shadow-sm max-w-2xl">
-                <div className="p-4 bg-[#FFFCFB] border-b border-[#E8EDF2] font-bold text-xs text-[#64748B] uppercase tracking-wider flex justify-between">
-                  <span>Category Name</span>
-                  <span>Actions</span>
+              <div className="bg-white rounded-2xl border border-[#E8EDF2] overflow-hidden shadow-sm max-w-3xl">
+                <div className="p-4 bg-[#FFFCFB] border-b border-[#E8EDF2] font-bold text-xs text-[#64748B] uppercase tracking-wider grid grid-cols-12 gap-2">
+                  <span className="col-span-2 sm:col-span-1">Icon</span>
+                  <span className="col-span-6 sm:col-span-7">Category Name</span>
+                  <span className="col-span-2 hidden sm:block">Display</span>
+                  <span className="col-span-4 sm:col-span-2 text-right">Actions</span>
                 </div>
                 <div className="divide-y divide-[#E8EDF2]">
                   {categories.map((cat) => (
-                    <div key={cat._id} className="p-4 flex items-center justify-between text-sm font-semibold text-[#163B5C]">
-                      {editingCategory?._id === cat._id ? (
-                        <div className="flex items-center gap-2 flex-1 pr-4">
-                          <input
-                            type="text"
-                            value={editCatName}
-                            onChange={(e) => setEditCatName(e.target.value)}
-                            className="px-3 py-1.5 rounded-lg border border-[#ED3500] text-xs focus:outline-none flex-1"
-                          />
-                          <button
-                            onClick={() => handleSaveEditedCategory(cat._id)}
-                            className="p-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600"
-                            title="Save Category Name"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setEditingCategory(null)}
-                            className="p-1.5 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-300"
-                            title="Cancel"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                    <div key={cat._id} className="p-3.5 sm:p-4 grid grid-cols-12 gap-2 items-center text-sm font-semibold text-[#163B5C] hover:bg-slate-50/50 transition-colors">
+                      {/* Image Thumbnail */}
+                      <div className="col-span-2 sm:col-span-1">
+                        <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden bg-emerald-50 flex items-center justify-center shrink-0 shadow-2xs">
+                          {cat.image ? (
+                            <img
+                              src={cat.image}
+                              alt={cat.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <Flower2 className="w-5 h-5 text-emerald-600" />
+                          )}
                         </div>
-                      ) : (
-                        <span className="flex items-center gap-2">
-                          <Tag className="w-4 h-4 text-[#ED3500]" />
-                          {cat.name}
-                        </span>
-                      )}
+                      </div>
 
-                      {editingCategory?._id !== cat._id && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setEditingCategory(cat);
-                              setEditCatName(cat.name);
-                            }}
-                            className="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50"
-                            title="Edit Category Name"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCategory(cat._id)}
-                            className="p-1.5 rounded-lg text-[#64748B] hover:text-rose-600 hover:bg-rose-50"
-                            title="Delete Category"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
+                      {/* Category Name */}
+                      <div className="col-span-6 sm:col-span-7 flex flex-col justify-center">
+                        <span className="font-bold text-gray-900 text-xs sm:text-sm">{cat.name}</span>
+                        <span className="text-[10px] text-gray-400 font-normal">
+                          Added {new Date(cat.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      {/* Display Status */}
+                      <div className="col-span-2 hidden sm:block">
+                        {cat.image ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            Custom Image
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                            Default Icon
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="col-span-4 sm:col-span-2 flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => handleOpenEditCategory(cat)}
+                          className="p-2 rounded-xl text-purple-600 hover:bg-purple-50 transition-colors"
+                          title="Edit Category Name & Image"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(cat._id)}
+                          className="p-2 rounded-xl text-[#64748B] hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          title="Delete Category"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1804,7 +2149,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         {/* Bill Breakdown */}
                         <div className="flex items-center justify-between pt-2 border-t border-[#E8EDF2] font-bold text-xs">
                           <span className="text-[#64748B]">
-                            Subtotal: {formatCurrency(order.subtotal)} | GST: {formatCurrency(order.totalGst)}
+                            Subtotal: {formatCurrency(order.subtotal)} | Tax: {formatCurrency(order.totalTax !== undefined ? order.totalTax : order.totalGst || 0)}
                           </span>
                           <span className="text-sm font-black text-[#ED3500]">
                             Total Paid: {formatCurrency(order.totalAmount)}
@@ -1849,57 +2194,125 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         {activeTab === 'banners' && (
           <div className="space-y-6">
             {/* Create Banner Form */}
-            <div className="bg-white rounded-3xl border border-[#E8EDF2] p-6 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 text-[#ED3500]">
-                <ImageIcon className="w-5 h-5" />
-                <h3 className="text-lg font-black text-[#163B5C]">Upload New Hero Banner Image</h3>
+            <div className="bg-white rounded-3xl border border-[#E8EDF2] p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E8EDF2] pb-4">
+                <div>
+                  <div className="flex items-center gap-2 text-[#ED3500]">
+                    <ImageIcon className="w-5 h-5" />
+                    <h3 className="text-lg font-black text-[#163B5C]">Add New Hero Carousel Slide</h3>
+                  </div>
+                  <p className="text-xs text-[#64748B] mt-1">
+                    Manage the main homepage hero banner slides (Eyebrow tag, Headline, Subtitle/Description, Button CTA, and Image).
+                  </p>
+                </div>
+                <span className="text-xs font-semibold px-3 py-1 bg-amber-50 text-amber-800 rounded-full border border-amber-200 self-start sm:self-auto">
+                  {banners.length} Active Slides
+                </span>
               </div>
-              <p className="text-xs text-[#64748B]">
-                Upload high-res banner images to display dynamically in the homepage hero section with high-performance responsive lazy loading.
-              </p>
 
               {bannerError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
                   {bannerError}
                 </div>
               )}
 
-              <form onSubmit={handleAddBanner} className="space-y-4">
+              <form onSubmit={handleAddBanner} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Eyebrow Tag */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
-                      Banner Title / Tagline *
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Eyebrow Tag (e.g. Festival / Collection Tag)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. FESTIVAL & POOJA ESSENTIALS"
+                      value={newBannerEyebrow}
+                      onChange={(e) => setNewBannerEyebrow(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    />
+                  </div>
+
+                  {/* Headline Title */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Hero Headline / Title *
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. 100% Pure Organic Honey Harvest"
+                      placeholder="e.g. Sacred Flowers For Daily Pooja"
                       value={newBannerTitle}
                       onChange={(e) => setNewBannerTitle(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
                     />
                   </div>
+                </div>
 
+                {/* Subtitle / Description */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                    Subheading / Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g. Fresh marigold, lotus, jasmine, and mango leaves delivered directly to your doorstep in pristine condition."
+                    value={newBannerDesc}
+                    onChange={(e) => setNewBannerDesc(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Button CTA Text */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
-                      Optional Target Link URL
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Button Text (CTA)
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. /#products or https://..."
+                      placeholder="e.g. Shop Pooja Items"
+                      value={newBannerCta}
+                      onChange={(e) => setNewBannerCta(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    />
+                  </div>
+
+                  {/* Button Link */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Button Target Link URL
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. #products-section or /categories/..."
                       value={newBannerLink}
                       onChange={(e) => setNewBannerLink(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
                     />
                   </div>
+
+                  {/* Slide Order */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Slide Order Position
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={newBannerOrder}
+                      onChange={(e) => setNewBannerOrder(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    />
+                  </div>
                 </div>
 
+                {/* Banner Image */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
-                    Upload Banner Image *
+                    Banner Background Image *
                   </label>
                   <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#FFF8F5] hover:bg-[#ED3500]/10 text-[#ED3500] border border-[#ED3500]/20 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-all">
+                    <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#FFF8F5] hover:bg-[#ED3500]/10 text-[#ED3500] border border-[#ED3500]/20 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-all shrink-0">
                       <Upload className="w-4 h-4" /> Select Banner Image File
                       <input
                         type="file"
@@ -1912,7 +2325,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     <div className="flex-1 w-full">
                       <input
                         type="text"
-                        placeholder="Or paste Image URL (https://...)"
+                        placeholder="Or image URL / Base64 string"
                         value={newBannerImage}
                         onChange={(e) => {
                           setNewBannerImage(e.target.value);
@@ -1925,23 +2338,37 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 </div>
 
                 {bannerImagePreview && (
-                  <div className="p-3 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] max-w-md">
-                    <span className="text-[11px] font-bold text-[#64748B] block mb-2 uppercase">Image Preview:</span>
-                    <img
-                      src={bannerImagePreview}
-                      alt="Banner Preview"
-                      className="w-full h-40 object-cover rounded-xl border border-[#E8EDF2]"
-                    />
+                  <div className="p-3 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] max-w-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-bold text-[#64748B] uppercase">Slide Image Preview:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewBannerImage('');
+                          setBannerImagePreview('');
+                        }}
+                        className="text-xs text-rose-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="relative aspect-video rounded-xl overflow-hidden border border-[#E8EDF2] bg-slate-100">
+                      <img
+                        src={bannerImagePreview}
+                        alt="Banner Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
                 )}
 
                 <button
                   type="submit"
                   disabled={isSubmittingBanner}
-                  className="px-6 py-3 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#ED3500]/20 flex items-center gap-2"
+                  className="px-6 py-3 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#ED3500]/20 flex items-center gap-2 transition-all disabled:opacity-50"
                 >
                   {isSubmittingBanner ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  Add Hero Banner Image
+                  Add Hero Carousel Slide
                 </button>
               </form>
             </div>
@@ -1960,37 +2387,93 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {banners.map((b) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {banners.map((b, idx) => (
                   <div
                     key={b._id}
-                    className="bg-white rounded-2xl border border-[#E8EDF2] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                    className="bg-white rounded-2xl border border-[#E8EDF2] overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                   >
-                    <div className="relative aspect-video bg-[#FFF8F5]">
-                      <img
-                        src={b.image}
-                        alt={b.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
+                    <div>
+                      {/* Image Preview with Slide Order Pill */}
+                      <div className="relative aspect-video bg-[#FFF8F5] overflow-hidden">
+                        <img
+                          src={b.image}
+                          alt={b.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold">
+                            Slide #{idx + 1}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-white/90 text-gray-800 text-[10px] font-bold shadow-xs">
+                            Order {b.order ?? idx + 1}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Content Details */}
+                      <div className="p-4 space-y-2.5">
+                        {/* Eyebrow Tag */}
+                        {b.eyebrow ? (
+                          <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                            {b.eyebrow}
+                          </span>
+                        ) : (
+                          <span className="inline-block text-[10px] font-medium text-gray-400 italic">
+                            (No eyebrow tag)
+                          </span>
+                        )}
+
+                        {/* Title */}
+                        <h4 className="font-bold text-sm text-[#163B5C] leading-snug line-clamp-2">
+                          {b.title}
+                        </h4>
+
+                        {/* Description */}
+                        {b.description && (
+                          <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed">
+                            {b.description}
+                          </p>
+                        )}
+
+                        {/* CTA Button & Link */}
+                        <div className="pt-1 flex flex-wrap items-center gap-2">
+                          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F4F8F4] border border-[#134633]/20 text-[11px] font-semibold text-[#134633]">
+                            <span>{b.ctaText || 'Shop Now'}</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </div>
+                          {b.link && (
+                            <span className="text-[11px] text-blue-600 truncate max-w-[140px]" title={b.link}>
+                              {b.link}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-4 space-y-3">
-                      <h4 className="font-bold text-sm text-[#163B5C] line-clamp-1">{b.title}</h4>
-                      {b.link && (
-                        <p className="text-[11px] text-blue-600 truncate underline">
-                          Link: {b.link}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between pt-2 border-t border-[#E8EDF2]">
+
+                    {/* Card Actions */}
+                    <div className="p-4 pt-0">
+                      <div className="flex items-center justify-between pt-3 border-t border-[#E8EDF2]">
                         <span className="text-[10px] text-[#64748B]">
                           Added {new Date(b.createdAt).toLocaleDateString('en-US')}
                         </span>
-                        <button
-                          onClick={() => handleDeleteBanner(b._id)}
-                          className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white font-bold text-xs flex items-center gap-1 transition-all"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleOpenEditBanner(b)}
+                            className="px-3 py-1.5 rounded-lg bg-[#FFF8F5] text-[#ED3500] hover:bg-[#ED3500] hover:text-white font-bold text-xs flex items-center gap-1 transition-all border border-[#ED3500]/20"
+                            title="Edit this banner slide"
+                          >
+                            <Edit className="w-3.5 h-3.5" /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBanner(b._id)}
+                            className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white font-bold text-xs flex items-center gap-1 transition-all"
+                            title="Delete this banner slide"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2221,7 +2704,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
                 {/* Refresh */}
                 <button
-                  onClick={fetchCustomOrders}
+                  onClick={() => fetchCustomOrders(true)}
                   disabled={loadingCustomOrders}
                   className="px-3.5 py-2 rounded-xl bg-[#F4F8F4] hover:bg-emerald-100/60 border border-emerald-200 text-[#0B3B24] font-bold text-xs flex items-center gap-1.5 transition-all"
                   title="Refresh Inquiries"
@@ -2478,6 +2961,156 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             )}
           </div>
         )}
+
+        {/* Tab Content: Subscribers */}
+        {activeTab === 'subscribers' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-black text-[#163B5C] flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-[#0B3B24]" />
+                  <span>Newsletter Email Subscribers</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#0B3B24] font-bold">
+                    {subscribers.length} total
+                  </span>
+                </h3>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  Customers who subscribed for flower updates, festival offers, and seasonal deals.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleExportSubscribersCSV}
+                  disabled={subscribers.length === 0}
+                  className="px-4 py-2 rounded-xl bg-white border border-[#E8EDF2] hover:border-[#0B3B24] text-[#0B3B24] font-bold text-xs flex items-center gap-2 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Export subscriber list to CSV"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Export to CSV</span>
+                </button>
+
+                <button
+                  onClick={() => fetchSubscribers(true)}
+                  disabled={loadingSubscribers}
+                  className="px-3.5 py-2 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingSubscribers ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search subscriber by email address..."
+                  value={subscriberSearch}
+                  onChange={(e) => setSubscriberSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#0B3B24] bg-white font-normal"
+                />
+              </div>
+            </div>
+
+            {/* Subscribers List Table */}
+            {loadingSubscribers ? (
+              <div className="p-12 text-center bg-white rounded-2xl border border-[#E8EDF2]">
+                <RefreshCw className="w-6 h-6 animate-spin text-[#0B3B24] mx-auto mb-2" />
+                <p className="text-xs text-[#64748B]">Loading newsletter subscribers...</p>
+              </div>
+            ) : subscribers.length === 0 ? (
+              <div className="p-12 text-center bg-white rounded-2xl border border-[#E8EDF2] space-y-3">
+                <div className="w-12 h-12 rounded-full bg-[#0B3B24]/10 text-[#0B3B24] flex items-center justify-center mx-auto">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <h4 className="text-base font-bold text-[#163B5C]">No subscribers yet</h4>
+                <p className="text-xs text-[#64748B] max-w-sm mx-auto">
+                  When visitors subscribe using the footer newsletter signup on the homepage, their email addresses will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-[#E8EDF2] shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#FAF6F0] border-b border-[#E8EDF2] text-[#64748B] uppercase font-bold text-[10px] tracking-wider">
+                      <tr>
+                        <th className="py-3.5 px-4">#</th>
+                        <th className="py-3.5 px-4">Email Address</th>
+                        <th className="py-3.5 px-4">Status</th>
+                        <th className="py-3.5 px-4">Source</th>
+                        <th className="py-3.5 px-4">Subscribed Date</th>
+                        <th className="py-3.5 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E8EDF2]">
+                      {subscribers
+                        .filter((s) =>
+                          !subscriberSearch || s.email.toLowerCase().includes(subscriberSearch.toLowerCase())
+                        )
+                        .map((subscriber, idx) => (
+                          <tr key={subscriber._id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-3.5 px-4 font-mono text-gray-400">{idx + 1}</td>
+                            <td className="py-3.5 px-4 font-semibold text-[#163B5C]">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-3.5 h-3.5 text-[#0B3B24]" />
+                                <a
+                                  href={`mailto:${subscriber.email}`}
+                                  className="hover:underline hover:text-[#0B3B24]"
+                                >
+                                  {subscriber.email}
+                                </a>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                  subscriber.status === 'active'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                }`}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    subscriber.status === 'active' ? 'bg-emerald-500' : 'bg-gray-400'
+                                  }`}
+                                />
+                                {subscriber.status === 'active' ? 'Active' : 'Unsubscribed'}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-gray-500 font-mono text-[11px]">
+                              {subscriber.source || 'storefront_footer'}
+                            </td>
+                            <td className="py-3.5 px-4 text-gray-500">
+                              {new Date(subscriber.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <button
+                                onClick={() => handleDeleteSubscriber(subscriber._id, subscriber.email)}
+                                disabled={isDeletingSubscriber === subscriber._id}
+                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-40"
+                                title="Remove subscriber"
+                              >
+                                <Trash2 className="w-4 h-4 inline" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Add / Edit Product Modal */}
@@ -2626,17 +3259,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
-                      GST Percentage (%) *
+                      Sales Tax Status *
                     </label>
                     <select
                       value={productForm.gst}
                       onChange={(e) => setProductForm({ ...productForm, gst: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
                     >
-                      <option value="0">0% GST (Exempted / Organic Goods)</option>
-                      <option value="5">5% GST (Merit Rate / Essential & Processed Food Produce)</option>
-                      <option value="18">18% GST (Standard Goods)</option>
-                      <option value="28">28% GST (Luxury Items)</option>
+                      <option value="1">Standard Taxable (Cut Flowers, Floral Goods)</option>
+                      <option value="0">Tax Exempt / Non-Taxable Item</option>
                     </select>
                   </div>
 
@@ -2793,6 +3424,308 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     'Add Product to Store'
                   )}
                 </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Category Modal */}
+      {isEditCatModalOpen && editingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative">
+            <button
+              onClick={() => {
+                setIsEditCatModalOpen(false);
+                setEditingCategory(null);
+                setEditCatName('');
+                setEditCatImage('');
+                setEditCatImagePreview('');
+              }}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E8EDF2] text-[#64748B]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-xl font-black text-[#163B5C] flex items-center gap-2">
+                  <Edit className="w-5 h-5 text-[#ED3500]" />
+                  <span>Edit Category</span>
+                </h3>
+                <p className="text-xs text-[#64748B]">
+                  Update category name and front page circular tile image.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveEditedCategory} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                    Category Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editCatName}
+                    onChange={(e) => setEditCatName(e.target.value)}
+                    placeholder="Category Name"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                  />
+                </div>
+
+                {/* Category Image Upload */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                    Category Image (Front Page Circle Tile)
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <label className="flex-1 w-full border-2 border-dashed border-[#E8EDF2] hover:border-[#ED3500] rounded-2xl p-4 text-center cursor-pointer bg-[#FFFCFB] transition-colors">
+                      <Upload className="w-5 h-5 text-[#ED3500] mx-auto mb-1" />
+                      <span className="text-xs font-bold text-[#163B5C] block">
+                        {editCatImagePreview ? 'Change Image File' : 'Upload Image File'}
+                      </span>
+                      <span className="text-[10px] text-[#64748B]">Auto-optimized for circular tile</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEditCatImageChange}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {editCatImagePreview && (
+                      <div className="relative group shrink-0">
+                        <div className="w-20 h-20 rounded-full border-2 border-[#ED3500] overflow-hidden bg-[#FFF8F5] shadow-xs">
+                          <img
+                            src={editCatImagePreview}
+                            alt="Category Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditCatImage('');
+                            setEditCatImagePreview('');
+                          }}
+                          className="absolute -top-1 -right-1 p-1 rounded-full bg-rose-600 text-white shadow-xs hover:bg-rose-700 transition-colors"
+                          title="Remove image"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditCatModalOpen(false);
+                      setEditingCategory(null);
+                      setEditCatName('');
+                      setEditCatImage('');
+                      setEditCatImagePreview('');
+                    }}
+                    className="flex-1 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-bold text-[#64748B] hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingCat || !editCatName.trim()}
+                    className="flex-1 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#ED3500]/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+                  >
+                    {isSubmittingCat ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Hero Banner Modal */}
+      {isEditBannerModalOpen && editingBanner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative my-8 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => {
+                setIsEditBannerModalOpen(false);
+                setEditingBanner(null);
+              }}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E8EDF2] text-[#64748B]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-5">
+              <div className="border-b border-[#E8EDF2] pb-4">
+                <h3 className="text-xl font-black text-[#163B5C] flex items-center gap-2">
+                  <Edit className="w-5 h-5 text-[#ED3500]" />
+                  <span>Edit Homepage Hero Slide</span>
+                </h3>
+                <p className="text-xs text-[#64748B] mt-1">
+                  Update the eyebrow tag, headline title, description, button CTA, link, or image for this slide.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveEditedBanner} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Eyebrow Tag */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Eyebrow Tag
+                    </label>
+                    <input
+                      type="text"
+                      value={editBannerEyebrow}
+                      onChange={(e) => setEditBannerEyebrow(e.target.value)}
+                      placeholder="e.g. FESTIVAL & POOJA ESSENTIALS"
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    />
+                  </div>
+
+                  {/* Headline Title */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Headline / Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editBannerTitle}
+                      onChange={(e) => setEditBannerTitle(e.target.value)}
+                      placeholder="e.g. Sacred Flowers For Daily Pooja"
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    />
+                  </div>
+                </div>
+
+                {/* Subtitle / Description */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                    Subheading / Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editBannerDesc}
+                    onChange={(e) => setEditBannerDesc(e.target.value)}
+                    placeholder="e.g. Fresh marigold, lotus, jasmine, and mango leaves delivered directly to your doorstep in pristine condition."
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Button CTA Text */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Button Text (CTA)
+                    </label>
+                    <input
+                      type="text"
+                      value={editBannerCta}
+                      onChange={(e) => setEditBannerCta(e.target.value)}
+                      placeholder="e.g. Shop Pooja Items"
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    />
+                  </div>
+
+                  {/* Button Link */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Button Link URL
+                    </label>
+                    <input
+                      type="text"
+                      value={editBannerLink}
+                      onChange={(e) => setEditBannerLink(e.target.value)}
+                      placeholder="e.g. #products-section"
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    />
+                  </div>
+
+                  {/* Order */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Display Order
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editBannerOrder}
+                      onChange={(e) => setEditBannerOrder(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    />
+                  </div>
+                </div>
+
+                {/* Banner Image */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                    Banner Background Image *
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#FFF8F5] hover:bg-[#ED3500]/10 text-[#ED3500] border border-[#ED3500]/20 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-all shrink-0">
+                      <Upload className="w-4 h-4" /> Change Image File
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEditBannerImageChange}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <div className="flex-1 w-full">
+                      <input
+                        type="text"
+                        placeholder="Or image URL / Base64 string"
+                        value={editBannerImage}
+                        onChange={(e) => {
+                          setEditBannerImage(e.target.value);
+                          setEditBannerImagePreview(e.target.value);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#ED3500]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {editBannerImagePreview && (
+                  <div className="p-3 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2]">
+                    <span className="text-[11px] font-bold text-[#64748B] block mb-2 uppercase">Image Preview:</span>
+                    <div className="relative aspect-video rounded-xl overflow-hidden border border-[#E8EDF2] bg-slate-100 max-h-48">
+                      <img
+                        src={editBannerImagePreview}
+                        alt="Banner Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-3 flex items-center gap-3 border-t border-[#E8EDF2]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditBannerModalOpen(false);
+                      setEditingBanner(null);
+                    }}
+                    className="flex-1 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-bold text-[#64748B] hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingBanner || !editBannerTitle.trim() || !editBannerImage}
+                    className="flex-1 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#ED3500]/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+                  >
+                    {isSubmittingBanner ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    Save Changes
+                  </button>
+                </div>
               </form>
             </div>
           </div>

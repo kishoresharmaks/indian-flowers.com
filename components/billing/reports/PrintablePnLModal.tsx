@@ -175,22 +175,17 @@ export default function PrintablePnLModal({
                   {company.name}
                 </h1>
                 {company.owner && <p className="font-semibold text-slate-700">{company.owner}</p>}
-                <p className="text-[11px] text-slate-600 max-w-md leading-tight">{company.address}</p>
-                <p className="text-[10px] text-slate-600">
-                  <strong>FSSAI :</strong> {company.fssai} &nbsp;|&nbsp; <strong>IEC :</strong> {company.iec}
-                </p>
-                <p className="text-[10px] text-slate-600">
-                  <strong>Manufacturing :</strong> {company.manufacturing}
-                </p>
-                <p className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mt-1">
-                  {company.certifications}
-                </p>
+                {company.address && <p className="text-[11px] text-slate-600 max-w-md leading-tight">{company.address}</p>}
                 <p className="text-[11px] text-slate-600">
-                  <strong>Phone no.:</strong> {company.phone} | <strong>Email:</strong> {company.email}
+                  {company.phone && <span><strong>Phone:</strong> {company.phone} &nbsp;|&nbsp; </span>}
+                  {company.email && <span><strong>Email:</strong> {company.email}</span>}
                 </p>
-                <p className="text-[11px] text-slate-700">
-                  <strong>GSTIN:</strong> {company.gstin} | <strong>State:</strong> {company.state}
-                </p>
+                {(company.ein || company.stateTaxPermitId) && (
+                  <p className="text-[11px] text-slate-700">
+                    {company.ein && <span><strong>EIN:</strong> {company.ein} &nbsp;|&nbsp; </span>}
+                    {company.stateTaxPermitId && <span><strong>State Tax Permit:</strong> {company.stateTaxPermitId}</span>}
+                  </p>
+                )}
               </div>
 
               <div className="text-right flex-shrink-0">
@@ -357,46 +352,45 @@ export default function PrintablePnLModal({
               </table>
             </div>
 
-            {/* 5. GST Tax Compliance Table */}
+            {/* 5. US Sales Tax Liability Table */}
             <div className="space-y-3 pt-2">
               <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 border-b pb-1">
-                2. GST TAX COMPLIANCE SUMMARY (OUTPUT VS INPUT TAX CREDIT)
+                2. US SALES TAX LIABILITY SUMMARY
               </h3>
 
               <table className="w-full text-left text-xs border-collapse border border-slate-200">
                 <thead>
                   <tr className="bg-slate-100 border-b border-slate-300 font-bold uppercase text-slate-700">
-                    <th className="p-2.5 border border-slate-300">GST Tax Parameter</th>
+                    <th className="p-2.5 border border-slate-300">Sales Tax Parameter</th>
                     <th className="p-2.5 text-right border border-slate-300">Amount ($)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   <tr>
-                    <td className="p-2.5 text-slate-700 border border-slate-200">Output GST Collected on Customer Sales</td>
+                    <td className="p-2.5 text-slate-700 border border-slate-200">Total Sales Tax Collected on Customer Sales</td>
                     <td className="p-2.5 text-right font-bold text-amber-800 border border-slate-200">
-                      {formatCurrency(report.outputGstCollected)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="p-2.5 text-slate-700 border border-slate-200">Input Tax Credit (ITC) Paid on Vendor Purchases</td>
-                    <td className="p-2.5 text-right font-bold text-emerald-800 border border-slate-200">
-                      {formatCurrency(report.inputGstCredit)}
+                      {formatCurrency(report.salesTaxCollected ?? report.outputGstCollected ?? 0)}
                     </td>
                   </tr>
                   <tr className="font-black bg-amber-50 text-slate-900 border-t-2 border-amber-300">
-                    <td className="p-2.5 border border-slate-200">NET GST PAYABLE TO GOVERNMENT</td>
+                    <td className="p-2.5 border border-slate-200">TOTAL SALES TAX PAYABLE TO STATE & LOCAL JURISDICTIONS</td>
                     <td className="p-2.5 text-right text-amber-900 text-sm border border-slate-200">
-                      {formatCurrency(report.netGstPayable)}
+                      {formatCurrency(report.salesTaxPayable ?? report.netGstPayable ?? 0)}
                     </td>
                   </tr>
                 </tbody>
               </table>
+              <p className="text-[10px] text-slate-500 italic">
+                * Note: Sales tax collected is a fiduciary liability held in trust for state and local tax authorities and is excluded from operational net sales revenue.
+              </p>
             </div>
 
             {/* 6. Footer Signoff */}
             <div className="mt-8 pt-4 border-t border-slate-300 flex justify-between items-end text-xs text-slate-600">
               <div>
-                <p className="font-semibold text-slate-800">{company.name} | GSTIN: {company.gstin}</p>
+                <p className="font-semibold text-slate-800">
+                  {company.name}{company.ein ? ` | EIN: ${company.ein}` : ''}
+                </p>
                 <p className="text-[10px] text-slate-500">This is an official computer-generated financial report statement.</p>
               </div>
               <div className="text-right space-y-6">

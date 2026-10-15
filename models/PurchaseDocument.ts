@@ -6,9 +6,12 @@ export interface IPurchaseDocItem {
   variantName?: string;
   purchasePrice: number;
   quantity: number;
-  gst: number;
+  isTaxable?: boolean;
+  taxRate?: number;
+  lineTax?: number;
+  gst?: number;
   lineSubtotal: number;
-  lineGst: number;
+  lineGst?: number;
   lineTotal: number;
 }
 
@@ -18,11 +21,13 @@ export interface IPurchaseDocument extends Document {
   vendorId?: string;
   vendorName: string;
   vendorPhone: string;
+  vendorTaxId?: string;
   vendorGstin?: string;
   vendorAddress?: string;
   items: IPurchaseDocItem[];
   subtotal: number;
-  totalGst: number;
+  totalTax?: number;
+  totalGst?: number;
   discountAmount?: number;
   grandTotal: number;
   paidAmount: number;
@@ -42,9 +47,12 @@ const PurchaseDocItemSchema = new Schema({
   variantName: { type: String, default: '' },
   purchasePrice: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
+  isTaxable: { type: Boolean, default: true },
+  taxRate: { type: Number, default: 0 },
+  lineTax: { type: Number, default: 0 },
   gst: { type: Number, default: 0 },
   lineSubtotal: { type: Number, required: true },
-  lineGst: { type: Number, required: true },
+  lineGst: { type: Number, default: 0 },
   lineTotal: { type: Number, required: true },
 });
 
@@ -60,11 +68,13 @@ const PurchaseDocumentSchema: Schema = new Schema(
     vendorId: { type: String, default: '' },
     vendorName: { type: String, required: true, trim: true },
     vendorPhone: { type: String, required: true, trim: true },
+    vendorTaxId: { type: String, default: '', trim: true },
     vendorGstin: { type: String, default: '', trim: true },
     vendorAddress: { type: String, default: '' },
     items: [PurchaseDocItemSchema],
     subtotal: { type: Number, required: true },
-    totalGst: { type: Number, required: true },
+    totalTax: { type: Number, default: 0 },
+    totalGst: { type: Number, default: 0 },
     discountAmount: { type: Number, default: 0 },
     grandTotal: { type: Number, required: true },
     paidAmount: { type: Number, default: 0 },

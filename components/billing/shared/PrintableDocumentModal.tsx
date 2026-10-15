@@ -189,7 +189,7 @@ export default function PrintableDocumentModal({
               Format: {printMode === 'A4' ? '📄 A4 Format' : '🧾 Thermal 80mm'}
             </button>
             <a
-              href={`https://wa.me/91${clientPhone}?text=${getWhatsappText()}`}
+              href={`https://wa.me/${(clientPhone || '').replace(/\D/g, '').length === 10 ? '1' + (clientPhone || '').replace(/\D/g, '') : (clientPhone || '').replace(/\D/g, '')}?text=${getWhatsappText()}`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
@@ -224,28 +224,15 @@ export default function PrintableDocumentModal({
                   {company.name}
                 </h1>
                 {company.owner && <p className="font-semibold text-slate-700">{company.owner}</p>}
-                <p className="text-[11px] text-slate-600 max-w-md leading-tight">{company.address}</p>
-                <p className="text-[10px] text-slate-600">
-                  <strong>FSSAI :</strong> {company.fssai} &nbsp;|&nbsp; <strong>IEC :</strong> {company.iec}
-                </p>
-                <p className="text-[10px] text-slate-600">
-                  <strong>Manufacturing :</strong> {company.manufacturing}
-                </p>
-                <p className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mt-1">
-                  {company.certifications}
-                </p>
-                <p className="text-[11px] text-slate-600">
-                  <strong>Phone no.:</strong> {company.phone}
-                </p>
-                <p className="text-[11px] text-slate-600">
-                  <strong>Email:</strong> {company.email}
-                </p>
-                <p className="text-[11px] text-slate-700">
-                  <strong>GSTIN:</strong> {company.gstin}
-                </p>
-                <p className="text-[11px] text-slate-700">
-                  <strong>State:</strong> {company.state}
-                </p>
+                {company.address && <p className="text-[11px] text-slate-600 max-w-md leading-tight">{company.address}</p>}
+                {company.phone && <p className="text-[11px] text-slate-600"><strong>Phone:</strong> {company.phone}</p>}
+                {company.email && <p className="text-[11px] text-slate-600"><strong>Email:</strong> {company.email}</p>}
+                {(company.ein || company.stateTaxPermitId) && (
+                  <p className="text-[11px] text-slate-700">
+                    {company.ein && <span><strong>EIN:</strong> {company.ein} &nbsp;|&nbsp; </span>}
+                    {company.stateTaxPermitId && <span><strong>State Tax Permit:</strong> {company.stateTaxPermitId}</span>}
+                  </p>
+                )}
               </div>
 
               {/* Right Column: Company Logo */}
@@ -278,7 +265,9 @@ export default function PrintableDocumentModal({
                 <p className="font-bold text-slate-900 uppercase text-sm">{clientName}</p>
                 {clientAddress && <p className="text-slate-600 leading-tight">{clientAddress}</p>}
                 {clientPhone && <p className="text-slate-600">Contact No.: {clientPhone}</p>}
-                {clientGstin && <p className="text-slate-700 font-semibold">GSTIN Number: {clientGstin}</p>}
+                {(doc?.taxId || clientGstin) && (
+                  <p className="text-slate-700 font-semibold">Tax ID / Resale #: {doc?.taxId || clientGstin}</p>
+                )}
                 <p className="text-slate-600">State: {clientState}</p>
               </div>
 
@@ -302,11 +291,11 @@ export default function PrintableDocumentModal({
                   <tr className="pdf-header-bg bg-[#8F8DF5] text-white font-bold text-[11px] uppercase">
                     <th className="py-2.5 px-3 border border-slate-300">#</th>
                     <th className="py-2.5 px-3 border border-slate-300">Item Name</th>
-                    <th className="py-2.5 px-3 border border-slate-300 text-center">HSN/ SAC</th>
+                    <th className="py-2.5 px-3 border border-slate-300 text-center">SKU / Code</th>
                     <th className="py-2.5 px-3 border border-slate-300 text-center">Quantity</th>
                     <th className="py-2.5 px-3 border border-slate-300 text-center">Unit</th>
                     <th className="py-2.5 px-3 border border-slate-300 text-right">Price/ Unit</th>
-                    <th className="py-2.5 px-3 border border-slate-300 text-center">GST</th>
+                    <th className="py-2.5 px-3 border border-slate-300 text-center">Sales Tax</th>
                     <th className="py-2.5 px-3 border border-slate-300 text-right">Amount</th>
                   </tr>
                 </thead>
@@ -315,10 +304,10 @@ export default function PrintableDocumentModal({
                     doc.items.map((item: any, idx: number) => {
                       const qty = item.quantity || 1;
                       const unitPrice = item.price || item.purchasePrice || 0;
-                      const gstPct = item.gst !== undefined ? Number(item.gst) : item.gstRate !== undefined ? Number(item.gstRate) : item.gstPercent !== undefined ? Number(item.gstPercent) : 5.0;
                       const lineSubtotal = item.lineSubtotal || qty * unitPrice;
-                      const gstVal = item.lineGst !== undefined ? Number(item.lineGst) : item.gstAmount !== undefined ? Number(item.gstAmount) : (lineSubtotal * gstPct) / 100;
-                      const lineAmt = item.lineTotal || (lineSubtotal + gstVal);
+                      const taxRateVal = item.taxRate !== undefined ? Number(item.taxRate) : item.gst !== undefined ? Number(item.gst) : 0;
+                      const taxVal = item.lineTax !== undefined ? Number(item.lineTax) : item.lineGst !== undefined ? Number(item.lineGst) : (lineSubtotal * (taxRateVal > 1 ? taxRateVal / 100 : taxRateVal));
+                      const lineAmt = item.lineTotal || (lineSubtotal + taxVal);
 
                       return (
                         <tr key={idx} className="hover:bg-slate-50/50">
@@ -329,13 +318,19 @@ export default function PrintableDocumentModal({
                               <span className="block text-[10px] text-slate-500 font-normal">({item.variantName})</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-3 border border-slate-200 text-center text-slate-600 font-mono">{item.hsnCode || '08041030'}</td>
+                          <td className="py-2.5 px-3 border border-slate-200 text-center text-slate-600 font-mono">
+                            {item.sku || item.taxCode || item.hsnCode || 'FLOWER-01'}
+                          </td>
                           <td className="py-2.5 px-3 border border-slate-200 text-center font-bold text-slate-800">{qty}</td>
-                          <td className="py-2.5 px-3 border border-slate-200 text-center text-slate-600">{item.unit || 'Kg'}</td>
+                          <td className="py-2.5 px-3 border border-slate-200 text-center text-slate-600">{item.unit || 'Box'}</td>
                           <td className="py-2.5 px-3 border border-slate-200 text-right text-slate-700">{formatCurrency(unitPrice)}</td>
                           <td className="py-2.5 px-3 border border-slate-200 text-center text-slate-600">
-                            {formatCurrency(gstVal)}
-                            <span className="block text-[10px] text-slate-400">({gstPct}%)</span>
+                            {formatCurrency(taxVal)}
+                            {taxRateVal > 0 && (
+                              <span className="block text-[10px] text-slate-400">
+                                ({(taxRateVal > 1 ? taxRateVal : taxRateVal * 100).toFixed(1)}%)
+                              </span>
+                            )}
                           </td>
                           <td className="py-2.5 px-3 border border-slate-200 text-right font-bold text-slate-900">{formatCurrency(lineAmt)}</td>
                         </tr>
@@ -357,7 +352,7 @@ export default function PrintableDocumentModal({
                     </td>
                     <td colSpan={2} className="border border-slate-300"></td>
                     <td className="py-2.5 px-3 border border-slate-300 text-center text-slate-900 font-extrabold">
-                      {formatCurrency(Number(doc?.totalGst || 0))}
+                      {formatCurrency(Number(doc?.totalTax !== undefined ? doc.totalTax : doc?.totalGst || 0))}
                     </td>
                     <td className="py-2.5 px-3 border border-slate-300 text-right text-slate-900 font-black text-sm">
                       {formatCurrency(grandTotalNum)}
@@ -387,10 +382,11 @@ export default function PrintableDocumentModal({
                 {/* Bank Pay To Details */}
                 <div className="pt-2 border-t border-slate-200 space-y-0.5">
                   <span className="font-bold text-slate-900 block mb-1">Pay To:</span>
-                  <p className="text-slate-600"><strong>Bank Name:</strong> {company.bankName}</p>
-                  <p className="text-slate-600"><strong>Bank Account No.:</strong> {company.bankAccountNo}</p>
-                  <p className="text-slate-600"><strong>Bank IFSC code:</strong> {company.bankIfsc}</p>
-                  <p className="text-slate-600"><strong>Account Holder's Name:</strong> {company.bankHolder}</p>
+                  {company.bankName && <p className="text-slate-600"><strong>Bank Name:</strong> {company.bankName}</p>}
+                  {company.bankAccountNo && <p className="text-slate-600"><strong>Account No.:</strong> {company.bankAccountNo}</p>}
+                  {company.bankRoutingNo && <p className="text-slate-600"><strong>Routing No.:</strong> {company.bankRoutingNo}</p>}
+                  {company.bankHolder && <p className="text-slate-600"><strong>Account Holder:</strong> {company.bankHolder}</p>}
+                  {company.upiId && <p className="text-slate-600"><strong>UPI ID:</strong> {company.upiId}</p>}
                 </div>
               </div>
 
@@ -400,16 +396,21 @@ export default function PrintableDocumentModal({
                 <div className="space-y-1 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                   <div className="flex justify-between text-slate-600 py-0.5">
                     <span>Sub Total</span>
-                    <span>{formatCurrency(Number(doc?.subtotal || grandTotalNum * 0.95))}</span>
+                    <span>{formatCurrency(Number(doc?.subtotal !== undefined ? doc.subtotal : grandTotalNum * 0.95))}</span>
                   </div>
-                  <div className="flex justify-between text-slate-600 py-0.5">
-                    <span>SGST@2.5%</span>
-                    <span>{formatCurrency(Number(doc?.totalGst || 0) / 2)}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600 py-0.5">
-                    <span>CGST@2.5%</span>
-                    <span>{formatCurrency(Number(doc?.totalGst || 0) / 2)}</span>
-                  </div>
+                  {doc?.taxSnapshot?.jurisdictions && doc.taxSnapshot.jurisdictions.length > 0 ? (
+                    doc.taxSnapshot.jurisdictions.map((j: any, jIdx: number) => (
+                      <div key={jIdx} className="flex justify-between text-slate-600 py-0.5">
+                        <span>{j.jurisdictionName} ({(Number(j.rate || 0) * (j.rate < 1 ? 100 : 1)).toFixed(1)}%)</span>
+                        <span>{formatCurrency(Number(j.taxAmount || 0))}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex justify-between text-slate-600 py-0.5">
+                      <span>Sales Tax</span>
+                      <span>{formatCurrency(Number(doc?.totalTax !== undefined ? doc.totalTax : doc?.totalGst || 0))}</span>
+                    </div>
+                  )}
 
                   {/* Grand Total Bar */}
                   <div className="pdf-header-bg flex justify-between text-sm font-black bg-[#8F8DF5] text-white p-2 rounded-lg my-1.5 shadow-2xs">

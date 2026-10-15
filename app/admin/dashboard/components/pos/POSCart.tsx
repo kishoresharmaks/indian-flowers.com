@@ -141,7 +141,7 @@ export default function POSCart({
                       </span>
                     )}
                     <span>{formatCurrency(item.price)}</span>
-                    <span>({item.gst}% GST)</span>
+                    <span>({item.gst}% Tax)</span>
                   </div>
                 </div>
               </div>
@@ -224,7 +224,7 @@ export default function POSCart({
               <span className="font-bold text-[#163B5C]">{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex justify-between">
-              <span>GST Tax Split:</span>
+              <span>Sales Tax:</span>
               <span className="font-bold text-[#163B5C]">{formatCurrency(totalGst)}</span>
             </div>
             {discountAmount > 0 && (
