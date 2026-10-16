@@ -15,7 +15,15 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/privacy-policy',
+        destination: '/policy/privacy-policy',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
-

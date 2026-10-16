@@ -311,8 +311,22 @@ export default function Footer({
 
         {/* Copyright Bottom Bar */}
         <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/60">
-          <div>
-            &copy; {new Date().getFullYear()} <strong>The Indian Flowers</strong>. All Rights Reserved.
+          <div className="text-white/80 text-xs">
+            Copyright &copy; 2026{' '}
+            <Link
+              href="https://indian-flowers.com/"
+              className="text-white font-medium hover:text-emerald-300 hover:underline transition-colors"
+            >
+              Indian flowers
+            </Link>
+            . All Rights Reserved.{' '}
+            <Link
+              href="https://indian-flowers.com/privacy-policy/"
+              className="text-white font-medium hover:text-emerald-300 hover:underline transition-colors"
+            >
+              Privacy Policy
+            </Link>{' '}
+            | <span className="text-emerald-300 font-semibold">Indian Flowers</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-white/70">
             <Link href="/about" className="hover:text-white transition-colors">
