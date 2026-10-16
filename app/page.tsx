@@ -840,7 +840,7 @@ export default function CustomerStore() {
   );
 
   return (
-    <div className={`min-h-[100dvh] flex flex-col justify-between bg-white text-gray-900 font-sans ${cartItemCount > 0 ? 'pb-24 sm:pb-0' : ''}`}>
+    <div className="min-h-[100dvh] flex flex-col justify-between bg-white text-gray-900 font-sans">
       {/* 1. TOP NAVBAR & PAGE LINKS (Retrieved from DB Categories) */}
       <Header
         cartItemCount={cartItemCount}

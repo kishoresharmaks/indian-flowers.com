@@ -83,7 +83,7 @@ export default function Footer({
   const mapSearchUrl = 'https://www.google.com/maps/search/?api=1&query=14922+Bobcat+lane,+Fontana,+CA+92336';
 
   return (
-    <footer className="bg-[#0B3B24] text-white pt-12 sm:pt-16 pb-10 border-t border-[#0B3B24] overflow-hidden">
+    <footer className="bg-[#0B3B24] text-white pt-12 sm:pt-16 pb-28 sm:pb-12 border-t border-[#0B3B24] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* ========================================================= */}
@@ -386,18 +386,21 @@ export default function Footer({
           </div>
 
           {/* D. Compact Trust and Delivery Strip (Mobile) */}
-          <div className="rounded-xl bg-white/[0.04] border border-white/10 p-3 flex items-center justify-between text-xs text-white/85">
-            <div className="flex items-center gap-2 flex-1 pr-2 min-w-0">
-              <Truck className="w-4 h-4 text-[#8FE7B8] shrink-0" />
-              <span className="text-[10.5px] leading-tight text-white/90 truncate sm:whitespace-normal">
-                Overnight delivery to all 50 states.
+          <div className="rounded-xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5 space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:divide-x sm:divide-white/15 text-xs text-white/85">
+            <div className="flex items-center gap-2.5 sm:pr-3 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-400/20 flex items-center justify-center shrink-0">
+                <Truck className="w-4 h-4 text-[#8FE7B8]" />
+              </div>
+              <span className="text-xs sm:text-[11.5px] leading-snug text-white/95 font-medium">
+                Overnight cold-chain delivery to all 50 states across the USA
               </span>
             </div>
-            <div className="h-6 w-px bg-white/15 shrink-0 mx-2" />
-            <div className="flex items-center gap-2 flex-1 pl-2 min-w-0">
-              <ShieldCheck className="w-4 h-4 text-[#8FE7B8] shrink-0" />
-              <span className="text-[10.5px] leading-tight font-medium text-emerald-200 truncate sm:whitespace-normal">
-                100% Freshness Guaranteed.
+            <div className="flex items-center gap-2.5 sm:pl-3 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-400/20 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4 text-[#8FE7B8]" />
+              </div>
+              <span className="text-xs sm:text-[11.5px] leading-snug font-medium text-emerald-200">
+                100% Quality &amp; Freshness Guaranteed on Arrival
               </span>
             </div>
           </div>

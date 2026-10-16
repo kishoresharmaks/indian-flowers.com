@@ -167,56 +167,58 @@ export default function Header({
 
   return (
     <>
-      {/* 1. TOP ANNOUNCEMENT & UTILITY BAR (Deep Forest Green #0B3B24) */}
-      <div className="w-full bg-[#0B3B24] text-white/90 text-[11px] py-1 px-3 sm:px-6 lg:px-8 border-b border-[#0B3B24]/40">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
-          {/* Left Guarantees */}
-          <div className="flex items-center gap-2 sm:gap-6 min-w-0">
-            <span className="flex items-center gap-1.5 font-medium truncate text-white/95">
-              <Truck className="w-3 h-3 text-emerald-300 shrink-0" />
-              <span className="truncate">Fresh Indian flowers, delivered across the USA</span>
-            </span>
-            <span className="hidden md:flex items-center gap-1.5 font-medium text-white/90">
-              <Clock className="w-3 h-3 text-emerald-300 shrink-0" />
-              <span>Fast &amp; Fresh Delivery</span>
-            </span>
-            <span className="hidden xl:flex items-center gap-1.5 font-medium text-white/90">
-              <ShieldCheck className="w-3 h-3 text-emerald-300 shrink-0" />
-              <span>Trusted by 10,000+ Customers</span>
-            </span>
-          </div>
+      {/* UNIFIED STICKY HEADER: ANNOUNCEMENT BAR + MAIN NAVBAR */}
+      <header className="w-full sticky top-0 z-40">
+        {/* 1. TOP ANNOUNCEMENT & UTILITY BAR (Deep Forest Green #0B3B24) */}
+        <div className="w-full bg-[#0B3B24] text-white/90 text-xs sm:text-[11px] py-2 sm:py-1.5 px-3 sm:px-6 lg:px-8 border-b border-[#0B3B24]/40 min-h-[34px] sm:min-h-[32px] flex items-center">
+          <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-2 sm:gap-3">
+            {/* Left Guarantees */}
+            <div className="flex items-center gap-2 sm:gap-6 min-w-0">
+              <span className="flex items-center gap-1.5 font-medium truncate text-white/95 text-[11.5px] sm:text-xs">
+                <Truck className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                <span className="truncate">Fresh Indian flowers, delivered across the USA</span>
+              </span>
+              <span className="hidden md:flex items-center gap-1.5 font-medium text-white/90">
+                <Clock className="w-3 h-3 text-emerald-300 shrink-0" />
+                <span>Fast &amp; Fresh Delivery</span>
+              </span>
+              <span className="hidden xl:flex items-center gap-1.5 font-medium text-white/90">
+                <ShieldCheck className="w-3 h-3 text-emerald-300 shrink-0" />
+                <span>Trusted by 10,000+ Customers</span>
+              </span>
+            </div>
 
-          {/* Right Direct Contact Info (Dynamic from DB StoreSettings) */}
-          <div className="flex items-center gap-3 sm:gap-5 text-white/90 shrink-0 text-[11px]">
-            <a
-              href={`tel:${storePhone.replace(/[^0-9+]/g, '')}`}
-              className="flex items-center gap-1.5 hover:text-white transition-colors"
-              title="Call Customer Support"
-            >
-              <Phone className="w-3 h-3 text-emerald-300 shrink-0" />
-              <span className="hidden sm:inline font-medium">{storePhone}</span>
-            </a>
-            <a
-              href={`mailto:${storeEmail}`}
-              className="hidden lg:flex items-center gap-1.5 hover:text-white transition-colors"
-              title="Email Customer Support"
-            >
-              <Mail className="w-3 h-3 text-emerald-300 shrink-0" />
-              <span className="font-medium">{storeEmail}</span>
-            </a>
+            {/* Right Direct Contact Info (Dynamic from DB StoreSettings) */}
+            <div className="flex items-center gap-3 sm:gap-5 text-white/90 shrink-0 text-[11px]">
+              <a
+                href={`tel:${storePhone.replace(/[^0-9+]/g, '')}`}
+                className="flex items-center gap-1.5 hover:text-white transition-colors"
+                title="Call Customer Support"
+              >
+                <Phone className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                <span className="hidden sm:inline font-medium">{storePhone}</span>
+              </a>
+              <a
+                href={`mailto:${storeEmail}`}
+                className="hidden lg:flex items-center gap-1.5 hover:text-white transition-colors"
+                title="Email Customer Support"
+              >
+                <Mail className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                <span className="font-medium">{storeEmail}</span>
+              </a>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* 2. STICKY MAIN NAVBAR */}
-      <div
-        className={`w-full z-40 sticky top-0 transition-all duration-200 ${
-          isScrolled
-            ? 'bg-white/95 backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.06)] border-b border-gray-100'
-            : 'bg-white shadow-xs border-b border-gray-100/80'
-        }`}
-      >
-        <header className="bg-white/0 py-2 sm:py-2.5 px-3 sm:px-6 lg:px-8 max-w-full overflow-hidden">
+        {/* 2. STICKY MAIN NAVBAR */}
+        <div
+          className={`w-full transition-all duration-200 ${
+            isScrolled
+              ? 'bg-white/95 backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.06)] border-b border-gray-100'
+              : 'bg-white shadow-xs border-b border-gray-100/80'
+          }`}
+        >
+          <div className="bg-white/0 py-2 sm:py-2.5 px-3 sm:px-6 lg:px-8 max-w-full overflow-hidden">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-1 sm:gap-6 lg:gap-8">
           {/* Left: Mobile Menu Trigger + Brand Logo */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
@@ -381,7 +383,7 @@ export default function Header({
             <span>Offers</span>
           </Link>
         </div>
-      </header>
+      </div>
 
       {/* 3. SUB-NAVIGATION CATEGORY BAR (Desktop, Single Line with Dynamic DB Categories & Offers Pill) */}
       <nav className="bg-white border-b border-gray-100 hidden md:block">
@@ -427,6 +429,7 @@ export default function Header({
         </div>
       </nav>
       </div>
+      </header>
 
       {/* 4. MOBILE SLIDE-OUT DRAWER MENU WITH SMOOTH OPEN & CLOSE ANIMATION */}
       {/* Backdrop (Smooth Fade-In / Fade-Out) */}
