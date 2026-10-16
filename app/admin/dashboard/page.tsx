@@ -1486,7 +1486,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   const ActiveHeaderIcon = activeMeta.icon;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#163B5C] flex flex-row">
+    <div className="h-screen w-screen overflow-hidden bg-[#F8FAFC] text-[#163B5C] flex flex-row">
       {/* 1. MOBILE SLIDE-OVER DRAWER MENU */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -1647,7 +1647,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
       {/* 2. DESKTOP VERTICAL LEFT SIDEBAR */}
       <aside
-        className={`hidden lg:flex flex-col bg-white border-r border-[#E2E8F0] sticky top-0 h-screen z-30 transition-all duration-300 ease-in-out shrink-0 select-none ${
+        className={`hidden lg:flex flex-col bg-white border-r border-[#E2E8F0] h-full z-30 transition-all duration-300 ease-in-out shrink-0 select-none ${
           isSidebarCollapsed ? 'w-20' : 'w-64 xl:w-72'
         }`}
       >
@@ -1838,7 +1838,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       </aside>
 
       {/* 3. MAIN DASHBOARD CONTENT WORKSPACE */}
-      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+      <div id="admin-main-scroll" className="flex-1 min-w-0 flex flex-col h-full overflow-y-auto bg-[#F8FAFC]">
         {/* Expiry & Grace Period Alert Banner */}
         <GracePeriodBanner
           license={licenseState}
@@ -1846,7 +1846,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         />
 
         {/* Sticky Top Utility Header */}
-        <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-20 shadow-2xs">
+        <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-20 shadow-2xs shrink-0">
           <div className="px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
             {/* Left: Mobile Drawer Trigger & Active Tab Breadcrumb */}
             <div className="flex items-center gap-3 min-w-0">
