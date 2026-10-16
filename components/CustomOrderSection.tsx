@@ -160,18 +160,18 @@ export default function CustomOrderSection() {
               {/* Direct Contact Card */}
               <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <a
-                  href="tel:+15105795199"
+                  href="tel:+19093793678"
                   className="flex items-center gap-2 text-gray-700 hover:text-[#0B3B24] font-medium"
                 >
                   <Phone className="w-4 h-4 text-[#0B3B24]" />
-                  <span>+1 (510) 579-5199</span>
+                  <span>+1 (909) 379-3678</span>
                 </a>
                 <a
-                  href="mailto:support@indian-flowers.com"
+                  href="mailto:indianflowersorder@gmail.com"
                   className="flex items-center gap-2 text-gray-700 hover:text-[#0B3B24] font-medium"
                 >
                   <Mail className="w-4 h-4 text-[#0B3B24]" />
-                  <span>support@indian-flowers.com</span>
+                  <span>indianflowersorder@gmail.com</span>
                 </a>
               </div>
             </div>

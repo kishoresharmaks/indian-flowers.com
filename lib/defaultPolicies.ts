@@ -109,10 +109,10 @@ We may update this Privacy Policy periodically to reflect changes in our operati
 ## 9. Contact Our Data Privacy Officer
 
 If you have questions, feedback, or formal privacy inquiries regarding our compliance or data handling:
-* **Email:** privacy@indian-flowers.com
-* **Customer Concierge:** support@indian-flowers.com
-* **Telephone:** +1 (510) 579-5199
-* **Mailing Address:** Indian-Flowers.com Legal Department, Fremont, California, United States`
+* **Email:** indianflowersorder@gmail.com
+* **Customer Concierge:** indianflowersorder@gmail.com
+* **Telephone:** +1 (909) 379-3678
+* **Mailing Address:** The Indian Flowers, 14922 Bobcat lane, Fontana, CA 92336, California, USA`
   },
   {
     slug: 'shipping-policy',
@@ -133,7 +133,7 @@ Fresh Indian flowers—including fragrant Madurai Jasmine strands (*Mallipoo*), 
 ## 2. Delivery Coverage Across the United States
 
 * **Contiguous 48 States:** We provide express overnight delivery to residential, temple, banquet hall, and hotel destinations across all 48 contiguous US states.
-* **Alaska & Hawaii:** Deliveries to Alaska and Hawaii require specialized air-cargo arrangements. Please contact our support team at **support@indian-flowers.com** at least 7 days in advance to coordinate routing.
+* **Alaska & Hawaii:** Deliveries to Alaska and Hawaii require specialized air-cargo arrangements. Please contact our support team at **indianflowersorder@gmail.com** at least 7 days in advance to coordinate routing.
 * **P.O. Boxes & APO/FPO:** Because our floral shipments contain living, perishable botanical items requiring immediate care, **we cannot ship to P.O. Boxes, APO/FPO military addresses, or unstaffed parcel lockers.** A physical street address is mandatory for all orders.
 
 ---
@@ -284,7 +284,7 @@ At **Indian-Flowers.com**, our goal is your complete satisfaction and spiritual 
 
 If your flowers arrive in compromised condition, damaged in transit, or differing materially from your confirmed order specifications:
 1. **Notice Within 24 Hours:** You must notify our US customer support team within **24 hours of package delivery timestamp** (as recorded by the carrier delivery scan).
-2. **Photo Documentation:** Email **support@indian-flowers.com** with your **Order ID** and **2 to 3 clear, well-lit photographs** showing:
+2. **Photo Documentation:** Email **indianflowersorder@gmail.com** with your **Order ID** and **2 to 3 clear, well-lit photographs** showing:
    * The flowers in the condition received.
    * The inner cold-chain packaging and gel pack status.
    * The carrier shipping label affixed to the exterior carton.
@@ -441,6 +441,6 @@ We respect consumer privacy signals. Our systems are engineered to honor **Globa
 
 ## 6. Contact Us Regarding Cookies
 
-If you have questions regarding our use of cookies or local storage technologies, please contact our web compliance team at **support@indian-flowers.com** or call **+1 (510) 579-5199**.`
+If you have questions regarding our use of cookies or local storage technologies, please contact our web compliance team at **indianflowersorder@gmail.com** or call **+1 (909) 379-3678**.`
   }
 ];

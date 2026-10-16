@@ -12,6 +12,7 @@ import ProductCarousel from '@/components/ProductCarousel';
 import FloralCornerDecorations from '@/components/FloralCornerDecorations';
 import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
 import ProductQuickViewModal from '@/components/ProductQuickViewModal';
+import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import WishlistDrawer from '@/components/WishlistDrawer';
 import CustomOrderSection from '@/components/CustomOrderSection';
@@ -824,8 +825,8 @@ export default function CustomerStore() {
     }
   };
 
-  const contactPhone = storeSettings?.contactPhone || '+1 (510) 579-5199';
-  const contactEmail = storeSettings?.contactEmail || 'support@indian-flowers.com';
+  const contactPhone = storeSettings?.contactPhone || '+1 (909) 379-3678';
+  const contactEmail = storeSettings?.contactEmail || 'indianflowersorder@gmail.com';
 
   // Dynamic Backend Payment Options (Real Settings from MongoDB)
   const isCodActive = storeSettings ? storeSettings.enableCOD !== false : true;
@@ -853,10 +854,10 @@ export default function CustomerStore() {
         selectedCategory={selectedCategory}
         onSelectCategory={handleSelectCategory}
         onMenuToggle={setIsMobileNavOpen}
-        storeName={storeSettings?.siteName || 'Indian-Flowers.com'}
-        storeTagline={storeSettings?.tagline || 'Indian Flowers for Every Occasion'}
-        storePhone={storeSettings?.contactPhone || storeSettings?.phone || '+1 (510) 579-5199'}
-        storeEmail={storeSettings?.contactEmail || storeSettings?.email || 'support@indian-flowers.com'}
+        storeName={storeSettings?.siteName || 'The Indian Flowers'}
+        storeTagline={storeSettings?.tagline || 'Fresh Indian Flowers for Every Occasion'}
+        storePhone={storeSettings?.contactPhone || storeSettings?.phone || '+1 (909) 379-3678'}
+        storeEmail={storeSettings?.contactEmail || storeSettings?.email || 'indianflowersorder@gmail.com'}
       />
 
       {/* 2. IMAGE SLIDER HERO (Retrieved from DB Banners) */}
@@ -1330,230 +1331,18 @@ export default function CustomerStore() {
         </div>
       </section>
 
-      {/* 9. BRAND FOOTER (4-COLUMN EDITORIAL BOTANICAL DESIGN) */}
-      <footer className="bg-[#0B3B24] text-white pt-16 pb-10 border-t border-[#0B3B24]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
-            {/* Column 1: Brand Info */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center">
-                  <Flower2 className="w-5 h-5 text-emerald-300" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold tracking-tight text-white leading-tight">
-                    Indian-Flowers.com
-                  </h3>
-                  <span className="text-[10px] text-emerald-300 font-medium tracking-wide uppercase">
-                    Authentic Indian Flora
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-xs text-white/75 leading-relaxed font-normal">
-                Dedicated to bringing fresh ceremonial flowers, garlands, and sacred leaves to Indian homes and temples across the United States.
-              </p>
-
-              <div className="text-xs text-white/80 space-y-2 pt-1 font-normal">
-                <p className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>{contactPhone}</span>
-                </p>
-                <p className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>{contactEmail}</span>
-                </p>
-                <p className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>United States Delivery Nationwide</span>
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <a
-                  href="#"
-                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                  aria-label="Facebook"
-                >
-                  <Facebook className="w-3.5 h-3.5 text-white" />
-                </a>
-                <a
-                  href="#"
-                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                  aria-label="Instagram"
-                >
-                  <Instagram className="w-3.5 h-3.5 text-white" />
-                </a>
-                <a
-                  href="#"
-                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                  aria-label="YouTube"
-                >
-                  <Youtube className="w-3.5 h-3.5 text-white" />
-                </a>
-              </div>
-            </div>
-
-            {/* Column 2: Popular Categories from DB */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-emerald-300">
-                Categories
-              </h4>
-              <ul className="space-y-2 text-xs text-white/75 font-normal">
-                {categories.slice(0, 6).map((cat) => (
-                  <li key={cat._id || cat.name}>
-                    <button
-                      onClick={() => {
-                        setSelectedCategory(cat.name);
-                        const el = document.getElementById('products-section');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="hover:text-white transition-colors"
-                    >
-                      {cat.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 3: Customer Care */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-emerald-300">
-                Customer Care
-              </h4>
-              <ul className="space-y-2 text-xs text-white/75 font-normal">
-                <li>
-                  <button
-                    onClick={() => setIsTrackModalOpen(true)}
-                    className="hover:text-white transition-colors text-left"
-                  >
-                    Track Your Order
-                  </button>
-                </li>
-                <li>
-                  <Link href="/policy/shipping-policy" className="hover:text-white transition-colors">
-                    USA Shipping &amp; Delivery Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/policy/refund-policy" className="hover:text-white transition-colors">
-                    Freshness &amp; Handling Guarantee
-                  </Link>
-                </li>
-                <li>
-                  <a href="#custom-orders" className="hover:text-white transition-colors">
-                    Custom Wedding Inquiries
-                  </a>
-                </li>
-                <li>
-                  <a href="#faq" className="hover:text-white transition-colors">
-                    Frequently Asked Questions
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 4: Policies & Safe Checkout */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-emerald-300">
-                Policies &amp; Legal
-              </h4>
-              <ul className="space-y-2 text-xs text-white/75">
-                <li>
-                  <Link href="/policy/privacy-policy" className="hover:text-white transition-colors">
-                    Privacy Policy (CCPA/CPRA)
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/policy/terms-and-conditions" className="hover:text-white transition-colors">
-                    Terms &amp; Conditions
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/policy/disclaimer" className="hover:text-white transition-colors">
-                    Disclaimer &amp; Botanical Disclosures
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/policy/cookie-policy" className="hover:text-white transition-colors">
-                    Cookie &amp; Tracking Policy
-                  </Link>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (typeof window !== 'undefined') {
-                        window.dispatchEvent(new CustomEvent('open-cookie-preferences'));
-                      }
-                    }}
-                    className="hover:text-white transition-colors text-left"
-                  >
-                    Cookie Preferences
-                  </button>
-                </li>
-              </ul>
-
-              <div className="pt-3 border-t border-white/10 space-y-1">
-                <span className="text-[11px] text-emerald-200 block font-semibold">
-                  100% Secure USA Checkout
-                </span>
-                <p className="text-[10px] text-white/60">
-                  All transactions and pricing in US Dollars (USD).
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Copyright Bottom Bar */}
-          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/60">
-            <div>
-              &copy; {new Date().getFullYear()} <strong>Indian-Flowers.com</strong>. All Rights Reserved.
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-white/70">
-              <Link href="/policy/privacy-policy" className="hover:text-white transition-colors">
-                Privacy
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/terms-and-conditions" className="hover:text-white transition-colors">
-                Terms
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/shipping-policy" className="hover:text-white transition-colors">
-                Shipping
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/refund-policy" className="hover:text-white transition-colors">
-                Refunds
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/disclaimer" className="hover:text-white transition-colors">
-                Disclaimer
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/cookie-policy" className="hover:text-white transition-colors">
-                Cookies
-              </Link>
-              <span>&bull;</span>
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('open-cookie-preferences'));
-                  }
-                }}
-                className="hover:text-white transition-colors text-[11px]"
-              >
-                Preferences
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
-              <span>Currency: <strong>USD ($)</strong></span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* 9. BRAND FOOTER (UNIFIED) */}
+      <Footer
+        categories={categories}
+        onSelectCategory={(catName) => {
+          setSelectedCategory(catName);
+          const el = document.getElementById('products-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+        onTrackOrderClick={() => setIsTrackModalOpen(true)}
+        contactPhone={contactPhone}
+        contactEmail={contactEmail}
+      />
 
       {/* CART DRAWER */}
       <CartDrawer

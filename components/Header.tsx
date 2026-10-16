@@ -15,6 +15,7 @@ import {
   Heart,
   Tag,
   ChevronRight,
+  Flower2,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -48,10 +49,10 @@ export default function Header({
   selectedCategory = 'All',
   onSelectCategory,
   onMenuToggle,
-  storeName = 'Indian-Flowers.com',
-  storeTagline = 'Indian Flowers for Every Occasion',
-  storePhone = '+1 (510) 579-5199',
-  storeEmail = 'support@indian-flowers.com',
+  storeName = 'The Indian Flowers',
+  storeTagline = 'Fresh Indian Flowers for Every Occasion',
+  storePhone = '+1 (909) 379-3678',
+  storeEmail = 'indianflowersorder@gmail.com',
   logoUrl,
 }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -450,8 +451,14 @@ export default function Header({
               })}
             </div>
 
-            {/* Right: Offers Pill Button */}
-            <div className="shrink-0 pl-2">
+            {/* Right: About Us & Offers Pill Button */}
+            <div className="shrink-0 pl-2 flex items-center gap-3">
+              <Link
+                href="/about"
+                className="text-[12.5px] font-semibold text-gray-700 hover:text-[#0B3B24] transition-colors py-0.5"
+              >
+                About Us
+              </Link>
               <Link
                 href="/#products-section"
                 className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-semibold text-[#C85A78] bg-[#FDF2F4] border border-rose-200/70 hover:bg-rose-100 transition-colors shadow-2xs"
@@ -553,6 +560,18 @@ export default function Header({
 
               {/* Special Links & Actions */}
               <div className="pt-3 border-t border-gray-100 space-y-2">
+                <Link
+                  href="/about"
+                  onClick={() => toggleMobileMenu(false)}
+                  className="w-full py-2.5 px-3.5 rounded-xl border border-stone-200 text-xs font-semibold text-gray-800 hover:bg-stone-50 transition-colors flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <Flower2 className="w-4 h-4 text-[#0B3B24]" />
+                    <span>About The Indian Flowers</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </Link>
+
                 <Link
                   href="/#products-section"
                   onClick={() => toggleMobileMenu(false)}

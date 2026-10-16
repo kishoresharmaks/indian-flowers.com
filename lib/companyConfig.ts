@@ -19,6 +19,9 @@ export interface CompanyConfig {
     country: string;
     phone: string;
     email: string;
+    aboutText?: string;
+    otherLocations?: string[];
+    pickupLocations?: string[];
     ein?: string;              // US Federal EIN (Employer Identification Number)
     stateTaxPermitId?: string; // State Department of Revenue Seller's Permit #
     bankName?: string;
@@ -37,22 +40,33 @@ export interface CompanyConfig {
 }
 
 export const getCompanyConfig = (overrideSettings?: Partial<CompanyConfig>): CompanyConfig => ({
-    name: overrideSettings?.name || process.env.NEXT_PUBLIC_COMPANY_NAME || 'Indian Flowers',
-    dba: overrideSettings?.dba || process.env.NEXT_PUBLIC_COMPANY_DBA || 'Indian Flowers USA',
+    name: overrideSettings?.name || process.env.NEXT_PUBLIC_COMPANY_NAME || 'The Indian Flowers',
+    dba: overrideSettings?.dba || process.env.NEXT_PUBLIC_COMPANY_DBA || 'The Indian Flowers USA',
     owner: overrideSettings?.owner || process.env.NEXT_PUBLIC_COMPANY_OWNER || '',
-    address: overrideSettings?.address || process.env.NEXT_PUBLIC_COMPANY_ADDRESS || '39120 Argonaut Way, Suite 428',
-    city: overrideSettings?.city || process.env.NEXT_PUBLIC_COMPANY_CITY || 'Fremont',
+    address: overrideSettings?.address || process.env.NEXT_PUBLIC_COMPANY_ADDRESS || '14922 Bobcat lane',
+    city: overrideSettings?.city || process.env.NEXT_PUBLIC_COMPANY_CITY || 'Fontana',
     state: overrideSettings?.state || process.env.NEXT_PUBLIC_COMPANY_STATE || 'CA',
-    zipCode: overrideSettings?.zipCode || process.env.NEXT_PUBLIC_COMPANY_ZIP || '94538',
+    zipCode: overrideSettings?.zipCode || process.env.NEXT_PUBLIC_COMPANY_ZIP || '92336',
     country: overrideSettings?.country || process.env.NEXT_PUBLIC_COMPANY_COUNTRY || 'United States',
-    phone: overrideSettings?.phone || process.env.NEXT_PUBLIC_COMPANY_PHONE || '+1 (510) 579-5199',
-    email: overrideSettings?.email || process.env.NEXT_PUBLIC_COMPANY_EMAIL || 'support@indian-flowers.com',
+    phone: overrideSettings?.phone || process.env.NEXT_PUBLIC_COMPANY_PHONE || '+1 (909) 379-3678',
+    email: overrideSettings?.email || process.env.NEXT_PUBLIC_COMPANY_EMAIL || 'indianflowersorder@gmail.com',
+    aboutText: overrideSettings?.aboutText || "We pride ourselves on delivering fresh and quality garlands that exceed our customer’s expectations with every order. From the moment a customer places an order with us, we prioritize their satisfaction by ensuring prompt delivery of our finest garlands. Our commitment to freshness and quality shines through in every garland we create, reflecting our dedication to excellent garlands.",
+    otherLocations: overrideSettings?.otherLocations || ['6893 Alverno ln, Inver Grove Heights, MN 55077'],
+    pickupLocations: overrideSettings?.pickupLocations || [
+        'Houston, TX',
+        'Tampa, FL',
+        'Sacramento, CA',
+        'Reminderville, OH',
+        'Livermore, CA',
+        'Greenwood Village, CO',
+        'Denver, CO'
+    ],
     ein: overrideSettings?.ein || process.env.NEXT_PUBLIC_COMPANY_EIN || '94-3829104',
     stateTaxPermitId: overrideSettings?.stateTaxPermitId || process.env.NEXT_PUBLIC_STATE_TAX_PERMIT_ID || 'SR-KHE-102-984712',
     bankName: overrideSettings?.bankName || process.env.NEXT_PUBLIC_COMPANY_BANK_NAME || 'JPMorgan Chase Bank, N.A.',
     bankAccountNo: overrideSettings?.bankAccountNo || process.env.NEXT_PUBLIC_COMPANY_BANK_ACC || 'Checking •••• 4829',
     bankRoutingNo: overrideSettings?.bankRoutingNo || process.env.NEXT_PUBLIC_COMPANY_BANK_ROUTING || '121000247',
-    bankHolder: overrideSettings?.bankHolder || process.env.NEXT_PUBLIC_COMPANY_BANK_HOLDER || 'Indian Flowers LLC',
+    bankHolder: overrideSettings?.bankHolder || process.env.NEXT_PUBLIC_COMPANY_BANK_HOLDER || 'The Indian Flowers LLC',
     upiId: overrideSettings?.upiId || process.env.NEXT_PUBLIC_MERCHANT_UPI_ID || '',
     logoUrl: overrideSettings?.logoUrl || process.env.NEXT_PUBLIC_COMPANY_LOGO_URL || '/indian-flowers-logo.svg',
     // Legacy fields default to empty if not configured; zero fabrication

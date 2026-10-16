@@ -7,6 +7,7 @@ import Policy, { IPolicy } from '@/models/Policy';
 import { DEFAULT_POLICIES } from '@/lib/defaultPolicies';
 import PolicyContentRenderer from '@/components/policies/PolicyContentRenderer';
 import PrintPolicyButton from '@/components/policies/PrintPolicyButton';
+import Footer from '@/components/Footer';
 import {
   ShieldCheck,
   Lock,
@@ -91,7 +92,7 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
               </div>
               <div>
                 <span className="font-extrabold text-lg sm:text-xl text-[#0B3B24] tracking-tight block leading-tight">
-                  Indian-Flowers.com
+                  The Indian Flowers
                 </span>
                 <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase text-stone-500 block">
                   USA Fresh Floral Delivery
@@ -102,17 +103,23 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
             {/* Right: Quick actions */}
             <div className="flex items-center gap-3">
               <Link
+                href="/about"
+                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-stone-700 hover:text-[#0B3B24] transition-colors"
+              >
+                About Us
+              </Link>
+              <Link
                 href="/"
                 className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-[#0B3B24] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to Storefront
               </Link>
               <a
-                href="tel:+15105795199"
+                href="tel:+19093793678"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-stone-700 hover:text-[#0B3B24] border border-stone-200 hover:border-stone-300 bg-white transition-colors"
               >
                 <Phone className="w-3.5 h-3.5 text-[#0B3B24]" />
-                <span className="hidden md:inline">+1 (510) 579-5199</span>
+                <span className="hidden md:inline">+1 (909) 379-3678</span>
                 <span className="md:hidden">Support</span>
               </a>
             </div>
@@ -277,11 +284,11 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
                 Our floral specialists are available to coordinate delivery schedules, custom wedding garland specifications, and address deliverability checks for your local zip code.
               </p>
               <div className="pt-2 flex flex-wrap gap-4 text-xs font-semibold text-[#0B3B24]">
-                <a href="mailto:support@indian-flowers.com" className="hover:underline flex items-center gap-1">
-                  <Mail className="w-3.5 h-3.5" /> support@indian-flowers.com
+                <a href="mailto:indianflowersorder@gmail.com" className="hover:underline flex items-center gap-1">
+                  <Mail className="w-3.5 h-3.5" /> indianflowersorder@gmail.com
                 </a>
-                <a href="tel:+15105795199" className="hover:underline flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5" /> +1 (510) 579-5199
+                <a href="tel:+19093793678" className="hover:underline flex items-center gap-1">
+                  <Phone className="w-3.5 h-3.5" /> +1 (909) 379-3678
                 </a>
               </div>
             </div>
@@ -289,76 +296,11 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
         </div>
       </main>
 
-      {/* 4. FOOTER */}
-      <footer className="bg-[#0B3B24] text-white pt-12 pb-8 border-t border-emerald-900 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Col 1 */}
-            <div className="space-y-3">
-              <span className="font-extrabold text-base tracking-tight text-white block">
-                Indian-Flowers.com
-              </span>
-              <p className="text-xs text-white/75 leading-relaxed font-normal">
-                Authentic, dewy Indian blossoms, temple malas, jasmine strings, and sacred puja leaves delivered fresh across all 50 states of the USA.
-              </p>
-              <div className="pt-1 text-xs text-emerald-300 font-semibold">
-                Toll Free: +1 (510) 579-5199
-              </div>
-            </div>
-
-            {/* Col 2 */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-emerald-300">
-                Fresh Collections
-              </h4>
-              <ul className="space-y-2 text-xs text-white/75">
-                <li><Link href="/#categories" className="hover:text-white transition-colors">Jasmine &amp; Fragrant Strings</Link></li>
-                <li><Link href="/#categories" className="hover:text-white transition-colors">Ceremonial &amp; Wedding Jai Malas</Link></li>
-                <li><Link href="/#categories" className="hover:text-white transition-colors">Daily Pooja Loose Blooms</Link></li>
-                <li><Link href="/#categories" className="hover:text-white transition-colors">Sacred Mango &amp; Betel Leaves</Link></li>
-              </ul>
-            </div>
-
-            {/* Col 3 */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-emerald-300">
-                Customer Services
-              </h4>
-              <ul className="space-y-2 text-xs text-white/75">
-                <li><Link href="/policy/shipping-policy" className="hover:text-white transition-colors">USA Shipping &amp; Delivery</Link></li>
-                <li><Link href="/policy/refund-policy" className="hover:text-white transition-colors">24-Hour Freshness Guarantee</Link></li>
-                <li><Link href="/#custom-orders" className="hover:text-white transition-colors">Custom Wedding Consultations</Link></li>
-                <li><Link href="/#faq" className="hover:text-white transition-colors">Frequently Asked Questions</Link></li>
-              </ul>
-            </div>
-
-            {/* Col 4 */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-emerald-300">
-                Policies &amp; Compliance
-              </h4>
-              <ul className="space-y-2 text-xs text-white/75">
-                <li><Link href="/policy/privacy-policy" className="hover:text-white transition-colors">Privacy Policy (CCPA/CPRA)</Link></li>
-                <li><Link href="/policy/terms-and-conditions" className="hover:text-white transition-colors">Terms &amp; Conditions</Link></li>
-                <li><Link href="/policy/refund-policy" className="hover:text-white transition-colors">Refund &amp; Cancellation</Link></li>
-                <li><Link href="/policy/disclaimer" className="hover:text-white transition-colors">Disclaimer &amp; Disclosures</Link></li>
-                <li><Link href="/policy/cookie-policy" className="hover:text-white transition-colors">Cookie Policy</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/60">
-            <div>
-              &copy; {new Date().getFullYear()} <strong>Indian-Flowers.com</strong>. All Rights Reserved. US Registered E-Commerce.
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-emerald-400" /> SSL Protected</span>
-              <span>&bull;</span>
-              <span>Currency: <strong>USD ($)</strong></span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* 4. UNIFIED BRAND FOOTER */}
+      <Footer
+        contactPhone="+1 (909) 379-3678"
+        contactEmail="indianflowersorder@gmail.com"
+      />
     </div>
   );
 }
