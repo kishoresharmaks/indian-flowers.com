@@ -4,6 +4,7 @@ import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import { calculateSalesTax, TaxLineItem } from '@/lib/tax';
 import { toCents, fromCents } from '@/lib/tax/taxProvider';
+import { validateCheckoutForm } from '@/lib/checkoutValidation';
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
       items,
       shippingFee = 0,
       discountAmount = 0,
+      customerName,
       streetAddress,
       aptSuite,
       city,
@@ -23,9 +25,30 @@ export async function POST(request: Request) {
       customerPhone,
     } = body;
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    // Strict Pre-flight Form Validation
+    const validation = validateCheckoutForm(
+      {
+        customerName,
+        customerPhone,
+        customerEmail,
+        streetAddress,
+        aptSuite,
+        city,
+        state,
+        zipCode,
+      },
+      items?.length || 0
+    );
+
+    if (!validation.isValid) {
       return NextResponse.json(
-        { success: false, message: 'At least one order item is required.' },
+        {
+          success: false,
+          message:
+            validation.firstErrorMessage ||
+            'Please verify all required customer and shipping details before loading Razorpay checkout.',
+          errors: validation.errors,
+        },
         { status: 400 }
       );
     }

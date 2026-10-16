@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/currency';
 import { US_STATES } from '@/lib/tax';
+import { validateCheckoutForm } from '@/lib/checkoutValidation';
 import Header from '@/components/Header';
 import HeroSection, { HeroSlide } from '@/components/HeroSection';
 import CategoryCarousel, { CategoryItem } from '@/components/CategoryCarousel';
@@ -44,6 +45,7 @@ import {
   Instagram,
   Youtube,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 
 interface CartItem {
@@ -139,6 +141,7 @@ export default function CustomerStore() {
 
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
@@ -559,17 +562,23 @@ export default function CustomerStore() {
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
+    setFieldErrors({});
 
-    if (
-      !checkoutForm.customerName ||
-      !checkoutForm.customerPhone ||
-      !checkoutForm.customerEmail ||
-      !streetAddressValid(checkoutForm.streetAddress) ||
-      !checkoutForm.city ||
-      !checkoutForm.state ||
-      !checkoutForm.zipCode
-    ) {
-      setFormError('Please fill in all required shipping address fields (Street, City, State, and ZIP).');
+    // 1. Pre-flight Form Validation — Strictly verify all filled form details before initializing Razorpay
+    const validation = validateCheckoutForm(checkoutForm, cart.length);
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors);
+      setFormError(
+        validation.firstErrorMessage ||
+          'Please verify all highlighted form fields before proceeding.'
+      );
+      if (validation.firstErrorField) {
+        const el = document.getElementById(`checkout-${validation.firstErrorField}`);
+        if (el) {
+          el.focus();
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
       return;
     }
 
@@ -628,6 +637,7 @@ export default function CustomerStore() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             items: payload.items,
+            customerName: payload.customerName,
             streetAddress: payload.streetAddress,
             aptSuite: payload.aptSuite,
             city: payload.city,
@@ -640,6 +650,9 @@ export default function CustomerStore() {
 
         const rzpOrderData = await rzpOrderRes.json();
         if (!rzpOrderData.success) {
+          if (rzpOrderData.errors) {
+            setFieldErrors(rzpOrderData.errors);
+          }
           setFormError(rzpOrderData.message || 'Failed to initialize Razorpay checkout.');
           setSubmittingOrder(false);
           return;
@@ -1687,41 +1700,89 @@ export default function CustomerStore() {
                     Full Name *
                   </label>
                   <input
+                    id="checkout-customerName"
                     type="text"
                     required
                     placeholder="e.g. Priya Sharma"
                     value={checkoutForm.customerName}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, customerName: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
+                    onChange={(e) => {
+                      setCheckoutForm({ ...checkoutForm, customerName: e.target.value });
+                      if (fieldErrors.customerName) {
+                        setFieldErrors((prev) => ({ ...prev, customerName: '' }));
+                      }
+                    }}
+                    className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
+                      fieldErrors.customerName
+                        ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                        : 'border-gray-200 focus:border-[#0B3B24]'
+                    }`}
                   />
+                  {fieldErrors.customerName && (
+                    <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      {fieldErrors.customerName}
+                    </p>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-medium text-gray-700 block mb-1">
                       Phone Number *
                     </label>
                     <input
+                      id="checkout-customerPhone"
                       type="tel"
                       required
-                      placeholder="+1 (510) ..."
+                      placeholder="+1 (510) 555-0123"
                       value={checkoutForm.customerPhone}
-                      onChange={(e) => setCheckoutForm({ ...checkoutForm, customerPhone: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
+                      onChange={(e) => {
+                        setCheckoutForm({ ...checkoutForm, customerPhone: e.target.value });
+                        if (fieldErrors.customerPhone) {
+                          setFieldErrors((prev) => ({ ...prev, customerPhone: '' }));
+                        }
+                      }}
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
+                        fieldErrors.customerPhone
+                          ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                          : 'border-gray-200 focus:border-[#0B3B24]'
+                      }`}
                     />
+                    {fieldErrors.customerPhone && (
+                      <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        {fieldErrors.customerPhone}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-700 block mb-1">
                       Email Address *
                     </label>
                     <input
+                      id="checkout-customerEmail"
                       type="email"
                       required
                       placeholder="priya@example.com"
                       value={checkoutForm.customerEmail}
-                      onChange={(e) => setCheckoutForm({ ...checkoutForm, customerEmail: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
+                      onChange={(e) => {
+                        setCheckoutForm({ ...checkoutForm, customerEmail: e.target.value });
+                        if (fieldErrors.customerEmail) {
+                          setFieldErrors((prev) => ({ ...prev, customerEmail: '' }));
+                        }
+                      }}
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
+                        fieldErrors.customerEmail
+                          ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                          : 'border-gray-200 focus:border-[#0B3B24]'
+                      }`}
                     />
+                    {fieldErrors.customerEmail && (
+                      <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        {fieldErrors.customerEmail}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1730,13 +1791,29 @@ export default function CustomerStore() {
                     Street Address *
                   </label>
                   <input
+                    id="checkout-streetAddress"
                     type="text"
                     required
                     placeholder="e.g. 123 Mission Blvd"
                     value={checkoutForm.streetAddress}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, streetAddress: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
+                    onChange={(e) => {
+                      setCheckoutForm({ ...checkoutForm, streetAddress: e.target.value });
+                      if (fieldErrors.streetAddress) {
+                        setFieldErrors((prev) => ({ ...prev, streetAddress: '' }));
+                      }
+                    }}
+                    className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
+                      fieldErrors.streetAddress
+                        ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                        : 'border-gray-200 focus:border-[#0B3B24]'
+                    }`}
                   />
+                  {fieldErrors.streetAddress && (
+                    <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      {fieldErrors.streetAddress}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -1744,6 +1821,7 @@ export default function CustomerStore() {
                     Apartment, Suite, Unit (Optional)
                   </label>
                   <input
+                    id="checkout-aptSuite"
                     type="text"
                     placeholder="Apt 4B, Suite 200, etc."
                     value={checkoutForm.aptSuite}
@@ -1758,23 +1836,49 @@ export default function CustomerStore() {
                       City *
                     </label>
                     <input
+                      id="checkout-city"
                       type="text"
                       required
                       placeholder="e.g. Fremont"
                       value={checkoutForm.city}
-                      onChange={(e) => setCheckoutForm({ ...checkoutForm, city: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
+                      onChange={(e) => {
+                        setCheckoutForm({ ...checkoutForm, city: e.target.value });
+                        if (fieldErrors.city) {
+                          setFieldErrors((prev) => ({ ...prev, city: '' }));
+                        }
+                      }}
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
+                        fieldErrors.city
+                          ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                          : 'border-gray-200 focus:border-[#0B3B24]'
+                      }`}
                     />
+                    {fieldErrors.city && (
+                      <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        {fieldErrors.city}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-700 block mb-1">
                       State *
                     </label>
                     <select
+                      id="checkout-state"
                       required
                       value={checkoutForm.state}
-                      onChange={(e) => setCheckoutForm({ ...checkoutForm, state: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal bg-white"
+                      onChange={(e) => {
+                        setCheckoutForm({ ...checkoutForm, state: e.target.value });
+                        if (fieldErrors.state) {
+                          setFieldErrors((prev) => ({ ...prev, state: '' }));
+                        }
+                      }}
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal bg-white transition-colors ${
+                        fieldErrors.state
+                          ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                          : 'border-gray-200 focus:border-[#0B3B24]'
+                      }`}
                     >
                       {Object.entries(US_STATES).map(([code, name]) => (
                         <option key={code} value={code}>
@@ -1782,6 +1886,12 @@ export default function CustomerStore() {
                         </option>
                       ))}
                     </select>
+                    {fieldErrors.state && (
+                      <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        {fieldErrors.state}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1791,13 +1901,29 @@ export default function CustomerStore() {
                       ZIP Code *
                     </label>
                     <input
+                      id="checkout-zipCode"
                       type="text"
                       required
                       placeholder="e.g. 94538"
                       value={checkoutForm.zipCode}
-                      onChange={(e) => setCheckoutForm({ ...checkoutForm, zipCode: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal"
+                      onChange={(e) => {
+                        setCheckoutForm({ ...checkoutForm, zipCode: e.target.value });
+                        if (fieldErrors.zipCode) {
+                          setFieldErrors((prev) => ({ ...prev, zipCode: '' }));
+                        }
+                      }}
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
+                        fieldErrors.zipCode
+                          ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                          : 'border-gray-200 focus:border-[#0B3B24]'
+                      }`}
                     />
+                    {fieldErrors.zipCode && (
+                      <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        {fieldErrors.zipCode}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-700 block mb-1">
