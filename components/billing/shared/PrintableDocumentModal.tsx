@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Printer, Share2 } from 'lucide-react';
 import { getCompanyConfig, numberToWords } from '@/lib/companyConfig';
 import { formatCurrency } from '@/lib/currency';
@@ -17,7 +17,44 @@ export default function PrintableDocumentModal({
   onClose,
 }: PrintableDocumentModalProps) {
   const doc = documentProp || docProp;
-  const company = getCompanyConfig();
+  const [dbSettings, setDbSettings] = useState<any>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((json) => {
+        if (isMounted && json?.success && json?.data) {
+          setDbSettings(json.data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const company = getCompanyConfig(
+    dbSettings
+      ? {
+          name: dbSettings.businessName || dbSettings.siteName,
+          address: dbSettings.companyAddress,
+          city: dbSettings.companyCity,
+          state: dbSettings.companyState,
+          zipCode: dbSettings.companyZip,
+          country: dbSettings.companyCountry,
+          phone: dbSettings.contactPhone,
+          email: dbSettings.contactEmail,
+          ein: dbSettings.companyTaxId,
+          stateTaxPermitId: dbSettings.stateTaxPermitId,
+          bankName: dbSettings.bankName,
+          bankAccountNo: dbSettings.bankAccountNo,
+          bankRoutingNo: dbSettings.bankRoutingNo,
+          bankHolder: dbSettings.bankHolder,
+          logoUrl: dbSettings.logoDataUrl || undefined,
+        }
+      : undefined
+  );
 
   const [printMode, setPrintMode] = useState<'A4' | 'THERMAL'>('A4');
 
@@ -218,15 +255,31 @@ export default function PrintableDocumentModal({
           >
             {/* 1. TOP HEADER SECTION (Matching PDF Template Layout Exactly) */}
             <div className="pdf-print-flex flex justify-between items-start border-b-2 border-[#8F8DF5] pb-4">
-              {/* Left Column: Company Details (Loaded from ENV) */}
+              {/* Left Column: Company Details */}
               <div className="space-y-0.5 text-xs text-left">
                 <h1 className="font-extrabold text-xl text-slate-900 uppercase tracking-tight">
                   {company.name}
                 </h1>
+                {company.dba && company.dba !== company.name && (
+                  <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">{company.dba}</p>
+                )}
                 {company.owner && <p className="font-semibold text-slate-700">{company.owner}</p>}
-                {company.address && <p className="text-[11px] text-slate-600 max-w-md leading-tight">{company.address}</p>}
-                {company.phone && <p className="text-[11px] text-slate-600"><strong>Phone:</strong> {company.phone}</p>}
-                {company.email && <p className="text-[11px] text-slate-600"><strong>Email:</strong> {company.email}</p>}
+                {(company.address || company.city) && (
+                  <p className="text-[11px] text-slate-600 max-w-md leading-tight">
+                    {company.address}
+                    {company.city ? `, ${company.city}` : ''}
+                    {company.state ? `, ${company.state}` : ''}
+                    {company.zipCode ? ` ${company.zipCode}` : ''}
+                    {company.country && company.country !== 'United States' ? `, ${company.country}` : ', USA'}
+                  </p>
+                )}
+                {(company.phone || company.email) && (
+                  <p className="text-[11px] text-slate-600">
+                    {company.phone && <span><strong>Phone:</strong> {company.phone}</span>}
+                    {company.phone && company.email && <span> &nbsp;|&nbsp; </span>}
+                    {company.email && <span><strong>Email:</strong> {company.email}</span>}
+                  </p>
+                )}
                 {(company.ein || company.stateTaxPermitId) && (
                   <p className="text-[11px] text-slate-700">
                     {company.ein && <span><strong>EIN:</strong> {company.ein} &nbsp;|&nbsp; </span>}
@@ -240,9 +293,12 @@ export default function PrintableDocumentModal({
                 <img
                   src={company.logoUrl}
                   alt={company.name}
-                  className="w-24 h-24 object-contain rounded-xl border border-slate-200"
+                  className="w-24 h-24 object-contain rounded-xl border border-slate-200 bg-white shadow-2xs"
                   onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
+                    const img = e.target as HTMLImageElement;
+                    if (img && img.src.indexOf('indian-flowers-logo.svg') === -1) {
+                      img.src = '/indian-flowers-logo.svg';
+                    }
                   }}
                 />
               </div>
@@ -386,6 +442,9 @@ export default function PrintableDocumentModal({
                   {company.bankAccountNo && <p className="text-slate-600"><strong>Account No.:</strong> {company.bankAccountNo}</p>}
                   {company.bankRoutingNo && <p className="text-slate-600"><strong>Routing No.:</strong> {company.bankRoutingNo}</p>}
                   {company.bankHolder && <p className="text-slate-600"><strong>Account Holder:</strong> {company.bankHolder}</p>}
+                  {!company.bankName && !company.bankAccountNo && (
+                    <p className="text-slate-600">Online Card / Verified Digital Payment</p>
+                  )}
                 </div>
               </div>
 

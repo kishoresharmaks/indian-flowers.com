@@ -54,9 +54,16 @@ export async function POST(request: NextRequest) {
     if (typeof razorpayKeySecret === 'string') updateFields.razorpayKeySecret = razorpayKeySecret.trim();
     updateFields.currency = STORE_CURRENCY;
     updateFields.locale = STORE_LOCALE;
-    for (const field of ['siteName', 'tagline', 'businessName', 'domain', 'contactEmail', 'contactPhone', 'currency', 'locale', 'timezone']) {
-      if (field === 'currency' || field === 'locale') continue;
-      if (typeof body[field] === 'string') updateFields[field] = body[field].trim().slice(0, field === 'tagline' ? 180 : 254);
+    const companyStringFields = [
+      'siteName', 'tagline', 'businessName', 'domain', 'contactEmail', 'contactPhone',
+      'companyAddress', 'companyCity', 'companyState', 'companyZip', 'companyCountry',
+      'companyTaxId', 'stateTaxPermitId', 'bankName', 'bankAccountNo', 'bankRoutingNo', 'bankHolder',
+      'logoDataUrl', 'timezone'
+    ];
+    for (const field of companyStringFields) {
+      if (typeof body[field] === 'string') {
+        updateFields[field] = body[field].trim().slice(0, field === 'logoDataUrl' ? 1000000 : field === 'tagline' ? 180 : 254);
+      }
     }
 
     const settings = await Settings.findOneAndUpdate(

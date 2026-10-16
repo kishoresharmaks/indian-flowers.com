@@ -283,7 +283,30 @@ export default function AdminDashboard() {
   const [isEditBannerModalOpen, setIsEditBannerModalOpen] = useState(false);
 
   // Settings State
-  const [paymentSettings, setPaymentSettings] = useState({ enableRazorpay: true, razorpayKeyId: '', razorpayKeySecret: '', enableCOD: true, siteName: '', businessName: '', tagline: '', domain: '', contactEmail: '', contactPhone: '' });
+  const [paymentSettings, setPaymentSettings] = useState({
+    enableRazorpay: true,
+    razorpayKeyId: '',
+    razorpayKeySecret: '',
+    enableCOD: true,
+    siteName: 'Indian Flowers',
+    businessName: 'Indian Flowers LLC',
+    tagline: 'Indian Flowers for Every Occasion',
+    domain: 'indian-flowers.com',
+    contactEmail: 'support@indian-flowers.com',
+    contactPhone: '+1 (510) 579-5199',
+    companyAddress: '39120 Argonaut Way, Suite 428',
+    companyCity: 'Fremont',
+    companyState: 'CA',
+    companyZip: '94538',
+    companyCountry: 'United States',
+    companyTaxId: '94-3829104',
+    stateTaxPermitId: 'SR-KHE-102-984712',
+    bankName: 'JPMorgan Chase Bank, N.A.',
+    bankAccountNo: 'Checking •••• 4829',
+    bankRoutingNo: '121000247',
+    bankHolder: 'Indian Flowers LLC',
+    logoDataUrl: '/indian-flowers-logo.svg',
+  });
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState('');
@@ -475,7 +498,24 @@ export default function AdminDashboard() {
           razorpayKeyId: data.data.razorpayKeyId ?? '',
           razorpayKeySecret: data.data.razorpayKeySecret ?? '',
           enableCOD: data.data.enableCOD ?? true,
-          siteName: data.data.siteName ?? '', businessName: data.data.businessName ?? '', tagline: data.data.tagline ?? '', domain: data.data.domain ?? '', contactEmail: data.data.contactEmail ?? '', contactPhone: data.data.contactPhone ?? '',
+          siteName: data.data.siteName || 'Indian Flowers',
+          businessName: data.data.businessName || 'Indian Flowers LLC',
+          tagline: data.data.tagline || 'Indian Flowers for Every Occasion',
+          domain: data.data.domain || 'indian-flowers.com',
+          contactEmail: data.data.contactEmail || 'support@indian-flowers.com',
+          contactPhone: data.data.contactPhone || '+1 (510) 579-5199',
+          companyAddress: data.data.companyAddress || '39120 Argonaut Way, Suite 428',
+          companyCity: data.data.companyCity || 'Fremont',
+          companyState: data.data.companyState || 'CA',
+          companyZip: data.data.companyZip || '94538',
+          companyCountry: data.data.companyCountry || 'United States',
+          companyTaxId: data.data.companyTaxId || '94-3829104',
+          stateTaxPermitId: data.data.stateTaxPermitId || 'SR-KHE-102-984712',
+          bankName: data.data.bankName || 'JPMorgan Chase Bank, N.A.',
+          bankAccountNo: data.data.bankAccountNo || 'Checking •••• 4829',
+          bankRoutingNo: data.data.bankRoutingNo || '121000247',
+          bankHolder: data.data.bankHolder || 'Indian Flowers LLC',
+          logoDataUrl: data.data.logoDataUrl || '/indian-flowers-logo.svg',
         });
       }
     } catch (err) {
@@ -2562,13 +2602,160 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
               )}
 
               <form onSubmit={handleSaveSettings} className="space-y-6">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {(['siteName', 'businessName', 'tagline', 'domain', 'contactEmail', 'contactPhone'] as const).map((field) => (
-                    <label key={field} className="text-xs font-bold text-[#163B5C] capitalize">
-                      {field.replace(/([A-Z])/g, ' $1')}
-                      <input value={paymentSettings[field]} onChange={(e) => setPaymentSettings({ ...paymentSettings, [field]: e.target.value })} className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]" />
+                <div>
+                  <h3 className="font-extrabold text-sm text-[#163B5C] mb-3">Storefront Identity</h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {(['siteName', 'businessName', 'tagline', 'domain', 'contactEmail', 'contactPhone'] as const).map((field) => (
+                      <label key={field} className="text-xs font-bold text-[#163B5C] capitalize">
+                        {field.replace(/([A-Z])/g, ' $1')}
+                        <input value={paymentSettings[field]} onChange={(e) => setPaymentSettings({ ...paymentSettings, [field]: e.target.value })} className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]" />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Company & Invoice Profile */}
+                <div className="pt-4 border-t border-[#E8EDF2]">
+                  <div className="mb-3">
+                    <h3 className="font-extrabold text-sm text-[#163B5C]">Company &amp; Tax Invoice Profile</h3>
+                    <p className="text-xs text-[#64748B]">These details appear in the header and footer of your Tax Invoices, Receipts, and Financial Statements.</p>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="text-xs font-bold text-[#163B5C] sm:col-span-2">
+                      Company Street Address
+                      <input
+                        value={paymentSettings.companyAddress}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, companyAddress: e.target.value })}
+                        placeholder="39120 Argonaut Way, Suite 428"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
                     </label>
-                  ))}
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      City
+                      <input
+                        value={paymentSettings.companyCity}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, companyCity: e.target.value })}
+                        placeholder="Fremont"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      State
+                      <input
+                        value={paymentSettings.companyState}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, companyState: e.target.value })}
+                        placeholder="CA"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      ZIP / Postal Code
+                      <input
+                        value={paymentSettings.companyZip}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, companyZip: e.target.value })}
+                        placeholder="94538"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Country
+                      <input
+                        value={paymentSettings.companyCountry}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, companyCountry: e.target.value })}
+                        placeholder="United States"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Federal EIN / Tax ID
+                      <input
+                        value={paymentSettings.companyTaxId}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, companyTaxId: e.target.value })}
+                        placeholder="94-3829104"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      State Tax Permit #
+                      <input
+                        value={paymentSettings.stateTaxPermitId}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, stateTaxPermitId: e.target.value })}
+                        placeholder="SR-KHE-102-984712"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Bank Name
+                      <input
+                        value={paymentSettings.bankName}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, bankName: e.target.value })}
+                        placeholder="JPMorgan Chase Bank, N.A."
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Bank Account No.
+                      <input
+                        value={paymentSettings.bankAccountNo}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, bankAccountNo: e.target.value })}
+                        placeholder="Checking •••• 4829"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      ABA Routing No.
+                      <input
+                        value={paymentSettings.bankRoutingNo}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, bankRoutingNo: e.target.value })}
+                        placeholder="121000247"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Bank Account Beneficiary
+                      <input
+                        value={paymentSettings.bankHolder}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, bankHolder: e.target.value })}
+                        placeholder="Indian Flowers LLC"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-[#ED3500]"
+                      />
+                    </label>
+
+                    <div className="sm:col-span-2 flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <div className="w-16 h-16 rounded-xl border border-slate-300 bg-white flex items-center justify-center overflow-hidden shrink-0">
+                        <img
+                          src={paymentSettings.logoDataUrl || '/indian-flowers-logo.svg'}
+                          alt="Invoice Logo"
+                          className="w-full h-full object-contain p-1"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-[#163B5C] block">
+                          Invoice Brand Logo Path / URL
+                        </label>
+                        <input
+                          value={paymentSettings.logoDataUrl}
+                          onChange={(e) => setPaymentSettings({ ...paymentSettings, logoDataUrl: e.target.value })}
+                          placeholder="/indian-flowers-logo.svg"
+                          className="mt-1 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-xs font-medium outline-none focus:border-[#ED3500]"
+                        />
+                        <p className="text-[11px] text-[#64748B] mt-0.5">
+                          Default: <code className="text-emerald-700">/indian-flowers-logo.svg</code> (renders high-resolution vector emblem on print).
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 {/* Razorpay Toggle & Config Card */}
                 <div className="p-5 rounded-2xl border border-[#E8EDF2] bg-[#FFFCFB] space-y-4">

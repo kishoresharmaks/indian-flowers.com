@@ -3,6 +3,7 @@
 import React from 'react';
 import { Printer, MessageCircle, CheckCircle2, RefreshCw, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { getCompanyConfig } from '@/lib/companyConfig';
 
 interface POSReceiptProps {
   order: any;
@@ -11,6 +12,7 @@ interface POSReceiptProps {
 }
 
 export default function POSReceipt({ order, onClose, onNewSale }: POSReceiptProps) {
+  const company = getCompanyConfig();
   if (!order) return null;
 
   const handlePrint = () => {
@@ -123,16 +125,16 @@ Visit: https://indian-flowers.com`;
           {/* Header Branding */}
           <div className="text-center space-y-1 pb-3 border-b border-dashed border-gray-300">
             <h2 className="font-bold text-sm uppercase tracking-tight">
-              {process.env.NEXT_PUBLIC_COMPANY_NAME || 'INDIAN FLOWERS'}
+              {company.name}
             </h2>
-            {process.env.NEXT_PUBLIC_COMPANY_ADDRESS ? (
+            {(company.address || company.city) && (
               <p className="text-[10px] text-gray-600 leading-tight">
-                {process.env.NEXT_PUBLIC_COMPANY_ADDRESS}
+                {company.address}{company.city ? `, ${company.city}` : ''}{company.state ? `, ${company.state}` : ''}{company.zipCode ? ` ${company.zipCode}` : ''}
               </p>
-            ) : null}
+            )}
             <p className="text-[10px] text-gray-600">
-              {process.env.NEXT_PUBLIC_COMPANY_PHONE ? `Phone: ${process.env.NEXT_PUBLIC_COMPANY_PHONE}` : 'Indian-Flowers.com'}
-              {process.env.NEXT_PUBLIC_COMPANY_EIN ? ` | EIN: ${process.env.NEXT_PUBLIC_COMPANY_EIN}` : ''}
+              {company.phone ? `Phone: ${company.phone}` : 'Indian-Flowers.com'}
+              {company.ein ? ` | EIN: ${company.ein}` : ''}
             </p>
             <span className="inline-block mt-1 px-2 py-0.5 rounded bg-gray-100 font-bold text-[10px] uppercase">
               POS RECEIPT

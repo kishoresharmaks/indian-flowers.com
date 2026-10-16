@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F4F8F4"/>
+      <stop offset="100%" stop-color="#E8F3EB"/>
+    </linearGradient>
+    <!-- Gold Trim Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <!-- Crimson Petal Gradient -->
+    <linearGradient id="crimsonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E0533C"/>
+      <stop offset="100%" stop-color="#B91C1C"/>
+    </linearGradient>
+    <!-- Saffron Petal Gradient -->
+    <linearGradient id="saffronGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <!-- Emerald Leaf Gradient -->
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#15803D"/>
+      <stop offset="100%" stop-color="#0B3B24"/>
+    </linearGradient>
+    <!-- Soft Drop Shadow -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0B3B24" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Outer Rounded Card Canvas -->
+  <rect x="8" y="8" width="224" height="224" rx="36" fill="url(#bgGrad)" stroke="#10B981" stroke-width="2" stroke-opacity="0.25"/>
+
+  <!-- Inner Decorative Ring -->
+  <circle cx="120" cy="100" r="68" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+
+  <!-- Stylized Indian Lotus Emblem -->
+  <g transform="translate(120, 102) scale(2.3)" filter="url(#softShadow)">
+    <!-- Base Green Leaf Petals -->
+    <path d="M-18 6 C-26 10 -28 18 -24 20 C-18 22 -8 18 -4 12 C-10 10 -15 8 -18 6 Z" fill="url(#emeraldGrad)"/>
+    <path d="M18 6 C26 10 28 18 24 20 C18 22 8 18 4 12 C10 10 15 8 18 6 Z" fill="url(#emeraldGrad)"/>
+
+    <!-- Outer Saffron/Marigold Radiant Petals -->
+    <path d="M-6 -16 C-6 -16 -24 -4 -24 8 C-24 16 -17 22 -8 20 C-16 12 -12 -2 -6 -16 Z" fill="url(#saffronGrad)"/>
+    <path d="M6 -16 C6 -16 24 -4 24 8 C24 16 17 22 8 20 C16 12 12 -2 6 -16 Z" fill="url(#saffronGrad)"/>
+
+    <!-- Central Sacred Crimson Petal -->
+    <path d="M0 -28 C0 -28 -14 -10 -14 6 C-14 14 -7 20 0 20 C7 20 14 14 14 6 C14 -10 0 -28 0 -28 Z" fill="url(#crimsonGrad)"/>
+
+    <!-- Inner Golden Glow / Bindu Accent -->
+    <circle cx="0" cy="4" r="3.5" fill="#FEF08A"/>
+    <circle cx="0" cy="4" r="2" fill="#F59E0B"/>
+  </g>
+
+  <!-- Brand Typography -->
+  <g text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif">
+    <text x="120" y="190" font-size="14" font-weight="800" fill="#0B3B24" letter-spacing="1.2">INDIAN FLOWERS</text>
+    <text x="120" y="208" font-size="8.5" font-weight="600" fill="#6B7280" letter-spacing="2">AUTHENTIC FLORA • USA</text>
+  </g>
+</svg>
