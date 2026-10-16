@@ -41,6 +41,8 @@ import {
   Download,
   Users,
   ArrowRight,
+  Settings,
+  ExternalLink,
 } from 'lucide-react';
 import POSCounter from './components/pos/POSCounter';
 import SubscriptionTab from '@/components/licensing/SubscriptionTab';
@@ -172,6 +174,7 @@ export default function AdminDashboard() {
   const [licenseState, setLicenseState] = useState<IClientLicenseState | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // POS & Billing Security Lock State
   const [isPosUnlocked, setIsPosUnlocked] = useState(false);
@@ -1269,403 +1272,795 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#FFFCFB] text-[#163B5C] flex flex-col justify-between">
-      {/* Expiry & Grace Period Alert Banner */}
-      <GracePeriodBanner
-        license={licenseState}
-        onOpenRenewal={() => setActiveTab('subscription')}
-      />
+  type NavItemId =
+    | 'products'
+    | 'categories'
+    | 'orders'
+    | 'customOrders'
+    | 'banners'
+    | 'subscribers'
+    | 'policies'
+    | 'settings'
+    | 'pos'
+    | 'subscription'
+    | 'billing';
 
-      {/* Header with Refresh & Mobile Menu */}
-      <header className="bg-white border-b border-[#E8EDF2] sticky top-0 z-30 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+  interface NavItem {
+    id: NavItemId;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    count?: number;
+    badge?: string;
+    badgeColor?: string;
+    locked?: boolean;
+    isExternal?: boolean;
+    href?: string;
+    action: (e?: React.MouseEvent) => void;
+  }
+
+  interface NavGroup {
+    title: string;
+    items: NavItem[];
+  }
+
+  const navGroups: NavGroup[] = [
+    {
+      title: 'Store & Inventory',
+      items: [
+        {
+          id: 'products',
+          label: 'Products',
+          icon: Package,
+          count: products.length,
+          action: () => setActiveTab('products'),
+        },
+        {
+          id: 'categories',
+          label: 'Categories',
+          icon: Layers,
+          count: categories.length,
+          action: () => setActiveTab('categories'),
+        },
+        {
+          id: 'orders',
+          label: 'Orders',
+          icon: ShoppingBag,
+          count: orders.length,
+          action: () => setActiveTab('orders'),
+        },
+        {
+          id: 'customOrders',
+          label: 'Custom Orders',
+          icon: Flower2,
+          count: customOrders.length,
+          badge: newCustomOrdersCount > 0 ? `${newCustomOrdersCount} new` : undefined,
+          badgeColor: 'bg-[#C85A78] text-white',
+          action: () => setActiveTab('customOrders'),
+        },
+      ],
+    },
+    {
+      title: 'Storefront & Media',
+      items: [
+        {
+          id: 'banners',
+          label: 'Hero Banners',
+          icon: ImageIcon,
+          count: banners.length,
+          action: () => setActiveTab('banners'),
+        },
+        {
+          id: 'subscribers',
+          label: 'Subscribers',
+          icon: Mail,
+          count: subscribers.length,
+          action: () => setActiveTab('subscribers'),
+        },
+        {
+          id: 'policies',
+          label: 'Policies & Legal',
+          icon: FileText,
+          badge: 'US Laws',
+          badgeColor: 'bg-emerald-100 text-emerald-800',
+          action: () => setActiveTab('policies'),
+        },
+      ],
+    },
+    {
+      title: 'Sales & POS Terminal',
+      items: [
+        {
+          id: 'pos',
+          label: 'POS Counter',
+          icon: Store,
+          locked: !isPosUnlocked,
+          action: () => {
+            if (isPosUnlocked) {
+              setActiveTab('pos');
+            } else {
+              setTargetTabAfterUnlock('pos');
+              setIsSecModalOpen(true);
+            }
+          },
+        },
+        {
+          id: 'billing',
+          label: 'Billing & Accounting ↗',
+          icon: DollarSign,
+          locked: !isPosUnlocked,
+          isExternal: true,
+          href: '/admin/billing',
+          action: (e?: React.MouseEvent) => {
+            if (!isPosUnlocked) {
+              e?.preventDefault();
+              setTargetTabAfterUnlock('billing');
+              setIsSecModalOpen(true);
+            }
+          },
+        },
+      ],
+    },
+    {
+      title: 'System & License',
+      items: [
+        {
+          id: 'settings',
+          label: 'Store Settings',
+          icon: Settings,
+          action: () => setActiveTab('settings'),
+        },
+        {
+          id: 'subscription',
+          label: 'Plan & Subscription',
+          icon: ShieldCheck,
+          badge:
+            licenseState?.daysRemaining !== undefined && licenseState.daysRemaining <= 7
+              ? licenseState.daysRemaining <= 0
+                ? 'Expired'
+                : `${licenseState.daysRemaining}d`
+              : undefined,
+          badgeColor: 'bg-amber-500 text-white',
+          action: () => setActiveTab('subscription'),
+        },
+      ],
+    },
+  ];
+
+  const currentTabMeta: Record<
+    string,
+    { label: string; desc: string; icon: React.ComponentType<{ className?: string }> }
+  > = {
+    products: {
+      label: 'Product Inventory',
+      desc: `Manage, edit, and organize all ${products.length} store products`,
+      icon: Package,
+    },
+    categories: {
+      label: 'Category Management',
+      desc: `Organize store categories and navigation hierarchy (${categories.length})`,
+      icon: Layers,
+    },
+    orders: {
+      label: 'Customer Orders',
+      desc: `Track, fulfill, and manage ${orders.length} customer orders`,
+      icon: ShoppingBag,
+    },
+    customOrders: {
+      label: 'Custom Muhurtham & Event Inquiries',
+      desc: `Manage bespoke garland inquiries and custom wedding orders (${customOrders.length})`,
+      icon: Flower2,
+    },
+    banners: {
+      label: 'Hero Banners & Promotions',
+      desc: `Manage homepage hero slider banners and promotional campaigns (${banners.length})`,
+      icon: ImageIcon,
+    },
+    subscribers: {
+      label: 'Newsletter Subscribers',
+      desc: `Customer marketing email list and subscriber growth (${subscribers.length})`,
+      icon: Mail,
+    },
+    policies: {
+      label: 'Store Policies & Legal Compliance',
+      desc: 'US e-commerce legal policies, return terms, and consumer disclosures',
+      icon: FileText,
+    },
+    settings: {
+      label: 'Store & Checkout Settings',
+      desc: 'Sales tax nexus, payment gateways, store address, and currency configuration',
+      icon: Settings,
+    },
+    pos: {
+      label: 'Retail POS Counter',
+      desc: 'In-person walk-in order terminal and instant receipt printer',
+      icon: Store,
+    },
+    subscription: {
+      label: 'Plan & License Subscription',
+      desc: 'Software license management, active features, and subscription validity',
+      icon: ShieldCheck,
+    },
+  };
+
+  const activeMeta = currentTabMeta[activeTab] || currentTabMeta.products;
+  const ActiveHeaderIcon = activeMeta.icon;
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] text-[#163B5C] flex flex-row">
+      {/* 1. MOBILE SLIDE-OVER DRAWER MENU */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Panel */}
+          <aside className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-200">
+            {/* Drawer Header */}
+            <div className="h-16 px-4 border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <img
+                  src="/nexus-mark.svg"
+                  alt="Nexus Ecom CMS logo"
+                  className="w-9 h-9 object-contain rounded-xl border border-[#E8EDF2]"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+                <div>
+                  <h2 className="font-extrabold text-sm text-[#163B5C]">Nexus Ecom</h2>
+                  <span className="text-[11px] text-[#64748B]">Admin Portal</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"
+                aria-label="Close Navigation"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer Navigation Body */}
+            <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full [scrollbar-width:thin] [scrollbar-color:#E2E8F0_transparent]">
+              {navGroups.map((group) => (
+                <div key={group.title} className="space-y-1">
+                  <h4 className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    {group.title}
+                  </h4>
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const ItemIcon = item.icon;
+                      const isActive = activeTab === item.id;
+
+                      if (item.isExternal && item.href) {
+                        return (
+                          <Link
+                            key={item.id}
+                            href={item.href}
+                            onClick={(e) => {
+                              item.action(e);
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                              isActive
+                                ? 'bg-[#FFF8F5] text-[#ED3500] font-extrabold border-l-4 border-[#ED3500]'
+                                : 'text-slate-600 hover:text-[#163B5C] hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <ItemIcon
+                                className={`w-4 h-4 shrink-0 ${
+                                  isActive ? 'text-[#ED3500]' : 'text-slate-400'
+                                }`}
+                              />
+                              <span>{item.label}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {item.locked && <Lock className="w-3 h-3 text-amber-500" />}
+                              <ExternalLink className="w-3 h-3 text-slate-400" />
+                            </div>
+                          </Link>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            item.action();
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left ${
+                            isActive
+                              ? 'bg-[#FFF8F5] text-[#ED3500] font-extrabold border-l-4 border-[#ED3500]'
+                              : 'text-slate-600 hover:text-[#163B5C] hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <ItemIcon
+                              className={`w-4 h-4 shrink-0 ${
+                                isActive ? 'text-[#ED3500]' : 'text-slate-400'
+                              }`}
+                            />
+                            <span>{item.label}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {item.locked && <Lock className="w-3 h-3 text-amber-500" />}
+                            {item.badge ? (
+                              <span
+                                className={`px-1.5 py-0.5 text-[10px] font-black rounded-full leading-none ${
+                                  item.badgeColor || 'bg-slate-100 text-slate-600'
+                                }`}
+                              >
+                                {item.badge}
+                              </span>
+                            ) : item.count !== undefined ? (
+                              <span
+                                className={`px-1.5 py-0.5 text-[10.5px] font-bold rounded-md leading-none ${
+                                  isActive
+                                    ? 'bg-[#ED3500]/10 text-[#ED3500]'
+                                    : 'bg-slate-100 text-slate-500'
+                                }`}
+                              >
+                                {item.count}
+                              </span>
+                            ) : null}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Drawer Footer Actions */}
+            <div className="p-3 border-t border-[#E2E8F0] space-y-2 bg-slate-50">
+              <Link
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-xs font-bold text-[#163B5C]"
+              >
+                <span>View Storefront</span>
+                <span>↗</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout Session</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* 2. DESKTOP VERTICAL LEFT SIDEBAR */}
+      <aside
+        className={`hidden lg:flex flex-col bg-white border-r border-[#E2E8F0] sticky top-0 h-screen z-30 transition-all duration-300 ease-in-out shrink-0 select-none ${
+          isSidebarCollapsed ? 'w-20' : 'w-64 xl:w-72'
+        }`}
+      >
+        {/* Sidebar Header Brand */}
+        <div className="h-16 sm:h-20 px-4 border-b border-[#E2E8F0] flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             <img
               src="/nexus-mark.svg"
               alt="Nexus Ecom CMS admin logo"
-              className="w-10 h-10 object-contain rounded-xl shadow-xs border border-[#E8EDF2]"
+              className="w-10 h-10 object-contain rounded-xl shadow-xs border border-[#E8EDF2] shrink-0"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
-            <div>
-              <h1 className="font-extrabold text-base sm:text-xl text-[#163B5C]">Nexus Ecom CMS</h1>
-              <span className="text-[11px] sm:text-xs text-[#64748B] hidden sm:block">Manage Inventory, Categories & Customer Orders</span>
-            </div>
-          </div>
-
-          {/* Desktop Quick Actions */}
-          <div className="hidden md:flex items-center gap-3">
-            <button
-              onClick={() => setActiveTab('subscription')}
-              className={`px-3.5 py-2 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition-all shadow-xs ${
-                activeTab === 'subscription'
-                  ? 'bg-amber-500 text-white border-amber-600'
-                  : 'bg-amber-50/80 hover:bg-amber-100 border-amber-200 text-amber-900'
-              }`}
-              title="Manage Software License & Subscription Plan"
-            >
-              <ShieldCheck className={`w-4 h-4 ${activeTab === 'subscription' ? 'text-white' : 'text-amber-600'}`} />
-              <span>Plan & Subscription</span>
-              {licenseState?.daysRemaining !== undefined && licenseState.daysRemaining <= 7 && (
-                <span className="px-1.5 py-0.2 text-[10px] font-black bg-amber-600 text-white rounded-full">
-                  {licenseState.daysRemaining <= 0 ? '!' : `${licenseState.daysRemaining}d`}
+            {!isSidebarCollapsed && (
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h2 className="font-extrabold text-sm text-[#163B5C] truncate">
+                    Nexus Ecom
+                  </h2>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-[#ED3500]/10 text-[#ED3500] px-1.5 py-0.2 rounded">
+                    Admin
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#64748B] block truncate">
+                  The Indian Flowers
                 </span>
-              )}
-            </button>
-
-            <button
-              onClick={handleOptimizeExistingDatabaseImages}
-              disabled={isOptimizingDb}
-              className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs flex items-center gap-2 transition-all shadow-xs"
-              title="Compress heavy existing images in database down to ~40KB"
-            >
-              <Zap className={`w-4 h-4 text-emerald-600 ${isOptimizingDb ? 'animate-bounce' : ''}`} />
-              <span>{isOptimizingDb ? 'Optimizing...' : 'Optimize DB Images'}</span>
-            </button>
-
-            <button
-              onClick={fetchAllData}
-              disabled={isRefreshing}
-              className="px-3.5 py-2 rounded-xl bg-[#FFFCFB] hover:bg-[#E8EDF2] border border-[#E8EDF2] text-[#163B5C] font-bold text-xs flex items-center gap-2 transition-all shadow-xs"
-              title="Refresh Dashboard Data"
-            >
-              <RefreshCw className={`w-4 h-4 text-[#ED3500] ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>{isRefreshing ? 'Refreshing...' : 'Refresh Data'}</span>
-            </button>
-
-            <Link
-              href="/"
-              className="text-xs font-semibold text-[#64748B] hover:text-[#ED3500] transition-colors"
-            >
-              View Store ↗
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="px-3.5 py-2 rounded-xl bg-[#FFF8F5] text-[#ED3500] hover:bg-[#ED3500] hover:text-white border border-[#ED3500]/20 font-bold text-xs flex items-center gap-2 transition-all"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
-            </button>
+              </div>
+            )}
           </div>
 
-          {/* Mobile Hamburger Toggle Button */}
-          <div className="flex md:hidden items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-xl border border-[#E8EDF2] text-[#163B5C] hover:bg-gray-50 transition-colors"
-              aria-label="Toggle Mobile Menu"
-            >
-              {isMobileMenuOpen ? <X className="w-6 h-6 text-[#ED3500]" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
+          {/* Desktop Collapse / Expand Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="p-1.5 rounded-lg border border-transparent hover:border-slate-200 text-slate-400 hover:text-[#163B5C] hover:bg-slate-50 transition-all shrink-0"
+            title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            aria-label={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
         </div>
 
-        {/* Mobile Slide-Down Dropdown Menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-[#E8EDF2] p-4 space-y-2.5 animate-fadeIn shadow-lg">
-            <button
-              onClick={() => {
-                setActiveTab('subscription');
-                setIsMobileMenuOpen(false);
-              }}
-              className="w-full p-3 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 font-extrabold text-xs flex items-center justify-between"
-            >
-              <span className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-amber-600" /> Plan & Subscription
-              </span>
-              <span className="text-[10px] uppercase font-black bg-amber-200 text-amber-900 px-2 py-0.5 rounded">
-                License
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('customOrders');
-                setIsMobileMenuOpen(false);
-              }}
-              className="w-full p-3 rounded-xl bg-[#F4F8F4] text-[#0B3B24] border border-emerald-200 font-extrabold text-xs flex items-center justify-between"
-            >
-              <span className="flex items-center gap-2">
-                <Flower2 className="w-4 h-4 text-[#0B3B24]" /> Custom Orders ({customOrders.length})
-              </span>
-              {newCustomOrdersCount > 0 && (
-                <span className="text-[10px] font-black bg-[#C85A78] text-white px-2 py-0.5 rounded-full">
-                  {newCustomOrdersCount} new
-                </span>
+        {/* Sidebar Navigation Items (Smooth Scrollable) */}
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 [scrollbar-width:thin] [scrollbar-color:#E2E8F0_transparent]">
+          {navGroups.map((group) => (
+            <div key={group.title} className="space-y-1">
+              {!isSidebarCollapsed ? (
+                <h4 className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  {group.title}
+                </h4>
+              ) : (
+                <div className="h-px bg-slate-100 my-2 mx-2" />
               )}
-            </button>
 
-            <button
-              onClick={() => {
-                setActiveTab('subscribers');
-                setIsMobileMenuOpen(false);
-              }}
-              className="w-full p-3 rounded-xl bg-[#F4F8F4] text-[#0B3B24] border border-emerald-200 font-extrabold text-xs flex items-center justify-between"
-            >
-              <span className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-[#0B3B24]" /> Newsletter Subscribers ({subscribers.length})
-              </span>
-              <span className="text-[10px] uppercase font-black bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded">
-                Email
-              </span>
-            </button>
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const ItemIcon = item.icon;
+                  const isActive = activeTab === item.id;
 
-            <button
-              onClick={() => {
-                setActiveTab('policies');
-                setIsMobileMenuOpen(false);
-              }}
-              className="w-full p-3 rounded-xl bg-[#F4F8F4] text-[#0B3B24] border border-emerald-200 font-extrabold text-xs flex items-center justify-between"
-            >
-              <span className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#0B3B24]" /> Store Policies & Legal
-              </span>
-              <span className="text-[10px] uppercase font-black bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded">
-                US Laws
-              </span>
-            </button>
+                  if (item.isExternal && item.href) {
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        onClick={(e) => {
+                          item.action(e);
+                        }}
+                        title={item.label}
+                        className={`group flex items-center ${
+                          isSidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2.5'
+                        } rounded-xl text-xs font-bold transition-all ${
+                          isActive
+                            ? 'bg-[#FFF8F5] text-[#ED3500] font-extrabold border-l-4 border-[#ED3500] shadow-2xs'
+                            : 'text-slate-600 hover:text-[#163B5C] hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <ItemIcon
+                            className={`w-4 h-4 shrink-0 transition-colors ${
+                              isActive ? 'text-[#ED3500]' : 'text-slate-400 group-hover:text-slate-600'
+                            }`}
+                          />
+                          {!isSidebarCollapsed && (
+                            <span className="truncate">{item.label}</span>
+                          )}
+                        </div>
+                        {!isSidebarCollapsed && (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {item.locked && <Lock className="w-3 h-3 text-amber-500" />}
+                            <ExternalLink className="w-3 h-3 text-slate-400" />
+                          </div>
+                        )}
+                      </Link>
+                    );
+                  }
 
-            <button
-              onClick={() => {
-                handleOptimizeExistingDatabaseImages();
-                setIsMobileMenuOpen(false);
-              }}
-              disabled={isOptimizingDb}
-              className="w-full p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-xs flex items-center justify-between"
-            >
-              <span className="flex items-center gap-2"><Zap className="w-4 h-4 text-emerald-600" /> Optimize DB Images</span>
-              <span className="text-[10px] uppercase font-black bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded">Compress</span>
-            </button>
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => item.action()}
+                      title={item.label}
+                      className={`w-full group flex items-center ${
+                        isSidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2.5'
+                      } rounded-xl text-xs font-bold transition-all text-left ${
+                        isActive
+                          ? 'bg-[#FFF8F5] text-[#ED3500] font-extrabold border-l-4 border-[#ED3500] shadow-2xs'
+                          : 'text-slate-600 hover:text-[#163B5C] hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <ItemIcon
+                          className={`w-4 h-4 shrink-0 transition-colors ${
+                            isActive ? 'text-[#ED3500]' : 'text-slate-400 group-hover:text-slate-600'
+                          }`}
+                        />
+                        {!isSidebarCollapsed && (
+                          <span className="truncate">{item.label}</span>
+                        )}
+                      </div>
+                      {!isSidebarCollapsed && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {item.locked && <Lock className="w-3 h-3 text-amber-500" />}
+                          {item.badge ? (
+                            <span
+                              className={`px-1.5 py-0.5 text-[10px] font-black rounded-full leading-none ${
+                                item.badgeColor || 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              {item.badge}
+                            </span>
+                          ) : item.count !== undefined ? (
+                            <span
+                              className={`px-1.5 py-0.5 text-[10.5px] font-bold rounded-md leading-none ${
+                                isActive
+                                  ? 'bg-[#ED3500]/10 text-[#ED3500]'
+                                  : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                              }`}
+                            >
+                              {item.count}
+                            </span>
+                          ) : null}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
 
-            <button
-              onClick={() => {
-                fetchAllData();
-                setIsMobileMenuOpen(false);
-              }}
-              disabled={isRefreshing}
-              className="w-full p-3 rounded-xl bg-gray-50 text-[#163B5C] border border-[#E8EDF2] font-extrabold text-xs flex items-center justify-between"
-            >
-              <span className="flex items-center gap-2"><RefreshCw className={`w-4 h-4 text-[#ED3500] ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh Dashboard Data</span>
-              <span className="text-[10px] text-gray-500">Sync</span>
-            </button>
+        {/* Sidebar Footer */}
+        <div className="p-3 border-t border-[#E2E8F0] space-y-1.5 bg-slate-50/60 shrink-0">
+          <Link
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View Storefront"
+            className={`w-full flex items-center ${
+              isSidebarCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-2'
+            } rounded-xl text-xs font-semibold text-slate-600 hover:text-[#ED3500] hover:bg-white border border-transparent hover:border-slate-200 transition-all`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Store className="w-4 h-4 text-slate-400 shrink-0" />
+              {!isSidebarCollapsed && <span className="truncate">View Storefront</span>}
+            </div>
+            {!isSidebarCollapsed && <span className="text-[10px] text-slate-400">↗</span>}
+          </Link>
 
-            <Link
-              href="/"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="w-full p-3 rounded-xl bg-gray-50 text-[#163B5C] border border-[#E8EDF2] font-extrabold text-xs flex items-center justify-between"
-            >
-              <span>View Customer Storefront</span>
-              <span>↗</span>
-            </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Logout Admin"
+            className={`w-full flex items-center ${
+              isSidebarCollapsed ? 'justify-center p-2' : 'gap-2 px-3 py-2'
+            } rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all`}
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            {!isSidebarCollapsed && <span>Logout</span>}
+          </button>
+        </div>
+      </aside>
 
-            <button
-              onClick={handleLogout}
-              className="w-full p-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-extrabold text-xs flex items-center justify-between"
-            >
-              <span className="flex items-center gap-2"><LogOut className="w-4 h-4" /> Logout Admin Session</span>
-            </button>
+      {/* 3. MAIN DASHBOARD CONTENT WORKSPACE */}
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+        {/* Expiry & Grace Period Alert Banner */}
+        <GracePeriodBanner
+          license={licenseState}
+          onOpenRenewal={() => setActiveTab('subscription')}
+        />
+
+        {/* Sticky Top Utility Header */}
+        <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-20 shadow-2xs">
+          <div className="px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
+            {/* Left: Mobile Drawer Trigger & Active Tab Breadcrumb */}
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="lg:hidden p-2 rounded-xl border border-[#E2E8F0] text-[#163B5C] hover:bg-slate-50 shrink-0"
+                aria-label="Open Navigation Menu"
+              >
+                <Menu className="w-5 h-5 text-[#163B5C]" />
+              </button>
+
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-[#163B5C]">
+                  <ActiveHeaderIcon className="w-4 h-4 text-[#ED3500]" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="font-extrabold text-sm sm:text-base lg:text-lg text-[#163B5C] truncate">
+                    {activeMeta.label}
+                  </h1>
+                  <p className="text-[11px] sm:text-xs text-[#64748B] hidden sm:block truncate">
+                    {activeMeta.desc}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Quick Action Controls */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveTab('subscription')}
+                className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-xs ${
+                  activeTab === 'subscription'
+                    ? 'bg-amber-500 text-white border-amber-600'
+                    : 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-900'
+                }`}
+                title="Manage Software License & Subscription Plan"
+              >
+                <ShieldCheck
+                  className={`w-3.5 h-3.5 ${
+                    activeTab === 'subscription' ? 'text-white' : 'text-amber-600'
+                  }`}
+                />
+                <span className="hidden xl:inline">Plan &amp; Subscription</span>
+                {licenseState?.daysRemaining !== undefined && licenseState.daysRemaining <= 7 && (
+                  <span className="px-1.5 py-0.2 text-[10px] font-black bg-amber-600 text-white rounded-full">
+                    {licenseState.daysRemaining <= 0 ? '!' : `${licenseState.daysRemaining}d`}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOptimizeExistingDatabaseImages}
+                disabled={isOptimizingDb}
+                className="px-3 py-1.5 sm:py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                title="Compress heavy existing images in database down to ~40KB"
+              >
+                <Zap
+                  className={`w-3.5 h-3.5 text-emerald-600 ${
+                    isOptimizingDb ? 'animate-bounce' : ''
+                  }`}
+                />
+                <span className="hidden md:inline">
+                  {isOptimizingDb ? 'Optimizing...' : 'Optimize DB Images'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={fetchAllData}
+                disabled={isRefreshing}
+                className="px-3 py-1.5 sm:py-2 rounded-xl bg-white hover:bg-slate-50 border border-[#E2E8F0] text-[#163B5C] font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                title="Refresh Dashboard Data"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 text-[#ED3500] ${
+                    isRefreshing ? 'animate-spin' : ''
+                  }`}
+                />
+                <span className="hidden md:inline">
+                  {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+                </span>
+              </button>
+
+              <Link
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:flex items-center gap-1 text-xs font-semibold text-[#64748B] hover:text-[#ED3500] px-2.5 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <span>View Store</span>
+                <span className="text-[10px]">↗</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-[#FFF8F5] text-[#ED3500] hover:bg-[#ED3500] hover:text-white border border-[#ED3500]/20 font-bold text-xs transition-all shadow-xs"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Database Optimization Progress Banner */}
+        {isOptimizingDb && (
+          <div className="bg-emerald-600 text-white px-4 py-3 text-xs font-bold flex items-center justify-between animate-pulse">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              <span>{optimizeStatus || 'Compressing heavy database images...'}</span>
+            </div>
+            <span>Please wait...</span>
           </div>
         )}
-      </header>
 
-      {/* Database Optimization Progress Banner */}
-      {isOptimizingDb && (
-        <div className="bg-emerald-600 text-white px-4 py-3 text-xs font-bold flex items-center justify-between animate-pulse">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            <span>{optimizeStatus || 'Compressing heavy database images...'}</span>
-          </div>
-          <span>Please wait...</span>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
-        {/* Metric Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-white border border-[#E8EDF2] shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#ED3500]/10 text-[#ED3500] flex items-center justify-center">
-              <Package className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
-                Total Products
-              </span>
-              <span className="text-2xl font-black text-[#163B5C]">
-                {products.length}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white border border-[#E8EDF2] shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
-              <Layers className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
-                Total Categories
-              </span>
-              <span className="text-2xl font-black text-[#163B5C]">
-                {categories.length}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white border border-[#E8EDF2] shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-              <Clock className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
-                Pending Orders
-              </span>
-              <span className="text-2xl font-black text-[#163B5C]">
-                {pendingOrdersCount}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white border border-[#E8EDF2] shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-              <DollarSign className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
-                Total Revenue
-              </span>
-              <span className="text-2xl font-black text-[#ED3500]">
-                {formatCurrency(totalRevenue)}
-              </span>
-              <span className="text-[10px] font-semibold text-emerald-700 block">
-                Verified payments only
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Navigation (Responsive Horizontal Scroll) */}
-        <div className="flex items-center justify-between border-b border-[#E8EDF2] gap-2 pb-1 overflow-x-auto scrollbar-none scroll-smooth">
-          <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
-            <button
-              onClick={() => setActiveTab('products')}
-              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'products'
-                  ? 'border-[#ED3500] text-[#ED3500] bg-[#FFF8F5] sm:bg-transparent rounded-t-xl sm:rounded-none'
-                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
-              }`}
-            >
-              <Package className="w-4 h-4" /> Products ({products.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('categories')}
-              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'categories'
-                  ? 'border-[#ED3500] text-[#ED3500] bg-[#FFF8F5] sm:bg-transparent rounded-t-xl sm:rounded-none'
-                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
-              }`}
-            >
-              <Layers className="w-4 h-4" /> Categories ({categories.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'orders'
-                  ? 'border-[#ED3500] text-[#ED3500] bg-[#FFF8F5] sm:bg-transparent rounded-t-xl sm:rounded-none'
-                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
-              }`}
-            >
-              <ShoppingBag className="w-4 h-4" /> Orders ({orders.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('customOrders')}
-              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'customOrders'
-                  ? 'border-[#0B3B24] text-[#0B3B24] bg-[#F4F8F4] sm:bg-transparent rounded-t-xl sm:rounded-none'
-                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
-              }`}
-            >
-              <Flower2 className="w-4 h-4 text-[#0B3B24]" /> Custom Orders ({customOrders.length})
-              {newCustomOrdersCount > 0 && (
-                <span className="px-1.5 py-0.5 text-[10px] font-black bg-[#C85A78] text-white rounded-full leading-none">
-                  {newCustomOrdersCount}
+        {/* Main Workspace Body */}
+        <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full flex-1">
+          {/* Metric Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-5 rounded-2xl bg-white border border-[#E8EDF2] shadow-sm flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[#ED3500]/10 text-[#ED3500] flex items-center justify-center">
+                <Package className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
+                  Total Products
                 </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('banners')}
-              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'banners'
-                  ? 'border-[#ED3500] text-[#ED3500] bg-[#FFF8F5] sm:bg-transparent rounded-t-xl sm:rounded-none'
-                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
-              }`}
-            >
-              <ImageIcon className="w-4 h-4" /> Banners ({banners.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('subscribers')}
-              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'subscribers'
-                  ? 'border-[#0B3B24] text-[#0B3B24] bg-[#F4F8F4] sm:bg-transparent rounded-t-xl sm:rounded-none'
-                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
-              }`}
-            >
-              <Mail className="w-4 h-4 text-[#0B3B24]" /> Subscribers ({subscribers.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('policies')}
-              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'policies'
-                  ? 'border-[#0B3B24] text-[#0B3B24] bg-[#F4F8F4] sm:bg-transparent rounded-t-xl sm:rounded-none'
-                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
-              }`}
-            >
-              <FileText className="w-4 h-4 text-[#0B3B24]" /> Policies & Legal
-            </button>
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'settings'
-                  ? 'border-[#ED3500] text-[#ED3500] bg-[#FFF8F5] sm:bg-transparent rounded-t-xl sm:rounded-none'
-                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
-              }`}
-            >
-              <CreditCard className="w-4 h-4" /> Settings
-            </button>
-            <button
-              onClick={() => {
-                if (isPosUnlocked) {
-                  setActiveTab('pos');
-                } else {
-                  setTargetTabAfterUnlock('pos');
-                  setIsSecModalOpen(true);
-                }
-              }}
-              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'pos'
-                  ? 'border-[#ED3500] text-[#ED3500] bg-[#FFF8F5] sm:bg-transparent rounded-t-xl sm:rounded-none'
-                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
-              }`}
-            >
-              <Store className="w-4 h-4" /> POS Counter {!isPosUnlocked && <Lock className="w-3 h-3 text-amber-500 inline ml-0.5" />}
-            </button>
-            <Link
-              href="/admin/billing"
-              onClick={(e) => {
-                if (!isPosUnlocked) {
-                  e.preventDefault();
-                  setTargetTabAfterUnlock('billing');
-                  setIsSecModalOpen(true);
-                }
-              }}
-              className="px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold text-[#ED3500] hover:text-[#D02E00] flex items-center gap-1.5 border-b-2 border-transparent hover:border-[#ED3500] whitespace-nowrap transition-all"
-            >
-              <FileText className="w-4 h-4 text-[#ED3500]" /> Billing & Accounting ↗ {!isPosUnlocked && <Lock className="w-3 h-3 text-amber-500 inline ml-0.5" />}
-            </Link>
+                <span className="text-2xl font-black text-[#163B5C]">
+                  {products.length}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-[#E8EDF2] shadow-sm flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+                <Layers className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
+                  Total Categories
+                </span>
+                <span className="text-2xl font-black text-[#163B5C]">
+                  {categories.length}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-[#E8EDF2] shadow-sm flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                <Clock className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
+                  Pending Orders
+                </span>
+                <span className="text-2xl font-black text-[#163B5C]">
+                  {pendingOrdersCount}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-[#E8EDF2] shadow-sm flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                <DollarSign className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider block">
+                  Total Revenue
+                </span>
+                <span className="text-2xl font-black text-[#ED3500]">
+                  {formatCurrency(totalRevenue)}
+                </span>
+                <span className="text-[10px] font-semibold text-emerald-700 block">
+                  Verified payments only
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Mobile-Only Horizontal Quick Navigation Pills (Zero Native Scrollbars, Hidden on lg:) */}
+          <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {navGroups.flatMap((g) => g.items).map((item) => {
+              const ItemIcon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => item.action()}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    isActive
+                      ? 'bg-[#ED3500] text-white shadow-xs'
+                      : 'bg-white text-slate-600 border border-[#E2E8F0] hover:bg-slate-50'
+                  }`}
+                >
+                  <ItemIcon className="w-3.5 h-3.5" />
+                  <span>{item.label}</span>
+                  {item.count !== undefined && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full leading-none ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
         {/* Products Management View */}
         {activeTab === 'products' && (
@@ -4061,9 +4456,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       )}
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#E8EDF2] py-6 px-4 text-center text-xs text-[#64748B]">
-        Nexus Ecom CMS administration
+      <footer className="bg-white border-t border-[#E8EDF2] py-4 px-6 text-center text-xs text-[#64748B]">
+        Nexus Ecom CMS administration • The Indian Flowers Portal
       </footer>
     </div>
+  </div>
   );
 }
