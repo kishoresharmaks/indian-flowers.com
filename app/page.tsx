@@ -42,9 +42,6 @@ import {
   Wallet,
   Banknote,
   DollarSign,
-  Facebook,
-  Instagram,
-  Youtube,
   Loader2,
   AlertCircle,
 } from 'lucide-react';

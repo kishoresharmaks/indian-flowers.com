@@ -30,6 +30,12 @@ export interface CompanyConfig {
     bankHolder?: string;
     upiId?: string;            // Preserved for UPI payment workflow
     logoUrl: string;
+    socialLinks: {
+        facebook: string;
+        instagram: string;
+        youtube: string;
+        pinterest: string;
+    };
     // Legacy compatibility fields
     gstin?: string;
     fssai?: string;
@@ -69,6 +75,12 @@ export const getCompanyConfig = (overrideSettings?: Partial<CompanyConfig>): Com
     bankHolder: overrideSettings?.bankHolder || process.env.NEXT_PUBLIC_COMPANY_BANK_HOLDER || 'The Indian Flowers LLC',
     upiId: overrideSettings?.upiId || process.env.NEXT_PUBLIC_MERCHANT_UPI_ID || '',
     logoUrl: overrideSettings?.logoUrl || process.env.NEXT_PUBLIC_COMPANY_LOGO_URL || '/indian-flowers-logo.svg',
+    socialLinks: {
+        facebook: overrideSettings?.socialLinks?.facebook || 'https://www.facebook.com/indianflowersusa',
+        instagram: overrideSettings?.socialLinks?.instagram || 'https://www.instagram.com/indian_flowers_usa/',
+        youtube: overrideSettings?.socialLinks?.youtube || 'https://www.youtube.com/@Indianflowers-2020',
+        pinterest: overrideSettings?.socialLinks?.pinterest || 'https://in.pinterest.com/indianflowers01/',
+    },
     // Legacy fields default to empty if not configured; zero fabrication
     gstin: overrideSettings?.gstin || process.env.NEXT_PUBLIC_COMPANY_GSTIN || '',
     fssai: overrideSettings?.fssai || process.env.NEXT_PUBLIC_COMPANY_FSSAI || '',

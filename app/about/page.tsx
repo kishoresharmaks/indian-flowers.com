@@ -17,7 +17,6 @@ import {
   Building2,
   Calendar,
   ExternalLink,
-  Users,
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import BrandLogo from '@/components/BrandLogo';
