@@ -27,7 +27,7 @@ export default function SaleInvoiceForm({
 
   const [items, setItems] = useState<any[]>([]);
   const [paidAmount, setPaidAmount] = useState('0');
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'RAZORPAY' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT' | 'UPI'>('CASH');
   const [notes, setNotes] = useState('');
 
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
@@ -331,10 +331,11 @@ export default function SaleInvoiceForm({
                   className="w-full px-3 py-2 rounded-xl border border-[#E8EDF2] text-xs font-semibold bg-white"
                 >
                   <option value="CASH">Cash Payment</option>
-                  <option value="UPI">Online UPI (GPay/PhonePe)</option>
-                  <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
-                  <option value="CHEQUE">Cheque Payment</option>
-                  <option value="CREDIT">On Credit (Due Later)</option>
+                  <option value="RAZORPAY">Razorpay Online</option>
+                  <option value="CREDIT_CARD">Credit / Debit Card</option>
+                  <option value="BANK_TRANSFER">Bank Transfer (ACH / Wire)</option>
+                  <option value="CHEQUE">Check Payment</option>
+                  <option value="CREDIT">On Credit (Net Terms)</option>
                 </select>
               </div>
 

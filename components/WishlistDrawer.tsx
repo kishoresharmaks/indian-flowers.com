@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { X, Heart, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Heart, Trash2, ShoppingBag, ArrowRight, Check } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { Product, ProductVariant } from '@/components/ProductCard';
 
@@ -9,6 +9,7 @@ interface WishlistDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   items: Product[];
+  cartProductIds?: string[];
   onRemoveFromWishlist: (productId: string) => void;
   onAddToCart: (product: Product, variant?: ProductVariant) => void;
   onClearWishlist?: () => void;
@@ -19,11 +20,38 @@ export default function WishlistDrawer({
   isOpen,
   onClose,
   items,
+  cartProductIds = [],
   onRemoveFromWishlist,
   onAddToCart,
   onClearWishlist,
   onProductClick,
 }: WishlistDrawerProps) {
+  const [recentlyAddedIds, setRecentlyAddedIds] = useState<Record<string, boolean>>({});
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, ProductVariant>>({});
+
+  useEffect(() => {
+    setRecentlyAddedIds((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const id of Object.keys(next)) {
+        if (!cartProductIds.includes(id)) {
+          delete next[id];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [cartProductIds]);
+
+  const handleAddToCart = (product: Product, variant?: ProductVariant) => {
+    const chosenVariant =
+      variant ||
+      selectedVariants[product._id] ||
+      (product.variants && product.variants.length > 0 ? product.variants[0] : undefined);
+    onAddToCart(product, chosenVariant);
+    setRecentlyAddedIds((prev) => ({ ...prev, [product._id]: true }));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -91,10 +119,12 @@ export default function WishlistDrawer({
             </div>
           ) : (
             items.map((product) => {
-              const displayPrice =
-                product.variants && product.variants.length > 0
-                  ? product.variants[0].price
-                  : product.price;
+              const activeVariant =
+                selectedVariants[product._id] ||
+                (product.variants && product.variants.length > 0
+                  ? product.variants[0]
+                  : undefined);
+              const displayPrice = activeVariant ? activeVariant.price : product.price;
 
               return (
                 <div
@@ -128,20 +158,80 @@ export default function WishlistDrawer({
                     >
                       {product.name}
                     </h4>
+
+                    {/* Variant Selector / Details */}
+                    {product.variants && product.variants.length > 1 ? (
+                      <div className="py-1">
+                        <span className="text-[10px] font-medium text-gray-500 block mb-1">
+                          Select Variant:
+                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {product.variants.map((v) => {
+                            const isSelected = activeVariant?.name === v.name;
+                            return (
+                              <button
+                                key={v.name}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedVariants((prev) => ({
+                                    ...prev,
+                                    [product._id]: v,
+                                  }));
+                                }}
+                                className={`text-[11px] px-2 py-0.5 rounded-md font-medium transition-all ${
+                                  isSelected
+                                    ? 'bg-[#0B3B24] text-white shadow-2xs font-semibold'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200/60'
+                                }`}
+                              >
+                                {v.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : activeVariant ? (
+                      <div className="py-0.5">
+                        <span className="inline-flex items-center text-[10px] font-medium text-[#134633] bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200/50">
+                          {activeVariant.name}
+                        </span>
+                      </div>
+                    ) : null}
+
                     <div className="text-xs font-bold text-[#0B3B24] tabular-nums">
                       {formatCurrency(displayPrice)}
                     </div>
 
                     <div className="flex items-center gap-2 pt-1">
-                      <button
-                        onClick={() => {
-                          onAddToCart(product);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0B3B24] hover:bg-[#134633] text-white text-[11px] font-semibold transition-colors"
-                      >
-                        <ShoppingBag className="w-3 h-3" />
-                        <span>Add to Cart</span>
-                      </button>
+                      {(() => {
+                        const isAdded =
+                          Boolean(recentlyAddedIds[product._id]) ||
+                          cartProductIds.includes(product._id);
+
+                        return (
+                          <button
+                            onClick={() => handleAddToCart(product, activeVariant)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 active:scale-95 ${
+                              isAdded
+                                ? 'bg-emerald-800 text-white shadow-xs hover:bg-emerald-900'
+                                : 'bg-[#0B3B24] hover:bg-[#134633] text-white'
+                            }`}
+                          >
+                            {isAdded ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 stroke-[2.5] text-emerald-200" />
+                                <span>Added to Cart</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag className="w-3 h-3" />
+                                <span>Add to Cart</span>
+                              </>
+                            )}
+                          </button>
+                        );
+                      })()}
                       <button
                         onClick={() => onRemoveFromWishlist(product._id)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
@@ -165,12 +255,12 @@ export default function WishlistDrawer({
               <span>Saved Items Total:</span>
               <strong className="font-semibold text-gray-900 tabular-nums">
                 {formatCurrency(
-                  items.reduce(
-                    (sum, p) =>
-                      sum +
-                      (p.variants && p.variants.length > 0 ? p.variants[0].price : p.price),
-                    0
-                  )
+                  items.reduce((sum, p) => {
+                    const active =
+                      selectedVariants[p._id] ||
+                      (p.variants && p.variants.length > 0 ? p.variants[0] : undefined);
+                    return sum + (active ? active.price : p.price);
+                  }, 0)
                 )}
               </strong>
             </div>

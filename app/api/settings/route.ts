@@ -11,7 +11,7 @@ export async function GET() {
     if (!settings) {
       const created = await Settings.create({
         key: 'global',
-        enableUPI: true,
+        enableRazorpay: true,
         enableCOD: true,
         currency: STORE_CURRENCY,
         locale: STORE_LOCALE,
@@ -45,11 +45,13 @@ export async function POST(request: NextRequest) {
     if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
     const body = await request.json();
-    const { enableUPI, enableCOD } = body;
+    const { enableRazorpay, enableCOD, razorpayKeyId, razorpayKeySecret } = body;
 
     const updateFields: any = {};
-    if (typeof enableUPI === 'boolean') updateFields.enableUPI = enableUPI;
+    if (typeof enableRazorpay === 'boolean') updateFields.enableRazorpay = enableRazorpay;
     if (typeof enableCOD === 'boolean') updateFields.enableCOD = enableCOD;
+    if (typeof razorpayKeyId === 'string') updateFields.razorpayKeyId = razorpayKeyId.trim();
+    if (typeof razorpayKeySecret === 'string') updateFields.razorpayKeySecret = razorpayKeySecret.trim();
     updateFields.currency = STORE_CURRENCY;
     updateFields.locale = STORE_LOCALE;
     for (const field of ['siteName', 'tagline', 'businessName', 'domain', 'contactEmail', 'contactPhone', 'currency', 'locale', 'timezone']) {

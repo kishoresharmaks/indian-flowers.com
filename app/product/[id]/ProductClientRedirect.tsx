@@ -76,11 +76,12 @@ export default function ProductClientRedirect({ id }: { id: string }) {
     );
   }
 
-  const handleAddToCart = (variant?: ProductVariant) => {
+  const handleAddToCart = (variant?: ProductVariant, quantity: number = 1) => {
     // This would typically add to cart in a real implementation
     // For now, we'll show a confirmation
     const variantText = variant ? ` (${variant.name})` : '';
-    alert(`Added "${product?.name}${variantText}" to cart!`);
+    const qtyText = quantity > 1 ? ` x ${quantity}` : '';
+    alert(`Added "${product?.name}${variantText}${qtyText}" to cart!`);
   };
 
   const handleShare = () => {

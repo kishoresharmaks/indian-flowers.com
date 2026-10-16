@@ -61,18 +61,16 @@ export default function Header({
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
 
   const toggleMobileMenu = (open?: boolean) => {
-    setIsMobileMenuOpen((prev) => {
-      const next = typeof open === 'boolean' ? open : !prev;
-      if (!next) {
-        // Drop focus from within drawer immediately before closing
-        if (typeof document !== 'undefined' && drawerRef.current?.contains(document.activeElement)) {
-          (document.activeElement as HTMLElement)?.blur();
-          menuTriggerRef.current?.focus();
-        }
+    const next = typeof open === 'boolean' ? open : !isMobileMenuOpen;
+    if (!next) {
+      // Drop focus from within drawer immediately before closing
+      if (typeof document !== 'undefined' && drawerRef.current?.contains(document.activeElement)) {
+        (document.activeElement as HTMLElement)?.blur();
+        menuTriggerRef.current?.focus();
       }
-      if (onMenuToggle) onMenuToggle(next);
-      return next;
-    });
+    }
+    setIsMobileMenuOpen(next);
+    if (onMenuToggle) onMenuToggle(next);
   };
 
   // Close mobile drawer on Escape key press

@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { QrCode, DollarSign, UserCheck, RefreshCw, AlertCircle, Check } from 'lucide-react';
+import { CreditCard, DollarSign, UserCheck, RefreshCw, AlertCircle, Check } from 'lucide-react';
 
 interface PaymentPanelProps {
   finalTotal: number;
-  paymentMethod: 'CASH' | 'UPI';
-  onUpdatePaymentMethod: (method: 'CASH' | 'UPI') => void;
+  paymentMethod: 'CASH' | 'CreditCard';
+  onUpdatePaymentMethod: (method: 'CASH' | 'CreditCard') => void;
   cashReceived: number;
   onUpdateCashReceived: (val: number) => void;
   transactionId: string;
@@ -18,7 +18,6 @@ interface PaymentPanelProps {
   onSubmitPOS: () => void;
   isSubmitting: boolean;
   isCartEmpty: boolean;
-  merchantUpiId?: string;
 }
 
 export default function PaymentPanel({
@@ -36,10 +35,8 @@ export default function PaymentPanel({
   onSubmitPOS,
   isSubmitting,
   isCartEmpty,
-  merchantUpiId = process.env.NEXT_PUBLIC_MERCHANT_UPI_ID || '',
 }: PaymentPanelProps) {
   const [isGuest, setIsGuest] = useState(true);
-  const [showUpiQr, setShowUpiQr] = useState(false);
 
   const changeReturned = cashReceived >= finalTotal ? Math.round(cashReceived - finalTotal) : 0;
 
@@ -52,13 +49,8 @@ export default function PaymentPanel({
     isSubmitting ||
     (paymentMethod === 'CASH' && (cashReceived < finalTotal || finalTotal <= 0));
 
-  // Quick Cash preset buttons
-  const quickCashOptions = [100, 200, 500, 2000].filter((val) => val >= finalTotal);
-
-  const upiIntentUrl = `upi://pay?pa=${encodeURIComponent(merchantUpiId)}&pn=${encodeURIComponent(
-    'Nexus Ecom'
-  )}&am=${finalTotal}&cu=USD&tn=POS%20Bill`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiIntentUrl)}`;
+  // Quick Cash preset buttons (Standard US Bill Denominations)
+  const quickCashOptions = [20, 50, 100, 200].filter((val) => val >= finalTotal);
 
   return (
     <div className="bg-white rounded-2xl border border-[#E8EDF2] p-4 space-y-3.5 shadow-sm">
@@ -126,7 +118,7 @@ export default function PaymentPanel({
         )}
       </div>
 
-      {/* 2. Select Payment Method (CASH / UPI) */}
+      {/* 2. Select Payment Method (CASH / Card) */}
       <div className="space-y-2.5">
         <label className="text-[11px] font-black text-[#163B5C] uppercase tracking-wider block">
           Select Payment Method
@@ -163,33 +155,33 @@ export default function PaymentPanel({
             </span>
           </button>
 
-          {/* UPI Button */}
+          {/* Credit Card Button */}
           <button
             type="button"
-            onClick={() => onUpdatePaymentMethod('UPI')}
+            onClick={() => onUpdatePaymentMethod('CreditCard')}
             className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
-              paymentMethod === 'UPI'
-                ? 'border-[#ED3500] bg-[#FFF8F5] ring-2 ring-[#ED3500]/20 shadow-xs'
+              paymentMethod === 'CreditCard'
+                ? 'border-[#0B3B24] bg-emerald-50 ring-2 ring-[#0B3B24]/20 shadow-xs'
                 : 'border-[#E8EDF2] bg-white hover:border-[#163B5C]/20'
             }`}
           >
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center font-bold">
-                <QrCode className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                <CreditCard className="w-4 h-4" />
               </div>
               <div className="text-left">
-                <span className="font-bold text-xs text-[#163B5C] block">Online UPI QR</span>
-                <span className="text-[10px] text-[#64748B]">GPay, PhonePe</span>
+                <span className="font-bold text-xs text-[#163B5C] block">Card / Terminal</span>
+                <span className="text-[10px] text-[#64748B]">Credit, Debit, Swipe</span>
               </div>
             </div>
             <span
               className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                paymentMethod === 'UPI'
-                  ? 'border-[#ED3500] bg-[#ED3500]'
+                paymentMethod === 'CreditCard'
+                  ? 'border-[#0B3B24] bg-[#0B3B24]'
                   : 'border-gray-300 bg-white'
               }`}
             >
-              {paymentMethod === 'UPI' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+              {paymentMethod === 'CreditCard' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
             </span>
           </button>
         </div>
@@ -254,37 +246,17 @@ export default function PaymentPanel({
           </div>
         )}
 
-        {/* UPI Details & QR Popup Trigger */}
-        {paymentMethod === 'UPI' && (
-          <div className="p-3 rounded-xl bg-purple-50/70 border border-purple-200 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-purple-950">Counter UPI QR Code</span>
-              <button
-                type="button"
-                onClick={() => setShowUpiQr(!showUpiQr)}
-                className="px-2.5 py-1 rounded-lg bg-purple-700 text-white font-bold text-[10px] uppercase flex items-center gap-1 shadow-xs hover:bg-purple-800"
-              >
-                <QrCode className="w-3 h-3" /> {showUpiQr ? 'Hide QR' : 'Show Counter QR'}
-              </button>
-            </div>
-
-            {showUpiQr && (
-              <div className="text-center p-3 bg-white rounded-xl border border-purple-200 space-y-1.5">
-                <img src={qrImageUrl} alt="POS UPI QR" className="w-32 h-32 mx-auto rounded-lg border border-purple-100" />
-                <span className="font-mono text-[10px] font-bold text-purple-900 block">
-                  VPA: {merchantUpiId}
-                </span>
-              </div>
-            )}
-
+        {/* Credit Card Details */}
+        {paymentMethod === 'CreditCard' && (
+          <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
             <div className="space-y-1 text-xs">
-              <label className="font-bold text-[#163B5C] text-[11px]">Optional UTR / Ref No:</label>
+              <label className="font-bold text-[#163B5C] text-[11px]">Card Auth / Approval Code (Optional):</label>
               <input
                 type="text"
-                placeholder="e.g. 428901928374"
+                placeholder="e.g. AUTH-982124"
                 value={transactionId}
                 onChange={(e) => onUpdateTransactionId(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg border border-purple-200 text-xs font-semibold focus:outline-none focus:border-[#ED3500] bg-white"
+                className="w-full px-3 py-1.5 rounded-lg border border-emerald-200 text-xs font-semibold focus:outline-none focus:border-[#0B3B24] bg-white"
               />
             </div>
           </div>

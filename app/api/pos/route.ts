@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!['CASH', 'UPI'].includes(paymentMethod)) {
+    if (!['CASH', 'CreditCard', 'Razorpay'].includes(paymentMethod)) {
       return NextResponse.json(
         { success: false, message: 'Invalid payment method for POS sale.' },
         { status: 400 }
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     );
     const calculatedFinalTotal = calculatedFinalTotalCents / 100;
 
-    // 4. Server-side CASH / UPI Payment Validation
+    // 4. Server-side CASH / Card Payment Validation
     let finalCashReceived = 0;
     let finalChangeReturned = 0;
 
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
       }
       finalChangeReturned = Math.round(finalCashReceived - calculatedFinalTotal);
     } else {
-      // UPI Payment
+      // CreditCard / External Terminal / Electronic Payment
       finalCashReceived = calculatedFinalTotal;
       finalChangeReturned = 0;
     }

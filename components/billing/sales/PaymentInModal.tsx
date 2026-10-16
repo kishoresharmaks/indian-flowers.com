@@ -18,7 +18,7 @@ export default function PaymentInModal({
   const [partyName, setPartyName] = useState(linkedDoc?.customerName || '');
   const [partyPhone, setPartyPhone] = useState(linkedDoc?.customerPhone || '');
   const [amount, setAmount] = useState(linkedDoc?.balanceAmount ? String(linkedDoc.balanceAmount) : '');
-  const [paymentMode, setPaymentMode] = useState<'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE'>('CASH');
+  const [paymentMode, setPaymentMode] = useState<'CASH' | 'RAZORPAY' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'UPI'>('CASH');
   const [referenceNo, setReferenceNo] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -131,17 +131,18 @@ export default function PaymentInModal({
               className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold bg-white"
             >
               <option value="CASH">Cash</option>
-              <option value="UPI">Online UPI (GPay/PhonePe)</option>
-              <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
-              <option value="CHEQUE">Cheque</option>
+              <option value="RAZORPAY">Razorpay Online</option>
+              <option value="CREDIT_CARD">Credit / Debit Card</option>
+              <option value="BANK_TRANSFER">Bank Transfer (ACH / Wire)</option>
+              <option value="CHEQUE">Check</option>
             </select>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#163B5C] uppercase">Reference No / UTR (Optional)</label>
+            <label className="text-xs font-bold text-[#163B5C] uppercase">Payment / Reference ID (Optional)</label>
             <input
               type="text"
-              placeholder="e.g. UPI Ref 304918274"
+              placeholder="e.g. pay_XXXXX / Card Auth Code"
               value={referenceNo}
               onChange={(e) => setReferenceNo(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold"

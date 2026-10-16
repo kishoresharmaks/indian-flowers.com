@@ -63,7 +63,7 @@ export default function POSCounter({
   const [customerEmail, setCustomerEmail] = useState('');
 
   // Payment State
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CreditCard'>('CASH');
   const [cashReceived, setCashReceived] = useState(0);
   const [transactionId, setTransactionId] = useState('');
 
@@ -364,7 +364,6 @@ export default function POSCounter({
               onSubmitPOS={handleSubmitPOS}
               isSubmitting={isSubmitting}
               isCartEmpty={cartItems.length === 0}
-              merchantUpiId={process.env.NEXT_PUBLIC_MERCHANT_UPI_ID || ''}
             />
           </div>
         </div>

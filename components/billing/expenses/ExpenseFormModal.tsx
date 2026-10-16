@@ -17,7 +17,7 @@ export default function ExpenseFormModal({
   const [categoryName, setCategoryName] = useState(categories[0]?.name || 'General');
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
-  const [paymentMode, setPaymentMode] = useState<'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE'>('CASH');
+  const [paymentMode, setPaymentMode] = useState<'CASH' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'RAZORPAY' | 'UPI'>('CASH');
   const [paidTo, setPaidTo] = useState('');
   const [referenceNo, setReferenceNo] = useState('');
   const [notes, setNotes] = useState('');
@@ -141,9 +141,9 @@ export default function ExpenseFormModal({
                 className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold bg-white"
               >
                 <option value="CASH">Cash</option>
-                <option value="UPI">UPI (GPay/PhonePe)</option>
-                <option value="BANK_TRANSFER">Bank Transfer</option>
-                <option value="CHEQUE">Cheque</option>
+                <option value="CREDIT_CARD">Corporate Card</option>
+                <option value="BANK_TRANSFER">Bank Transfer (ACH / Wire)</option>
+                <option value="CHEQUE">Check</option>
               </select>
             </div>
           </div>

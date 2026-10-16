@@ -194,10 +194,12 @@ export default function ProductCard({
               type="button"
               onClick={(e) => {
                 e.preventDefault();
-                if (onProductClick) {
-                  onProductClick(product);
-                } else if (hasVariants) {
-                  setShowVariants(true);
+                if (hasVariants) {
+                  if (onProductClick) {
+                    onProductClick(product);
+                  } else {
+                    setShowVariants(true);
+                  }
                 } else {
                   handleAddToCart();
                 }

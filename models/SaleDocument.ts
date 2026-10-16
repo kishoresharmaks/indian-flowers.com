@@ -35,7 +35,7 @@ export interface ISaleDocument extends Document {
   grandTotal: number;
   paidAmount: number;
   balanceAmount: number;
-  paymentMethod?: 'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT';
+  paymentMethod?: 'CASH' | 'RAZORPAY' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT' | 'UPI';
   paymentStatus: 'Pending' | 'Partial' | 'Paid';
   status: 'Draft' | 'Active' | 'Converted' | 'Completed' | 'Cancelled';
   convertedToDocId?: string;
@@ -87,7 +87,7 @@ const SaleDocumentSchema: Schema = new Schema(
     balanceAmount: { type: Number, required: true },
     paymentMethod: {
       type: String,
-      enum: ['CASH', 'UPI', 'BANK_TRANSFER', 'CHEQUE', 'CREDIT'],
+      enum: ['CASH', 'RAZORPAY', 'CREDIT_CARD', 'CreditCard', 'BANK_TRANSFER', 'CHEQUE', 'CREDIT', 'UPI'],
       default: 'CASH',
     },
     paymentStatus: {

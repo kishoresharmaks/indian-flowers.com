@@ -11,7 +11,6 @@ import ProductCarousel from '@/components/ProductCarousel';
 import FloralCornerDecorations from '@/components/FloralCornerDecorations';
 import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
 import ProductQuickViewModal from '@/components/ProductQuickViewModal';
-import AddedToCartPopup, { AddedItemDetails } from '@/components/AddedToCartPopup';
 import CartDrawer from '@/components/CartDrawer';
 import WishlistDrawer from '@/components/WishlistDrawer';
 import CustomOrderSection from '@/components/CustomOrderSection';
@@ -40,9 +39,7 @@ import {
   Lock,
   Wallet,
   Banknote,
-  QrCode,
   DollarSign,
-  Copy,
   Facebook,
   Instagram,
   Youtube,
@@ -112,17 +109,6 @@ export default function CustomerStore() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<any | null>(null);
 
-  // Added To Cart Popup Notification State
-  const [addedItemDetails, setAddedItemDetails] = useState<AddedItemDetails | null>(null);
-  const [isAddedPopupOpen, setIsAddedPopupOpen] = useState(false);
-
-  // Automatically dismiss added-to-cart popup whenever cart, checkout, or wishlist is opened
-  useEffect(() => {
-    if (isCartOpen || isCheckoutOpen || isWishlistOpen) {
-      setIsAddedPopupOpen(false);
-    }
-  }, [isCartOpen, isCheckoutOpen, isWishlistOpen]);
-
   // Order Tracking Modal State
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
   const [trackQuery, setTrackQuery] = useState('');
@@ -143,14 +129,13 @@ export default function CustomerStore() {
     country: 'US',
     shippingAddress: '',
     pincode: '',
-    paymentMethod: 'COD',
+    paymentMethod: 'Razorpay',
     transactionId: '',
     notes: '',
   });
   const [checkoutTaxResult, setCheckoutTaxResult] = useState<any>(null);
   const [checkoutTaxAmount, setCheckoutTaxAmount] = useState<number>(0);
   const [calculatingTax, setCalculatingTax] = useState<boolean>(false);
-  const [copiedUpi, setCopiedUpi] = useState(false);
 
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [formError, setFormError] = useState('');
@@ -244,10 +229,10 @@ export default function CustomerStore() {
         const data = await res.json();
         if (data.success && data.data) {
           setStoreSettings(data.data);
-          if (data.data.enableCOD !== false) {
+          if (data.data.enableRazorpay !== false) {
+            setCheckoutForm((prev) => ({ ...prev, paymentMethod: 'Razorpay' }));
+          } else if (data.data.enableCOD !== false) {
             setCheckoutForm((prev) => ({ ...prev, paymentMethod: 'COD' }));
-          } else if (data.data.enableUPI) {
-            setCheckoutForm((prev) => ({ ...prev, paymentMethod: 'UPI' }));
           }
         }
       } catch (err) {
@@ -430,11 +415,16 @@ export default function CustomerStore() {
 
   // Cart Management
   const addToCart = (product: Product, variant?: ProductVariant, quantity: number = 1) => {
+    const effectiveVariant =
+      variant ||
+      (product.variants && product.variants.length > 0 ? product.variants[0] : undefined);
+
     setCart((prevCart) => {
       const existingIdx = prevCart.findIndex(
         (it) =>
           it.product._id === product._id &&
-          ((!it.selectedVariant && !variant) || it.selectedVariant?.name === variant?.name)
+          ((!it.selectedVariant && !effectiveVariant) ||
+            it.selectedVariant?.name === effectiveVariant?.name)
       );
 
       if (existingIdx > -1) {
@@ -442,13 +432,9 @@ export default function CustomerStore() {
         updated[existingIdx].quantity += quantity;
         return updated;
       } else {
-        return [...prevCart, { product, selectedVariant: variant, quantity }];
+        return [...prevCart, { product, selectedVariant: effectiveVariant, quantity }];
       }
     });
-
-    // Trigger proper responsive Added To Cart popup
-    setAddedItemDetails({ product, variant, quantity });
-    setIsAddedPopupOpen(true);
   };
 
   const updateCartQty = (productId: string, variantName: string | undefined, newQty: number) => {
@@ -588,24 +574,19 @@ export default function CustomerStore() {
     }
 
     const isCodActive = storeSettings ? storeSettings.enableCOD !== false : true;
-    const isUpiActive = storeSettings ? Boolean(storeSettings.enableUPI) : false;
+    const isRazorpayActive = storeSettings ? storeSettings.enableRazorpay !== false : true;
 
-    if (!isCodActive && !isUpiActive) {
+    if (!isCodActive && !isRazorpayActive) {
       setFormError('Online checkout is currently paused by store administration.');
       return;
     }
 
     const currentMethod =
-      checkoutForm.paymentMethod === 'UPI' && isUpiActive
-        ? 'UPI'
+      checkoutForm.paymentMethod === 'Razorpay' && isRazorpayActive
+        ? 'Razorpay'
         : isCodActive
         ? 'COD'
-        : 'UPI';
-
-    if (currentMethod === 'UPI' && !checkoutForm.transactionId.trim()) {
-      setFormError('Please enter the 12-digit UPI UTR / Reference ID from your payment receipt.');
-      return;
-    }
+        : 'Razorpay';
 
     try {
       setSubmittingOrder(true);
@@ -626,7 +607,7 @@ export default function CustomerStore() {
         shippingAddress: fullShippingAddress,
         pincode: checkoutForm.zipCode.trim(),
         paymentMethod: currentMethod,
-        transactionId: currentMethod === 'UPI' ? checkoutForm.transactionId.trim() : '',
+        transactionId: '',
         items: cart.map((item) => ({
           productId: item.product._id,
           name: item.selectedVariant
@@ -641,6 +622,130 @@ export default function CustomerStore() {
         totalAmount: cartGrandTotal,
       };
 
+      if (currentMethod === 'Razorpay') {
+        const rzpOrderRes = await fetch('/api/checkout/razorpay/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: payload.items,
+            streetAddress: payload.streetAddress,
+            aptSuite: payload.aptSuite,
+            city: payload.city,
+            state: payload.state,
+            zipCode: payload.zipCode,
+            customerEmail: payload.customerEmail,
+            customerPhone: payload.customerPhone,
+          }),
+        });
+
+        const rzpOrderData = await rzpOrderRes.json();
+        if (!rzpOrderData.success) {
+          setFormError(rzpOrderData.message || 'Failed to initialize Razorpay checkout.');
+          setSubmittingOrder(false);
+          return;
+        }
+
+        // Mock / Development Sandbox flow
+        if (rzpOrderData.isMock) {
+          const verifyRes = await fetch('/api/checkout/razorpay/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: rzpOrderData.orderId,
+              razorpay_payment_id: `pay_mock_${Date.now()}`,
+              razorpay_signature: `mock_sig_${Date.now()}`,
+              orderDetails: payload,
+            }),
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyData.success && verifyData.data) {
+            setOrderSuccess(verifyData.data);
+            setCart([]);
+            setIsCheckoutOpen(false);
+            setIsCartOpen(false);
+            localStorage.removeItem('if_cart');
+          } else {
+            setFormError(verifyData.message || 'Payment verification failed.');
+          }
+          setSubmittingOrder(false);
+          return;
+        }
+
+        // Standard Razorpay Modal Flow
+        if (typeof (window as any).Razorpay === 'undefined') {
+          setFormError('Razorpay checkout is still loading. Please try again in a few moments.');
+          setSubmittingOrder(false);
+          return;
+        }
+
+        const options = {
+          key: rzpOrderData.keyId,
+          amount: rzpOrderData.amount,
+          currency: rzpOrderData.currency,
+          name: storeSettings?.siteName || 'Indian-Flowers.com',
+          description: 'Authentic Indian Flowers Delivery',
+          order_id: rzpOrderData.orderId,
+          handler: async function (response: any) {
+            setSubmittingOrder(true);
+            try {
+              const verifyRes = await fetch('/api/checkout/razorpay/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  orderDetails: payload,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyData.success && verifyData.data) {
+                setOrderSuccess(verifyData.data);
+                setCart([]);
+                setIsCheckoutOpen(false);
+                setIsCartOpen(false);
+                localStorage.removeItem('if_cart');
+              } else {
+                setFormError(verifyData.message || 'Payment verification failed.');
+              }
+            } catch (vErr) {
+              setFormError('Connection error verifying payment with server.');
+            } finally {
+              setSubmittingOrder(false);
+            }
+          },
+          prefill: {
+            name: checkoutForm.customerName,
+            email: checkoutForm.customerEmail,
+            contact: checkoutForm.customerPhone,
+          },
+          theme: {
+            color: '#0B3B24',
+          },
+          modal: {
+            ondismiss: function () {
+              setSubmittingOrder(false);
+            },
+          },
+        };
+
+        const rzpInstance = new (window as any).Razorpay(options);
+        rzpInstance.on('payment.failed', function (resp: any) {
+          const rawError = resp.error?.description || 'Payment was unsuccessful.';
+          if (rawError.toLowerCase().includes('international cards')) {
+            setFormError(
+              'International cards are not enabled on this payment gateway yet. In your Razorpay Dashboard, please enable International Payments (Account & Settings → Payment Methods → International Payments) or choose Cash on Delivery.'
+            );
+          } else {
+            setFormError(rawError);
+          }
+          setSubmittingOrder(false);
+        });
+        rzpInstance.open();
+        return;
+      }
+
+      // COD Order flow
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -711,21 +816,7 @@ export default function CustomerStore() {
 
   // Dynamic Backend Payment Options (Real Settings from MongoDB)
   const isCodActive = storeSettings ? storeSettings.enableCOD !== false : true;
-  const isUpiActive = storeSettings ? Boolean(storeSettings.enableUPI) : false;
-  const merchantUpiId =
-    storeSettings?.contactEmail || process.env.NEXT_PUBLIC_MERCHANT_UPI_ID || 'orders@indian-flowers.com';
-  const upiIntentUrl = `upi://pay?pa=${encodeURIComponent(merchantUpiId)}&pn=${encodeURIComponent(
-    storeSettings?.businessName || 'Indian Flowers'
-  )}&am=${cartGrandTotal}&cu=USD&tn=Flower%20Order`;
-  const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
-    upiIntentUrl
-  )}`;
-
-  const handleCopyUpi = () => {
-    navigator.clipboard.writeText(merchantUpiId);
-    setCopiedUpi(true);
-    setTimeout(() => setCopiedUpi(false), 2000);
-  };
+  const isRazorpayActive = storeSettings ? storeSettings.enableRazorpay !== false : true;
 
     const weddingCategory = categories.find((c) =>
     c.name.toLowerCase().includes('wedding')
@@ -739,15 +830,9 @@ export default function CustomerStore() {
       {/* 1. TOP NAVBAR & PAGE LINKS (Retrieved from DB Categories) */}
       <Header
         cartItemCount={cartItemCount}
-        onCartClick={() => {
-          setIsAddedPopupOpen(false);
-          setIsCartOpen(true);
-        }}
+        onCartClick={() => setIsCartOpen(true)}
         wishlistCount={wishlist.length}
-        onWishlistClick={() => {
-          setIsAddedPopupOpen(false);
-          setIsWishlistOpen(true);
-        }}
+        onWishlistClick={() => setIsWishlistOpen(true)}
         onTrackClick={() => setIsTrackModalOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -1334,14 +1419,14 @@ export default function CustomerStore() {
                   </button>
                 </li>
                 <li>
-                  <a href="#shipping" className="hover:text-white transition-colors">
+                  <Link href="/policy/shipping-policy" className="hover:text-white transition-colors">
                     USA Shipping &amp; Delivery Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#freshness" className="hover:text-white transition-colors">
+                  <Link href="/policy/refund-policy" className="hover:text-white transition-colors">
                     Freshness &amp; Handling Guarantee
-                  </a>
+                  </Link>
                 </li>
                 <li>
                   <a href="#custom-orders" className="hover:text-white transition-colors">
@@ -1359,23 +1444,41 @@ export default function CustomerStore() {
             {/* Column 4: Policies & Safe Checkout */}
             <div className="space-y-3">
               <h4 className="font-semibold text-xs uppercase tracking-wider text-emerald-300">
-                Policies &amp; Trust
+                Policies &amp; Legal
               </h4>
               <ul className="space-y-2 text-xs text-white/75">
                 <li>
-                  <a href="#privacy" className="hover:text-white transition-colors">
-                    Privacy Policy
-                  </a>
+                  <Link href="/policy/privacy-policy" className="hover:text-white transition-colors">
+                    Privacy Policy (CCPA/CPRA)
+                  </Link>
                 </li>
                 <li>
-                  <a href="#terms" className="hover:text-white transition-colors">
+                  <Link href="/policy/terms-and-conditions" className="hover:text-white transition-colors">
                     Terms &amp; Conditions
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#refund" className="hover:text-white transition-colors">
-                    Refund &amp; Replacement Policy
-                  </a>
+                  <Link href="/policy/disclaimer" className="hover:text-white transition-colors">
+                    Disclaimer &amp; Botanical Disclosures
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/policy/cookie-policy" className="hover:text-white transition-colors">
+                    Cookie &amp; Tracking Policy
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('open-cookie-preferences'));
+                      }
+                    }}
+                    className="hover:text-white transition-colors text-left"
+                  >
+                    Cookie Preferences
+                  </button>
                 </li>
               </ul>
 
@@ -1391,9 +1494,46 @@ export default function CustomerStore() {
           </div>
 
           {/* Copyright Bottom Bar */}
-          <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/60">
+          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/60">
             <div>
               &copy; {new Date().getFullYear()} <strong>Indian-Flowers.com</strong>. All Rights Reserved.
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-white/70">
+              <Link href="/policy/privacy-policy" className="hover:text-white transition-colors">
+                Privacy
+              </Link>
+              <span>&bull;</span>
+              <Link href="/policy/terms-and-conditions" className="hover:text-white transition-colors">
+                Terms
+              </Link>
+              <span>&bull;</span>
+              <Link href="/policy/shipping-policy" className="hover:text-white transition-colors">
+                Shipping
+              </Link>
+              <span>&bull;</span>
+              <Link href="/policy/refund-policy" className="hover:text-white transition-colors">
+                Refunds
+              </Link>
+              <span>&bull;</span>
+              <Link href="/policy/disclaimer" className="hover:text-white transition-colors">
+                Disclaimer
+              </Link>
+              <span>&bull;</span>
+              <Link href="/policy/cookie-policy" className="hover:text-white transition-colors">
+                Cookies
+              </Link>
+              <span>&bull;</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('open-cookie-preferences'));
+                  }
+                }}
+                className="hover:text-white transition-colors text-[11px]"
+              >
+                Preferences
+              </button>
             </div>
             <div className="flex items-center gap-3">
               <span>Currency: <strong>USD ($)</strong></span>
@@ -1423,6 +1563,7 @@ export default function CustomerStore() {
         isOpen={isWishlistOpen}
         onClose={() => setIsWishlistOpen(false)}
         items={wishlist}
+        cartProductIds={cart.map((it) => it.product._id)}
         onRemoveFromWishlist={handleRemoveFromWishlist}
         onClearWishlist={handleClearWishlist}
         onAddToCart={(prod, variant) => {
@@ -1442,23 +1583,6 @@ export default function CustomerStore() {
         isWishlisted={selectedProduct ? wishlist.some((w) => w._id === selectedProduct._id) : false}
         onToggleWishlist={handleToggleWishlist}
         onAddToCart={(prod, v, qty) => addToCart(prod, v, qty || 1)}
-      />
-
-      {/* PROPER RESPONSIVE ADDED TO CART NOTIFICATION POPUP (BOTH LARGE & SMALL SCREENS) */}
-      <AddedToCartPopup
-        isOpen={isAddedPopupOpen && !isCartOpen && !isCheckoutOpen && !isWishlistOpen}
-        onClose={() => setIsAddedPopupOpen(false)}
-        item={addedItemDetails}
-        cartSubtotal={cartSubtotal}
-        cartItemCount={cartItemCount}
-        onViewCart={() => {
-          setIsAddedPopupOpen(false);
-          setIsCartOpen(true);
-        }}
-        onCheckout={() => {
-          setIsAddedPopupOpen(false);
-          setIsCheckoutOpen(true);
-        }}
       />
 
       {/* ORDER TRACKING MODAL */}
@@ -1699,12 +1823,48 @@ export default function CustomerStore() {
                     </span>
                   </div>
 
-                  {!isCodActive && !isUpiActive ? (
+                  {!isCodActive && !isRazorpayActive ? (
                     <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-normal">
                       Online checkout is temporarily paused by the store administration. Please contact support.
                     </div>
                   ) : (
                     <div className="space-y-2.5">
+                      {/* Razorpay Online Payment — US Credit/Debit Cards, NetBanking */}
+                      {isRazorpayActive && (
+                        <label
+                          className={`block p-3.5 rounded-xl border cursor-pointer transition-all ${
+                            checkoutForm.paymentMethod === 'Razorpay'
+                              ? 'border-[#0B3B24] bg-emerald-50/40 ring-1 ring-[#0B3B24]'
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="Razorpay"
+                                checked={checkoutForm.paymentMethod === 'Razorpay'}
+                                onChange={() => setCheckoutForm({ ...checkoutForm, paymentMethod: 'Razorpay' })}
+                                className="w-4 h-4 text-[#0B3B24] focus:ring-[#0B3B24] accent-[#0B3B24]"
+                              />
+                              <div>
+                                <div className="text-xs sm:text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                                  <CreditCard className="w-4 h-4 text-[#0B3B24]" />
+                                  Razorpay Secure Checkout
+                                </div>
+                                <p className="text-[11px] text-gray-500 mt-0.5 font-normal">
+                                  Pay securely with US Credit Cards, Debit Cards, and NetBanking in USD.
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                              Active
+                            </span>
+                          </div>
+                        </label>
+                      )}
+
                       {/* Cash on Delivery (COD) — Real Backend Option */}
                       {isCodActive && (
                         <label
@@ -1740,92 +1900,6 @@ export default function CustomerStore() {
                           </div>
                         </label>
                       )}
-
-                      {/* Online UPI Payment — Real Backend Option (Enabled via Admin Settings) */}
-                      {isUpiActive && (
-                        <div
-                          className={`p-3.5 rounded-xl border transition-all ${
-                            checkoutForm.paymentMethod === 'UPI'
-                              ? 'border-[#0B3B24] bg-emerald-50/40 ring-1 ring-[#0B3B24]'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                        >
-                          <label className="flex items-center justify-between cursor-pointer">
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="radio"
-                                name="paymentMethod"
-                                value="UPI"
-                                checked={checkoutForm.paymentMethod === 'UPI'}
-                                onChange={() => setCheckoutForm({ ...checkoutForm, paymentMethod: 'UPI' })}
-                                className="w-4 h-4 text-[#0B3B24] focus:ring-[#0B3B24] accent-[#0B3B24]"
-                              />
-                              <div>
-                                <div className="text-xs sm:text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                                  <QrCode className="w-4 h-4 text-[#0B3B24]" />
-                                  Online UPI Payment
-                                </div>
-                                <p className="text-[11px] text-gray-500 mt-0.5 font-normal">
-                                  Allows customers to pay instantly using Google Pay, PhonePe, Paytm, BHIM, or any UPI app.
-                                </p>
-                              </div>
-                            </div>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
-                              Active
-                            </span>
-                          </label>
-
-                          {checkoutForm.paymentMethod === 'UPI' && (
-                            <div className="mt-3.5 pt-3.5 border-t border-emerald-100/80 space-y-3 animate-fadeIn">
-                              <div className="bg-white p-3 rounded-xl border border-gray-200 flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-                                <img
-                                  src={qrCodeImageUrl}
-                                  alt="UPI Payment QR Code"
-                                  className="w-28 h-28 rounded-lg border border-gray-200 bg-white p-1 shrink-0"
-                                />
-                                <div className="space-y-1.5 flex-1">
-                                  <div className="text-xs text-gray-600 font-medium">Scan QR Code or pay directly to UPI ID:</div>
-                                  <div className="flex items-center gap-2 justify-center sm:justify-start">
-                                    <code className="text-xs font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded border border-gray-200">
-                                      {merchantUpiId}
-                                    </code>
-                                    <button
-                                      type="button"
-                                      onClick={handleCopyUpi}
-                                      className="px-2 py-1 rounded bg-[#0B3B24] text-white text-[11px] font-medium flex items-center gap-1 hover:bg-[#134633] transition-colors"
-                                    >
-                                      <Copy className="w-3 h-3" />
-                                      {copiedUpi ? 'Copied!' : 'Copy'}
-                                    </button>
-                                  </div>
-                                  <div className="text-[11px] text-gray-500">
-                                    Payable Amount: <strong className="text-gray-900">{formatCurrency(cartGrandTotal)}</strong>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div>
-                                <label className="text-xs font-medium text-gray-700 block mb-1">
-                                  12-Digit UPI UTR / Reference No. *
-                                </label>
-                                <input
-                                  type="text"
-                                  required={checkoutForm.paymentMethod === 'UPI'}
-                                  placeholder="e.g. 428901928374 (From Payment Receipt)"
-                                  value={checkoutForm.transactionId}
-                                  onChange={(e) =>
-                                    setCheckoutForm({ ...checkoutForm, transactionId: e.target.value.trim() })
-                                  }
-                                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] bg-white font-mono"
-                                />
-                                <p className="text-[11px] text-gray-500 mt-1">
-                                  Enter the UTR / Ref ID received after completing payment in your UPI app.
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -1851,11 +1925,15 @@ export default function CustomerStore() {
 
                 <button
                   type="submit"
-                  disabled={submittingOrder || (!isCodActive && !isUpiActive)}
+                  disabled={submittingOrder || (!isCodActive && !isRazorpayActive)}
                   className="w-full py-3 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-medium text-xs uppercase tracking-wider transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Lock className="w-3.5 h-3.5" />
-                  {submittingOrder ? 'Processing...' : `Place Order — ${formatCurrency(cartGrandTotal)}`}
+                  {submittingOrder
+                    ? 'Processing...'
+                    : checkoutForm.paymentMethod === 'Razorpay'
+                    ? `Pay with Razorpay — ${formatCurrency(cartGrandTotal)}`
+                    : `Place Order — ${formatCurrency(cartGrandTotal)}`}
                 </button>
 
                 <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 pt-0.5">
@@ -1893,14 +1971,18 @@ export default function CustomerStore() {
                 <span className="text-gray-500">Payment:</span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
                   <Check className="w-3 h-3 text-emerald-600" />
-                  {orderSuccess.paymentMethod === 'UPI'
-                    ? 'Online UPI (Pending Verification)'
+                  {orderSuccess.paymentMethod === 'Razorpay'
+                    ? 'Paid Online (Razorpay Verified)'
+                    : orderSuccess.paymentMethod === 'CreditCard'
+                    ? 'Paid Online (Card Verified)'
                     : 'Cash on Delivery (COD)'}
                 </span>
               </div>
-              {orderSuccess.paymentMethod === 'UPI' && orderSuccess.transactionId && (
+              {orderSuccess.transactionId && (
                 <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-gray-500">UTR / Ref No:</span>
+                  <span className="text-gray-500">
+                    {orderSuccess.paymentMethod === 'Razorpay' ? 'Razorpay Payment ID:' : 'Transaction ID:'}
+                  </span>
                   <code className="font-mono font-medium text-gray-800">{orderSuccess.transactionId}</code>
                 </div>
               )}
@@ -1926,10 +2008,7 @@ export default function CustomerStore() {
       <FloatingCartBar
         cartItemCount={cartItemCount}
         cartGrandTotal={cartGrandTotal}
-        onOpenCart={() => {
-          setIsAddedPopupOpen(false);
-          setIsCartOpen(true);
-        }}
+        onOpenCart={() => setIsCartOpen(true)}
         isCartOpen={isCartOpen}
         isCheckoutOpen={isCheckoutOpen}
         isMobileMenuOpen={isMobileNavOpen}

@@ -386,7 +386,6 @@ export default function PrintableDocumentModal({
                   {company.bankAccountNo && <p className="text-slate-600"><strong>Account No.:</strong> {company.bankAccountNo}</p>}
                   {company.bankRoutingNo && <p className="text-slate-600"><strong>Routing No.:</strong> {company.bankRoutingNo}</p>}
                   {company.bankHolder && <p className="text-slate-600"><strong>Account Holder:</strong> {company.bankHolder}</p>}
-                  {company.upiId && <p className="text-slate-600"><strong>UPI ID:</strong> {company.upiId}</p>}
                 </div>
               </div>
 

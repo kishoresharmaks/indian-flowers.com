@@ -6,7 +6,7 @@ export interface IPaymentTransaction extends Document {
   partyName: string;
   partyPhone: string;
   amount: number;
-  paymentMode: 'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE';
+  paymentMode: 'CASH' | 'RAZORPAY' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'UPI';
   referenceNo?: string;
   docId?: string; // Linked SaleDocument or PurchaseDocument ID
   docNumber?: string;
@@ -29,7 +29,7 @@ const PaymentTransactionSchema: Schema = new Schema(
     amount: { type: Number, required: true, min: 0.01 },
     paymentMode: {
       type: String,
-      enum: ['CASH', 'UPI', 'BANK_TRANSFER', 'CHEQUE'],
+      enum: ['CASH', 'RAZORPAY', 'CREDIT_CARD', 'CreditCard', 'BANK_TRANSFER', 'CHEQUE', 'UPI'],
       default: 'CASH',
     },
     referenceNo: { type: String, default: '' },

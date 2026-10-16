@@ -31,7 +31,7 @@ async function runSeed() {
       locale: 'en-US',
       timezone: 'America/New_York',
       enableCOD: true,
-      enableUPI: false,
+      enableRazorpay: true,
     },
     { upsert: true, new: true }
   );

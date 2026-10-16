@@ -5,7 +5,7 @@ export interface IExpense extends Document {
   categoryName: string;
   title: string;
   amount: number;
-  paymentMode: 'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE';
+  paymentMode: 'CASH' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'RAZORPAY' | 'UPI';
   paidTo?: string;
   referenceNo?: string;
   notes?: string;
@@ -22,7 +22,7 @@ const ExpenseSchema: Schema = new Schema(
     amount: { type: Number, required: true, min: 0.01 },
     paymentMode: {
       type: String,
-      enum: ['CASH', 'UPI', 'BANK_TRANSFER', 'CHEQUE'],
+      enum: ['CASH', 'CREDIT_CARD', 'CreditCard', 'BANK_TRANSFER', 'CHEQUE', 'RAZORPAY', 'UPI'],
       default: 'CASH',
     },
     paidTo: { type: String, default: '' },

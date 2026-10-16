@@ -31,7 +31,7 @@ interface Product {
 
 interface ProductDetailProps {
   product: Product;
-  onAddToCart: (variant?: ProductVariant) => void;
+  onAddToCart: (variant?: ProductVariant, quantity?: number) => void;
   onShare: () => void;
   loading?: boolean;
 }
@@ -61,7 +61,7 @@ export default function ProductDetail({
 
   const handleAddToCart = () => {
     if (!isOutOfStock) {
-      onAddToCart(selectedVariant);
+      onAddToCart(selectedVariant, quantity);
       setQuantity(1);
     }
   };

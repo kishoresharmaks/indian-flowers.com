@@ -189,20 +189,12 @@ export async function POST(request: Request) {
       subtotalCents - safeDiscountCents + toCents(calculatedTax) + toCents(safeShippingFee);
     const totalAmount = fromCents(Math.max(0, totalAmountCents));
 
-    // 3. Payment Method Verification (Mandatory: Preserve COD and UPI exactly as they work)
-    const allowedMethods = ['CreditCard', 'COD', 'ApplePay', 'PayPal', 'UPI', 'CASH'];
+    // 3. Payment Method Verification
+    const allowedMethods = ['CreditCard', 'COD', 'ApplePay', 'PayPal', 'CASH', 'Razorpay'];
     const method = allowedMethods.includes(paymentMethod) ? paymentMethod : 'COD';
 
-    // UPI verification rule: must provide 12-digit transaction ID and remains Pending until admin verified
-    if (method === 'UPI' && !transactionId) {
-      return NextResponse.json(
-        { success: false, message: 'Please enter the UPI Reference ID / UTR number for UPI payment.' },
-        { status: 400 }
-      );
-    }
-
-    // COD and UPI orders start in 'Pending' payment status
-    const pStatus = method === 'CreditCard' || method === 'ApplePay' || method === 'PayPal' ? 'Paid' : 'Pending';
+    // Online Razorpay and digital payments are recorded as 'Paid' when confirmed
+    const pStatus = method === 'CreditCard' || method === 'ApplePay' || method === 'PayPal' || method === 'Razorpay' ? 'Paid' : 'Pending';
 
     // Sequential order ID
     const orderCount = await Order.countDocuments();

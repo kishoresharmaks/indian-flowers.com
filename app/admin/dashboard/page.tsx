@@ -45,6 +45,7 @@ import POSCounter from './components/pos/POSCounter';
 import SubscriptionTab from '@/components/licensing/SubscriptionTab';
 import GracePeriodBanner from '@/components/licensing/GracePeriodBanner';
 import LicenseActivationModal from '@/components/licensing/LicenseActivationModal';
+import PolicyManagerTab from '@/components/admin/PolicyManagerTab';
 import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
 
 interface BannerItem {
@@ -125,7 +126,7 @@ interface Order {
   discountType?: 'FLAT' | 'PERCENTAGE';
   discountValue?: number;
   discountAmount?: number;
-  paymentMethod: 'COD' | 'UPI' | 'CASH';
+  paymentMethod: 'COD' | 'CASH' | 'CreditCard' | 'Razorpay';
   paymentStatus: 'Pending' | 'Paid' | 'Failed';
   transactionId?: string;
   cashReceived?: number;
@@ -165,7 +166,7 @@ export default function AdminDashboard() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'products' | 'categories' | 'orders' | 'banners' | 'settings' | 'pos' | 'subscription' | 'customOrders' | 'subscribers'
+    'products' | 'categories' | 'orders' | 'banners' | 'settings' | 'pos' | 'subscription' | 'customOrders' | 'subscribers' | 'policies'
   >('products');
   const [licenseState, setLicenseState] = useState<IClientLicenseState | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -281,7 +282,7 @@ export default function AdminDashboard() {
   const [isEditBannerModalOpen, setIsEditBannerModalOpen] = useState(false);
 
   // Settings State
-  const [paymentSettings, setPaymentSettings] = useState({ enableUPI: true, enableCOD: true, siteName: '', businessName: '', tagline: '', domain: '', contactEmail: '', contactPhone: '' });
+  const [paymentSettings, setPaymentSettings] = useState({ enableRazorpay: true, razorpayKeyId: '', razorpayKeySecret: '', enableCOD: true, siteName: '', businessName: '', tagline: '', domain: '', contactEmail: '', contactPhone: '' });
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState('');
@@ -469,7 +470,9 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.success && data.data) {
         setPaymentSettings({
-          enableUPI: data.data.enableUPI ?? true,
+          enableRazorpay: data.data.enableRazorpay ?? true,
+          razorpayKeyId: data.data.razorpayKeyId ?? '',
+          razorpayKeySecret: data.data.razorpayKeySecret ?? '',
           enableCOD: data.data.enableCOD ?? true,
           siteName: data.data.siteName ?? '', businessName: data.data.businessName ?? '', tagline: data.data.tagline ?? '', domain: data.data.domain ?? '', contactEmail: data.data.contactEmail ?? '', contactPhone: data.data.contactPhone ?? '',
         });
@@ -1371,6 +1374,21 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
             <button
               onClick={() => {
+                setActiveTab('policies');
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full p-3 rounded-xl bg-[#F4F8F4] text-[#0B3B24] border border-emerald-200 font-extrabold text-xs flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#0B3B24]" /> Store Policies & Legal
+              </span>
+              <span className="text-[10px] uppercase font-black bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded">
+                US Laws
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
                 handleOptimizeExistingDatabaseImages();
                 setIsMobileMenuOpen(false);
               }}
@@ -1551,6 +1569,16 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
               }`}
             >
               <Mail className="w-4 h-4 text-[#0B3B24]" /> Subscribers ({subscribers.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('policies')}
+              className={`px-3 py-2 sm:pb-4 text-xs sm:text-sm font-extrabold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all ${
+                activeTab === 'policies'
+                  ? 'border-[#0B3B24] text-[#0B3B24] bg-[#F4F8F4] sm:bg-transparent rounded-t-xl sm:rounded-none'
+                  : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
+              }`}
+            >
+              <FileText className="w-4 h-4 text-[#0B3B24]" /> Policies & Legal
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -1997,18 +2025,24 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           {/* Payment Method Badge */}
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
-                              order.paymentMethod === 'UPI'
-                                ? 'bg-purple-100 text-purple-700'
+                              order.paymentMethod === 'Razorpay'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : order.paymentMethod === 'CreditCard'
+                                ? 'bg-blue-100 text-blue-800'
                                 : 'bg-slate-100 text-slate-700'
                             }`}
                           >
-                            {order.paymentMethod === 'UPI' ? (
+                            {order.paymentMethod === 'Razorpay' ? (
                               <>
-                                <QrCode className="w-3.5 h-3.5" /> Online UPI
+                                <CreditCard className="w-3.5 h-3.5" /> Razorpay (Online)
+                              </>
+                            ) : order.paymentMethod === 'CreditCard' ? (
+                              <>
+                                <CreditCard className="w-3.5 h-3.5" /> Card / POS
                               </>
                             ) : (
                               <>
-                                <CreditCard className="w-3.5 h-3.5" /> Cash on Delivery
+                                <DollarSign className="w-3.5 h-3.5" /> Cash on Delivery
                               </>
                             )}
                           </span>
@@ -2100,11 +2134,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             </span>
                           </p>
 
-                          {order.paymentMethod === 'UPI' && (
+                          {(order.paymentMethod === 'Razorpay' || order.paymentMethod === 'CreditCard') && order.transactionId && (
                             <div className="pt-2 border-t border-[#E8EDF2] space-y-1 text-xs">
-                              <span className="font-bold text-[#163B5C] block">UPI Payment Ref / UTR:</span>
-                              <code className="bg-purple-50 text-purple-800 px-2 py-1 rounded font-mono text-[11px] block border border-purple-200">
-                                {order.transactionId || 'No UTR provided'}
+                              <span className="font-bold text-[#163B5C] block">Payment Ref / Transaction ID:</span>
+                              <code className="bg-emerald-50 text-emerald-800 px-2 py-1 rounded font-mono text-[11px] block border border-emerald-200">
+                                {order.transactionId}
                               </code>
                             </div>
                           )}
@@ -2528,42 +2562,73 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     </label>
                   ))}
                 </div>
-                {/* UPI Toggle Card */}
-                <div className="p-5 rounded-2xl border border-[#E8EDF2] bg-[#FFFCFB] flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#ED3500]/10 text-[#ED3500] flex items-center justify-center font-black">
-                      <QrCode className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-extrabold text-[#163B5C]">Online UPI Payment</h3>
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            paymentSettings.enableUPI
-                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                              : 'bg-rose-100 text-rose-700 border border-rose-200'
-                          }`}
-                        >
-                          {paymentSettings.enableUPI ? 'Active' : 'Disabled'}
-                        </span>
+                {/* Razorpay Toggle & Config Card */}
+                <div className="p-5 rounded-2xl border border-[#E8EDF2] bg-[#FFFCFB] space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-[#0B3B24]/10 text-[#0B3B24] flex items-center justify-center font-black">
+                        <CreditCard className="w-6 h-6" />
                       </div>
-                      <p className="text-xs text-[#64748B] mt-0.5">
-                        Allows customers to pay instantly using Google Pay, PhonePe, Paytm, BHIM, or any UPI app.
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-[#163B5C]">Razorpay Online Payment (USD)</h3>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              paymentSettings.enableRazorpay
+                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                : 'bg-rose-100 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            {paymentSettings.enableRazorpay ? 'Active' : 'Disabled'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#64748B] mt-0.5">
+                          Enables customers to pay securely with US credit cards, debit cards, and digital wallets via Razorpay.
+                        </p>
+                      </div>
                     </div>
+
+                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={paymentSettings.enableRazorpay}
+                        onChange={(e) =>
+                          setPaymentSettings({ ...paymentSettings, enableRazorpay: e.target.checked })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-12 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#0B3B24]"></div>
+                    </label>
                   </div>
 
-                  <label className="relative inline-flex items-center cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={paymentSettings.enableUPI}
-                      onChange={(e) =>
-                        setPaymentSettings({ ...paymentSettings, enableUPI: e.target.checked })
-                      }
-                      className="sr-only peer"
-                    />
-                    <div className="w-12 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#ED3500]"></div>
-                  </label>
+                  {paymentSettings.enableRazorpay && (
+                    <div className="pt-3 border-t border-[#E8EDF2] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="font-bold text-[#163B5C] block mb-1">Razorpay Key ID:</label>
+                        <input
+                          type="text"
+                          placeholder="rzp_live_... or rzp_test_..."
+                          value={paymentSettings.razorpayKeyId}
+                          onChange={(e) =>
+                            setPaymentSettings({ ...paymentSettings, razorpayKeyId: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#0B3B24] font-mono text-[11px]"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-[#163B5C] block mb-1">Razorpay Key Secret:</label>
+                        <input
+                          type="password"
+                          placeholder="••••••••••••••••"
+                          value={paymentSettings.razorpayKeySecret}
+                          onChange={(e) =>
+                            setPaymentSettings({ ...paymentSettings, razorpayKeySecret: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#0B3B24] font-mono text-[11px]"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* COD Toggle Card */}
@@ -3111,6 +3176,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             )}
           </div>
         )}
+
+        {/* Tab Content: Store Policies & Legal Disclosures */}
+        {activeTab === 'policies' && <PolicyManagerTab />}
       </main>
 
       {/* Add / Edit Product Modal */}

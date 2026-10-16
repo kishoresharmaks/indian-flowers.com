@@ -218,9 +218,9 @@ Visit: https://indian-flowers.com`;
                   </div>
                 </>
               )}
-              {order.paymentMethod === 'UPI' && order.transactionId && (
+              {(order.paymentMethod === 'CreditCard' || order.paymentMethod === 'Razorpay') && order.transactionId && (
                 <div className="flex justify-between">
-                  <span>UPI Ref / UTR:</span>
+                  <span>Payment / Auth ID:</span>
                   <span className="font-mono text-[10px]">{order.transactionId}</span>
                 </div>
               )}

@@ -18,7 +18,7 @@ export default function PaymentOutModal({
   const [partyName, setPartyName] = useState(linkedDoc?.vendorName || '');
   const [partyPhone, setPartyPhone] = useState(linkedDoc?.vendorPhone || '');
   const [amount, setAmount] = useState(linkedDoc?.balanceAmount ? String(linkedDoc.balanceAmount) : '');
-  const [paymentMode, setPaymentMode] = useState<'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE'>('CASH');
+  const [paymentMode, setPaymentMode] = useState<'CASH' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'RAZORPAY' | 'UPI'>('CASH');
   const [referenceNo, setReferenceNo] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -131,17 +131,17 @@ export default function PaymentOutModal({
               className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold bg-white"
             >
               <option value="CASH">Cash Payout</option>
-              <option value="UPI">Online UPI (GPay/PhonePe)</option>
-              <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
-              <option value="CHEQUE">Cheque Payout</option>
+              <option value="CREDIT_CARD">Corporate Card</option>
+              <option value="BANK_TRANSFER">Bank Transfer (ACH / Wire)</option>
+              <option value="CHEQUE">Check Payout</option>
             </select>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#163B5C] uppercase">Reference No / UTR (Optional)</label>
+            <label className="text-xs font-bold text-[#163B5C] uppercase">Reference / Check No. (Optional)</label>
             <input
               type="text"
-              placeholder="e.g. Bank NEFT Ref 94018274"
+              placeholder="e.g. Wire Ref / Check #1042"
               value={referenceNo}
               onChange={(e) => setReferenceNo(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold"

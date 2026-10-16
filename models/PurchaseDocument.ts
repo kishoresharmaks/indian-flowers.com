@@ -32,7 +32,7 @@ export interface IPurchaseDocument extends Document {
   grandTotal: number;
   paidAmount: number;
   balanceAmount: number;
-  paymentMethod?: 'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT';
+  paymentMethod?: 'CASH' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT' | 'RAZORPAY' | 'UPI';
   paymentStatus: 'Pending' | 'Partial' | 'Paid';
   status: 'Draft' | 'Active' | 'Converted' | 'Completed' | 'Cancelled';
   convertedToDocId?: string;
@@ -81,7 +81,7 @@ const PurchaseDocumentSchema: Schema = new Schema(
     balanceAmount: { type: Number, required: true },
     paymentMethod: {
       type: String,
-      enum: ['CASH', 'UPI', 'BANK_TRANSFER', 'CHEQUE', 'CREDIT'],
+      enum: ['CASH', 'CREDIT_CARD', 'CreditCard', 'BANK_TRANSFER', 'CHEQUE', 'CREDIT', 'RAZORPAY', 'UPI'],
       default: 'CASH',
     },
     paymentStatus: {

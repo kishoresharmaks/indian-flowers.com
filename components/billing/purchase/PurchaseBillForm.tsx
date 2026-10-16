@@ -27,7 +27,7 @@ export default function PurchaseBillForm({
 
   const [items, setItems] = useState<any[]>([]);
   const [paidAmount, setPaidAmount] = useState('0');
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT' | 'RAZORPAY' | 'UPI'>('CASH');
   const [notes, setNotes] = useState('');
 
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
@@ -335,9 +335,9 @@ export default function PurchaseBillForm({
                   className="w-full px-3 py-2 rounded-xl border border-[#E8EDF2] text-xs font-semibold bg-white"
                 >
                   <option value="CASH">Cash Payout</option>
-                  <option value="UPI">Online UPI (GPay/PhonePe)</option>
-                  <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
-                  <option value="CHEQUE">Cheque Payout</option>
+                  <option value="CREDIT_CARD">Corporate Card</option>
+                  <option value="BANK_TRANSFER">Bank Transfer (ACH / Wire)</option>
+                  <option value="CHEQUE">Check Payout</option>
                   <option value="CREDIT">Vendor Payable (Due Later)</option>
                 </select>
               </div>

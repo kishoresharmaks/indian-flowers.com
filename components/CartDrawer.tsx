@@ -9,6 +9,7 @@ interface CartItem {
     _id: string;
     name: string;
     image: string;
+    price?: number;
     gst: number;
   };
   selectedVariant?: {
@@ -104,13 +105,15 @@ export default function CartDrawer({
                   <h4 className="text-sm font-medium text-text line-clamp-2">
                     {item.product.name}
                   </h4>
-                  {item.selectedVariant && (
-                    <p className="text-xs text-text-muted font-normal">
-                      {item.selectedVariant.name}
-                    </p>
+                  {item.selectedVariant?.name && (
+                    <div className="pt-0.5">
+                      <span className="inline-flex items-center text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+                        {item.selectedVariant.name}
+                      </span>
+                    </div>
                   )}
                   <p className="text-sm font-semibold text-brand-900 tabular-nums">
-                    {formatCurrency(item.selectedVariant?.price || 0)}
+                    {formatCurrency(item.selectedVariant?.price ?? item.product.price ?? 0)}
                   </p>
 
                   {/* Quantity Control */}

@@ -2,7 +2,9 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ISettings extends Document {
   key: string;
-  enableUPI: boolean;
+  enableRazorpay: boolean;
+  razorpayKeyId?: string;
+  razorpayKeySecret?: string;
   enableCOD: boolean;
   siteName: string;
   tagline: string;
@@ -23,7 +25,9 @@ export interface ISettings extends Document {
 const SettingsSchema: Schema = new Schema(
   {
     key: { type: String, required: true, unique: true, default: 'global' },
-    enableUPI: { type: Boolean, default: true },
+    enableRazorpay: { type: Boolean, default: true },
+    razorpayKeyId: { type: String, default: '' },
+    razorpayKeySecret: { type: String, default: '' },
     enableCOD: { type: Boolean, default: true },
     siteName: { type: String, default: 'Nexus Ecom' },
     tagline: { type: String, default: 'Commerce, configured for your business.' },

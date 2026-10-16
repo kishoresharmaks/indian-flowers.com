@@ -39,7 +39,7 @@ export interface IOrder extends Document {
   discountType?: 'FLAT' | 'PERCENTAGE';
   discountValue?: number;
   discountAmount?: number;
-  paymentMethod: 'CreditCard' | 'COD' | 'ApplePay' | 'PayPal' | 'UPI' | 'CASH';
+  paymentMethod: 'CreditCard' | 'COD' | 'ApplePay' | 'PayPal' | 'CASH' | 'Razorpay';
   paymentStatus: 'Pending' | 'Paid' | 'Failed';
   transactionId?: string;
   cashReceived?: number;
@@ -97,7 +97,7 @@ const OrderSchema: Schema = new Schema(
     discountAmount: { type: Number, default: 0 },
     paymentMethod: {
       type: String,
-      enum: ['CreditCard', 'COD', 'ApplePay', 'PayPal', 'UPI', 'CASH'],
+      enum: ['CreditCard', 'COD', 'ApplePay', 'PayPal', 'CASH', 'Razorpay'],
       default: 'COD',
     },
     paymentStatus: {
