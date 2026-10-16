@@ -1,0 +1,61 @@
+# ==============================================================================
+# Render.com Blueprint Specification for Indian-Flowers.com
+# Documentation: https://render.com/docs/blueprint-spec
+# ==============================================================================
+
+services:
+  - type: web
+    name: indian-flowers-storefront
+    runtime: node
+    region: oregon # US West (ideal for US delivery logistics)
+    plan: starter  # Starter ($7/mo recommended for persistent 24/7 cut flower ordering) or free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+
+    envVars:
+      # Node.js Environment
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: NODE_ENV
+        value: production
+
+      # Market & Currency Standard (US Market strictly USD)
+      - key: STORE_CURRENCY
+        value: USD
+      - key: STORE_LOCALE
+        value: en-US
+      - key: STORE_TIMEZONE
+        value: America/Los_Angeles
+      - key: STORE_NAME
+        value: "Indian-Flowers.com"
+      - key: BUSINESS_NAME
+        value: "Indian Flowers USA"
+
+      # Database Connection (Enter your Atlas URI in Render dashboard)
+      - key: MONGODB_URI
+        sync: false
+
+      # Authentication Secrets
+      - key: AUTH_SECRET
+        generateValue: true # Render will generate a cryptographically secure 256-bit string
+
+      # Admin Login Credentials
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+      # Razorpay Payment Gateway (USD Supported)
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_RAZORPAY_KEY_ID
+        sync: false
+
+      # Licensing Server Integration
+      - key: LICENSING_SERVER_URL
+        value: "https://lic.nexusnation.in"
+      - key: NEXT_PUBLIC_LICENSING_SERVER_URL
+        value: "https://lic.nexusnation.in"
