@@ -73,6 +73,11 @@ export async function POST(request: NextRequest) {
           itemPrice = variant.price;
           variantName = variant.name;
         }
+      } else if (!variantName && product.variants && product.variants.length > 0) {
+        const variant = product.variants.find((v) => Number(v.price) === Number(rawItem.price || product.price));
+        if (variant) {
+          variantName = variant.name;
+        }
       }
 
       const lineSubtotalCents = Math.round(Number(itemPrice) * 100) * qty;

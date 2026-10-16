@@ -43,8 +43,12 @@ import {
   ArrowRight,
   Settings,
   ExternalLink,
+  Eye,
+  Printer,
+  RotateCcw,
 } from 'lucide-react';
 import POSCounter from './components/pos/POSCounter';
+import POSReceipt from './components/pos/POSReceipt';
 import SubscriptionTab from '@/components/licensing/SubscriptionTab';
 import GracePeriodBanner from '@/components/licensing/GracePeriodBanner';
 import LicenseActivationModal from '@/components/licensing/LicenseActivationModal';
@@ -100,9 +104,12 @@ interface CategoryItem {
 interface OrderItem {
   productId: string;
   name: string;
+  variantName?: string;
   price: number;
   quantity: number;
-  gst: number;
+  gst?: number;
+  isTaxable?: boolean;
+  taxCode?: string;
   image?: string;
 }
 
@@ -223,6 +230,9 @@ export default function AdminDashboard() {
   const [productFormError, setProductFormError] = useState('');
   const [productPage, setProductPage] = useState(1);
   const productsPerPage = 8;
+  const [productSearch, setProductSearch] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState('All');
+  const [productStockFilter, setProductStockFilter] = useState<'All' | 'inStock' | 'lowStock' | 'outOfStock'>('All');
 
   // Add/Edit Product Form State
   const [productForm, setProductForm] = useState({
@@ -256,8 +266,34 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [orderStatusFilter, setOrderStatusFilter] = useState('All');
+  const [orderChannelFilter, setOrderChannelFilter] = useState<'All' | 'ONLINE' | 'POS'>('All');
+  const [orderSearch, setOrderSearch] = useState('');
   const [orderPage, setOrderPage] = useState(1);
-  const ordersPerPage = 5;
+  const ordersPerPage = 10;
+  const [selectedOrderForDetails, setSelectedOrderForDetails] = useState<Order | null>(null);
+  const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
+
+  // Helper to resolve product variants & images for orders (including historical fallback by price match)
+  const enrichOrderWithVariants = (orderToEnrich: Order | null): Order | null => {
+    if (!orderToEnrich) return null;
+    return {
+      ...orderToEnrich,
+      items: orderToEnrich.items?.map((it) => {
+        const matchedProduct = products.find(
+          (p) => p._id === it.productId || p.name?.toLowerCase().trim() === it.name?.toLowerCase().trim()
+        );
+        const resolvedVariant =
+          (it.variantName && it.variantName.trim().length > 0)
+            ? it.variantName
+            : matchedProduct?.variants?.find((v) => Number(v.price) === Number(it.price))?.name;
+        return {
+          ...it,
+          variantName: resolvedVariant || it.variantName || '',
+          image: it.image || matchedProduct?.image || '',
+        };
+      }),
+    };
+  };
 
   // Banners State
   const [banners, setBanners] = useState<BannerItem[]>([]);
@@ -1182,7 +1218,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   };
 
   // Update Order Status
-  const handleUpdateOrderStatus = async (orderId: string, updates: { status?: string; paymentStatus?: string }) => {
+  const handleUpdateOrderStatus = async (
+    orderId: string,
+    updates: {
+      status?: any;
+      paymentStatus?: any;
+    }
+  ) => {
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: 'PATCH',
@@ -1192,6 +1234,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       const data = await res.json();
       if (data.success) {
         fetchOrders();
+        setSelectedOrderForDetails((prev) =>
+          prev && prev._id === orderId ? ({ ...prev, ...updates } as Order) : prev
+        );
       }
     } catch (err) {
       console.error(err);
@@ -1213,18 +1258,53 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   const pendingOrdersCount = orders.filter((o) => o.status === 'Pending').length;
 
   // Filter & Pagination for Orders
-  const filteredOrders = orders.filter((o) =>
-    orderStatusFilter === 'All' ? true : o.status === orderStatusFilter
-  );
+  const filteredOrders = orders.filter((o) => {
+    if (orderStatusFilter !== 'All' && o.status !== orderStatusFilter) return false;
+    if (orderChannelFilter === 'ONLINE' && o.orderType === 'POS') return false;
+    if (orderChannelFilter === 'POS' && o.orderType !== 'POS') return false;
+    if (!orderSearch.trim()) return true;
+    const q = orderSearch.toLowerCase().trim();
+    return (
+      o.orderId?.toLowerCase().includes(q) ||
+      o.invoiceNumber?.toLowerCase().includes(q) ||
+      o.customerName?.toLowerCase().includes(q) ||
+      o.customerPhone?.toLowerCase().includes(q) ||
+      o.customerEmail?.toLowerCase().includes(q) ||
+      o.transactionId?.toLowerCase().includes(q) ||
+      o.shippingAddress?.toLowerCase().includes(q) ||
+      o.pincode?.toLowerCase().includes(q) ||
+      o.city?.toLowerCase().includes(q) ||
+      o.state?.toLowerCase().includes(q) ||
+      o.items?.some((item) => item.name?.toLowerCase().includes(q))
+    );
+  });
   const totalOrderPages = Math.ceil(filteredOrders.length / ordersPerPage) || 1;
   const paginatedOrders = filteredOrders.slice(
     (orderPage - 1) * ordersPerPage,
     orderPage * ordersPerPage
   );
 
-  // Pagination for Products
-  const totalProductPages = Math.ceil(products.length / productsPerPage) || 1;
-  const paginatedProducts = products.slice(
+  // Filter & Pagination for Products
+  const filteredProducts = products.filter((p) => {
+    if (productCategoryFilter !== 'All' && p.category?.toLowerCase() !== productCategoryFilter.toLowerCase()) {
+      return false;
+    }
+    if (productStockFilter === 'inStock' && p.quantity <= 0) return false;
+    if (productStockFilter === 'lowStock' && (p.quantity <= 0 || p.quantity > 5)) return false;
+    if (productStockFilter === 'outOfStock' && p.quantity > 0) return false;
+
+    if (!productSearch.trim()) return true;
+    const q = productSearch.toLowerCase().trim();
+    return (
+      p.name?.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q) ||
+      p.category?.toLowerCase().includes(q) ||
+      p.price?.toString().includes(q) ||
+      p.variants?.some((v) => v.name?.toLowerCase().includes(q))
+    );
+  });
+  const totalProductPages = Math.ceil(filteredProducts.length / productsPerPage) || 1;
+  const paginatedProducts = filteredProducts.slice(
     (productPage - 1) * productsPerPage,
     productPage * productsPerPage
   );
@@ -2065,17 +2145,99 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         {/* Products Management View */}
         {activeTab === 'products' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between bg-white p-4 sm:p-5 rounded-2xl border border-[#E8EDF2] shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-[#E8EDF2] shadow-sm">
               <div>
                 <h3 className="text-base sm:text-lg font-black text-[#163B5C]">Product Inventory</h3>
                 <p className="text-xs text-[#64748B]">Manage, edit, and organize all {products.length} store products</p>
               </div>
               <button
                 onClick={openAddProductModal}
-                className="px-4 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0"
+                className="px-4 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0 self-start sm:self-auto"
               >
                 <Plus className="w-4 h-4" /> Add Product
               </button>
+            </div>
+
+            {/* Product Search & Filter Bar */}
+            <div className="bg-white p-4 rounded-2xl border border-[#E8EDF2] shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              {/* Real-time Search Input */}
+              <div className="relative flex-1 min-w-[240px]">
+                <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search products by title, description, category, price..."
+                  value={productSearch}
+                  onChange={(e) => {
+                    setProductSearch(e.target.value);
+                    setProductPage(1);
+                  }}
+                  className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#E8EDF2] bg-[#F8FAFC]/50 text-xs sm:text-sm font-medium text-[#163B5C] placeholder:text-[#94A3B8] focus:bg-white focus:outline-none focus:border-[#ED3500] focus:ring-2 focus:ring-[#ED3500]/10 transition-all"
+                />
+                {productSearch && (
+                  <button
+                    onClick={() => {
+                      setProductSearch('');
+                      setProductPage(1);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100"
+                    title="Clear Search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Category & Stock Filter Controls */}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Filter className="w-3.5 h-3.5 text-[#64748B]" />
+                  <select
+                    value={productCategoryFilter}
+                    onChange={(e) => {
+                      setProductCategoryFilter(e.target.value);
+                      setProductPage(1);
+                    }}
+                    className="px-3 py-2 rounded-xl border border-[#E8EDF2] bg-white text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
+                  >
+                    <option value="All">All Categories ({products.length})</option>
+                    {Array.from(new Set(products.map((p) => p.category).filter(Boolean))).map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat} ({products.filter((p) => p.category === cat).length})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <select
+                  value={productStockFilter}
+                  onChange={(e) => {
+                    setProductStockFilter(e.target.value as any);
+                    setProductPage(1);
+                  }}
+                  className="px-3 py-2 rounded-xl border border-[#E8EDF2] bg-white text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500] shrink-0"
+                >
+                  <option value="All">All Stock Levels</option>
+                  <option value="inStock">In Stock (&gt;5)</option>
+                  <option value="lowStock">Low Stock (1-5)</option>
+                  <option value="outOfStock">Out of Stock (0)</option>
+                </select>
+
+                {(productSearch || productCategoryFilter !== 'All' || productStockFilter !== 'All') && (
+                  <button
+                    onClick={() => {
+                      setProductSearch('');
+                      setProductCategoryFilter('All');
+                      setProductStockFilter('All');
+                      setProductPage(1);
+                    }}
+                    className="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 transition-all shrink-0"
+                    title="Reset All Filters"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {loadingProducts ? (
@@ -2092,6 +2254,25 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   className="px-5 py-2.5 rounded-full bg-[#ED3500] text-white font-bold text-xs uppercase tracking-wider"
                 >
                   + Add Product Now
+                </button>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="py-16 text-center bg-white rounded-2xl border border-[#E8EDF2] p-8 space-y-3">
+                <Search className="w-10 h-10 text-[#64748B] mx-auto opacity-30" />
+                <h4 className="text-base font-bold text-[#163B5C]">No products found</h4>
+                <p className="text-xs text-[#64748B]">
+                  No products matched your search {productSearch ? `"${productSearch}"` : ''} or selected filter criteria.
+                </p>
+                <button
+                  onClick={() => {
+                    setProductSearch('');
+                    setProductCategoryFilter('All');
+                    setProductStockFilter('All');
+                    setProductPage(1);
+                  }}
+                  className="px-4 py-2 bg-[#163B5C] text-white rounded-xl text-xs font-bold hover:bg-[#112F4A] transition-colors"
+                >
+                  Clear Filters
                 </button>
               </div>
             ) : (
@@ -2395,29 +2576,143 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           </div>
         )}
 
-        {/* Customer Orders Management View with Responsive Filtering */}
+        {/* Customer Orders Management View with High-Density Tabular UI & Search */}
         {activeTab === 'orders' && (
           <div className="space-y-6">
-            {/* Filter by status */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#64748B] overflow-x-auto pb-1 scrollbar-none w-full">
-                <span className="flex items-center gap-1 shrink-0"><Filter className="w-4 h-4" /> Status:</span>
-                {['All', 'Pending', 'Processing', 'Completed', 'Cancelled'].map((st) => (
+            {/* Top Orders Header & Filter Controls Bar */}
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E8EDF2] shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-[#163B5C]">Orders &amp; Shipments</h3>
+                  <p className="text-xs text-[#64748B]">
+                    Track, fulfill, and review online delivery and in-store POS sales
+                  </p>
+                </div>
+
+                {/* Channel Filter Pills (All / Online / POS) */}
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto shrink-0">
                   <button
-                    key={st}
+                    type="button"
                     onClick={() => {
-                      setOrderStatusFilter(st);
+                      setOrderChannelFilter('All');
                       setOrderPage(1);
                     }}
-                    className={`px-3 py-1.5 rounded-lg whitespace-nowrap shrink-0 transition-all ${
-                      orderStatusFilter === st
-                        ? 'bg-[#163B5C] text-white font-bold'
-                        : 'bg-white border border-[#E8EDF2] text-[#64748B] hover:text-[#163B5C]'
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      orderChannelFilter === 'All'
+                        ? 'bg-white text-[#163B5C] shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    {st}
+                    All Channels ({orders.length})
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderChannelFilter('ONLINE');
+                      setOrderPage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      orderChannelFilter === 'ONLINE'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Online ({onlineOrders.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderChannelFilter('POS');
+                      setOrderPage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      orderChannelFilter === 'POS'
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    POS ({posOrders.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Real-time Order Search & Status Filter Row */}
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-3 border-t border-[#E8EDF2]">
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[240px]">
+                  <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search by Order ID, customer name, phone, email, or item..."
+                    value={orderSearch}
+                    onChange={(e) => {
+                      setOrderSearch(e.target.value);
+                      setOrderPage(1);
+                    }}
+                    className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-[#E8EDF2] bg-[#F8FAFC]/50 text-xs sm:text-sm font-medium text-[#163B5C] placeholder:text-[#94A3B8] focus:bg-white focus:outline-none focus:border-[#ED3500] focus:ring-2 focus:ring-[#ED3500]/10 transition-all"
+                  />
+                  {orderSearch && (
+                    <button
+                      onClick={() => {
+                        setOrderSearch('');
+                        setOrderPage(1);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100"
+                      title="Clear Order Search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Status Pills with Dynamic Counts */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+                  {[
+                    { id: 'All', label: 'All', count: orders.length },
+                    { id: 'Pending', label: 'Pending', count: orders.filter((o) => o.status === 'Pending').length },
+                    { id: 'Processing', label: 'Processing', count: orders.filter((o) => o.status === 'Processing').length },
+                    { id: 'Completed', label: 'Completed', count: orders.filter((o) => o.status === 'Completed').length },
+                    { id: 'Cancelled', label: 'Cancelled', count: orders.filter((o) => o.status === 'Cancelled').length },
+                  ].map((st) => (
+                    <button
+                      key={st.id}
+                      onClick={() => {
+                        setOrderStatusFilter(st.id);
+                        setOrderPage(1);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 ${
+                        orderStatusFilter === st.id
+                          ? 'bg-[#163B5C] text-white shadow-xs'
+                          : 'bg-white border border-[#E8EDF2] text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>{st.label}</span>
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                          orderStatusFilter === st.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {st.count}
+                      </span>
+                    </button>
+                  ))}
+
+                  {(orderSearch || orderStatusFilter !== 'All' || orderChannelFilter !== 'All') && (
+                    <button
+                      onClick={() => {
+                        setOrderSearch('');
+                        setOrderStatusFilter('All');
+                        setOrderChannelFilter('All');
+                        setOrderPage(1);
+                      }}
+                      className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 transition-all shrink-0"
+                      title="Reset Order Filters"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Reset</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -2425,224 +2720,230 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
               <div className="py-20 text-center">
                 <RefreshCw className="w-8 h-8 text-[#ED3500] animate-spin mx-auto" />
               </div>
-            ) : filteredOrders.length === 0 ? (
+            ) : orders.length === 0 ? (
               <div className="py-20 text-center bg-white rounded-3xl border border-[#E8EDF2] p-8 space-y-4">
                 <ShoppingBag className="w-12 h-12 text-[#64748B] mx-auto opacity-40" />
-                <h3 className="text-xl font-bold text-[#163B5C]">No orders found</h3>
+                <h3 className="text-xl font-bold text-[#163B5C]">No orders in system</h3>
                 <p className="text-sm text-[#64748B]">
-                  Customer orders will appear here automatically when placed.
+                  Customer orders will appear here automatically when placed online or rung up at POS.
                 </p>
               </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="py-16 text-center bg-white rounded-2xl border border-[#E8EDF2] p-8 space-y-3">
+                <Search className="w-10 h-10 text-[#64748B] mx-auto opacity-30" />
+                <h4 className="text-base font-bold text-[#163B5C]">No orders found</h4>
+                <p className="text-xs text-[#64748B]">
+                  No orders matched your search {orderSearch ? `"${orderSearch}"` : ''} or selected filter criteria.
+                </p>
+                <button
+                  onClick={() => {
+                    setOrderSearch('');
+                    setOrderStatusFilter('All');
+                    setOrderChannelFilter('All');
+                    setOrderPage(1);
+                  }}
+                  className="px-4 py-2 bg-[#163B5C] text-white rounded-xl text-xs font-bold hover:bg-[#112F4A] transition-colors"
+                >
+                  Clear Filters
+                </button>
+              </div>
             ) : (
-              <div className="space-y-4">
-                {paginatedOrders.map((order) => {
-                  const paymentDisplay = getOrderPaymentDisplayInfo(order);
-                  return (
-                    <div
-                      key={order._id}
-                      className="bg-white rounded-2xl border border-[#E8EDF2] p-6 shadow-sm space-y-4 hover:border-[#ED3500]/30 transition-all"
-                    >
-                    {/* Top Row */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF2]">
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-black text-lg text-[#163B5C]">
-                            {order.orderId}
-                          </span>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-extrabold ${
-                              order.status === 'Completed'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : order.status === 'Processing'
-                                ? 'bg-blue-100 text-blue-700'
-                                : order.status === 'Cancelled'
-                                ? 'bg-rose-100 text-rose-700'
-                                : 'bg-amber-100 text-amber-700 animate-pulse'
-                            }`}
+              <div className="bg-white rounded-2xl border border-[#E8EDF2] overflow-hidden shadow-sm space-y-4 p-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[720px] lg:min-w-full">
+                    <thead>
+                      <tr className="bg-[#FFFCFB] border-b border-[#E8EDF2] text-xs font-bold text-[#64748B] uppercase tracking-wider">
+                        <th className="py-3.5 px-4">Order ID &amp; Placed</th>
+                        <th className="py-3.5 px-4">Customer</th>
+                        <th className="py-3.5 px-4">Items Summary</th>
+                        <th className="py-3.5 px-4">Total Amount</th>
+                        <th className="py-3.5 px-4">Payment</th>
+                        <th className="py-3.5 px-4">Order Status</th>
+                        <th className="py-3.5 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E8EDF2] text-sm">
+                      {paginatedOrders.map((order) => {
+                        const paymentDisplay = getOrderPaymentDisplayInfo(order);
+                        const itemCount =
+                          order.items?.reduce((sum, it) => sum + (it.quantity || 1), 0) ||
+                          order.items?.length ||
+                          0;
+                        const itemsSummary = order.items
+                          ?.map((it) => {
+                            const matchedProduct = products.find(
+                              (p) => p._id === it.productId || p.name?.toLowerCase() === it.name?.toLowerCase()
+                            );
+                            const variant =
+                              it.variantName ||
+                              matchedProduct?.variants?.find((v) => Number(v.price) === Number(it.price))?.name;
+                            return `${it.name}${variant ? ` (${variant})` : ''} (x${it.quantity})`;
+                          })
+                          .join(', ');
+
+                        return (
+                          <tr
+                            key={order._id}
+                            className="hover:bg-[#FFFCFB]/80 transition-colors group cursor-pointer"
+                            onClick={() => setSelectedOrderForDetails(enrichOrderWithVariants(order))}
                           >
-                            Order: {order.status}
-                          </span>
-
-                          {/* Payment Method Badge */}
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
-                              order.paymentMethod === 'Razorpay'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : order.paymentMethod === 'CreditCard'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            {order.paymentMethod === 'Razorpay' ? (
-                              <>
-                                <CreditCard className="w-3.5 h-3.5" /> Razorpay (Online)
-                              </>
-                            ) : order.paymentMethod === 'CreditCard' ? (
-                              <>
-                                <CreditCard className="w-3.5 h-3.5" /> Card / POS
-                              </>
-                            ) : (
-                              <>
-                                <DollarSign className="w-3.5 h-3.5" /> Cash on Delivery
-                              </>
-                            )}
-                          </span>
-
-                          {/* Payment Status Badge */}
-                          <span
-                            className={`px-2.5 py-0.5 rounded text-[11px] font-bold ${paymentDisplay.badgeClass}`}
-                          >
-                            {paymentDisplay.badgeLabel}
-                          </span>
-                        </div>
-                        <span className="text-xs text-[#64748B]">
-                          Placed on {new Date(order.createdAt).toLocaleString('en-US')}
-                        </span>
-                      </div>
-
-                      {/* Status Selector & Payment Status Toggle */}
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-[#64748B]">Pay Status:</span>
-                          {order.status === 'Cancelled' ? (
-                            <span className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 font-extrabold text-xs flex items-center gap-1 border border-rose-200">
-                              Order Cancelled
-                            </span>
-                          ) : order.paymentStatus === 'Paid' ? (
-                            <span className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1 shadow-xs">
-                              🔒 Paid (Verified)
-                            </span>
-                          ) : (
-                            <select
-                              value={order.paymentStatus || 'Pending'}
-                              onChange={(e) =>
-                                handleUpdateOrderStatus(order._id, { paymentStatus: e.target.value })
-                              }
-                              className="bg-[#FFFCFB] border border-[#E8EDF2] rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
-                            >
-                              <option value="Pending">Pending Verification</option>
-                              <option value="Paid">Mark Paid & Verify</option>
-                              <option value="Failed">Failed</option>
-                            </select>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-[#64748B]">Order Status:</span>
-                          {order.status === 'Completed' ? (
-                            <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center gap-1 border border-emerald-300 shadow-xs">
-                              🔒 Completed (Locked)
-                            </span>
-                          ) : (
-                            <select
-                              value={order.status}
-                              onChange={(e) =>
-                                handleUpdateOrderStatus(order._id, { status: e.target.value })
-                              }
-                              className="bg-[#FFFCFB] border border-[#E8EDF2] rounded-xl px-3 py-1.5 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
-                            >
-                              <option value="Pending">Pending</option>
-                              <option value="Processing">Processing</option>
-                              <option value="Completed">Completed</option>
-                              <option value="Cancelled">Cancelled</option>
-                            </select>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Customer & Items grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
-                      {/* Customer Details */}
-                      <div className="p-4 rounded-xl bg-[#FFFCFB] border border-[#E8EDF2] space-y-2">
-                        <h5 className="font-bold text-[#163B5C] uppercase tracking-wider text-[11px]">
-                          Customer Contact Details
-                        </h5>
-                        <div className="space-y-1 text-[#64748B]">
-                          <p className="font-bold text-[#163B5C] text-sm">{order.customerName}</p>
-                          <p className="flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5 text-[#ED3500]" /> {order.customerPhone}
-                          </p>
-                          {order.customerEmail ? (
-                            <p className="flex items-center gap-1.5">
-                              <Mail className="w-3.5 h-3.5 text-[#ED3500]" /> {order.customerEmail}
-                            </p>
-                          ) : null}
-                          <p className="flex items-start gap-1.5 pt-1 border-t border-[#E8EDF2]">
-                            <MapPin className="w-3.5 h-3.5 text-[#ED3500] shrink-0 mt-0.5" />
-                            <span>
-                              {order.shippingAddress} (Pincode: {order.pincode})
-                            </span>
-                          </p>
-
-                          {(order.paymentMethod === 'Razorpay' || order.paymentMethod === 'CreditCard') && order.transactionId && (
-                            <div className="pt-2 border-t border-[#E8EDF2] space-y-1 text-xs">
-                              <span className="font-bold text-[#163B5C] block">Payment Ref / Transaction ID:</span>
-                              <code className="bg-emerald-50 text-emerald-800 px-2 py-1 rounded font-mono text-[11px] block border border-emerald-200">
-                                {order.transactionId}
-                              </code>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Order Items */}
-                      <div className="lg:col-span-2 space-y-2">
-                        <h5 className="font-bold text-[#163B5C] uppercase tracking-wider text-[11px]">
-                          Ordered Items ({order.items.length})
-                        </h5>
-                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                          {order.items.map((item, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between p-2.5 rounded-xl bg-[#FFFCFB] border border-[#E8EDF2]"
-                            >
-                              <div className="flex items-center gap-3">
-                                {item.image && (
-                                  <img
-                                    src={item.image}
-                                    alt={item.name}
-                                    className="w-10 h-10 object-cover rounded-lg bg-white border border-[#E8EDF2]"
-                                  />
-                                )}
-                                <div>
-                                  <h6 className="font-bold text-[#163B5C] text-xs">{item.name}</h6>
-                                  <span className="text-[#64748B] text-[10px]">
-                                    GST: {item.gst}%
+                            {/* Order ID & Channel & Date */}
+                            <td className="py-3.5 px-4">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-sm text-[#163B5C] group-hover:text-[#ED3500] transition-colors">
+                                    {order.orderId}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                                      order.orderType === 'POS'
+                                        ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    }`}
+                                  >
+                                    {order.orderType === 'POS' ? 'POS' : 'Online'}
                                   </span>
                                 </div>
+                                <p className="text-[11px] text-[#64748B]">
+                                  {new Date(order.createdAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </p>
                               </div>
-                              <div className="text-right">
-                                <span className="font-bold text-[#163B5C]">
-                                  {formatCurrency(item.price)} × {item.quantity}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                            </td>
 
-                        {/* Bill Breakdown */}
-                        <div className="flex items-center justify-between pt-2 border-t border-[#E8EDF2] font-bold text-xs">
-                          <span className="text-[#64748B]">
-                            Subtotal: {formatCurrency(order.subtotal)} | Tax: {formatCurrency(order.totalTax !== undefined ? order.totalTax : order.totalGst || 0)}
-                          </span>
-                          <span className={`text-sm font-black flex items-center gap-1.5 ${paymentDisplay.amountClass}`}>
-                            {paymentDisplay.isVerified && <Check className="w-4 h-4 text-emerald-600 inline" />}
-                            {paymentDisplay.amountLabel} {formatCurrency(order.totalAmount)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                            {/* Customer */}
+                            <td className="py-3.5 px-4">
+                              <div className="space-y-0.5">
+                                <p className="font-bold text-[#163B5C] text-xs sm:text-sm line-clamp-1">
+                                  {order.customerName || 'Walk-in Guest'}
+                                </p>
+                                <p className="text-[11px] text-[#64748B] flex items-center gap-1">
+                                  <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                  <span className="truncate">{order.customerPhone}</span>
+                                </p>
+                              </div>
+                            </td>
+
+                            {/* Items Summary */}
+                            <td className="py-3.5 px-4 max-w-[240px]">
+                              <div className="space-y-0.5">
+                                <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px]">
+                                  {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                                </span>
+                                <p className="text-xs text-[#64748B] truncate" title={itemsSummary}>
+                                  {itemsSummary || 'Standard Floral Package'}
+                                </p>
+                              </div>
+                            </td>
+
+                            {/* Total Amount (USD) */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="space-y-0.5">
+                                <span className="text-sm font-black text-[#163B5C]">
+                                  {formatCurrency(order.totalAmount)}
+                                </span>
+                                {paymentDisplay.isVerified && (
+                                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
+                                    <Check className="w-3 h-3 text-emerald-600" /> Verified
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Payment Method & Status */}
+                            <td
+                              className="py-3.5 px-4 whitespace-nowrap"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="space-y-1">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${paymentDisplay.badgeClass}`}
+                                >
+                                  {order.paymentMethod === 'Razorpay' || order.paymentMethod === 'CreditCard' ? (
+                                    <CreditCard className="w-3 h-3" />
+                                  ) : (
+                                    <DollarSign className="w-3 h-3" />
+                                  )}
+                                  <span>{paymentDisplay.badgeLabel}</span>
+                                </span>
+                                <p className="text-[10px] text-slate-500 font-medium">
+                                  {order.paymentMethod}
+                                </p>
+                              </div>
+                            </td>
+
+                            {/* Order Status */}
+                            <td
+                              className="py-3.5 px-4 whitespace-nowrap"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {order.status === 'Completed' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-xs">
+                                  <Check className="w-3.5 h-3.5" /> Completed
+                                </span>
+                              ) : order.status === 'Cancelled' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-extrabold text-xs">
+                                  <X className="w-3.5 h-3.5" /> Cancelled
+                                </span>
+                              ) : (
+                                <select
+                                  value={order.status}
+                                  onChange={(e) =>
+                                    handleUpdateOrderStatus(order._id, { status: e.target.value })
+                                  }
+                                  className="bg-[#FFFCFB] border border-[#E8EDF2] rounded-lg px-2.5 py-1 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
+                                >
+                                  <option value="Pending">Pending</option>
+                                  <option value="Processing">Processing</option>
+                                  <option value="Completed">Completed</option>
+                                  <option value="Cancelled">Cancelled</option>
+                                </select>
+                              )}
+                            </td>
+
+                            {/* Actions (View Details & Print Receipt) */}
+                            <td
+                              className="py-3.5 px-4 text-right whitespace-nowrap"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedOrderForDetails(enrichOrderWithVariants(order))}
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#163B5C] hover:bg-[#112F4A] text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-colors"
+                                  title="View Full Order Details"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>View</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setReceiptOrder(enrichOrderWithVariants(order))}
+                                  className="p-1.5 rounded-lg border border-[#E8EDF2] text-[#64748B] hover:text-[#163B5C] hover:bg-slate-50 transition-colors"
+                                  title="Print Receipt / Tax Invoice"
+                                >
+                                  <Printer className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* Orders Pagination Controls */}
                 {totalOrderPages > 1 && (
-                  <div className="flex items-center justify-between pt-4 bg-white p-4 rounded-2xl border border-[#E8EDF2] text-xs text-[#64748B]">
+                  <div className="flex items-center justify-between pt-4 border-t border-[#E8EDF2] text-xs text-[#64748B]">
                     <span>
                       Page <strong className="text-[#163B5C]">{orderPage}</strong> of{' '}
-                      <strong className="text-[#163B5C]">{totalOrderPages}</strong>
+                      <strong className="text-[#163B5C]">{totalOrderPages}</strong> ({filteredOrders.length} total orders)
                     </span>
                     <div className="flex items-center gap-2">
                       <button
@@ -4453,6 +4754,362 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             </form>
           </div>
         </div>
+      )}
+
+      {/* Order Details Comprehensive Modal */}
+      {selectedOrderForDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-[#E8EDF2] shadow-2xl max-w-4xl w-full overflow-hidden my-auto max-h-[92vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="px-5 sm:px-6 py-4 bg-[#FFFCFB] border-b border-[#E8EDF2] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#ED3500]/10 text-[#ED3500] flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-base sm:text-lg text-[#163B5C]">
+                      Order #{selectedOrderForDetails.orderId}
+                    </h3>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                        selectedOrderForDetails.orderType === 'POS'
+                          ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      }`}
+                    >
+                      {selectedOrderForDetails.orderType === 'POS' ? 'POS Counter' : 'Online Delivery'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#64748B]">
+                    Placed on {new Date(selectedOrderForDetails.createdAt).toLocaleString('en-US')}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedOrderForDetails(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                title="Close Order Details"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+              {/* Quick Status Control Strip */}
+              <div className="p-4 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-[#163B5C]">Order Fulfillment:</span>
+                  {selectedOrderForDetails.status === 'Completed' ? (
+                    <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold flex items-center gap-1 border border-emerald-300">
+                      🔒 Completed (Locked)
+                    </span>
+                  ) : (
+                    <select
+                      value={selectedOrderForDetails.status}
+                      onChange={(e) =>
+                        handleUpdateOrderStatus(selectedOrderForDetails._id, { status: e.target.value })
+                      }
+                      className="bg-white border border-[#E8EDF2] rounded-xl px-3 py-1.5 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-[#163B5C]">Payment Verification:</span>
+                  {selectedOrderForDetails.status === 'Cancelled' ? (
+                    <span className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 font-extrabold border border-rose-200">
+                      Cancelled
+                    </span>
+                  ) : selectedOrderForDetails.paymentStatus === 'Paid' ? (
+                    <span className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white font-extrabold flex items-center gap-1 shadow-xs">
+                      🔒 Paid (Verified)
+                    </span>
+                  ) : (
+                    <select
+                      value={selectedOrderForDetails.paymentStatus || 'Pending'}
+                      onChange={(e) =>
+                        handleUpdateOrderStatus(selectedOrderForDetails._id, { paymentStatus: e.target.value })
+                      }
+                      className="bg-white border border-[#E8EDF2] rounded-xl px-3 py-1.5 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
+                    >
+                      <option value="Pending">Pending Verification</option>
+                      <option value="Paid">Mark Paid &amp; Verify</option>
+                      <option value="Failed">Failed</option>
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              {/* 2-Column Grid: Customer & Delivery Details vs Items & Financial Summary */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* Column 1: Customer & Delivery Details */}
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="p-4 rounded-2xl bg-white border border-[#E8EDF2] space-y-2.5 shadow-2xs">
+                    <h5 className="font-extrabold text-[#163B5C] text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-[#ED3500]" />
+                      <span>Customer Contact</span>
+                    </h5>
+                    <div className="space-y-1 text-slate-600">
+                      <p className="font-bold text-sm text-[#163B5C]">{selectedOrderForDetails.customerName || 'Walk-in Guest'}</p>
+                      <p className="flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-[#ED3500] shrink-0" />
+                        <a href={`tel:${selectedOrderForDetails.customerPhone}`} className="hover:underline font-medium">
+                          {selectedOrderForDetails.customerPhone}
+                        </a>
+                      </p>
+                      {selectedOrderForDetails.customerEmail && (
+                        <p className="flex items-center gap-2">
+                          <Mail className="w-3.5 h-3.5 text-[#ED3500] shrink-0" />
+                          <a href={`mailto:${selectedOrderForDetails.customerEmail}`} className="hover:underline font-medium">
+                            {selectedOrderForDetails.customerEmail}
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-white border border-[#E8EDF2] space-y-2.5 shadow-2xs">
+                    <h5 className="font-extrabold text-[#163B5C] text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4 text-[#ED3500]" />
+                      <span>Delivery / Shipping Address</span>
+                    </h5>
+                    <div className="space-y-1 text-slate-600">
+                      <p className="font-medium text-[#163B5C]">
+                        {selectedOrderForDetails.shippingAddress || selectedOrderForDetails.streetAddress || 'Direct Storefront Pickup / In-person Delivery'}
+                      </p>
+                      {(selectedOrderForDetails.city || selectedOrderForDetails.state || selectedOrderForDetails.pincode || selectedOrderForDetails.zipCode) && (
+                        <p className="text-slate-500 text-[11px]">
+                          {[
+                            selectedOrderForDetails.city,
+                            selectedOrderForDetails.state,
+                            selectedOrderForDetails.pincode || selectedOrderForDetails.zipCode,
+                          ]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-white border border-[#E8EDF2] space-y-2.5 shadow-2xs">
+                    <h5 className="font-extrabold text-[#163B5C] text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <CreditCard className="w-4 h-4 text-[#ED3500]" />
+                      <span>Payment &amp; Transaction Details</span>
+                    </h5>
+                    <div className="space-y-2 text-slate-600">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500">Method:</span>
+                        <span className="font-bold text-[#163B5C]">{selectedOrderForDetails.paymentMethod}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500">Status:</span>
+                        <span className="font-bold text-[#163B5C]">{selectedOrderForDetails.paymentStatus || 'Pending'}</span>
+                      </div>
+                      {selectedOrderForDetails.transactionId && (
+                        <div className="pt-2 border-t border-slate-100 space-y-1">
+                          <span className="text-slate-500 block text-[11px]">Transaction ID / Reference:</span>
+                          <code className="bg-emerald-50 text-emerald-800 px-2 py-1 rounded font-mono text-[11px] block border border-emerald-200 break-all select-all">
+                            {selectedOrderForDetails.transactionId}
+                          </code>
+                        </div>
+                      )}
+                      {selectedOrderForDetails.cashierName && (
+                        <div className="flex justify-between items-center pt-1 border-t border-slate-100">
+                          <span className="text-slate-500">Cashier:</span>
+                          <span className="font-bold text-[#163B5C]">{selectedOrderForDetails.cashierName}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 2: Ordered Items & Bill Summary */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#E8EDF2] space-y-3.5 shadow-2xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                      <h5 className="font-extrabold text-[#163B5C] text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <Package className="w-4 h-4 text-[#ED3500]" />
+                        <span>Ordered Items ({selectedOrderForDetails.items?.length || 0})</span>
+                      </h5>
+                      <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[11px]">
+                        Total Units: {selectedOrderForDetails.items?.reduce((sum, it) => sum + (it.quantity || 1), 0) || 0}
+                      </span>
+                    </div>
+
+                    <div className="max-h-96 overflow-y-auto pr-1 space-y-2.5">
+                      {selectedOrderForDetails.items?.map((item, idx) => {
+                        const matchedProduct = products.find(
+                          (p) => p._id === item.productId || p.name?.toLowerCase().trim() === item.name?.toLowerCase().trim()
+                        );
+                        const matchedVariant =
+                          (item.variantName && item.variantName.trim().length > 0)
+                            ? item.variantName
+                            : matchedProduct?.variants?.find((v) => Number(v.price) === Number(item.price))?.name;
+                        const itemImage = item.image || matchedProduct?.image;
+                        const lineTotal = item.price * item.quantity;
+                        const categoryName = matchedProduct?.category;
+
+                        return (
+                          <div
+                            key={idx}
+                            className="p-3 sm:p-3.5 rounded-xl bg-[#FAFBFD] border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                          >
+                            <div className="flex items-start gap-3 min-w-0 flex-1">
+                              {itemImage ? (
+                                <img
+                                  src={itemImage}
+                                  alt={item.name}
+                                  className="w-14 h-14 object-cover rounded-xl bg-white border border-slate-200 shrink-0 shadow-2xs"
+                                />
+                              ) : (
+                                <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                                  <Package className="w-6 h-6" />
+                                </div>
+                              )}
+
+                              <div className="min-w-0 space-y-1.5 flex-1">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <p className="font-extrabold text-[#163B5C] text-xs sm:text-sm leading-snug break-words">
+                                    {item.name}
+                                  </p>
+                                  {categoryName && (
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shrink-0">
+                                      {categoryName}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Selected Variant Badge */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {matchedVariant ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs">
+                                      <Tag className="w-3 h-3 text-purple-600 shrink-0" />
+                                      <span>Variant: {matchedVariant}</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                                      Standard Item
+                                    </span>
+                                  )}
+
+                                  {(item.productId || matchedProduct?._id) && (
+                                    <Link
+                                      href={`/product/${item.productId || matchedProduct?._id}`}
+                                      target="_blank"
+                                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#063D29] hover:text-[#ED3500] hover:underline"
+                                    >
+                                      <span>View Product</span>
+                                      <ExternalLink className="w-3 h-3" />
+                                    </Link>
+                                  )}
+                                </div>
+
+                                {/* Price breakdown & tax info */}
+                                <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 font-medium">
+                                  <span>
+                                    Qty: <strong className="text-slate-800 font-bold">{item.quantity}</strong> × {formatCurrency(item.price)} each
+                                  </span>
+                                  {item.isTaxable !== false && (
+                                    <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px]">
+                                      {item.taxCode ? `Tax: ${item.taxCode}` : item.gst ? `Tax: ${item.gst}%` : 'Taxable'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Line Total */}
+                            <div className="sm:text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 flex sm:flex-col justify-between items-center sm:items-end w-full sm:w-auto">
+                              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold sm:block">
+                                Line Total
+                              </span>
+                              <span className="font-extrabold text-sm sm:text-base text-[#163B5C]">
+                                {formatCurrency(lineTotal)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Financial Breakdown */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <h5 className="font-extrabold text-[#163B5C] text-xs uppercase tracking-wider">
+                      Financial Summary
+                    </h5>
+                    <div className="space-y-1.5 text-slate-600">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span className="font-semibold">{formatCurrency(selectedOrderForDetails.subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Sales Tax:</span>
+                        <span className="font-semibold">
+                          {formatCurrency(
+                            selectedOrderForDetails.totalTax !== undefined
+                              ? selectedOrderForDetails.totalTax
+                              : selectedOrderForDetails.totalGst || 0
+                          )}
+                        </span>
+                      </div>
+                      {selectedOrderForDetails.discountAmount ? (
+                        <div className="flex justify-between text-emerald-700 font-medium">
+                          <span>Discount:</span>
+                          <span>-{formatCurrency(selectedOrderForDetails.discountAmount)}</span>
+                        </div>
+                      ) : null}
+                      <div className="pt-2 border-t border-slate-200 flex justify-between items-center font-black text-sm text-[#163B5C]">
+                        <span>Grand Total:</span>
+                        <span className="text-base text-[#ED3500]">
+                          {formatCurrency(selectedOrderForDetails.totalAmount)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Bottom Footer */}
+            <div className="px-5 sm:px-6 py-4 bg-[#FFFCFB] border-t border-[#E8EDF2] flex items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setReceiptOrder(enrichOrderWithVariants(selectedOrderForDetails));
+                }}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <Printer className="w-4 h-4 text-slate-500" />
+                <span>Print Receipt / Tax Invoice</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedOrderForDetails(null)}
+                className="px-5 py-2.5 rounded-xl bg-[#163B5C] hover:bg-[#112F4A] text-white font-bold text-xs transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Instant POS / Tax Receipt Slip Modal */}
+      {receiptOrder && (
+        <POSReceipt
+          order={receiptOrder}
+          onClose={() => setReceiptOrder(null)}
+        />
       )}
 
       {/* Footer */}

@@ -118,6 +118,11 @@ export async function POST(request: Request) {
           unitPrice = Number(variant.price);
           variantName = variant.name;
         }
+      } else if (dbProduct && !variantName && Array.isArray(dbProduct.variants) && dbProduct.variants.length > 0) {
+        const variant = dbProduct.variants.find((v: any) => Number(v.price) === Number(unitPrice));
+        if (variant) {
+          variantName = variant.name;
+        }
       }
 
       const lineSubtotalCents = toCents(unitPrice) * qty;

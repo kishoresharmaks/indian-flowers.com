@@ -170,7 +170,7 @@ Visit: https://indian-flowers.com`;
             </div>
             {order.items.map((it: any, idx: number) => (
               <div key={idx} className="grid grid-cols-12 text-[11px] items-center">
-                <span className="col-span-6 line-clamp-1 font-semibold">
+                <span className="col-span-6 font-semibold break-words leading-tight pr-1">
                   {it.name} {it.variantName ? `(${it.variantName})` : ''}
                 </span>
                 <span className="col-span-2 text-center">{it.quantity}</span>
