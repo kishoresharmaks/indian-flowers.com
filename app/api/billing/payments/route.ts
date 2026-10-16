@@ -39,21 +39,27 @@ export async function GET(req: NextRequest) {
 
       const mappedOrderPayments = orderPayments
         .filter((ord: any) => {
-          const num = ord.invoiceNumber || ord.orderNumber;
+          const num = ord.invoiceNumber || ord.orderId;
           return !num || !existingDocNumbers.has(num);
         })
-        .map((ord: any) => ({
-          _id: `ord_${ord._id}`,
-          paymentType: 'PAYMENT_IN',
-          partyName: ord.customerName || 'Walk-in Guest',
-          partyPhone: ord.customerPhone || '0000000000',
-          amount: ord.paymentStatus === 'Paid' ? ord.totalAmount : ord.cashReceived || ord.totalAmount,
-          paymentMode: ord.paymentMethod || 'CASH',
-          referenceNo: ord.transactionId || ord.paymentMethod || 'DIRECT',
-          docNumber: ord.invoiceNumber || ord.orderNumber || `BH-POS-${String(ord._id).slice(-6).toUpperCase()}`,
-          notes: ord.orderType === 'POS' ? 'POS Counter Billing' : 'Online Customer Checkout',
-          createdAt: ord.createdAt,
-        }));
+        .map((ord: any) => {
+          const isPos = ord.orderType === 'POS';
+          const docNumber = isPos
+            ? (ord.invoiceNumber || ord.orderId || `BH-POS-${String(ord._id).slice(-6).toUpperCase()}`)
+            : (ord.orderId || ord.invoiceNumber || `ORD-${String(ord._id).slice(-6).toUpperCase()}`);
+          return {
+            _id: `ord_${ord._id}`,
+            paymentType: 'PAYMENT_IN',
+            partyName: ord.customerName || (isPos ? 'Walk-in Guest' : 'Online Customer'),
+            partyPhone: ord.customerPhone || '0000000000',
+            amount: ord.paymentStatus === 'Paid' ? ord.totalAmount : ord.cashReceived || ord.totalAmount,
+            paymentMode: ord.paymentMethod || (isPos ? 'CASH' : 'Razorpay'),
+            referenceNo: ord.transactionId || ord.paymentMethod || 'DIRECT',
+            docNumber,
+            notes: isPos ? 'POS Counter Billing' : 'Online Customer Checkout',
+            createdAt: ord.createdAt,
+          };
+        });
 
       // 2. Fetch legacy Sale Documents with paidAmount > 0 that lack explicit PaymentTransactions
       const saleDocPayments = await SaleDocument.find({

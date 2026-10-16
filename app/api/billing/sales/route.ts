@@ -41,11 +41,15 @@ export async function GET(req: NextRequest) {
 
       const mappedOrders = orders.map((ord: any) => {
         const isPaid = ord.paymentStatus === 'Paid';
+        const isPos = ord.orderType === 'POS';
+        const docNumber = isPos
+          ? (ord.invoiceNumber || ord.orderId || `BH-POS-${String(ord._id).slice(-6).toUpperCase()}`)
+          : (ord.orderId || ord.invoiceNumber || `ORD-${String(ord._id).slice(-6).toUpperCase()}`);
         return {
           _id: String(ord._id),
           docType: 'SALE_INVOICE',
-          docNumber: ord.invoiceNumber || ord.orderNumber || `BH-POS-${String(ord._id).slice(-6).toUpperCase()}`,
-          customerName: ord.customerName || 'Walk-in Guest',
+          docNumber,
+          customerName: ord.customerName || (isPos ? 'Walk-in Guest' : 'Online Customer'),
           customerPhone: ord.customerPhone || '0000000000',
           customerEmail: ord.customerEmail || '',
           items: ord.items || [],
@@ -54,10 +58,10 @@ export async function GET(req: NextRequest) {
           grandTotal: ord.totalAmount,
           paidAmount: isPaid ? ord.totalAmount : ord.cashReceived || 0,
           balanceAmount: isPaid ? 0 : Math.max(0, ord.totalAmount - (ord.cashReceived || 0)),
-          paymentMethod: ord.paymentMethod || 'CASH',
-          paymentStatus: ord.paymentStatus || (ord.orderType === 'POS' ? 'Paid' : 'Pending'),
+          paymentMethod: ord.paymentMethod || (isPos ? 'CASH' : 'Razorpay'),
+          paymentStatus: ord.paymentStatus || (isPos ? 'Paid' : 'Pending'),
           status: ord.status === 'Completed' ? 'Completed' : isPaid ? 'Completed' : 'Active',
-          orderSource: ord.orderType || 'ONLINE',
+          orderSource: isPos ? 'POS' : 'ONLINE',
           createdAt: ord.createdAt,
         };
       });
@@ -81,7 +85,7 @@ export async function GET(req: NextRequest) {
       const mappedSaleOrders = saleOrders.map((ord: any) => ({
         _id: String(ord._id),
         docType: 'SALE_ORDER',
-        docNumber: ord.orderNumber || ord.invoiceNumber || `BH-ORD-${String(ord._id).slice(-6).toUpperCase()}`,
+        docNumber: ord.orderId || ord.invoiceNumber || `ORD-${String(ord._id).slice(-6).toUpperCase()}`,
         customerName: ord.customerName || 'Online Customer',
         customerPhone: ord.customerPhone || '0000000000',
         customerEmail: ord.customerEmail || '',

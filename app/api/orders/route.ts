@@ -204,6 +204,8 @@ export async function POST(request: Request) {
     // 4. Create Order with Durable Tax Snapshot and US Address
     const newOrder = await Order.create({
       orderId,
+      orderType: 'ONLINE',
+      invoiceNumber: orderId,
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       customerEmail: (customerEmail || '').trim(),

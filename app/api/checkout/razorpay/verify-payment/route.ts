@@ -173,6 +173,8 @@ export async function POST(request: Request) {
     // 7. Persist Confirmed & Paid Order
     const newOrder = await Order.create({
       orderId,
+      orderType: 'ONLINE',
+      invoiceNumber: orderId,
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       customerEmail: (customerEmail || '').trim(),
