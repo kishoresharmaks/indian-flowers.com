@@ -291,7 +291,7 @@ export default function PrintableDocumentModal({
               {/* Right Column: Company Logo */}
               <div className="text-right flex-shrink-0">
                 <img
-                  src={company.logoUrl}
+                  src={company.logoUrl || '/indian-flowers-logo.svg'}
                   alt={company.name}
                   className="w-24 h-24 object-contain rounded-xl border border-slate-200 bg-white shadow-2xs"
                   onError={(e) => {

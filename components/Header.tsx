@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import BrandLogo from './BrandLogo';
 import {
   Search,
   ShoppingBag,
@@ -242,52 +243,7 @@ export default function Header({
             </button>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group min-w-0">
-              {/* Stylized Indian Lotus Icon */}
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#F4F8F4] border border-emerald-100/80 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                <svg
-                  viewBox="0 0 40 40"
-                  className="w-5.5 h-5.5 sm:w-7 sm:h-7"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  {/* Central Lotus Blossom Petal */}
-                  <path
-                    d="M20 5C20 5 13 14 13 22C13 26 16.5 29 20 29C23.5 29 27 26 27 22C27 14 20 5 20 5Z"
-                    fill="#E0533C"
-                  />
-                  {/* Left Radiant Petal */}
-                  <path
-                    d="M17 12C17 12 8 18 8 24C8 28 11.5 31 16 30C12 26 14 19 17 12Z"
-                    fill="#E58D3D"
-                  />
-                  {/* Right Radiant Petal */}
-                  <path
-                    d="M23 12C23 12 32 18 32 24C32 28 28.5 31 24 30C28 26 26 19 23 12Z"
-                    fill="#E58D3D"
-                  />
-                  {/* Base Green Leaf Petals */}
-                  <path
-                    d="M11 26C7 28 6 32 8 33C11 34 16 32 18 29C15 28 12.5 27 11 26Z"
-                    fill="#15803D"
-                  />
-                  <path
-                    d="M29 26C33 28 34 32 32 33C29 34 24 32 22 29C25 28 27.5 27 29 26Z"
-                    fill="#15803D"
-                  />
-                </svg>
-              </div>
-
-              {/* Brand Typography */}
-              <div className="min-w-0">
-                <span className="text-[14.5px] sm:text-xl font-bold text-[#134633] tracking-[-0.03em] block leading-tight truncate">
-                  {storeName}
-                </span>
-                <span className="hidden sm:block text-[10px] sm:text-[10.5px] text-gray-500 font-normal tracking-wide mt-0.5">
-                  {storeTagline}
-                </span>
-              </div>
-            </Link>
+            <BrandLogo storeName={storeName} storeTagline={storeTagline} size="md" />
           </div>
 
           {/* Center: Search Input Bar (Desktop) */}
@@ -499,21 +455,7 @@ export default function Header({
       >
             {/* Drawer Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0 bg-white">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-[#F4F8F4] border border-emerald-100 flex items-center justify-center shrink-0 shadow-2xs">
-                  <svg viewBox="0 0 40 40" className="w-6 h-6" fill="none">
-                    <path d="M20 5C20 5 13 14 13 22C13 26 16.5 29 20 29C23.5 29 27 26 27 22C27 14 20 5 20 5Z" fill="#E0533C" />
-                    <path d="M17 12C17 12 8 18 8 24C8 28 11.5 31 16 30C12 26 14 19 17 12Z" fill="#E58D3D" />
-                    <path d="M23 12C23 12 32 18 32 24C32 28 28.5 31 24 30C28 26 26 19 23 12Z" fill="#E58D3D" />
-                    <path d="M11 26C7 28 6 32 8 33C11 34 16 32 18 29C15 28 12.5 27 11 26Z" fill="#15803D" />
-                    <path d="M29 26C33 28 34 32 32 33C29 34 24 32 22 29C25 28 27.5 27 29 26Z" fill="#15803D" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[15px] font-bold tracking-tight text-[#134633] block truncate">{storeName}</span>
-                  <span className="text-[10px] text-gray-500 block truncate">{storeTagline}</span>
-                </div>
-              </div>
+              <BrandLogo storeName={storeName} storeTagline={storeTagline} size="sm" asLink={false} />
               <button
                 onClick={(e) => {
                   e.currentTarget.blur();

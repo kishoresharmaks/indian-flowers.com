@@ -2,8 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
+import BrandLogo from './BrandLogo';
 import {
-  Flower2,
   Phone,
   Mail,
   MapPin,
@@ -64,19 +64,7 @@ export default function Footer({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
           {/* Column 1: Brand Info & Mission Statement */}
           <div className="space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Flower2 className="w-5 h-5 text-emerald-300" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold tracking-tight text-white leading-tight">
-                  The Indian Flowers
-                </h3>
-                <span className="text-[10px] text-emerald-300 font-medium tracking-wide uppercase">
-                  Fresh Indian Garlands • USA
-                </span>
-              </div>
-            </Link>
+            <BrandLogo variant="dark" size="md" />
 
             <p className="text-xs text-white/80 leading-relaxed font-normal">
               We pride ourselves on delivering fresh and quality garlands that exceed our customer’s expectations with every order. Ensuring prompt delivery of our finest garlands across the United States.

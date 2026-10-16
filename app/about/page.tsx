@@ -20,6 +20,7 @@ import {
   Users,
 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import BrandLogo from '@/components/BrandLogo';
 
 export const metadata: Metadata = {
   title: 'About Us | The Indian Flowers — Fresh Indian Garlands & Blooms USA',
@@ -107,19 +108,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             {/* Left: Brand Identity */}
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-full bg-[#0B3B24] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                <Flower2 className="w-5 h-5 text-emerald-300" />
-              </div>
-              <div>
-                <span className="font-extrabold text-lg sm:text-xl text-[#0B3B24] tracking-tight block leading-tight">
-                  The Indian Flowers
-                </span>
-                <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase text-stone-500 block">
-                  Fresh Indian Garlands • USA
-                </span>
-              </div>
-            </Link>
+            <BrandLogo size="md" />
 
             {/* Right: Quick Actions */}
             <div className="flex items-center gap-3">
