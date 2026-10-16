@@ -38,13 +38,104 @@ function getWhatsAppUrl(phone: string): string {
   return `https://wa.me/${cleanDigits}?text=Hi%20NEXUS%20Support%2C%20I%20need%20assistance%20with%20my%20license%20key.`;
 }
 
+interface ClientErrorNotice {
+  title: string;
+  message: string;
+  suggestion?: string;
+}
+
+function parseUserFriendlyError(rawError: string, status?: number): ClientErrorNotice {
+  const text = (rawError || '').toLowerCase();
+
+  // 1. Database or configuration initialization issues
+  if (
+    text.includes('mongodb') ||
+    text.includes('database') ||
+    text.includes('finalized') ||
+    text.includes('verify the') ||
+    status === 409
+  ) {
+    return {
+      title: 'Store Setup Initializing',
+      message: 'Your store database is currently finalizing its connection.',
+      suggestion: 'Please wait a moment and try activating again, or refresh your browser.',
+    };
+  }
+
+  // 2. Licensing Authority server connection or timeout
+  if (
+    text.includes('licensing authority') ||
+    text.includes('server is online') ||
+    text.includes('cannot connect') ||
+    text.includes('failed to fetch') ||
+    text.includes('network') ||
+    text.includes('econnrefused') ||
+    status === 503
+  ) {
+    return {
+      title: 'Licensing Service Unreachable',
+      message: 'We were unable to connect to the license verification authority right now.',
+      suggestion: 'Please check your internet connection and try again in a few moments.',
+    };
+  }
+
+  // 3. Domain mismatch or unauthorized domain
+  if (
+    text.includes('domain') ||
+    text.includes('mismatch') ||
+    text.includes('unauthorized domain') ||
+    text.includes('host')
+  ) {
+    return {
+      title: 'Domain Mismatch',
+      message: 'This commercial key is registered to a different storefront domain.',
+      suggestion: 'Please contact support below to bind your license key to this domain.',
+    };
+  }
+
+  // 4. Invalid or unrecognized license key
+  if (
+    text.includes('valid license key') ||
+    text.includes('invalid') ||
+    text.includes('not found') ||
+    text.includes('rejected') ||
+    status === 400 ||
+    status === 404
+  ) {
+    return {
+      title: 'Invalid License Key',
+      message: 'The license key entered is invalid or could not be recognized.',
+      suggestion: 'Double-check the format (e.g. NEX-LIC-XXXX-XXXX-XXXX) or copy it directly from your receipt.',
+    };
+  }
+
+  // 5. Expired or suspended license
+  if (text.includes('expired') || text.includes('suspended')) {
+    return {
+      title: 'License Inactive or Expired',
+      message: 'This commercial license has expired or is currently suspended.',
+      suggestion: 'Please connect with support via WhatsApp or email below to renew your plan.',
+    };
+  }
+
+  // 6. Generic friendly fallback
+  return {
+    title: 'Activation Issue',
+    message:
+      rawError && rawError.length < 100 && !text.includes('error') && !text.includes('server')
+        ? rawError
+        : 'We were unable to activate your license key at this time.',
+    suggestion: 'Please check your license key or contact customer support below for instant assistance.',
+  };
+}
+
 export default function LicenseActivationModal({
   license,
   onActivated,
 }: LicenseActivationModalProps) {
   const [licenseKeyInput, setLicenseKeyInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorNotice, setErrorNotice] = useState<ClientErrorNotice | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
 
   // Fetch support contact details safely from ENV
@@ -53,11 +144,15 @@ export default function LicenseActivationModal({
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    setErrorNotice(null);
     setSuccessMsg('');
 
     if (!licenseKeyInput.trim()) {
-      setErrorMsg('Please enter your license key.');
+      setErrorNotice({
+        title: 'License Key Required',
+        message: 'Please enter your NEXUS PRODUCTS license key before submitting.',
+        suggestion: 'Format: NEX-LIC-XXXX-XXXX-XXXX',
+      });
       return;
     }
 
@@ -72,15 +167,15 @@ export default function LicenseActivationModal({
       const data = await res.json();
 
       if (data.success) {
-        setSuccessMsg('License activated successfully! Unlocking dashboard...');
+        setSuccessMsg('License activated successfully! Unlocking store dashboard...');
         setTimeout(() => {
           onActivated();
         }, 1200);
       } else {
-        setErrorMsg(data.message || 'License activation failed. Please check your key.');
+        setErrorNotice(parseUserFriendlyError(data.message || '', res.status));
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Cannot connect to licensing server. Please ensure the server is online.');
+      setErrorNotice(parseUserFriendlyError(err.message || '', 503));
     } finally {
       setIsSubmitting(false);
     }
@@ -245,10 +340,25 @@ export default function LicenseActivationModal({
           </div>
 
           {/* Error Alert */}
-          {errorMsg && (
-            <div className="p-3.5 bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-semibold rounded-xl flex items-center gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-              <span>{errorMsg}</span>
+          {errorNotice && (
+            <div className="p-4 bg-rose-950/80 border border-rose-800/80 text-rose-300 rounded-2xl flex items-start gap-3 shadow-lg animate-fadeIn">
+              <div className="p-1 bg-rose-900/60 rounded-lg text-rose-400 shrink-0 mt-0.5">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <div className="space-y-1 text-xs">
+                <h4 className="font-bold text-rose-200 tracking-tight">
+                  {errorNotice.title}
+                </h4>
+                <p className="text-rose-300/90 leading-relaxed font-normal">
+                  {errorNotice.message}
+                </p>
+                {errorNotice.suggestion && (
+                  <p className="text-[11px] text-amber-300/90 font-medium pt-1 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                    <span>{errorNotice.suggestion}</span>
+                  </p>
+                )}
+              </div>
             </div>
           )}
 

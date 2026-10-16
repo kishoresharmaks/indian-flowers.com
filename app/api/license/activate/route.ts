@@ -10,14 +10,14 @@ export async function POST(request: NextRequest) {
     await connectToDatabase();
     const installation = await Installation.findOne({ key: 'primary' }).lean();
     if (!installation || !['DATABASE_VERIFIED', 'LICENSE_ACTIVATED', 'COMPLETED'].includes(installation.state)) {
-      return NextResponse.json({ success: false, message: 'Verify the MongoDB connection before activating a license.' }, { status: 409 });
+      return NextResponse.json({ success: false, message: 'Store database configuration is currently being finalized. Please try again in a moment.' }, { status: 409 });
     }
     const body = await request.json();
     const { licenseKey } = body;
 
     if (!licenseKey || !licenseKey.trim()) {
       return NextResponse.json(
-        { success: false, message: 'Please enter a valid License Key.' },
+        { success: false, message: 'Please enter a valid License Key (Format: NEX-LIC-XXXX-XXXX-XXXX).' },
         { status: 400 }
       );
     }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: `Cannot connect to Licensing Authority Server at ${licensingServerUrl}. Make sure the licensing server is online.`,
+          message: 'Unable to connect to the license verification service at this time. Please try again shortly.',
         },
         { status: 503 }
       );
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     if (!serverRes.ok || !serverData.success) {
       return NextResponse.json(
-        { success: false, message: serverData.message || 'License activation rejected by server.' },
+        { success: false, message: serverData.message || 'The license key could not be verified. Please check the key and try again.' },
         { status: serverRes.status || 400 }
       );
     }
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     await captureServerException(request, error, 'store-license');
     return NextResponse.json(
-      { success: false, message: 'License activation could not be completed. Verify the key and licensing service, then try again.' },
+      { success: false, message: 'Unable to complete license activation at this time. Please verify your license key or contact customer support.' },
       { status: 500 }
     );
   }
