@@ -28,6 +28,14 @@ export async function PATCH(
       );
     }
 
+    // Prevent marking payment as paid on a cancelled order
+    if (existingOrder.status === 'Cancelled' && body.paymentStatus === 'Paid') {
+      return NextResponse.json(
+        { success: false, message: 'Cannot mark a cancelled order as paid.' },
+        { status: 400 }
+      );
+    }
+
     // Lock Paid Payment Status from further changes
     if (existingOrder.paymentStatus === 'Paid' && body.paymentStatus && body.paymentStatus !== 'Paid') {
       return NextResponse.json(

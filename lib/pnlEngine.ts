@@ -54,7 +54,10 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
   }
 
   // 1. Sales Calculation (Net of Sales Tax, as sales tax is a liability, not revenue)
-  const saleDocs = await SaleDocument.find(queryFilter).lean();
+  const saleDocs = await SaleDocument.find({
+    ...queryFilter,
+    status: { $nin: ['Cancelled', 'Draft'] },
+  }).lean();
   let b2bSaleInvoiceTotal = 0;
   let salesReturnTotal = 0;
   let totalSalesTax = 0;
@@ -72,8 +75,11 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
     }
   }
 
-  // Include storefront e-commerce orders & POS sales from Order collection
-  const orderFilter: any = { status: { $ne: 'Cancelled' } };
+  // Include storefront e-commerce orders & POS sales from Order collection (strictly verified payments only)
+  const orderFilter: any = {
+    status: { $nin: ['Cancelled', 'Failed'] },
+    paymentStatus: 'Paid',
+  };
   if (startDate || endDate) {
     orderFilter.createdAt = queryFilter.createdAt;
   }

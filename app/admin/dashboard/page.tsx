@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
+import { calculateVerifiedRevenue, getOrderPaymentDisplayInfo } from '@/lib/revenue';
 import {
   Plus,
   Package,
@@ -1160,12 +1161,12 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     router.push('/admin/login');
   };
 
-  // Metrics
+  // Metrics (Strictly verified payments only; pending COD, failed, or cancelled orders are excluded)
   const onlineOrders = orders.filter((o) => o.orderType !== 'POS');
   const posOrders = orders.filter((o) => o.orderType === 'POS');
-  const onlineRevenue = onlineOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-  const posRevenue = posOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-  const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const onlineRevenue = calculateVerifiedRevenue(onlineOrders);
+  const posRevenue = calculateVerifiedRevenue(posOrders);
+  const totalRevenue = calculateVerifiedRevenue(orders);
   const pendingOrdersCount = orders.filter((o) => o.status === 'Pending').length;
 
   // Filter & Pagination for Orders
@@ -1497,6 +1498,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
               </span>
               <span className="text-2xl font-black text-[#ED3500]">
                 {formatCurrency(totalRevenue)}
+              </span>
+              <span className="text-[10px] font-semibold text-emerald-700 block">
+                Verified payments only
               </span>
             </div>
           </div>
@@ -1996,11 +2000,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
               </div>
             ) : (
               <div className="space-y-4">
-                {paginatedOrders.map((order) => (
-                  <div
-                    key={order._id}
-                    className="bg-white rounded-2xl border border-[#E8EDF2] p-6 shadow-sm space-y-4 hover:border-[#ED3500]/30 transition-all"
-                  >
+                {paginatedOrders.map((order) => {
+                  const paymentDisplay = getOrderPaymentDisplayInfo(order);
+                  return (
+                    <div
+                      key={order._id}
+                      className="bg-white rounded-2xl border border-[#E8EDF2] p-6 shadow-sm space-y-4 hover:border-[#ED3500]/30 transition-all"
+                    >
                     {/* Top Row */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF2]">
                       <div>
@@ -2049,13 +2055,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
                           {/* Payment Status Badge */}
                           <span
-                            className={`px-2.5 py-0.5 rounded text-[11px] font-bold ${
-                              order.paymentStatus === 'Paid'
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-amber-500 text-white'
-                            }`}
+                            className={`px-2.5 py-0.5 rounded text-[11px] font-bold ${paymentDisplay.badgeClass}`}
                           >
-                            {order.paymentStatus || 'Pending'}
+                            {paymentDisplay.badgeLabel}
                           </span>
                         </div>
                         <span className="text-xs text-[#64748B]">
@@ -2067,7 +2069,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-bold text-[#64748B]">Pay Status:</span>
-                          {order.paymentStatus === 'Paid' ? (
+                          {order.status === 'Cancelled' ? (
+                            <span className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 font-extrabold text-xs flex items-center gap-1 border border-rose-200">
+                              Order Cancelled
+                            </span>
+                          ) : order.paymentStatus === 'Paid' ? (
                             <span className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1 shadow-xs">
                               🔒 Paid (Verified)
                             </span>
@@ -2185,14 +2191,16 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           <span className="text-[#64748B]">
                             Subtotal: {formatCurrency(order.subtotal)} | Tax: {formatCurrency(order.totalTax !== undefined ? order.totalTax : order.totalGst || 0)}
                           </span>
-                          <span className="text-sm font-black text-[#ED3500]">
-                            Total Paid: {formatCurrency(order.totalAmount)}
+                          <span className={`text-sm font-black flex items-center gap-1.5 ${paymentDisplay.amountClass}`}>
+                            {paymentDisplay.isVerified && <Check className="w-4 h-4 text-emerald-600 inline" />}
+                            {paymentDisplay.amountLabel} {formatCurrency(order.totalAmount)}
                           </span>
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
+                );
+              })}
 
                 {/* Orders Pagination Controls */}
                 {totalOrderPages > 1 && (
