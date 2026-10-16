@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();
     const installation = await Installation.findOne({ key: 'primary' }).lean();
-    if (!installation || !['DATABASE_VERIFIED', 'LICENSE_ACTIVATED'].includes(installation.state)) {
+    if (!installation || !['DATABASE_VERIFIED', 'LICENSE_ACTIVATED', 'COMPLETED'].includes(installation.state)) {
       return NextResponse.json({ success: false, message: 'Verify the MongoDB connection before activating a license.' }, { status: 409 });
     }
     const body = await request.json();
@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
       token: updatedSetting.signedToken,
     });
 
-    await Installation.findOneAndUpdate({ key: 'primary' }, { state: 'LICENSE_ACTIVATED' });
+    const nextState = installation.state === 'COMPLETED' ? 'COMPLETED' : 'LICENSE_ACTIVATED';
+    await Installation.findOneAndUpdate({ key: 'primary' }, { state: nextState });
 
     await captureServerEvent(request, 'license_activated', {
       license_status: clientState.status,
@@ -96,7 +97,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'License activated successfully. Continue installation.',
+      message: installation.state === 'COMPLETED'
+        ? 'License activated successfully. Store is now unlocked.'
+        : 'License activated successfully. Continue installation.',
       license: clientState,
     });
   } catch (error: any) {
