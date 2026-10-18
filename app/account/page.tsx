@@ -190,9 +190,9 @@ export default function AccountPage() {
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                   Verified US Customer
                 </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                  <Sparkles className="w-3 h-3 text-amber-500" />
-                  <span>⭐ {customer?.pointsBalance || 0} Points</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>{customer?.pointsBalance || 0} Points</span>
                 </span>
                 <span className="text-[11px] text-gray-400">
                   Member since {customer?.createdAt ? new Date(customer.createdAt).toLocaleDateString() : '2026'}
@@ -244,7 +244,7 @@ export default function AccountPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-800'
             }`}
           >
-            <Award className="w-4 h-4" />
+            <Sparkles className="w-4 h-4 text-amber-500" />
             <span>Loyalty Rewards ({customer?.pointsBalance || 0} pts)</span>
           </button>
         </div>
@@ -590,8 +590,8 @@ export default function AccountPage() {
             <div className="bg-white rounded-2xl border border-stone-200 shadow-xs p-5 sm:p-7 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
-                    <Award className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-white flex items-center justify-center shadow-xs">
+                    <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
                     <h2 className="text-base sm:text-lg font-bold text-gray-900">
@@ -618,8 +618,9 @@ export default function AccountPage() {
                   <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
                     Available Balance
                   </span>
-                  <div className="text-2xl font-extrabold text-amber-900 mt-1">
-                    ⭐ {customer?.pointsBalance || 0} pts
+                  <div className="text-2xl font-extrabold text-amber-900 mt-1 flex items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-amber-500 shrink-0" />
+                    <span>{customer?.pointsBalance || 0} pts</span>
                   </div>
                   <span className="text-xs font-semibold text-emerald-800 block mt-1">
                     ≈ {formatCurrency((customer?.pointsBalance || 0) / (loyaltyConfig?.pointsPerDollar || 10))} checkout discount
@@ -630,8 +631,9 @@ export default function AccountPage() {
                   <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
                     Lifetime Points Earned
                   </span>
-                  <div className="text-2xl font-extrabold text-emerald-900 mt-1">
-                    +{customer?.totalPointsEarned || 0} pts
+                  <div className="text-2xl font-extrabold text-emerald-900 mt-1 flex items-center gap-2">
+                    <Award className="w-6 h-6 text-emerald-600 shrink-0" />
+                    <span>+{customer?.totalPointsEarned || 0} pts</span>
                   </div>
                   <span className="text-xs text-gray-500 block mt-1">
                     Accumulated across all orders
@@ -642,8 +644,9 @@ export default function AccountPage() {
                   <span className="text-[10px] font-bold text-purple-800 uppercase tracking-wider block">
                     Lifetime Points Redeemed
                   </span>
-                  <div className="text-2xl font-extrabold text-purple-900 mt-1">
-                    -{customer?.totalPointsRedeemed || 0} pts
+                  <div className="text-2xl font-extrabold text-purple-900 mt-1 flex items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-purple-500 shrink-0" />
+                    <span>-{customer?.totalPointsRedeemed || 0} pts</span>
                   </div>
                   <span className="text-xs text-gray-500 block mt-1">
                     Saved on previous checkouts
@@ -661,7 +664,7 @@ export default function AccountPage() {
                   <div className="bg-white p-3 rounded-xl border border-stone-200/80">
                     <strong className="text-gray-900 block mb-0.5">1. Earn On Every Dollar Spent</strong>
                     <span>
-                      Get {loyaltyConfig?.pointsEarned || 10} reward points for every ${loyaltyConfig?.spendAmount || 100} spent on Indian-Flowers.com. Points are automatically credited once your order is confirmed.
+                      Get {loyaltyConfig?.pointsEarned || 10} reward points for every ${loyaltyConfig?.spendAmount || 100} spent on Indian-Flowers.com. Points are credited to your account once your order is delivered.
                     </span>
                   </div>
                   <div className="bg-white p-3 rounded-xl border border-stone-200/80">

@@ -239,11 +239,11 @@ export default function AdminBillingPage() {
                     { id: 'ALL', label: `All Parties (${parties.length})` },
                     {
                       id: 'CUSTOMER',
-                      label: `👥 Customers (${parties.filter((p) => p.partyType === 'CUSTOMER' || p.partyType === 'BOTH').length})`,
+                      label: `Customers (${parties.filter((p) => p.partyType === 'CUSTOMER' || p.partyType === 'BOTH').length})`,
                     },
                     {
                       id: 'VENDOR',
-                      label: `🏭 Vendors / Suppliers (${parties.filter((p) => p.partyType === 'VENDOR' || p.partyType === 'BOTH').length})`,
+                      label: `Vendors / Suppliers (${parties.filter((p) => p.partyType === 'VENDOR' || p.partyType === 'BOTH').length})`,
                     },
                   ].map((tab) => (
                     <button

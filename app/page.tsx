@@ -1880,15 +1880,16 @@ export default function CustomerStore() {
                             Customer Loyalty Rewards
                           </h4>
                           <p className="text-[11px] text-[#64748B]">
-                            Your balance: <strong className="text-amber-800 font-bold">⭐ {customer.pointsBalance || 0} pts</strong>
+                            Your balance: <strong className="text-amber-800 font-bold inline-flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" /> {customer.pointsBalance || 0} pts</strong>
                             {customer.pointsBalance ? ` (≈ ${formatCurrency((customer.pointsBalance || 0) / (loyaltyConfig?.pointsPerDollar || 10))} value)` : ''}
                           </p>
                         </div>
                       </div>
 
                       {estimatedPointsEarned > 0 && (
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
-                          +{estimatedPointsEarned} pts on this order
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-2.5 py-0.5 rounded-full border border-emerald-200 shrink-0 inline-flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span>+{estimatedPointsEarned} pts on this order</span>
                         </span>
                       )}
                     </div>

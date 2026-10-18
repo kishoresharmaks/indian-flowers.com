@@ -5149,7 +5149,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 {secSubmitting ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : (
-                  'Unlock Section 🔓'
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Unlock Section</span>
+                  </>
                 )}
               </button>
             </form>
@@ -5209,8 +5212,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         <RotateCcw className="w-3.5 h-3.5" /> Returned / Refunded
                       </span>
                     ) : selectedOrderForDetails.status === 'Completed' ? (
-                      <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold flex items-center gap-1 border border-emerald-300">
-                        🔒 Completed
+                      <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold flex items-center gap-1.5 border border-emerald-300">
+                        <Lock className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Completed</span>
                       </span>
                     ) : (
                       <select
@@ -5238,16 +5242,18 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         <RotateCcw className="w-3.5 h-3.5" /> Full Refund Issued
                       </span>
                     ) : selectedOrderForDetails.paymentStatus === 'Partially_Refunded' ? (
-                      <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 font-extrabold flex items-center gap-1 border border-amber-300">
-                        ⚠️ Partially Refunded
+                      <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 font-extrabold flex items-center gap-1.5 border border-amber-300">
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Partially Refunded</span>
                       </span>
                     ) : selectedOrderForDetails.status === 'Cancelled' ? (
                       <span className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 font-extrabold border border-rose-200">
                         Cancelled
                       </span>
                     ) : selectedOrderForDetails.paymentStatus === 'Paid' ? (
-                      <span className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white font-extrabold flex items-center gap-1 shadow-xs">
-                        🔒 Paid (Verified)
+                      <span className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white font-extrabold flex items-center gap-1.5 shadow-xs">
+                        <Check className="w-3.5 h-3.5 text-white" />
+                        <span>Paid (Verified)</span>
                       </span>
                     ) : (
                       <select
@@ -5302,8 +5308,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         </span>
                       </div>
                     </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${selectedOrderForDetails.isRestocked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
-                      {selectedOrderForDetails.isRestocked ? '✓ Inventory Restocked' : 'No Restock'}
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${selectedOrderForDetails.isRestocked ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-200 text-slate-700'}`}>
+                      {selectedOrderForDetails.isRestocked ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-700" />
+                          <span>Inventory Restocked</span>
+                        </>
+                      ) : (
+                        <span>No Restock</span>
+                      )}
                     </span>
                   </div>
                 )}
@@ -5550,12 +5563,14 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             <span>Reward Points:</span>
                           </span>
                           {selectedOrderForDetails.pointsAwarded ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              ✓ +{selectedOrderForDetails.pointsEarned} pts (Credited upon Delivery)
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
+                              <Check className="w-3 h-3 text-emerald-700 shrink-0" />
+                              <span>+{selectedOrderForDetails.pointsEarned} pts (Credited upon Delivery)</span>
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
-                              ⏳ +{selectedOrderForDetails.pointsEarned} pts (Pending Delivery)
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-amber-700 shrink-0" />
+                              <span>+{selectedOrderForDetails.pointsEarned} pts (Pending Delivery)</span>
                             </span>
                           )}
                         </div>

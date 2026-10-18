@@ -286,7 +286,7 @@ export default function PrintablePnLModal({
                 </span>
               </div>
               <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase bg-white border border-current">
-                {report.isProfit ? '🎉 NET PROFIT EARNED' : '⚠️ NET LOSS RECORDED'}
+                {report.isProfit ? 'NET PROFIT EARNED' : 'NET LOSS RECORDED'}
               </span>
             </div>
 

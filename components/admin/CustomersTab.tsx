@@ -408,15 +408,16 @@ export default function CustomersTab() {
             <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
               Loyalty Points
             </span>
-            <span className="text-xl sm:text-2xl font-black text-amber-600 mt-1 block">
-              ⭐ {stats.totalPointsInCirculation || 0}
+            <span className="text-xl sm:text-2xl font-black text-amber-600 mt-1 flex items-center gap-1.5">
+              <Sparkles className="w-5 h-5 text-amber-500 shrink-0" />
+              <span>{stats.totalPointsInCirculation || 0}</span>
             </span>
             <span className="text-[10px] text-[#64748B] font-medium mt-0.5 block">
               Claimed: {stats.totalPointsRedeemedAll || 0} pts
             </span>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
-            <Tag className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
           </div>
         </div>
       </div>
@@ -632,8 +633,9 @@ export default function CustomersTab() {
 
                       {/* Loyalty Points */}
                       <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-800 border border-amber-200">
-                          ⭐ {c.pointsBalance || 0}
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span>{c.pointsBalance || 0}</span>
                         </span>
                       </td>
 
@@ -723,7 +725,10 @@ export default function CustomersTab() {
                     <div className="flex items-center gap-3 sm:gap-4 text-xs">
                       <div>
                         <span className="text-[10px] text-[#64748B] block uppercase">Points</span>
-                        <span className="font-bold text-amber-600">⭐ {c.pointsBalance || 0}</span>
+                        <span className="font-bold text-amber-700 flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span>{c.pointsBalance || 0}</span>
+                        </span>
                       </div>
                       <div>
                         <span className="text-[10px] text-[#64748B] block uppercase">Orders</span>
@@ -890,8 +895,9 @@ export default function CustomersTab() {
                       Available Balance
                     </span>
                     <div className="flex items-baseline gap-2 mt-0.5">
-                      <span className="text-xl font-extrabold text-amber-700">
-                        ⭐ {selectedCustomer.pointsBalance || 0} pts
+                      <span className="text-xl font-extrabold text-amber-700 flex items-center gap-1.5">
+                        <Sparkles className="w-5 h-5 text-amber-500 shrink-0" />
+                        <span>{selectedCustomer.pointsBalance || 0} pts</span>
                       </span>
                     </div>
                     <span className="text-[11px] text-emerald-700 font-semibold block mt-0.5">
@@ -903,8 +909,9 @@ export default function CustomersTab() {
                     <span className="text-[10px] font-bold text-[#64748B] uppercase block tracking-wider">
                       Lifetime Points Earned
                     </span>
-                    <span className="text-lg font-bold text-[#163B5C] block mt-0.5">
-                      +{selectedCustomer.totalPointsEarned || 0} pts
+                    <span className="text-lg font-bold text-[#163B5C] flex items-center gap-1.5 mt-0.5">
+                      <Award className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>+{selectedCustomer.totalPointsEarned || 0} pts</span>
                     </span>
                     <span className="text-[11px] text-[#64748B] block mt-0.5">
                       Accumulated across completed orders
@@ -1125,8 +1132,9 @@ export default function CustomersTab() {
 
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex justify-between items-center">
                 <span className="text-xs text-amber-800 font-medium">Current Balance:</span>
-                <span className="text-base font-extrabold text-amber-900">
-                  ⭐ {selectedCustomer.pointsBalance || 0} pts
+                <span className="text-base font-extrabold text-amber-900 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>{selectedCustomer.pointsBalance || 0} pts</span>
                 </span>
               </div>
 

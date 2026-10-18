@@ -216,7 +216,8 @@ export default function AboutPage() {
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-900 text-emerald-100 text-xs font-bold uppercase tracking-wider">
-                    ★ Main Location (HQ)
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                    <span>Main Location (HQ)</span>
                   </span>
                   <span className="text-xs text-stone-500 font-medium flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5 text-emerald-700" />

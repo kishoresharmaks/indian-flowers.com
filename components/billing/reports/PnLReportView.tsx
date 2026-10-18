@@ -101,8 +101,18 @@ export default function PnLReportView() {
             <h2 className="text-3xl font-black">
               {report.isProfit ? '+' : '-'} {formatCurrency(Math.abs(report.netProfit))}
             </h2>
-            <span className="text-xs font-bold opacity-90">
-              {report.isProfit ? '🎉 Net Profit Earned' : '⚠️ Net Loss Recorded'}
+            <span className="text-xs font-bold opacity-90 inline-flex items-center gap-1.5">
+              {report.isProfit ? (
+                <>
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Net Profit Earned</span>
+                </>
+              ) : (
+                <>
+                  <TrendingDown className="w-4 h-4" />
+                  <span>Net Loss Recorded</span>
+                </>
+              )}
             </span>
           </div>
         </div>

@@ -309,8 +309,11 @@ export default function POSCounter({
       {/* Error Alert */}
       {posError && (
         <div className="shrink-0 p-3 px-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center justify-between">
-          <span>⚠️ {posError}</span>
-          <button onClick={() => setPosError('')} className="text-rose-600 font-bold">
+          <span className="flex items-center gap-1.5">
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{posError}</span>
+          </span>
+          <button onClick={() => setPosError('')} className="text-rose-600 font-bold hover:underline">
             Dismiss
           </button>
         </div>

@@ -686,8 +686,18 @@ export default function PolicyManagerTab() {
 
             {/* Bottom Footer Bar */}
             <div className="p-4 bg-stone-50 border-t border-stone-200 flex items-center justify-between">
-              <span className="text-xs text-stone-500">
-                {isDirty ? '⚠️ You have unsaved changes.' : '✓ All changes up to date.'}
+              <span className="text-xs text-stone-500 inline-flex items-center gap-1.5">
+                {isDirty ? (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span>You have unsaved changes.</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>All changes up to date.</span>
+                  </>
+                )}
               </span>
 
               <div className="flex items-center gap-2">

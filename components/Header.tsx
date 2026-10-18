@@ -452,8 +452,8 @@ export default function Header({
                               Active Account
                             </span>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                              <Sparkles className="w-2.5 h-2.5 text-amber-600" />
-                              <span>⭐ {activeCustomer.pointsBalance || 0} pts</span>
+                              <Sparkles className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                              <span>{activeCustomer.pointsBalance || 0} pts</span>
                             </span>
                           </div>
                         </div>
@@ -719,7 +719,10 @@ export default function Header({
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-900 truncate">{activeCustomer.name}</p>
                       <p className="text-[11px] text-gray-500 truncate">{activeCustomer.email}</p>
-                      <p className="text-[10.5px] font-bold text-amber-800 mt-0.5">⭐ {activeCustomer.pointsBalance || 0} pts</p>
+                      <p className="text-[10.5px] font-bold text-amber-800 mt-0.5 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
+                        <span>{activeCustomer.pointsBalance || 0} pts</span>
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">

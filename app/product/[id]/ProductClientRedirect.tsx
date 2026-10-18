@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import ProductDetail from '@/components/ProductDetail';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface ProductVariant {
   _id?: string;
@@ -63,7 +63,9 @@ export default function ProductClientRedirect({ id }: { id: string }) {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4 p-4 text-text">
-        <div className="text-6xl">⚠️</div>
+        <div className="w-16 h-16 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-2xs">
+          <AlertTriangle className="w-8 h-8" />
+        </div>
         <h1 className="text-2xl font-bold">Product Not Found</h1>
         <p className="text-text-muted">{error || 'This product is no longer available'}</p>
         <a
