@@ -23,8 +23,12 @@ import {
   Truck,
   ShoppingBag,
   Award,
-  Sparkles,
   Star,
+  Coins,
+  Gift,
+  Wallet,
+  Tag,
+  HelpCircle,
 } from 'lucide-react';
 import { US_STATES } from '@/lib/tax/jurisdiction';
 import { formatCurrency } from '@/lib/currency';
@@ -191,7 +195,7 @@ export default function AccountPage() {
                   Verified US Customer
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <Coins className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <span>{customer?.pointsBalance || 0} Points</span>
                 </span>
                 <span className="text-[11px] text-gray-400">
@@ -244,7 +248,7 @@ export default function AccountPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-800'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-amber-500" />
+            <Gift className="w-4 h-4 text-amber-600" />
             <span>Loyalty Rewards ({customer?.pointsBalance || 0} pts)</span>
           </button>
         </div>
@@ -558,7 +562,7 @@ export default function AccountPage() {
                       )}
                       {ord.pointsRedeemed && ord.pointsRedeemed > 0 && (
                         <span className="text-purple-800 font-semibold flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                          <Tag className="w-3.5 h-3.5 text-purple-600" />
                           <span>Redeemed: {ord.pointsRedeemed} Points (-{formatCurrency(ord.pointsDiscount || 0)})</span>
                         </span>
                       )}
@@ -591,7 +595,7 @@ export default function AccountPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-white flex items-center justify-center shadow-xs">
-                    <Sparkles className="w-5 h-5" />
+                    <Gift className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h2 className="text-base sm:text-lg font-bold text-gray-900">
@@ -619,7 +623,7 @@ export default function AccountPage() {
                     Available Balance
                   </span>
                   <div className="text-2xl font-extrabold text-amber-900 mt-1 flex items-center gap-2">
-                    <Sparkles className="w-6 h-6 text-amber-500 shrink-0" />
+                    <Coins className="w-6 h-6 text-amber-600 shrink-0" />
                     <span>{customer?.pointsBalance || 0} pts</span>
                   </div>
                   <span className="text-xs font-semibold text-emerald-800 block mt-1">
@@ -645,7 +649,7 @@ export default function AccountPage() {
                     Lifetime Points Redeemed
                   </span>
                   <div className="text-2xl font-extrabold text-purple-900 mt-1 flex items-center gap-2">
-                    <Sparkles className="w-6 h-6 text-purple-500 shrink-0" />
+                    <Tag className="w-6 h-6 text-purple-600 shrink-0" />
                     <span>-{customer?.totalPointsRedeemed || 0} pts</span>
                   </div>
                   <span className="text-xs text-gray-500 block mt-1">
@@ -657,7 +661,7 @@ export default function AccountPage() {
               {/* How it Works Banner */}
               <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-gray-600 space-y-2">
                 <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>How the Loyalty Rewards Program Works</span>
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">

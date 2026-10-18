@@ -47,7 +47,6 @@ import {
   Eye,
   Printer,
   RotateCcw,
-  Sparkles,
   Award,
 } from 'lucide-react';
 import POSCounter from './components/pos/POSCounter';
@@ -5544,7 +5543,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       {Boolean(selectedOrderForDetails.pointsRedeemed && selectedOrderForDetails.pointsRedeemed > 0) && (
                         <div className="flex justify-between text-purple-700 font-medium">
                           <span className="flex items-center gap-1">
-                            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                            <Tag className="w-3.5 h-3.5 text-purple-600" />
                             <span>Claimed Points Discount ({selectedOrderForDetails.pointsRedeemed} pts):</span>
                           </span>
                           <span>-{formatCurrency(selectedOrderForDetails.pointsDiscount || 0)}</span>

@@ -10,7 +10,6 @@ import {
   Truck,
   ShieldCheck,
   Heart,
-  Sparkles,
   ArrowLeft,
   Navigation,
   CheckCircle2,
@@ -114,7 +113,7 @@ export default function AboutPage() {
         <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 text-center space-y-6">
           {/* Eyebrow Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100/70 border border-emerald-200/80 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-[#0B3B24]">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+            <Truck className="w-3.5 h-3.5 text-emerald-700" />
             <span>Delivering Freshness Across The United States</span>
           </div>
 
@@ -216,7 +215,7 @@ export default function AboutPage() {
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-900 text-emerald-100 text-xs font-bold uppercase tracking-wider">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                    <Building2 className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                     <span>Main Location (HQ)</span>
                   </span>
                   <span className="text-xs text-stone-500 font-medium flex items-center gap-1">
@@ -411,7 +410,7 @@ export default function AboutPage() {
           <div className="bg-[#0B3B24] text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden shadow-xl space-y-6">
             <div className="relative z-10 space-y-4 max-w-2xl">
               <span className="text-xs uppercase tracking-widest font-bold text-emerald-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
+                <Flower2 className="w-3.5 h-3.5" />
                 Special Events &amp; Weddings
               </span>
 

@@ -27,7 +27,9 @@ import {
   X,
   Tag,
   Award,
-  Sparkles,
+  Coins,
+  Gift,
+  Wallet,
   Plus,
   Minus,
 } from 'lucide-react';
@@ -409,7 +411,7 @@ export default function CustomersTab() {
               Loyalty Points
             </span>
             <span className="text-xl sm:text-2xl font-black text-amber-600 mt-1 flex items-center gap-1.5">
-              <Sparkles className="w-5 h-5 text-amber-500 shrink-0" />
+              <Coins className="w-5 h-5 text-amber-500 shrink-0" />
               <span>{stats.totalPointsInCirculation || 0}</span>
             </span>
             <span className="text-[10px] text-[#64748B] font-medium mt-0.5 block">
@@ -417,7 +419,7 @@ export default function CustomersTab() {
             </span>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
-            <Sparkles className="w-5 h-5" />
+            <Coins className="w-5 h-5" />
           </div>
         </div>
       </div>
@@ -634,7 +636,7 @@ export default function CustomersTab() {
                       {/* Loyalty Points */}
                       <td className="py-3.5 px-4 text-center">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                           <span>{c.pointsBalance || 0}</span>
                         </span>
                       </td>
@@ -726,7 +728,7 @@ export default function CustomersTab() {
                       <div>
                         <span className="text-[10px] text-[#64748B] block uppercase">Points</span>
                         <span className="font-bold text-amber-700 flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                           <span>{c.pointsBalance || 0}</span>
                         </span>
                       </div>
@@ -883,7 +885,7 @@ export default function CustomersTab() {
                     }}
                     className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Coins className="w-3.5 h-3.5" />
                     <span>Adjust Points</span>
                   </button>
                 </div>
@@ -896,7 +898,7 @@ export default function CustomersTab() {
                     </span>
                     <div className="flex items-baseline gap-2 mt-0.5">
                       <span className="text-xl font-extrabold text-amber-700 flex items-center gap-1.5">
-                        <Sparkles className="w-5 h-5 text-amber-500 shrink-0" />
+                        <Wallet className="w-5 h-5 text-amber-500 shrink-0" />
                         <span>{selectedCustomer.pointsBalance || 0} pts</span>
                       </span>
                     </div>
@@ -1070,7 +1072,7 @@ export default function CustomersTab() {
                             )}
                             {order.pointsRedeemed && order.pointsRedeemed > 0 && (
                               <span className="text-purple-700 font-semibold flex items-center gap-1">
-                                <Sparkles className="w-3 h-3 text-purple-600" />
+                                <Tag className="w-3 h-3 text-purple-600" />
                                 <span>Redeemed: {order.pointsRedeemed} pts (-{formatCurrency(order.pointsDiscount || 0)})</span>
                               </span>
                             )}
@@ -1111,7 +1113,7 @@ export default function CustomersTab() {
           <div className="bg-white rounded-2xl border border-[#E8EDF2] w-full max-w-md shadow-2xl overflow-hidden">
             <div className="p-4 bg-[#163B5C] text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-400" />
+                <Coins className="w-4 h-4 text-amber-400" />
                 <h3 className="font-bold text-sm">Adjust Customer Loyalty Points</h3>
               </div>
               <button
@@ -1133,7 +1135,7 @@ export default function CustomersTab() {
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex justify-between items-center">
                 <span className="text-xs text-amber-800 font-medium">Current Balance:</span>
                 <span className="text-base font-extrabold text-amber-900 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                  <Coins className="w-4 h-4 text-amber-500 shrink-0" />
                   <span>{selectedCustomer.pointsBalance || 0} pts</span>
                 </span>
               </div>

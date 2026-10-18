@@ -23,7 +23,7 @@ import {
   LogOut,
   Package,
   Award,
-  Sparkles,
+  Coins,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -452,7 +452,7 @@ export default function Header({
                               Active Account
                             </span>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                              <Sparkles className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                              <Coins className="w-2.5 h-2.5 text-amber-600 shrink-0" />
                               <span>{activeCustomer.pointsBalance || 0} pts</span>
                             </span>
                           </div>
@@ -720,7 +720,7 @@ export default function Header({
                       <p className="text-xs font-bold text-gray-900 truncate">{activeCustomer.name}</p>
                       <p className="text-[11px] text-gray-500 truncate">{activeCustomer.email}</p>
                       <p className="text-[10.5px] font-bold text-amber-800 mt-0.5 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
+                        <Coins className="w-3 h-3 text-amber-600 shrink-0" />
                         <span>{activeCustomer.pointsBalance || 0} pts</span>
                       </p>
                     </div>
