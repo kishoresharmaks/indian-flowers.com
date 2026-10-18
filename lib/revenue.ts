@@ -69,7 +69,9 @@ export type OrderPaymentDisplayKind =
   | 'verified_paid'
   | 'pending_verification'
   | 'payment_failed'
-  | 'order_cancelled';
+  | 'order_cancelled'
+  | 'payment_refunded'
+  | 'partially_refunded';
 
 export interface OrderPaymentDisplayInfo {
   kind: OrderPaymentDisplayKind;
@@ -118,6 +120,36 @@ export function getOrderPaymentDisplayInfo(order?: OrderPaymentCheckTarget | nul
       amountLabel: 'Total (Cancelled):',
       amountClass: 'text-slate-400 line-through',
       statusDescription: 'Order was cancelled. Payment is not collected or has been voided.',
+    };
+  }
+
+  if (pStatus === 'refunded' || oStatus === 'refunded' || oStatus === 'returned') {
+    return {
+      kind: 'payment_refunded',
+      isVerified: false,
+      isPending: false,
+      isFailed: false,
+      isCancelled: false,
+      badgeLabel: 'Refunded / Returned',
+      badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200',
+      amountLabel: 'Total Refunded:',
+      amountClass: 'text-rose-600',
+      statusDescription: 'Order return & refund has been processed.',
+    };
+  }
+
+  if (pStatus === 'partially_refunded') {
+    return {
+      kind: 'partially_refunded',
+      isVerified: true,
+      isPending: false,
+      isFailed: false,
+      isCancelled: false,
+      badgeLabel: 'Partially Refunded',
+      badgeClass: 'bg-amber-100 text-amber-800 border border-amber-300',
+      amountLabel: 'Net Paid:',
+      amountClass: 'text-amber-700',
+      statusDescription: 'Partial refund issued on order.',
     };
   }
 

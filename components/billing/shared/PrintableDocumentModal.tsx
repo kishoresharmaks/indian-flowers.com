@@ -62,17 +62,48 @@ export default function PrintableDocumentModal({
     window.print();
   };
 
-  // Determine Exact Title matching PDF templates
+  // Determine Exact Title matching document type (SO, PO, Quotation, Invoice, etc.)
   const getDocumentTitle = () => {
-    if (!doc?.docType && !doc?.orderType && !doc?.paymentType) return 'Tax Invoice';
-    const type = (doc.docType || doc.paymentType || doc.orderType || '').toUpperCase();
-    if (type.includes('ESTIMATE') || type.includes('QUOTATION')) return 'Estimate';
-    if (type.includes('PAYMENT_IN') || type.includes('PAYMENT_RECEIVED')) return 'Payment-In';
-    if (type.includes('PAYMENT_OUT') || type.includes('PAYMENT_PAID')) return 'Payment-Out';
-    if (type.includes('CREDIT_NOTE')) return 'Credit Note';
-    if (type.includes('PURCHASE_ORDER')) return 'Purchase Order';
-    if (type.includes('PURCHASE')) return 'Purchase Invoice';
-    if (type.includes('POS')) return 'Tax Invoice';
+    const docNumber = (doc?.docNumber || doc?.invoiceNumber || doc?.orderId || '').toUpperCase();
+    const type = (doc?.docType || doc?.paymentType || doc?.orderType || '').toUpperCase();
+
+    // 1. Sales Order
+    if (docNumber.startsWith('BH-SO') || type === 'SALE_ORDER' || type === 'SALES_ORDER' || type === 'SALE ORDER') {
+      return 'Sales Order';
+    }
+    // 2. Purchase Order
+    if (docNumber.startsWith('BH-PO') || type === 'PURCHASE_ORDER' || type === 'PURCHASE ORDER') {
+      return 'Purchase Order';
+    }
+    // 3. Quotation / Estimate
+    if (docNumber.startsWith('BH-EST') || type.includes('QUOTATION') || type.includes('ESTIMATE')) {
+      return 'Quotation';
+    }
+    // 4. Proforma Invoice
+    if (docNumber.startsWith('BH-PRO') || type === 'PROFORMA' || type === 'PROFORMA_INVOICE') {
+      return 'Proforma Invoice';
+    }
+    // 5. Credit Note / Sales Return
+    if (docNumber.startsWith('BH-CRN') || type === 'SALE_RETURN' || type.includes('CREDIT_NOTE')) {
+      return 'Credit Note';
+    }
+    // 6. Debit Note / Purchase Return
+    if (docNumber.startsWith('BH-DRN') || type === 'PURCHASE_RETURN' || type.includes('DEBIT_NOTE')) {
+      return 'Debit Note';
+    }
+    // 7. Purchase Invoice / Bill
+    if (docNumber.startsWith('BH-PB') || type === 'PURCHASE_BILL' || type.includes('PURCHASE')) {
+      return 'Purchase Invoice';
+    }
+    // 8. Payment In
+    if (type.includes('PAYMENT_IN') || type.includes('PAYMENT_RECEIVED')) {
+      return 'Payment Receipt';
+    }
+    // 9. Payment Out
+    if (type.includes('PAYMENT_OUT') || type.includes('PAYMENT_PAID')) {
+      return 'Payment Voucher';
+    }
+    // Default: Tax Invoice (for Sales Invoices, POS Orders, Online Storefront Orders)
     return 'Tax Invoice';
   };
 
@@ -91,7 +122,7 @@ export default function PrintableDocumentModal({
     });
     msg += `--------------------------------\n`;
     msg += `Subtotal: ${formatCurrency(doc?.subtotal || 0)}\n`;
-    msg += `GST: ${formatCurrency(doc?.totalGst || 0)}\n`;
+    msg += `Sales Tax: ${formatCurrency(doc?.totalGst || 0)}\n`;
     msg += `*Grand Total: ${formatCurrency(grandTotalNum)}*\n`;
     msg += `Balance Due: ${formatCurrency(doc?.balanceAmount || 0)}\n`;
     msg += `Payment Status: ${doc?.paymentStatus || 'COMPLETED'}\n`;
@@ -214,7 +245,7 @@ export default function PrintableDocumentModal({
               <h3 className="font-extrabold text-base text-[#163B5C]">
                 {docTitle} — {doc?.docNumber || doc?.invoiceNumber || doc?.orderId}
               </h3>
-              <p className="text-xs text-[#64748B]">Matching PDF Template (*Sales, Estimate, Credit Note, Purchase*)</p>
+              <p className="text-xs text-[#64748B]">Official Printable Document</p>
             </div>
           </div>
 
@@ -424,7 +455,7 @@ export default function PrintableDocumentModal({
               {/* Left Column: Words, Terms & Bank Details */}
               <div className="space-y-3 text-left w-1/2">
                 <div>
-                  <span className="font-bold text-slate-900 block mb-1">Invoice Amount In Words</span>
+                  <span className="font-bold text-slate-900 block mb-1">{docTitle} Amount In Words</span>
                   <p className="text-slate-800 italic font-medium bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                     {numberToWords(grandTotalNum)}
                   </p>

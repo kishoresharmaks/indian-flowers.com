@@ -27,7 +27,8 @@ docs/
 *.xlsx
 
 # 3. Test Scripts, Debugging Tools & Verification Artifacts
-scripts/
+scripts/*
+!scripts/prebuild.js
 tests/
 *.py
 *.ps1

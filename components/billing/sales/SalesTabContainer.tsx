@@ -123,7 +123,7 @@ export default function SalesTabContainer({ products }: SalesTabContainerProps) 
             onClick={() => setIsFormOpen(true)}
             className="px-4 py-2 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-xs whitespace-nowrap shrink-0"
           >
-            <Plus className="w-4 h-4" /> Create {subTab.replace('_', ' ')}
+            <Plus className="w-4 h-4" /> Create {subTab === 'SALE_ORDER' ? 'Sales Order' : subTab === 'QUOTATION' ? 'Quotation' : subTab === 'PROFORMA' ? 'Proforma Invoice' : subTab === 'SALE_RETURN' ? 'Sales Return' : 'Sale Invoice'}
           </button>
         )}
       </div>

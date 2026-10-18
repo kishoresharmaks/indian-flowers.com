@@ -310,6 +310,14 @@ export default function PrintablePnLModal({
                       A. REVENUE FROM OPERATIONS (GROSS SALES)
                     </td>
                   </tr>
+                  {Number(report.b2bSaleInvoices) > 0 && (
+                    <tr>
+                      <td className="p-2.5 pl-6 text-slate-700 border border-slate-200">B2B Wholesale / Commercial Invoices</td>
+                      <td className="p-2.5 text-right font-semibold text-slate-900 border border-slate-200">
+                        {formatCurrency(report.b2bSaleInvoices)}
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <td className="p-2.5 pl-6 text-slate-700 border border-slate-200">Online E-Commerce Sales Revenue</td>
                     <td className="p-2.5 text-right font-semibold text-slate-900 border border-slate-200">
@@ -322,10 +330,10 @@ export default function PrintablePnLModal({
                       {formatCurrency(report.posCounterSales)}
                     </td>
                   </tr>
-                  <tr className="text-rose-600">
-                    <td className="p-2.5 pl-6 border border-slate-200">Less: Sales Returns & Credit Notes Issued</td>
+                  <tr className={Number(report.salesReturnTotal) > 0 ? 'text-rose-600' : 'text-slate-700'}>
+                    <td className="p-2.5 pl-6 border border-slate-200">Less: Sales Returns, Credit Notes &amp; Refunds</td>
                     <td className="p-2.5 text-right font-semibold border border-slate-200">
-                      - {formatCurrency(report.salesReturnTotal)}
+                      {Number(report.salesReturnTotal) > 0 ? `- ${formatCurrency(report.salesReturnTotal)}` : '$0.00'}
                     </td>
                   </tr>
                   <tr className="font-black bg-emerald-50 border-t-2 border-slate-300">

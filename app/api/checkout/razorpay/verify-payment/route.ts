@@ -7,6 +7,7 @@ import { getRazorpayConfig, verifyRazorpaySignature } from '@/lib/razorpay';
 import { calculateSalesTax, TaxLineItem } from '@/lib/tax';
 import { toCents, fromCents } from '@/lib/tax/taxProvider';
 import { validateTaxAddress, normalizeStateCode, formatUSZip } from '@/lib/tax/jurisdiction';
+import { getCustomerFromToken } from '@/lib/customerAuth';
 import { captureServerEvent } from '@/lib/telemetry';
 
 export async function POST(request: Request) {
@@ -53,12 +54,14 @@ export async function POST(request: Request) {
     }
 
     const {
+      customerId: providedCustomerId,
       customerName,
       customerPhone,
       customerEmail,
       streetAddress,
       aptSuite,
       city,
+      district,
       state,
       zipCode,
       country = 'US',
@@ -170,17 +173,23 @@ export async function POST(request: Request) {
     const nextSeqNumber = 1001 + orderCount;
     const orderId = `ORD-${nextSeqNumber}`;
 
+    // Resolve customer ID from orderDetails or active customer session cookie
+    const customerSession = getCustomerFromToken(request);
+    const finalCustomerId = providedCustomerId || customerSession?.customerId || undefined;
+
     // 7. Persist Confirmed & Paid Order
     const newOrder = await Order.create({
       orderId,
       orderType: 'ONLINE',
       invoiceNumber: orderId,
+      customerId: finalCustomerId,
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       customerEmail: (customerEmail || '').trim(),
       streetAddress: finalStreet,
       aptSuite: finalApt,
       city: finalCity,
+      district: (district || '').trim(),
       state: finalState,
       zipCode: finalZip,
       country: country || 'US',

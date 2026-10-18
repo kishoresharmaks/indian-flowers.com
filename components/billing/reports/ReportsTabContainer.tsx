@@ -25,6 +25,13 @@ export default function ReportsTabContainer() {
             {tab.label}
           </button>
         ))}
+
+        <a
+          href="/admin/dashboard?tab=reports"
+          className="ml-auto px-4 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 text-xs font-extrabold whitespace-nowrap flex items-center gap-1.5 transition-colors shadow-2xs"
+        >
+          <span>All Reports &amp; Excel Exports Center ↗</span>
+        </a>
       </div>
 
       {/* Report View */}

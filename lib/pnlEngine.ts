@@ -10,7 +10,10 @@ export interface PnLSummary {
   grossSalesRevenue: number; // Pure sales subtotal excluding sales tax liability
   onlineStoreSales: number;
   posCounterSales: number;
-  salesReturnTotal: number;
+  b2bSaleInvoices: number;   // Wholesale / Commercial B2B Invoices
+  salesReturnTotal: number;  // Combined Sales Returns & Refunds
+  b2bSalesReturns: number;   // B2B Credit Notes Issued
+  orderRefundsTotal: number; // Online & POS Customer Order Refunds
   netSalesRevenue: number;
 
   purchaseBillTotal: number; // Purchase Bills - Purchase Returns
@@ -59,7 +62,7 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
     status: { $nin: ['Cancelled', 'Draft'] },
   }).lean();
   let b2bSaleInvoiceTotal = 0;
-  let salesReturnTotal = 0;
+  let b2bSalesReturns = 0;
   let totalSalesTax = 0;
 
   for (const doc of saleDocs) {
@@ -70,15 +73,20 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
       b2bSaleInvoiceTotal += docSubtotal;
       totalSalesTax += docTax;
     } else if (doc.docType === 'SALE_RETURN') {
-      salesReturnTotal += docSubtotal;
+      b2bSalesReturns += docSubtotal;
       totalSalesTax = Math.max(0, totalSalesTax - docTax);
     }
   }
 
-  // Include storefront e-commerce orders & POS sales from Order collection (strictly verified payments only)
+  // Include storefront e-commerce orders & POS sales from Order collection
+  // Evaluates verified paid orders and applies any recorded customer refunds/returns
   const orderFilter: any = {
     status: { $nin: ['Cancelled', 'Failed'] },
-    paymentStatus: 'Paid',
+    $or: [
+      { paymentStatus: { $in: ['Paid', 'Refunded', 'Partially_Refunded'] } },
+      { status: { $in: ['Completed', 'Refunded', 'Returned'] } },
+      { refundAmount: { $gt: 0 } },
+    ],
   };
   if (startDate || endDate) {
     orderFilter.createdAt = queryFilter.createdAt;
@@ -87,6 +95,7 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
 
   let onlineStoreSales = 0;
   let posCounterSales = 0;
+  let orderRefundsTotal = 0;
 
   for (const ord of allOrders) {
     const ordTax = ord.totalTax || ord.taxSnapshot?.taxAmount || ord.totalGst || 0;
@@ -98,8 +107,28 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
       onlineStoreSales += ordSubtotal;
     }
     totalSalesTax += ordTax;
+
+    // Check for customer returns & refunds on this order
+    const isFullRefund =
+      ord.paymentStatus === 'Refunded' ||
+      ord.status === 'Refunded' ||
+      ord.status === 'Returned';
+
+    let refundVal = 0;
+    if (ord.refundAmount && ord.refundAmount > 0) {
+      const refundRatio = ord.totalAmount > 0 ? Math.min(1, ord.refundAmount / ord.totalAmount) : 1;
+      const refundTax = ordTax * refundRatio;
+      refundVal = Math.max(0, ord.refundAmount - refundTax);
+      totalSalesTax = Math.max(0, totalSalesTax - refundTax);
+    } else if (isFullRefund) {
+      refundVal = ordSubtotal;
+      totalSalesTax = Math.max(0, totalSalesTax - ordTax);
+    }
+
+    orderRefundsTotal += refundVal;
   }
 
+  const salesReturnTotal = b2bSalesReturns + orderRefundsTotal;
   const grossSalesRevenue = b2bSaleInvoiceTotal + onlineStoreSales + posCounterSales;
   const netSalesRevenue = Math.max(0, grossSalesRevenue - salesReturnTotal);
 
@@ -157,7 +186,10 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
     grossSalesRevenue: Math.round(grossSalesRevenue * 100) / 100,
     onlineStoreSales: Math.round(onlineStoreSales * 100) / 100,
     posCounterSales: Math.round(posCounterSales * 100) / 100,
+    b2bSaleInvoices: Math.round(b2bSaleInvoiceTotal * 100) / 100,
     salesReturnTotal: Math.round(salesReturnTotal * 100) / 100,
+    b2bSalesReturns: Math.round(b2bSalesReturns * 100) / 100,
+    orderRefundsTotal: Math.round(orderRefundsTotal * 100) / 100,
     netSalesRevenue: Math.round(netSalesRevenue * 100) / 100,
     purchaseBillTotal: Math.round(purchaseBillTotal * 100) / 100,
     purchaseReturnTotal: Math.round(purchaseReturnTotal * 100) / 100,

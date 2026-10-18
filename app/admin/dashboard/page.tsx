@@ -40,6 +40,7 @@ import {
   Search,
   Download,
   Users,
+  FileSpreadsheet,
   ArrowRight,
   Settings,
   ExternalLink,
@@ -53,6 +54,8 @@ import SubscriptionTab from '@/components/licensing/SubscriptionTab';
 import GracePeriodBanner from '@/components/licensing/GracePeriodBanner';
 import LicenseActivationModal from '@/components/licensing/LicenseActivationModal';
 import PolicyManagerTab from '@/components/admin/PolicyManagerTab';
+import CustomersTab from '@/components/admin/CustomersTab';
+import ReportsTab from '@/components/admin/ReportsTab';
 import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
 
 interface BannerItem {
@@ -136,14 +139,20 @@ interface Order {
   discountType?: 'FLAT' | 'PERCENTAGE';
   discountValue?: number;
   discountAmount?: number;
-  paymentMethod: 'COD' | 'CASH' | 'CreditCard' | 'Razorpay';
-  paymentStatus: 'Pending' | 'Paid' | 'Failed';
+  paymentMethod: 'COD' | 'CASH' | 'CreditCard' | 'Razorpay' | 'ApplePay' | 'PayPal';
+  paymentStatus: 'Pending' | 'Paid' | 'Failed' | 'Refunded' | 'Partially_Refunded';
   transactionId?: string;
   cashReceived?: number;
   changeReturned?: number;
   cashierName?: string;
   cashierId?: string;
-  status: 'Pending' | 'Processing' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Processing' | 'Completed' | 'Cancelled' | 'Refunded' | 'Returned';
+  refundAmount?: number;
+  refundReason?: string;
+  refundDate?: string;
+  isRestocked?: boolean;
+  restockedAt?: string;
+  refundNotes?: string;
   createdAt: string;
 }
 
@@ -176,8 +185,45 @@ export default function AdminDashboard() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'products' | 'categories' | 'orders' | 'banners' | 'settings' | 'pos' | 'subscription' | 'customOrders' | 'subscribers' | 'policies'
+    | 'products'
+    | 'categories'
+    | 'orders'
+    | 'banners'
+    | 'settings'
+    | 'pos'
+    | 'subscription'
+    | 'customOrders'
+    | 'subscribers'
+    | 'policies'
+    | 'customers'
+    | 'reports'
   >('products');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (
+        tabParam &&
+        [
+          'products',
+          'categories',
+          'orders',
+          'banners',
+          'settings',
+          'pos',
+          'subscription',
+          'customOrders',
+          'subscribers',
+          'policies',
+          'customers',
+          'reports',
+        ].includes(tabParam)
+      ) {
+        setActiveTab(tabParam as any);
+      }
+    }
+  }, []);
   const [licenseState, setLicenseState] = useState<IClientLicenseState | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -272,6 +318,75 @@ export default function AdminDashboard() {
   const ordersPerPage = 10;
   const [selectedOrderForDetails, setSelectedOrderForDetails] = useState<Order | null>(null);
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
+  const [customerCount, setCustomerCount] = useState<number>(0);
+
+  // Process Sales Return & Refund Modal State
+  const [refundOrderTarget, setRefundOrderTarget] = useState<Order | null>(null);
+  const [refundType, setRefundType] = useState<'FULL' | 'PARTIAL'>('FULL');
+  const [customRefundAmount, setCustomRefundAmount] = useState<string>('');
+  const [refundReason, setRefundReason] = useState<string>('Customer return / refund request');
+  const [restockReturnedItems, setRestockReturnedItems] = useState<boolean>(true);
+  const [refundNotes, setRefundNotes] = useState<string>('');
+  const [isProcessingRefund, setIsProcessingRefund] = useState<boolean>(false);
+  const [refundError, setRefundError] = useState<string>('');
+
+  const handleOpenRefundModal = (order: Order) => {
+    setRefundOrderTarget(order);
+    setRefundType('FULL');
+    setCustomRefundAmount(String(order.totalAmount || 0));
+    setRefundReason('Customer return / refund request');
+    setRestockReturnedItems(true);
+    setRefundNotes('');
+    setRefundError('');
+  };
+
+  const handleProcessRefundSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!refundOrderTarget) return;
+
+    setRefundError('');
+    const orderTotal = Number(refundOrderTarget.totalAmount) || 0;
+    const amountToRefund = refundType === 'FULL' ? orderTotal : Number(customRefundAmount);
+
+    if (isNaN(amountToRefund) || amountToRefund <= 0) {
+      setRefundError('Please enter a valid refund amount greater than $0.00');
+      return;
+    }
+    if (amountToRefund > orderTotal) {
+      setRefundError(`Refund amount cannot exceed order total ($${orderTotal.toFixed(2)})`);
+      return;
+    }
+
+    try {
+      setIsProcessingRefund(true);
+      const res = await fetch(`/api/orders/${refundOrderTarget._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'refund',
+          refundAmount: amountToRefund,
+          refundReason: refundReason.trim() || 'Customer return / refund',
+          refundNotes: refundNotes.trim(),
+          restockItems: restockReturnedItems,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setRefundOrderTarget(null);
+        await fetchOrders();
+        if (selectedOrderForDetails && selectedOrderForDetails._id === refundOrderTarget._id) {
+          setSelectedOrderForDetails(data.data);
+        }
+      } else {
+        setRefundError(data.message || 'Failed to process refund');
+      }
+    } catch (err: any) {
+      setRefundError(err.message || 'Network error processing refund');
+    } finally {
+      setIsProcessingRefund(false);
+    }
+  };
 
   // Helper to resolve product variants & images for orders (including historical fallback by price match)
   const enrichOrderWithVariants = (orderToEnrich: Order | null): Order | null => {
@@ -898,6 +1013,18 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     }
   };
 
+  const fetchCustomerCount = async () => {
+    try {
+      const res = await fetch(`/api/admin/customers?t=${Date.now()}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && data.stats) {
+        setCustomerCount(data.stats.totalCustomers || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch customer count:', err);
+    }
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -913,6 +1040,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           fetchLicenseStatus();
           fetchCustomOrders(true);
           fetchSubscribers(true);
+          fetchCustomerCount();
         } else {
           router.replace('/admin/login');
         }
@@ -1259,7 +1387,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
   // Filter & Pagination for Orders
   const filteredOrders = orders.filter((o) => {
-    if (orderStatusFilter !== 'All' && o.status !== orderStatusFilter) return false;
+    if (orderStatusFilter === 'Refunded') {
+      if (o.status !== 'Refunded' && o.status !== 'Returned' && o.paymentStatus !== 'Refunded' && o.paymentStatus !== 'Partially_Refunded') return false;
+    } else if (orderStatusFilter !== 'All' && o.status !== orderStatusFilter) {
+      return false;
+    }
     if (orderChannelFilter === 'ONLINE' && o.orderType === 'POS') return false;
     if (orderChannelFilter === 'POS' && o.orderType !== 'POS') return false;
     if (!orderSearch.trim()) return true;
@@ -1357,13 +1489,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     | 'categories'
     | 'orders'
     | 'customOrders'
+    | 'customers'
     | 'banners'
     | 'subscribers'
     | 'policies'
     | 'settings'
     | 'pos'
     | 'subscription'
-    | 'billing';
+    | 'billing'
+    | 'reports';
 
   interface NavItem {
     id: NavItemId;
@@ -1416,6 +1550,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           badge: newCustomOrdersCount > 0 ? `${newCustomOrdersCount} new` : undefined,
           badgeColor: 'bg-[#C85A78] text-white',
           action: () => setActiveTab('customOrders'),
+        },
+        {
+          id: 'customers',
+          label: 'Customer Accounts',
+          icon: Users,
+          count: customerCount > 0 ? customerCount : undefined,
+          action: () => setActiveTab('customers'),
         },
       ],
     },
@@ -1478,6 +1619,14 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             }
           },
         },
+        {
+          id: 'reports',
+          label: 'Reports & Exports',
+          icon: FileSpreadsheet,
+          badge: 'Excel',
+          badgeColor: 'bg-emerald-600 text-white',
+          action: () => setActiveTab('reports'),
+        },
       ],
     },
     {
@@ -1530,6 +1679,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       desc: `Manage bespoke garland inquiries and custom wedding orders (${customOrders.length})`,
       icon: Flower2,
     },
+    customers: {
+      label: 'Customer Accounts & Users',
+      desc: `Registered customer profiles and lifetime purchase histories (${customerCount})`,
+      icon: Users,
+    },
     banners: {
       label: 'Hero Banners & Promotions',
       desc: `Manage homepage hero slider banners and promotional campaigns (${banners.length})`,
@@ -1559,6 +1713,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       label: 'Plan & License Subscription',
       desc: 'Software license management, active features, and subscription validity',
       icon: ShieldCheck,
+    },
+    reports: {
+      label: 'Reports & Exports',
+      desc: 'Export detailed financial and customer Excel spreadsheets',
+      icon: FileSpreadsheet,
     },
   };
 
@@ -2589,52 +2748,61 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   </p>
                 </div>
 
-                {/* Channel Filter Pills (All / Online / POS) */}
-                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOrderChannelFilter('All');
-                      setOrderPage(1);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      orderChannelFilter === 'All'
-                        ? 'bg-white text-[#163B5C] shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    All Channels ({orders.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOrderChannelFilter('ONLINE');
-                      setOrderPage(1);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      orderChannelFilter === 'ONLINE'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Online ({onlineOrders.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOrderChannelFilter('POS');
-                      setOrderPage(1);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      orderChannelFilter === 'POS'
-                        ? 'bg-purple-600 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    POS ({posOrders.length})
-                  </button>
+                  <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('reports')}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Reports &amp; Excel Export</span>
+                    </button>
+                    <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOrderChannelFilter('All');
+                          setOrderPage(1);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          orderChannelFilter === 'All'
+                            ? 'bg-white text-[#163B5C] shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        All Channels ({orders.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOrderChannelFilter('ONLINE');
+                          setOrderPage(1);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          orderChannelFilter === 'ONLINE'
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Online ({onlineOrders.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOrderChannelFilter('POS');
+                          setOrderPage(1);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          orderChannelFilter === 'POS'
+                            ? 'bg-purple-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        POS ({posOrders.length})
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
               {/* Real-time Order Search & Status Filter Row */}
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-3 border-t border-[#E8EDF2]">
@@ -2673,6 +2841,17 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     { id: 'Processing', label: 'Processing', count: orders.filter((o) => o.status === 'Processing').length },
                     { id: 'Completed', label: 'Completed', count: orders.filter((o) => o.status === 'Completed').length },
                     { id: 'Cancelled', label: 'Cancelled', count: orders.filter((o) => o.status === 'Cancelled').length },
+                    {
+                      id: 'Refunded',
+                      label: 'Refunded / Returns',
+                      count: orders.filter(
+                        (o) =>
+                          o.status === 'Refunded' ||
+                          o.status === 'Returned' ||
+                          o.paymentStatus === 'Refunded' ||
+                          o.paymentStatus === 'Partially_Refunded'
+                      ).length,
+                    },
                   ].map((st) => (
                     <button
                       key={st.id}
@@ -2890,6 +3069,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-extrabold text-xs">
                                   <X className="w-3.5 h-3.5" /> Cancelled
                                 </span>
+                              ) : order.status === 'Refunded' || order.status === 'Returned' || order.paymentStatus === 'Refunded' ? (
+                                <span
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-extrabold text-xs"
+                                  title={order.refundReason || 'Order Refunded'}
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" /> Refunded
+                                </span>
                               ) : (
                                 <select
                                   value={order.status}
@@ -2902,16 +3088,32 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                                   <option value="Processing">Processing</option>
                                   <option value="Completed">Completed</option>
                                   <option value="Cancelled">Cancelled</option>
+                                  <option value="Refunded">Refunded</option>
+                                  <option value="Returned">Returned</option>
                                 </select>
                               )}
                             </td>
 
-                            {/* Actions (View Details & Print Receipt) */}
+                            {/* Actions (View Details, Process Refund & Print Receipt) */}
                             <td
                               className="py-3.5 px-4 text-right whitespace-nowrap"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex items-center justify-end gap-1.5">
+                                {(order.paymentStatus === 'Paid' || order.status === 'Completed') &&
+                                  order.status !== 'Refunded' &&
+                                  order.status !== 'Returned' &&
+                                  order.paymentStatus !== 'Refunded' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenRefundModal(enrichOrderWithVariants(order)!)}
+                                      className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1 border border-rose-200 transition-colors shadow-2xs"
+                                      title="Process Sales Return & Refund"
+                                    >
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                      <span className="hidden xl:inline">Refund</span>
+                                    </button>
+                                  )}
                                 <button
                                   type="button"
                                   onClick={() => setSelectedOrderForDetails(enrichOrderWithVariants(order))}
@@ -4070,6 +4272,12 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
         {/* Tab Content: Store Policies & Legal Disclosures */}
         {activeTab === 'policies' && <PolicyManagerTab />}
+
+        {/* Tab Content: Customer Accounts & User Management */}
+        {activeTab === 'customers' && <CustomersTab />}
+
+        {/* Tab Content: Reports & Financial Exports */}
+        {activeTab === 'reports' && <ReportsTab />}
       </main>
 
       {/* Add / Edit Product Modal */}
@@ -4799,53 +5007,110 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             {/* Modal Scrollable Body */}
             <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-xs">
               {/* Quick Status Control Strip */}
-              <div className="p-4 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-[#163B5C]">Order Fulfillment:</span>
-                  {selectedOrderForDetails.status === 'Completed' ? (
-                    <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold flex items-center gap-1 border border-emerald-300">
-                      🔒 Completed (Locked)
-                    </span>
-                  ) : (
-                    <select
-                      value={selectedOrderForDetails.status}
-                      onChange={(e) =>
-                        handleUpdateOrderStatus(selectedOrderForDetails._id, { status: e.target.value })
-                      }
-                      className="bg-white border border-[#E8EDF2] rounded-xl px-3 py-1.5 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Processing">Processing</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </select>
-                  )}
+              <div className="p-4 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#163B5C]">Order Fulfillment:</span>
+                    {selectedOrderForDetails.status === 'Refunded' || selectedOrderForDetails.status === 'Returned' ? (
+                      <span className="px-3 py-1.5 rounded-xl bg-rose-100 text-rose-800 font-extrabold flex items-center gap-1 border border-rose-300">
+                        <RotateCcw className="w-3.5 h-3.5" /> Returned / Refunded
+                      </span>
+                    ) : selectedOrderForDetails.status === 'Completed' ? (
+                      <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold flex items-center gap-1 border border-emerald-300">
+                        🔒 Completed
+                      </span>
+                    ) : (
+                      <select
+                        value={selectedOrderForDetails.status}
+                        onChange={(e) =>
+                          handleUpdateOrderStatus(selectedOrderForDetails._id, { status: e.target.value })
+                        }
+                        className="bg-white border border-[#E8EDF2] rounded-xl px-3 py-1.5 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                        <option value="Refunded">Refunded</option>
+                        <option value="Returned">Returned</option>
+                      </select>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#163B5C]">Payment Verification:</span>
+                    {selectedOrderForDetails.paymentStatus === 'Refunded' ? (
+                      <span className="px-3 py-1.5 rounded-xl bg-rose-100 text-rose-800 font-extrabold flex items-center gap-1 border border-rose-300">
+                        <RotateCcw className="w-3.5 h-3.5" /> Full Refund Issued
+                      </span>
+                    ) : selectedOrderForDetails.paymentStatus === 'Partially_Refunded' ? (
+                      <span className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 font-extrabold flex items-center gap-1 border border-amber-300">
+                        ⚠️ Partially Refunded
+                      </span>
+                    ) : selectedOrderForDetails.status === 'Cancelled' ? (
+                      <span className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 font-extrabold border border-rose-200">
+                        Cancelled
+                      </span>
+                    ) : selectedOrderForDetails.paymentStatus === 'Paid' ? (
+                      <span className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white font-extrabold flex items-center gap-1 shadow-xs">
+                        🔒 Paid (Verified)
+                      </span>
+                    ) : (
+                      <select
+                        value={selectedOrderForDetails.paymentStatus || 'Pending'}
+                        onChange={(e) =>
+                          handleUpdateOrderStatus(selectedOrderForDetails._id, { paymentStatus: e.target.value })
+                        }
+                        className="bg-white border border-[#E8EDF2] rounded-xl px-3 py-1.5 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
+                      >
+                        <option value="Pending">Pending Verification</option>
+                        <option value="Paid">Mark Paid &amp; Verify</option>
+                        <option value="Failed">Failed</option>
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Return & Refund Action Button in Details Modal */}
+                  {(selectedOrderForDetails.paymentStatus === 'Paid' || selectedOrderForDetails.status === 'Completed') &&
+                    selectedOrderForDetails.status !== 'Refunded' &&
+                    selectedOrderForDetails.status !== 'Returned' &&
+                    selectedOrderForDetails.paymentStatus !== 'Refunded' && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenRefundModal(selectedOrderForDetails)}
+                        className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Process Return / Refund</span>
+                      </button>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-[#163B5C]">Payment Verification:</span>
-                  {selectedOrderForDetails.status === 'Cancelled' ? (
-                    <span className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 font-extrabold border border-rose-200">
-                      Cancelled
+                {/* Return / Refund Record Banner if already refunded */}
+                {(Number(selectedOrderForDetails.refundAmount) > 0 ||
+                  selectedOrderForDetails.paymentStatus === 'Refunded' ||
+                  selectedOrderForDetails.status === 'Refunded' ||
+                  selectedOrderForDetails.status === 'Returned') && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-rose-200/60 flex items-center justify-center shrink-0">
+                        <RotateCcw className="w-4 h-4 text-rose-700" />
+                      </div>
+                      <div>
+                        <span className="font-extrabold block text-xs">
+                          Sales Return &amp; Refund Applied: -{formatCurrency(selectedOrderForDetails.refundAmount || selectedOrderForDetails.totalAmount)}
+                        </span>
+                        <span className="text-[11px] text-rose-700 block">
+                          Reason: <strong>{selectedOrderForDetails.refundReason || 'Customer return'}</strong>
+                          {selectedOrderForDetails.refundDate && ` • ${new Date(selectedOrderForDetails.refundDate).toLocaleDateString()}`}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${selectedOrderForDetails.isRestocked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
+                      {selectedOrderForDetails.isRestocked ? '✓ Inventory Restocked' : 'No Restock'}
                     </span>
-                  ) : selectedOrderForDetails.paymentStatus === 'Paid' ? (
-                    <span className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white font-extrabold flex items-center gap-1 shadow-xs">
-                      🔒 Paid (Verified)
-                    </span>
-                  ) : (
-                    <select
-                      value={selectedOrderForDetails.paymentStatus || 'Pending'}
-                      onChange={(e) =>
-                        handleUpdateOrderStatus(selectedOrderForDetails._id, { paymentStatus: e.target.value })
-                      }
-                      className="bg-white border border-[#E8EDF2] rounded-xl px-3 py-1.5 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
-                    >
-                      <option value="Pending">Pending Verification</option>
-                      <option value="Paid">Mark Paid &amp; Verify</option>
-                      <option value="Failed">Failed</option>
-                    </select>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* 2-Column Grid: Customer & Delivery Details vs Items & Financial Summary */}
@@ -5100,6 +5365,173 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Return & Refund Modal Dialog */}
+      {refundOrderTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-lg w-full border border-[#E8EDF2] shadow-2xl overflow-hidden animate-fadeIn">
+            {/* Header */}
+            <div className="p-5 border-b border-[#E8EDF2] flex items-center justify-between bg-[#FFFCFB]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-[#163B5C]">Process Sales Return &amp; Refund</h3>
+                  <p className="text-xs text-[#64748B]">Order #{refundOrderTarget.orderId} • {refundOrderTarget.customerName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRefundOrderTarget(null)}
+                className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleProcessRefundSubmit} className="p-5 space-y-4 text-xs">
+              {refundError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-bold">
+                  {refundError}
+                </div>
+              )}
+
+              {/* Order Summary Strip */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                <div>
+                  <span className="text-[#64748B] block text-[11px]">Original Order Total:</span>
+                  <span className="text-base font-black text-[#163B5C]">{formatCurrency(refundOrderTarget.totalAmount)}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[#64748B] block text-[11px]">Payment Method:</span>
+                  <span className="font-bold text-[#163B5C]">{refundOrderTarget.paymentMethod}</span>
+                </div>
+              </div>
+
+              {/* Refund Type */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-[#163B5C] block">Refund Amount Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRefundType('FULL');
+                      setCustomRefundAmount(String(refundOrderTarget.totalAmount));
+                    }}
+                    className={`p-2.5 rounded-xl border text-center font-bold transition-all ${
+                      refundType === 'FULL'
+                        ? 'border-rose-600 bg-rose-50 text-rose-700 shadow-2xs'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    Full Refund ({formatCurrency(refundOrderTarget.totalAmount)})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRefundType('PARTIAL')}
+                    className={`p-2.5 rounded-xl border text-center font-bold transition-all ${
+                      refundType === 'PARTIAL'
+                        ? 'border-rose-600 bg-rose-50 text-rose-700 shadow-2xs'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    Custom Partial Refund
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom Refund Amount Input (if partial) */}
+              {refundType === 'PARTIAL' && (
+                <div className="space-y-1">
+                  <label className="font-bold text-[#163B5C] block">Custom Refund Amount ($ USD)</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max={refundOrderTarget.totalAmount}
+                      value={customRefundAmount}
+                      onChange={(e) => setCustomRefundAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full pl-8 pr-4 py-2 rounded-xl border border-slate-300 font-bold text-sm text-[#163B5C] focus:outline-none focus:border-rose-500"
+                      required
+                    />
+                  </div>
+                  <span className="text-[10.5px] text-[#64748B]">Maximum refundable: {formatCurrency(refundOrderTarget.totalAmount)}</span>
+                </div>
+              )}
+
+              {/* Refund Reason */}
+              <div className="space-y-1">
+                <label className="font-bold text-[#163B5C] block">Return / Refund Reason</label>
+                <select
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium text-slate-700 focus:outline-none focus:border-rose-500"
+                >
+                  <option value="Customer return / refund request">Customer return / refund request</option>
+                  <option value="Damaged or degraded flowers on delivery">Damaged or degraded flowers on delivery</option>
+                  <option value="Event cancelled or rescheduled">Event cancelled or rescheduled</option>
+                  <option value="Incorrect floral garland or variant delivered">Incorrect floral garland or variant delivered</option>
+                  <option value="Shipping delay / delivery missed occasion">Shipping delay / delivery missed occasion</option>
+                  <option value="Counter POS customer walk-in return">Counter POS customer walk-in return</option>
+                  <option value="Other / Merchant courtesy refund">Other / Merchant courtesy refund</option>
+                </select>
+              </div>
+
+              {/* Additional Notes */}
+              <div className="space-y-1">
+                <label className="font-bold text-[#163B5C] block">Internal Notes (Optional)</label>
+                <textarea
+                  rows={2}
+                  value={refundNotes}
+                  onChange={(e) => setRefundNotes(e.target.value)}
+                  placeholder="Additional return notes, tracking number, or customer details..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-medium text-slate-700 focus:outline-none focus:border-rose-500 resize-none"
+                />
+              </div>
+
+              {/* Restock Items Checkbox */}
+              <label className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={restockReturnedItems}
+                  onChange={(e) => setRestockReturnedItems(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                />
+                <div>
+                  <span className="font-extrabold text-[#163B5C] block">Restock Items back into Inventory</span>
+                  <span className="text-[10.5px] text-[#64748B] block">
+                    Automatically increments the stock count for returned items ({refundOrderTarget.items?.length || 0} product lines).
+                  </span>
+                </div>
+              </label>
+
+              {/* Footer Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRefundOrderTarget(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessingRefund}
+                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold flex items-center gap-2 shadow-md shadow-rose-600/20 transition-all disabled:opacity-50"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>{isProcessingRefund ? 'Processing Refund...' : 'Confirm Return & Refund'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

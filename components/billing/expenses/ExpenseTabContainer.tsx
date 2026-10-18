@@ -18,7 +18,7 @@ export default function ExpenseTabContainer() {
   const fetchExpenses = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/billing/expenses?category=${selectedCategory}`);
+      const res = await fetch(`/api/billing/expenses?category=${encodeURIComponent(selectedCategory)}`);
       const data = await res.json();
       if (data.success) setExpenses(data.data);
     } catch (err) {

@@ -113,7 +113,7 @@ export default function CategoryCarousel({
       */}
 
       {/* CATEGORY TRACK CONTAINER WITH PREV/NEXT ARROWS */}
-      <div className="relative max-w-7xl mx-auto sm:px-4 lg:px-8">
+      <div className="relative w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto sm:px-4 lg:px-8 xl:px-10 2xl:px-12">
         {/* Left Navigation Arrow (Desktop/Tablet only) */}
         <button
           type="button"
@@ -140,7 +140,7 @@ export default function CategoryCarousel({
         <div
           ref={scrollContainerRef}
           onScroll={checkScrollState}
-          className="flex items-start justify-start md:justify-center gap-3 sm:gap-5 lg:gap-7 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 -mx-2 px-2 sm:mx-0 sm:px-0 focus:outline-none scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="flex items-start justify-start md:justify-center gap-3 sm:gap-5 lg:gap-7 xl:gap-8 2xl:gap-10 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 -mx-2 px-2 sm:mx-0 sm:px-0 focus:outline-none scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           tabIndex={0}
           role="region"
           aria-label="Categories"
@@ -158,11 +158,11 @@ export default function CategoryCarousel({
                 key={category._id || category.name}
                 type="button"
                 onClick={() => onSelectCategory && onSelectCategory(category.name)}
-                className="group flex flex-col items-center text-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3B24] rounded-2xl transition-all duration-300 hover:-translate-y-1 shrink-0 snap-start w-[88px] sm:w-[110px] md:w-[124px] lg:w-[134px]"
+                className="group flex flex-col items-center text-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3B24] rounded-2xl transition-all duration-300 hover:-translate-y-1 shrink-0 snap-start w-[88px] sm:w-[110px] md:w-[124px] lg:w-[134px] xl:w-[144px] 2xl:w-[154px]"
               >
                 {/* Circular Floral Thumbnail with Thin Warm-Gold Border */}
                 <div
-                  className={`w-18 h-18 sm:w-20 sm:h-20 md:w-22 md:h-22 lg:w-24 lg:h-24 rounded-full p-1 border-2 transition-all duration-300 ${
+                  className={`w-18 h-18 sm:w-20 sm:h-20 md:w-22 md:h-22 lg:w-24 lg:h-24 xl:w-26 xl:h-26 2xl:w-28 2xl:h-28 rounded-full p-1 border-2 transition-all duration-300 ${
                     isSelected
                       ? 'border-[#0B3B24] ring-3 ring-[#0B3B24]/20 shadow-md scale-105 bg-white'
                       : 'border-amber-300/80 ring-1 ring-amber-200/50 hover:border-[#0B3B24] hover:ring-emerald-200/50 hover:shadow-md bg-white'
@@ -183,7 +183,7 @@ export default function CategoryCarousel({
 
                 {/* Clean Centered Category Label without clipping */}
                 <span
-                  className={`mt-2 text-[11px] sm:text-[12.5px] leading-[1.25] text-center transition-colors px-0.5 line-clamp-2 min-h-[28px] sm:min-h-[32px] flex items-center justify-center ${
+                  className={`mt-2 text-[11px] sm:text-[12.5px] lg:text-[13px] 2xl:text-[13.5px] leading-[1.25] text-center transition-colors px-0.5 line-clamp-2 min-h-[28px] sm:min-h-[32px] flex items-center justify-center ${
                     isSelected
                       ? 'text-[#0B3B24] font-bold'
                       : 'text-gray-800 font-medium group-hover:text-[#0B3B24]'

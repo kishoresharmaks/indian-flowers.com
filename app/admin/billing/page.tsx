@@ -15,6 +15,7 @@ import {
   Eye,
   Edit,
   Lock,
+  FileSpreadsheet,
 } from 'lucide-react';
 import SalesTabContainer from '@/components/billing/sales/SalesTabContainer';
 import PurchaseTabContainer from '@/components/billing/purchase/PurchaseTabContainer';
@@ -106,6 +107,22 @@ export default function AdminBillingPage() {
               <span className="hidden sm:inline">Refresh Data</span>
             </button>
 
+            <Link
+              href="/admin/dashboard?tab=customers"
+              className="px-3 py-2 rounded-xl border border-[#E8EDF2] bg-white hover:bg-gray-50 text-[#163B5C] font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+            >
+              <Users className="w-4 h-4 text-emerald-700" />
+              <span className="hidden sm:inline">Store Customers</span>
+            </Link>
+
+            <Link
+              href="/admin/dashboard?tab=reports"
+              className="px-3 py-2 rounded-xl border border-[#E8EDF2] bg-white hover:bg-gray-50 text-[#163B5C] font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+              <span className="hidden sm:inline">Reports &amp; Excel ↗</span>
+            </Link>
+
             <button
               onClick={() => setIsPartyModalOpen(true)}
               className="px-3.5 py-2 rounded-xl bg-[#163B5C] hover:bg-[#0F2A42] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
@@ -158,7 +175,7 @@ export default function AdminBillingPage() {
                 : 'border-transparent text-[#64748B] hover:text-[#163B5C]'
             }`}
           >
-            <PieChart className="w-4 h-4" /> 4. P&L & GST Reports
+            <PieChart className="w-4 h-4" /> 4. P&L & Tax Reports
           </button>
           <button
             onClick={() => setActiveTab('parties')}

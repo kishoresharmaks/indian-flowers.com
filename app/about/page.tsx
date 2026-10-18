@@ -19,6 +19,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import Header from '@/components/Header';
 import BrandLogo from '@/components/BrandLogo';
 
 export const metadata: Metadata = {
@@ -102,40 +103,15 @@ const VALUES = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-[#FAF6F0]/50 text-stone-900 font-sans flex flex-col justify-between">
-      {/* 1. TOP UTILITY BAR & BRAND HEADER */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/90 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            {/* Left: Brand Identity */}
-            <BrandLogo size="md" />
-
-            {/* Right: Quick Actions */}
-            <div className="flex items-center gap-3">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold text-[#0B3B24] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Back to</span> Storefront
-              </Link>
-              <a
-                href="tel:+19093793678"
-                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-stone-700 hover:text-[#0B3B24] border border-stone-200 hover:border-stone-300 bg-white transition-colors"
-              >
-                <Phone className="w-3.5 h-3.5 text-[#0B3B24]" />
-                <span>+1 (909) 379-3678</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Storefront Header */}
+      <Header />
 
       {/* 2. HERO SECTION WITH USER MISSION STATEMENT */}
       <section className="relative overflow-hidden bg-gradient-to-b from-white via-[#F4F8F4]/40 to-[#FAF6F0]/60 border-b border-stone-200/80 pt-12 pb-16 sm:pt-20 sm:pb-24">
         {/* Subtle Background Decorative Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-tr from-emerald-100/30 via-rose-100/20 to-transparent blur-3xl pointer-events-none -z-10" />
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+        <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 text-center space-y-6">
           {/* Eyebrow Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100/70 border border-emerald-200/80 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-[#0B3B24]">
             <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
@@ -180,7 +156,7 @@ export default function AboutPage() {
 
       {/* 3. FOUR CORE CRAFTSMANSHIP PILLARS */}
       <section className="py-16 sm:py-20 bg-white border-b border-stone-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <span className="text-xs uppercase tracking-[0.14em] font-bold text-[#C85A78]">
               Quality You Can Feel
@@ -219,7 +195,7 @@ export default function AboutPage() {
 
       {/* 4. LOCATIONS & NATIONWIDE HUBS SHOWCASE */}
       <section className="py-16 sm:py-24 bg-[#FAF6F0]/60 border-b border-stone-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 space-y-14">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-[#0B3B24] text-[11px] font-bold uppercase tracking-wider">
               <Building2 className="w-3.5 h-3.5" />
@@ -430,7 +406,7 @@ export default function AboutPage() {
 
       {/* 5. CEREMONIAL FLORAL CATALOG BANNER */}
       <section className="py-16 sm:py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
           <div className="bg-[#0B3B24] text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden shadow-xl space-y-6">
             <div className="relative z-10 space-y-4 max-w-2xl">
               <span className="text-xs uppercase tracking-widest font-bold text-emerald-300 flex items-center gap-1.5">

@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get('category');
 
     const filter: any = {};
-    if (category && category !== 'All') filter.categoryName = category;
+    if (category && category !== 'All') {
+      const escaped = category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.categoryName = { $regex: new RegExp(`^${escaped}$`, 'i') };
+    }
 
     const expenses = await Expense.find(filter).sort({ date: -1 }).lean();
     return NextResponse.json({ success: true, data: expenses });

@@ -7,6 +7,7 @@ import { captureServerEvent, captureServerException } from '@/lib/telemetry';
 import { calculateSalesTax } from '@/lib/tax';
 import { toCents, fromCents } from '@/lib/tax/taxProvider';
 import { validateTaxAddress, normalizeStateCode, formatUSZip } from '@/lib/tax/jurisdiction';
+import { getCustomerFromToken } from '@/lib/customerAuth';
 
 export async function GET() {
   try {
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const {
+      customerId: providedCustomerId,
       customerName,
       customerPhone,
       customerEmail,
@@ -34,6 +36,7 @@ export async function POST(request: Request) {
       streetAddress,
       aptSuite,
       city,
+      district,
       state,
       zipCode,
       country = 'US',
@@ -206,17 +209,23 @@ export async function POST(request: Request) {
     const nextSeqNumber = 1001 + orderCount;
     const orderId = `ORD-${nextSeqNumber}`;
 
+    // Resolve customer ID from body or active customer session cookie
+    const customerSession = getCustomerFromToken(request);
+    const finalCustomerId = providedCustomerId || customerSession?.customerId || undefined;
+
     // 4. Create Order with Durable Tax Snapshot and US Address
     const newOrder = await Order.create({
       orderId,
       orderType: 'ONLINE',
       invoiceNumber: orderId,
+      customerId: finalCustomerId,
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       customerEmail: (customerEmail || '').trim(),
       streetAddress: finalStreet,
       aptSuite: finalApt,
       city: finalCity,
+      district: (district || '').trim(),
       state: finalState,
       zipCode: finalZip,
       country: country || 'US',

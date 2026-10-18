@@ -63,11 +63,11 @@ export default function ProductCarousel({
         <div className="space-y-4">
           <div className="h-4 w-36 bg-stone-200 animate-pulse rounded" />
           <div className="h-8 w-64 bg-stone-200 animate-pulse rounded" />
-          <div className="flex gap-3 sm:gap-5 overflow-hidden pt-2 -mx-2 px-2 sm:mx-0 sm:px-0">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="flex gap-3.5 sm:gap-5 lg:gap-6 overflow-hidden pt-2 -mx-2 px-2 sm:mx-0 sm:px-0">
+            {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="w-[72vw] xs:w-[68vw] sm:w-[42vw] md:w-[31vw] lg:w-[calc(24.5%-14px)] xl:w-[276px] shrink-0 h-80 rounded-2xl bg-stone-100 animate-pulse border border-stone-200"
+                className="w-[74vw] xs:w-[68vw] sm:w-[calc(50%-10px)] md:w-[calc(33.333%-14px)] lg:w-[calc(25%-18px)] 2xl:w-[calc(20%-19.5px)] shrink-0 h-80 rounded-2xl bg-stone-100 animate-pulse border border-stone-200"
               />
             ))}
           </div>
@@ -119,7 +119,7 @@ export default function ProductCarousel({
         </div>
       </div>
 
-      {/* Horizontal Carousel Track: Subtle 8px corner buffer on mobile to tackle sharp end corners, 4 complete cards + peek on desktop */}
+      {/* Horizontal Carousel Track: Responsive card widths calculating from available container space */}
       <div
         ref={trackRef}
         onScroll={checkScroll}
@@ -133,7 +133,7 @@ export default function ProductCarousel({
           return (
             <div
               key={product._id}
-              className="w-[72vw] xs:w-[68vw] sm:w-[42vw] md:w-[31vw] lg:w-[calc(24.5%-14px)] xl:w-[276px] shrink-0 snap-start flex flex-col"
+              className="w-[74vw] xs:w-[68vw] sm:w-[calc(50%-10px)] md:w-[calc(33.333%-14px)] lg:w-[calc(25%-18px)] 2xl:w-[calc(20%-19.5px)] shrink-0 snap-start flex flex-col"
             >
               <ProductCard
                 product={product}

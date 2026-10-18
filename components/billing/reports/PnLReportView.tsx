@@ -123,6 +123,12 @@ export default function PnLReportView() {
             <span className="text-xs font-black text-emerald-600">{formatCurrency(report.netSalesRevenue)}</span>
           </div>
           <div className="space-y-2 text-xs">
+            {Number(report.b2bSaleInvoices) > 0 && (
+              <div className="flex justify-between text-[#64748B]">
+                <span>B2B Wholesale Invoices:</span>
+                <span className="font-bold text-[#163B5C]">{formatCurrency(report.b2bSaleInvoices)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-[#64748B]">
               <span>Online E-Commerce Sales:</span>
               <span className="font-bold text-[#163B5C]">{formatCurrency(report.onlineStoreSales)}</span>
@@ -131,10 +137,26 @@ export default function PnLReportView() {
               <span>POS Counter Billing Sales:</span>
               <span className="font-bold text-[#163B5C]">{formatCurrency(report.posCounterSales)}</span>
             </div>
-            <div className="flex justify-between text-rose-600 font-semibold pt-1 border-t">
-              <span>Less: Sales Returns:</span>
-              <span>- {formatCurrency(report.salesReturnTotal)}</span>
+            <div className={`flex justify-between font-semibold pt-1 border-t ${Number(report.salesReturnTotal) > 0 ? 'text-rose-600' : 'text-[#64748B]'}`}>
+              <span>Less: Sales Returns &amp; Refunds:</span>
+              <span>{Number(report.salesReturnTotal) > 0 ? `- ${formatCurrency(report.salesReturnTotal)}` : '$0.00'}</span>
             </div>
+            {(Number(report.b2bSalesReturns) > 0 || Number(report.orderRefundsTotal) > 0) && (
+              <div className="pl-2 text-[10.5px] text-slate-500 space-y-0.5">
+                {Number(report.b2bSalesReturns) > 0 && (
+                  <div className="flex justify-between">
+                    <span>• B2B Credit Notes:</span>
+                    <span>-{formatCurrency(report.b2bSalesReturns)}</span>
+                  </div>
+                )}
+                {Number(report.orderRefundsTotal) > 0 && (
+                  <div className="flex justify-between">
+                    <span>• Storefront &amp; POS Refunds:</span>
+                    <span>-{formatCurrency(report.orderRefundsTotal)}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -181,26 +203,26 @@ export default function PnLReportView() {
         </div>
       </div>
 
-      {/* GST Tax Summary Card */}
+      {/* Sales Tax Summary Card */}
       <div className="p-6 rounded-3xl bg-white border border-[#E8EDF2] shadow-xs space-y-4">
         <div className="flex items-center gap-2 text-[#163B5C]">
           <ShieldCheck className="w-5 h-5 text-[#ED3500]" />
-          <h3 className="font-extrabold text-sm uppercase tracking-wider">GST Tax Summary (Output vs Input Tax Credit)</h3>
+          <h3 className="font-extrabold text-sm uppercase tracking-wider">Sales Tax Summary (Collected vs Paid)</h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
-            <span className="text-[#64748B] block font-bold">Output GST (Collected on Sales):</span>
+            <span className="text-[#64748B] block font-bold">Sales Tax (Collected on Sales):</span>
             <span className="text-xl font-black text-amber-800">{formatCurrency(report.outputGstCollected)}</span>
           </div>
 
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
-            <span className="text-[#64748B] block font-bold">Input Tax Credit (Paid on Purchases):</span>
+            <span className="text-[#64748B] block font-bold">Tax Paid on Purchases:</span>
             <span className="text-xl font-black text-emerald-800">{formatCurrency(report.inputGstCredit)}</span>
           </div>
 
           <div className="p-4 rounded-2xl bg-[#FFF8F5] border border-[#ED3500]/30">
-            <span className="text-[#64748B] block font-bold">Net GST Payable to Govt:</span>
+            <span className="text-[#64748B] block font-bold">Net Sales Tax Payable:</span>
             <span className="text-xl font-black text-[#ED3500]">{formatCurrency(report.netGstPayable)}</span>
           </div>
         </div>

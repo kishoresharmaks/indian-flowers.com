@@ -166,7 +166,7 @@ export default function PurchaseBillForm({
 
         <div>
           <h3 className="font-extrabold text-xl text-[#163B5C]">
-            Create New {docType.replace('_', ' ')}
+            Create New {docType === 'PURCHASE_ORDER' ? 'Purchase Order' : docType === 'PURCHASE_RETURN' ? 'Purchase Return' : 'Purchase Bill'}
           </h3>
           <p className="text-xs text-[#64748B]">
             {docType === 'PURCHASE_BILL'
@@ -262,7 +262,7 @@ export default function PurchaseBillForm({
                       <th className="p-3">Product Item</th>
                       <th className="p-3 w-28">Cost Price ($)</th>
                       <th className="p-3 w-20">Inward Qty</th>
-                      <th className="p-3 w-24">Input GST %</th>
+                      <th className="p-3 w-24">Tax %</th>
                       <th className="p-3 text-right">Total Cost ($)</th>
                       <th className="p-3 w-10 text-center"></th>
                     </tr>
@@ -294,15 +294,19 @@ export default function PurchaseBillForm({
                           />
                         </td>
                         <td className="p-3">
-                          <select
-                            value={item.gst}
-                            onChange={(e) => handleUpdateItem(idx, 'gst', e.target.value)}
-                            className="w-full px-2 py-1 border rounded text-xs font-semibold"
-                          >
-                            <option value="0">0%</option>
-                            <option value="5">5%</option>
-                            <option value="18">18%</option>
-                          </select>
+                          <div className="relative flex items-center">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={item.gst === 0 ? '0' : (item.gst || '')}
+                              onChange={(e) => handleUpdateItem(idx, 'gst', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                              placeholder="0"
+                              className="w-full px-2 py-1 pr-4 border border-[#E8EDF2] rounded text-xs font-semibold focus:outline-none focus:border-[#163B5C]"
+                            />
+                            <span className="absolute right-1 text-[10px] text-gray-400 font-bold pointer-events-none">%</span>
+                          </div>
                         </td>
                         <td className="p-3 text-right font-extrabold text-[#163B5C]">
                           {formatCurrency(item.lineTotal)}
@@ -360,7 +364,7 @@ export default function PurchaseBillForm({
                 <span className="font-bold">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#64748B]">Input Tax Credit (GST):</span>
+                <span className="text-[#64748B]">Tax:</span>
                 <span className="font-bold">{formatCurrency(totalGst)}</span>
               </div>
               <div className="flex justify-between text-base font-black text-[#ED3500] pt-1 border-t">
@@ -388,7 +392,7 @@ export default function PurchaseBillForm({
               className="px-6 py-3 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[#ED3500]/25 transition-all flex items-center gap-1.5"
             >
               <CheckCircle2 className="w-4 h-4" />
-              {isSubmitting ? 'Saving Document...' : `Save & Issue ${docType.replace('_', ' ')}`}
+              {isSubmitting ? 'Saving Document...' : `Save & Issue ${docType === 'PURCHASE_ORDER' ? 'Purchase Order' : docType === 'PURCHASE_RETURN' ? 'Purchase Return' : 'Purchase Bill'}`}
             </button>
           </div>
         </form>

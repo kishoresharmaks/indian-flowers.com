@@ -102,7 +102,7 @@ export default function PurchaseTabContainer({ products }: PurchaseTabContainerP
             onClick={() => setIsFormOpen(true)}
             className="px-4 py-2 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-xs whitespace-nowrap shrink-0"
           >
-            <Plus className="w-4 h-4" /> Create {subTab.replace('_', ' ')}
+            <Plus className="w-4 h-4" /> Create {subTab === 'PURCHASE_ORDER' ? 'Purchase Order' : subTab === 'PURCHASE_RETURN' ? 'Purchase Return' : 'Purchase Bill'}
           </button>
         )}
       </div>

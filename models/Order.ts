@@ -17,6 +17,7 @@ export interface IOrder extends Document {
   orderId: string;
   invoiceNumber?: string;
   orderType: 'ONLINE' | 'POS';
+  customerId?: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
@@ -24,6 +25,7 @@ export interface IOrder extends Document {
   streetAddress?: string;
   aptSuite?: string;
   city?: string;
+  district?: string;
   state?: string;
   zipCode?: string;
   country?: string;
@@ -40,13 +42,19 @@ export interface IOrder extends Document {
   discountValue?: number;
   discountAmount?: number;
   paymentMethod: 'CreditCard' | 'COD' | 'ApplePay' | 'PayPal' | 'CASH' | 'Razorpay';
-  paymentStatus: 'Pending' | 'Paid' | 'Failed';
+  paymentStatus: 'Pending' | 'Paid' | 'Failed' | 'Refunded' | 'Partially_Refunded';
   transactionId?: string;
   cashReceived?: number;
   changeReturned?: number;
   cashierName?: string;
   cashierId?: string;
-  status: 'Pending' | 'Processing' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Processing' | 'Completed' | 'Cancelled' | 'Refunded' | 'Returned';
+  refundAmount?: number;
+  refundReason?: string;
+  refundDate?: Date;
+  isRestocked?: boolean;
+  restockedAt?: Date;
+  refundNotes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +81,7 @@ const OrderSchema: Schema = new Schema(
       default: 'ONLINE',
       index: true,
     },
+    customerId: { type: String, sparse: true, index: true },
     customerName: { type: String, required: true, trim: true },
     customerPhone: { type: String, required: true, trim: true },
     customerEmail: { type: String, default: '', trim: true },
@@ -80,6 +89,7 @@ const OrderSchema: Schema = new Schema(
     streetAddress: { type: String, default: '' },
     aptSuite: { type: String, default: '' },
     city: { type: String, default: '' },
+    district: { type: String, default: '' },
     state: { type: String, default: '' },
     zipCode: { type: String, default: '' },
     country: { type: String, default: 'US' },
@@ -102,7 +112,7 @@ const OrderSchema: Schema = new Schema(
     },
     paymentStatus: {
       type: String,
-      enum: ['Pending', 'Paid', 'Failed'],
+      enum: ['Pending', 'Paid', 'Failed', 'Refunded', 'Partially_Refunded'],
       default: 'Pending',
     },
     transactionId: { type: String, default: '' },
@@ -112,9 +122,15 @@ const OrderSchema: Schema = new Schema(
     cashierId: { type: String, default: '' },
     status: {
       type: String,
-      enum: ['Pending', 'Processing', 'Completed', 'Cancelled'],
+      enum: ['Pending', 'Processing', 'Completed', 'Cancelled', 'Refunded', 'Returned'],
       default: 'Pending',
     },
+    refundAmount: { type: Number, default: 0 },
+    refundReason: { type: String, default: '' },
+    refundDate: { type: Date },
+    isRestocked: { type: Boolean, default: false },
+    restockedAt: { type: Date },
+    refundNotes: { type: String, default: '' },
   },
   { timestamps: true }
 );

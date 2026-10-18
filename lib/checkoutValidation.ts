@@ -204,3 +204,96 @@ export function validateCheckoutForm(
     firstErrorField,
   };
 }
+
+/**
+ * Validates a US District / County / Region.
+ */
+export function validateDistrict(district?: string | null): string | null {
+  if (!district || typeof district !== 'string') {
+    return 'District / County is required.';
+  }
+  const trimmed = district.trim();
+  if (trimmed.length < 2) {
+    return 'District / County must be at least 2 characters.';
+  }
+  return null;
+}
+
+/**
+ * Validates customer password strength.
+ */
+export function validatePassword(password?: string | null): string | null {
+  if (!password || typeof password !== 'string') {
+    return 'Password is required.';
+  }
+  if (password.length < 6) {
+    return 'Password must be at least 6 characters.';
+  }
+  return null;
+}
+
+export interface CustomerRegistrationData {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  aptSuite?: string;
+  city: string;
+  district?: string;
+  state: string;
+  zipCode: string;
+  password: string;
+  confirmPassword?: string;
+}
+
+export function validateCustomerRegistration(
+  data: Partial<CustomerRegistrationData>
+): CheckoutValidationResult {
+  const errors: Record<string, string> = {};
+
+  const nameError = validateCustomerName(data.name);
+  if (nameError) errors.name = nameError;
+
+  const phoneError = validateCustomerPhone(data.phone);
+  if (phoneError) errors.phone = phoneError;
+
+  const emailError = validateCustomerEmail(data.email);
+  if (emailError) errors.email = emailError;
+
+  const addressError = validateStreetAddress(data.address);
+  if (addressError) errors.address = addressError;
+
+  const cityError = validateCity(data.city);
+  if (cityError) errors.city = cityError;
+
+  if (data.district !== undefined) {
+    const districtError = validateDistrict(data.district);
+    if (districtError) errors.district = districtError;
+  }
+
+  const stateError = validateState(data.state);
+  if (stateError) errors.state = stateError;
+
+  const zipError = validateZipCode(data.zipCode);
+  if (zipError) errors.zipCode = zipError;
+
+  const passError = validatePassword(data.password);
+  if (passError) errors.password = passError;
+
+  if (data.confirmPassword !== undefined && data.password !== data.confirmPassword) {
+    errors.confirmPassword = 'Passwords do not match.';
+  }
+
+  const fieldKeys = Object.keys(errors);
+  const isValid = fieldKeys.length === 0;
+  const firstErrorField = isValid ? null : fieldKeys[0];
+  const firstErrorMessage = isValid ? null : errors[firstErrorField!];
+
+  return {
+    isValid,
+    errors,
+    firstErrorMessage,
+    firstErrorField,
+  };
+}
+

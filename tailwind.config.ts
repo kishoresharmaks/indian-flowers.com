@@ -51,6 +51,9 @@ const config: Config = {
         serif: ["var(--font-plus-jakarta)", "var(--font-heading)", "system-ui", "sans-serif"],
         heading: ["var(--font-plus-jakarta)", "sans-serif"],
       },
+      screens: {
+        '3xl': '1920px',
+      },
     },
   },
   plugins: [],

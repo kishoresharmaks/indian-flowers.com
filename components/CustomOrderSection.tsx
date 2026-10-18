@@ -85,9 +85,9 @@ export default function CustomOrderSection() {
 
   return (
     <section id="custom-orders-section" className="py-14 sm:py-20 bg-[#FAF6F0] border-y border-amber-100/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14 space-y-2">
+        <div className="text-center max-w-2xl xl:max-w-3xl mx-auto mb-10 sm:mb-14 space-y-2">
           <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.12em] text-[#C85A78]">
             Bespoke Ceremonies & Celebrations
           </span>

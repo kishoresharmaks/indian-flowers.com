@@ -8,6 +8,7 @@ import { DEFAULT_POLICIES } from '@/lib/defaultPolicies';
 import PolicyContentRenderer from '@/components/policies/PolicyContentRenderer';
 import PrintPolicyButton from '@/components/policies/PrintPolicyButton';
 import Footer from '@/components/Footer';
+import Header from '@/components/Header';
 import BrandLogo from '@/components/BrandLogo';
 import {
   ShieldCheck,
@@ -81,43 +82,12 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]/60 text-stone-900 font-sans flex flex-col justify-between">
-      {/* 1. TOP UTILITY BAR & BRAND HEADER */}
-      <header className="sticky top-0 z-40 bg-white border-b border-stone-200/90 shadow-2xs backdrop-blur-md bg-white/95">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            {/* Left: Brand Identity */}
-            <BrandLogo size="md" />
-
-            {/* Right: Quick actions */}
-            <div className="flex items-center gap-3">
-              <Link
-                href="/about"
-                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-stone-700 hover:text-[#0B3B24] transition-colors"
-              >
-                About Us
-              </Link>
-              <Link
-                href="/"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-[#0B3B24] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" /> Back to Storefront
-              </Link>
-              <a
-                href="tel:+19093793678"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-stone-700 hover:text-[#0B3B24] border border-stone-200 hover:border-stone-300 bg-white transition-colors"
-              >
-                <Phone className="w-3.5 h-3.5 text-[#0B3B24]" />
-                <span className="hidden md:inline">+1 (909) 379-3678</span>
-                <span className="md:hidden">Support</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Storefront Header */}
+      <Header />
 
       {/* 2. BREADCRUMBS & HERO SECTION */}
       <div className="bg-gradient-to-b from-white to-[#F4F8F4]/50 border-b border-stone-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 sm:py-12">
           {/* Breadcrumb Trail */}
           <nav className="flex items-center gap-1.5 text-xs text-stone-500 mb-4 font-medium">
             <Link href="/" className="hover:text-[#0B3B24] transition-colors">
@@ -166,7 +136,7 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
       </div>
 
       {/* 3. MAIN CONTENT LAYOUT (SIDEBAR + DOCUMENT) */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1 w-full">
+      <main className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 sm:py-12 flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* A. LEFT SIDEBAR: Policy Directory */}
           <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-28">

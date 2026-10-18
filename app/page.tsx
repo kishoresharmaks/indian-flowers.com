@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
 import { US_STATES } from '@/lib/tax';
 import { validateCheckoutForm } from '@/lib/checkoutValidation';
@@ -82,6 +83,9 @@ interface TrackedOrder {
 
 
 export default function CustomerStore() {
+  const router = useRouter();
+  const [customer, setCustomer] = useState<any | null>(null);
+
   // Dynamic State sourced 100% from MongoDB
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -220,6 +224,80 @@ export default function CustomerStore() {
 
   const handleClearWishlist = () => {
     setWishlist([]);
+  };
+
+  // Fetch active customer session & handle auto-opening checkout if redirected back
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const actionParam = params.get('action');
+      const categoryParam = params.get('category');
+      const searchParam = params.get('search');
+      if (actionParam === 'cart') setIsCartOpen(true);
+      if (actionParam === 'track') setIsTrackModalOpen(true);
+      if (actionParam === 'wishlist') setIsWishlistOpen(true);
+      if (categoryParam) setSelectedCategory(categoryParam);
+      if (searchParam) setSearchQuery(searchParam);
+    }
+
+    const isCheckoutRedirect =
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('checkout') === 'true';
+
+    fetch('/api/customer/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && data.customer) {
+          setCustomer(data.customer);
+          setCheckoutForm((prev) => ({
+            ...prev,
+            customerName: data.customer.name || prev.customerName,
+            customerPhone: data.customer.phone || prev.customerPhone,
+            customerEmail: data.customer.email || prev.customerEmail,
+            streetAddress: data.customer.address || prev.streetAddress,
+            aptSuite: data.customer.aptSuite || prev.aptSuite,
+            city: data.customer.district || data.customer.city || prev.city,
+            state: data.customer.state || prev.state,
+            zipCode: data.customer.zipCode || prev.zipCode,
+          }));
+          if (isCheckoutRedirect) {
+            setIsCheckoutOpen(true);
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        } else {
+          setCustomer(null);
+          if (isCheckoutRedirect) {
+            router.push('/login?redirect=checkout');
+          }
+        }
+      })
+      .catch(() => {
+        setCustomer(null);
+        if (isCheckoutRedirect) {
+          router.push('/login?redirect=checkout');
+        }
+      });
+  }, [router]);
+
+  const handleInitiateCheckout = () => {
+    if (!customer) {
+      setIsCartOpen(false);
+      router.push('/login?redirect=checkout');
+      return;
+    }
+    setCheckoutForm((prev) => ({
+      ...prev,
+      customerName: prev.customerName || customer.name || '',
+      customerPhone: prev.customerPhone || customer.phone || '',
+      customerEmail: prev.customerEmail || customer.email || '',
+      streetAddress: prev.streetAddress || customer.address || '',
+      aptSuite: prev.aptSuite || customer.aptSuite || '',
+      city: prev.city || customer.district || customer.city || '',
+      state: prev.state || customer.state || 'CA',
+      zipCode: prev.zipCode || customer.zipCode || '',
+    }));
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
   };
 
   // 1. Fetch Store Settings
@@ -602,12 +680,14 @@ export default function CustomerStore() {
       }, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zipCode}`;
 
       const payload = {
+        customerId: customer?.id || undefined,
         customerName: checkoutForm.customerName.trim(),
         customerPhone: checkoutForm.customerPhone.trim(),
         customerEmail: checkoutForm.customerEmail.trim(),
         streetAddress: checkoutForm.streetAddress.trim(),
         aptSuite: (checkoutForm.aptSuite || '').trim(),
         city: checkoutForm.city.trim(),
+        district: checkoutForm.city.trim(),
         state: checkoutForm.state.trim().toUpperCase(),
         zipCode: checkoutForm.zipCode.trim(),
         country: 'US',
@@ -855,6 +935,8 @@ export default function CustomerStore() {
         storeTagline={storeSettings?.tagline || 'Fresh Indian Flowers for Every Occasion'}
         storePhone={storeSettings?.contactPhone || storeSettings?.phone || '+1 (909) 379-3678'}
         storeEmail={storeSettings?.contactEmail || storeSettings?.email || 'indianflowersorder@gmail.com'}
+        customer={customer}
+        onCustomerChange={setCustomer}
       />
 
       {/* 2. IMAGE SLIDER HERO (Retrieved from DB Banners) */}
@@ -873,7 +955,7 @@ export default function CustomerStore() {
         <FloralCornerDecorations />
 
         {/* Content Container (z-10 above decorations) */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
           {/* Horizontal Category Carousel */}
           <CategoryCarousel
             categories={categories}
@@ -919,7 +1001,7 @@ export default function CustomerStore() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
                     {filteredSearchProducts.map((product) => (
                       <ProductCard
                         key={product._id}
@@ -986,7 +1068,7 @@ export default function CustomerStore() {
 
       {/* 5. OCCASION FEATURE DUAL BANNERS (CREATIVE BORDERLESS EDITORIAL CARDS WITH SEAMLESS PHOTO BLENDING) */}
       <section className="py-10 sm:py-16 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-7">
             {/* Banner 1: Wedding & Temple Garlands */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FAF5ED] via-[#F5ECE1] to-[#EFE2D4] p-6 sm:p-8 lg:p-9 min-h-[280px] sm:min-h-[310px] flex flex-col justify-between group shadow-xs hover:shadow-[0_20px_48px_rgba(11,59,36,0.08)] transition-all duration-500">
@@ -1081,7 +1163,7 @@ export default function CustomerStore() {
 
       {/* 6. WHY CHOOSE INDIAN-FLOWERS.COM SECTION */}
       <section className="py-12 sm:py-16 bg-[#FAFAF8] border-y border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 space-y-8">
           {/* Header */}
           <div className="text-center space-y-1">
             <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#C85A78]">
@@ -1156,7 +1238,7 @@ export default function CustomerStore() {
 
       {/* 7. CUSTOMER REVIEWS (Retrieved 100% Dynamically from DB) */}
       <section className="py-12 sm:py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 space-y-8">
           {/* Section Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
@@ -1244,7 +1326,7 @@ export default function CustomerStore() {
             src="/decorations/floral-left.png"
             alt=""
             aria-hidden="true"
-            className="absolute bottom-0 left-0 w-36 sm:w-56 md:w-72 lg:w-96 xl:w-[440px] pointer-events-none select-none object-contain object-bottom-left opacity-95 transition-opacity"
+            className="absolute bottom-0 left-0 w-36 sm:w-56 md:w-72 lg:w-96 xl:w-[440px] 2xl:w-[500px] 3xl:w-[560px] pointer-events-none select-none object-contain object-bottom-left opacity-95 transition-opacity"
             loading="lazy"
           />
 
@@ -1253,13 +1335,13 @@ export default function CustomerStore() {
             src="/decorations/floral-right.png"
             alt=""
             aria-hidden="true"
-            className="absolute bottom-0 right-0 w-36 sm:w-56 md:w-72 lg:w-96 xl:w-[440px] pointer-events-none select-none object-contain object-bottom-right opacity-95 transition-opacity"
+            className="absolute bottom-0 right-0 w-36 sm:w-56 md:w-72 lg:w-96 xl:w-[440px] 2xl:w-[500px] 3xl:w-[560px] pointer-events-none select-none object-contain object-bottom-right opacity-95 transition-opacity"
             loading="lazy"
           />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pb-6 sm:pb-3 md:pb-0">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 lg:gap-10 max-w-5xl mx-auto">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 relative z-10 pb-6 sm:pb-3 md:pb-0">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 lg:gap-10 max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
             <div className="space-y-1.5 text-center lg:text-left">
               <h3 className="text-[20px] sm:text-[24px] md:text-[28px] lg:text-[30px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.25]">
                 Get Flower Updates &amp; Special Offers
@@ -1351,10 +1433,7 @@ export default function CustomerStore() {
         grandTotal={cartGrandTotal}
         onUpdateQuantity={updateCartQty}
         onRemove={removeFromCart}
-        onCheckout={() => {
-          setIsCheckoutOpen(true);
-          setIsCartOpen(false);
-        }}
+        onCheckout={handleInitiateCheckout}
       />
 
       {/* WISHLIST DRAWER */}
@@ -1473,6 +1552,20 @@ export default function CustomerStore() {
                   Deliver fresh Indian flowers to your doorstep in the United States.
                 </p>
               </div>
+
+              {customer && (
+                <div className="p-3 bg-emerald-50/80 border border-emerald-200/90 rounded-xl flex items-start gap-2.5 text-xs text-[#0B3B24]">
+                  <CheckCircle2 className="w-4 h-4 text-[#0B3B24] shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold block text-emerald-950">
+                      Logged in as {customer.name} ({customer.email})
+                    </span>
+                    <span className="text-gray-600">
+                      US delivery address pre-filled from your account. You can edit any details below for this shipment.
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {formError && (
                 <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-normal">

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/prebuild.js && next build",
     "start": "next start -H 0.0.0.0",
     "lint": "next lint",
     "test": "node scripts/runTests.js"
@@ -20,7 +20,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sharp": "^0.35.5",
-    "tailwind-merge": "^2.5.2"
+    "tailwind-merge": "^2.5.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

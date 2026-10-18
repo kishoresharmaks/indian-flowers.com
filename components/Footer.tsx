@@ -80,6 +80,13 @@ export const SOCIAL_LINKS = [
   },
 ];
 
+export const DEFAULT_FOOTER_CATEGORIES: { _id?: string; name: string }[] = [
+  { _id: 'cat-strings', name: 'Fresh Flower Strings & Jasmine' },
+  { _id: 'cat-garlands', name: 'Wedding & Temple Garlands' },
+  { _id: 'cat-pooja', name: 'Loose Flowers for Daily Pooja' },
+  { _id: 'cat-leaves', name: 'Sacred Pooja Leaves & Greenery' },
+];
+
 export default function Footer({
   categories = [],
   onSelectCategory,
@@ -87,6 +94,8 @@ export default function Footer({
   contactPhone = '+1 (909) 379-3678',
   contactEmail = 'indianflowersorder@gmail.com',
 }: FooterProps) {
+  const displayCategories = categories && categories.length > 0 ? categories : DEFAULT_FOOTER_CATEGORIES;
+
   // Mobile accordion state (collapsed by default on initial load)
   const [openSections, setOpenSections] = useState<{
     quickLinks: boolean;
@@ -124,7 +133,7 @@ export default function Footer({
 
   return (
     <footer className="bg-[#0B3B24] text-white pt-12 sm:pt-16 pb-28 sm:pb-12 border-t border-[#0B3B24] overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
 
         {/* ========================================================= */}
         {/* 1. DEDICATED MOBILE & TABLET LAYOUT (< 1024px)            */}
@@ -414,59 +423,15 @@ export default function Footer({
             </div>
           </div>
 
-          {/* D. Compact Trust and Delivery Strip (Mobile) */}
-          <div className="rounded-xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5 space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:divide-x sm:divide-white/15 text-xs text-white/85">
-            <div className="flex items-center gap-2.5 sm:pr-3 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-400/20 flex items-center justify-center shrink-0">
-                <Truck className="w-4 h-4 text-[#8FE7B8]" />
-              </div>
-              <span className="text-xs sm:text-[11.5px] leading-snug text-white/95 font-medium">
-                Overnight cold-chain delivery to all 50 states across the USA
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5 sm:pl-3 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-400/20 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-4 h-4 text-[#8FE7B8]" />
-              </div>
-              <span className="text-xs sm:text-[11.5px] leading-snug font-medium text-emerald-200">
-                100% Quality &amp; Freshness Guaranteed on Arrival
-              </span>
-            </div>
-          </div>
-
-          {/* E. Minimal Copyright and Legal Bar (Mobile) */}
-          <div className="pt-4 border-t border-white/10 text-center space-y-2 text-xs text-white/60">
-            <div className="text-[11.5px] text-white/80">
+          {/* E. Minimal Copyright Bar (Mobile) */}
+          <div className="pt-4 border-t border-white/10 text-center text-xs text-white/70">
+            <p className="text-[11.5px]">
               &copy; 2026{' '}
-              <Link href="https://indian-flowers.com/" className="text-white font-medium hover:text-[#8FE7B8] transition-colors">
+              <Link href="/" className="text-white font-medium hover:text-[#8FE7B8] transition-colors">
                 The Indian Flowers
               </Link>
               . All Rights Reserved.
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[11px] text-white/70">
-              <Link href="/policy/privacy-policy" className="hover:text-white transition-colors">
-                Privacy
-              </Link>
-              <span className="text-white/30">&bull;</span>
-              <Link href="/policy/terms-and-conditions" className="hover:text-white transition-colors">
-                Terms
-              </Link>
-              <span className="text-white/30">&bull;</span>
-              <Link href="/policy/cookie-policy" className="hover:text-white transition-colors">
-                Cookies
-              </Link>
-              <span className="text-white/30">&bull;</span>
-              <button
-                type="button"
-                onClick={handleOpenCookiePreferences}
-                className="hover:text-white transition-colors"
-              >
-                Cookie Preferences
-              </button>
-            </div>
-            <div className="text-[10px] text-white/40">
-              Prices in US Dollars (USD, $)
-            </div>
+            </p>
           </div>
         </div>
 
@@ -547,7 +512,7 @@ export default function Footer({
                     All Fresh Indian Flowers
                   </Link>
                 </li>
-                {categories.slice(0, 5).map((cat) => (
+                {displayCategories.slice(0, 5).map((cat) => (
                   <li key={cat._id || cat.name}>
                     {onSelectCategory ? (
                       <button
@@ -691,81 +656,18 @@ export default function Footer({
             </div>
           </div>
 
-          {/* Highlight Guarantee Bar (Desktop) */}
-          <div className="py-4 px-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-3 text-xs text-white/80">
-            <div className="flex items-center gap-2">
-              <Truck className="w-4 h-4 text-[#8FE7B8] shrink-0" />
-              <span>Overnight cold-chain delivery to all 50 states across the USA.</span>
-            </div>
-            <div className="flex items-center gap-2 font-medium text-emerald-200">
-              <ShieldCheck className="w-4 h-4 text-[#F5C542] shrink-0" />
-              <span>100% Quality &amp; Freshness Guaranteed on Arrival</span>
-            </div>
-            <div className="flex items-center gap-2 text-white/70">
-              <Lock className="w-4 h-4 text-[#8FE7B8] shrink-0" />
-              <span>Safe &amp; Secure Ordering with Your Privacy Protected</span>
-            </div>
-          </div>
-
           {/* Copyright Bottom Bar (Desktop) */}
-          <div className="pt-6 border-t border-white/10 flex items-center justify-between gap-4 text-xs text-white/60">
-            <div className="text-white/80 text-xs">
+          <div className="pt-6 border-t border-white/10 text-center text-xs text-white/70">
+            <p>
               Copyright &copy; 2026{' '}
               <Link
-                href="https://indian-flowers.com/"
-                className="text-white font-medium hover:text-[#8FE7B8] hover:underline transition-colors"
+                href="/"
+                className="text-white font-medium hover:text-[#8FE7B8] transition-colors"
               >
-                Indian flowers
+                The Indian Flowers
               </Link>
-              . All Rights Reserved.{' '}
-              <Link
-                href="https://indian-flowers.com/privacy-policy/"
-                className="text-white font-medium hover:text-[#8FE7B8] hover:underline transition-colors"
-              >
-                Privacy Policy
-              </Link>{' '}
-              | <span className="text-[#8FE7B8] font-semibold">Indian Flowers</span>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-white/70">
-              <Link href="/about" className="hover:text-white transition-colors">
-                About Us
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/shipping-policy" className="hover:text-white transition-colors">
-                Shipping Policy
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/refund-policy" className="hover:text-white transition-colors">
-                Freshness Guarantee
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/privacy-policy" className="hover:text-white transition-colors">
-                Privacy Policy
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/terms-and-conditions" className="hover:text-white transition-colors">
-                Terms
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/disclaimer" className="hover:text-white transition-colors">
-                Disclaimer
-              </Link>
-              <span>&bull;</span>
-              <Link href="/policy/cookie-policy" className="hover:text-white transition-colors">
-                Cookies
-              </Link>
-              <span>&bull;</span>
-              <button
-                type="button"
-                onClick={handleOpenCookiePreferences}
-                className="hover:text-white transition-colors"
-              >
-                Cookie Preferences
-              </button>
-            </div>
-            <div className="text-[11px] text-white/50">
-              Prices in US Dollars (USD, $)
-            </div>
+              . All Rights Reserved.
+            </p>
           </div>
         </div>
 

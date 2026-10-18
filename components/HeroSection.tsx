@@ -113,8 +113,8 @@ export default function HeroSection({
 
   if (loading && (!slides || slides.length === 0)) {
     return (
-      <section className="relative w-full overflow-hidden bg-[#FAF6F0] min-h-[460px] sm:min-h-[480px] md:min-h-[500px] lg:min-h-[520px] flex items-center">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full animate-pulse">
+      <section className="relative w-full overflow-hidden bg-[#FAF6F0] min-h-[460px] sm:min-h-[480px] md:min-h-[520px] lg:min-h-[560px] xl:min-h-[600px] 2xl:min-h-[640px] 3xl:min-h-[680px] flex items-center">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8 animate-pulse">
           <div className="max-w-xl bg-white/80 p-6 rounded-3xl space-y-3">
             <div className="h-4 w-40 bg-rose-100 rounded-full" />
             <div className="h-8 w-3/4 bg-gray-200 rounded-lg" />
@@ -131,8 +131,8 @@ export default function HeroSection({
 
   return (
     <section className="relative w-full overflow-hidden bg-[#FAF6F0] select-none">
-      {/* Slider Container: Proportioned for desktop 1920x650 and mobile 750x850 */}
-      <div className="relative min-h-[460px] sm:min-h-[480px] md:min-h-[500px] lg:min-h-[520px] flex flex-col justify-end md:justify-center">
+      {/* Slider Container: Proportioned for all screen widths from mobile to 4K ultrawide */}
+      <div className="relative min-h-[460px] sm:min-h-[480px] md:min-h-[520px] lg:min-h-[560px] xl:min-h-[600px] 2xl:min-h-[640px] 3xl:min-h-[680px] flex flex-col justify-end md:justify-center">
         {/* Responsive Background Image: <picture> Tag */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {desktopImageUrl && (
@@ -143,49 +143,50 @@ export default function HeroSection({
               <img
                 src={desktopImageUrl}
                 alt={slide?.title || 'Indian Flowers'}
-                className="w-full h-full object-cover object-top md:object-[right_center] transition-all duration-700 ease-in-out"
+                className="w-full h-full object-cover object-top md:object-[right_center] xl:object-[75%_center] transition-all duration-700 ease-in-out"
                 loading="eager"
               />
             </picture>
           )}
 
-          {/* Desktop left ambient gradient for luxury readability */}
-          <div className="absolute inset-0 hidden md:block bg-gradient-to-r from-[#FAF6F0]/90 via-[#FAF6F0]/50 to-transparent w-3/5 pointer-events-none z-[1]" />
+          {/* Desktop left ambient gradient: localized behind text card to preserve vivid full-bleed background flowers */}
+          <div className="absolute inset-y-0 left-0 hidden md:block w-full max-w-xl lg:max-w-2xl xl:max-w-3xl 2xl:max-w-4xl bg-gradient-to-r from-[#FAF6F0]/95 via-[#FAF6F0]/65 to-transparent pointer-events-none z-[1]" />
           
-          {/* Desktop bottom smooth fade - melts the photo progressively into the ivory canvas so the photo dissolves completely into #FAF6F0 without any line */}
-          <div className="absolute inset-x-0 -bottom-1 h-36 lg:h-48 hidden md:block bg-gradient-to-t from-[#FAF6F0] from-25% via-[#FAF6F0]/90 via-55% to-transparent pointer-events-none z-[2]" />
+          {/* Desktop bottom smooth fade - melts the photo progressively into the ivory canvas */}
+          <div className="absolute inset-x-0 -bottom-1 h-24 sm:h-32 md:h-36 lg:h-40 hidden md:block bg-gradient-to-t from-[#FAF6F0] from-15% via-[#FAF6F0]/80 via-45% to-transparent pointer-events-none z-[2]" />
 
           {/* Mobile seamless bottom ivory melt: starts softly in lower half and dissolves 100% into #FAF6F0 at the bottom */}
           <div className="absolute inset-x-0 -bottom-1 h-80 sm:h-96 md:hidden bg-gradient-to-t from-[#FAF6F0] from-30% via-[#FAF6F0]/95 via-65% to-transparent pointer-events-none z-[2]" />
         </div>
 
-        {/* Floating Circular Prev / Next Slider Navigation Buttons (Desktop only to prevent clutter on mobile) */}
-        {slides.length > 1 && (
-          <>
-            <button
-              onClick={prevSlide}
-              className="hidden md:flex absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-gray-800 shadow-[0_4px_16px_rgba(0,0,0,0.12)] items-center justify-center transition-all hover:scale-105 active:scale-95 border border-white/80 backdrop-blur-sm"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="w-4.5 h-4.5 text-gray-800" />
-            </button>
+        {/* Responsive Inner Container: Houses both the hero text card and aligned navigation buttons */}
+        <div className="relative z-10 w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 pt-2 pb-6 sm:py-8 lg:py-10">
+          {/* Floating Circular Prev / Next Slider Navigation Buttons (aligned with responsive inner container) */}
+          {slides.length > 1 && (
+            <>
+              <button
+                onClick={prevSlide}
+                className="hidden md:flex absolute -left-2 lg:-left-3 xl:-left-4 2xl:-left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 rounded-full bg-white/95 hover:bg-white text-gray-800 shadow-[0_4px_16px_rgba(0,0,0,0.12)] items-center justify-center transition-all hover:scale-105 active:scale-95 border border-white/90 backdrop-blur-sm"
+                aria-label="Previous slide"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-800" />
+              </button>
 
-            <button
-              onClick={nextSlide}
-              className="hidden md:flex absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-gray-800 shadow-[0_4px_16px_rgba(0,0,0,0.12)] items-center justify-center transition-all hover:scale-105 active:scale-95 border border-white/80 backdrop-blur-sm"
-              aria-label="Next slide"
-            >
-              <ChevronRight className="w-4.5 h-4.5 text-gray-800" />
-            </button>
-          </>
-        )}
+              <button
+                onClick={nextSlide}
+                className="hidden md:flex absolute -right-2 lg:-right-3 xl:-right-4 2xl:-right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 rounded-full bg-white/95 hover:bg-white text-gray-800 shadow-[0_4px_16px_rgba(0,0,0,0.12)] items-center justify-center transition-all hover:scale-105 active:scale-95 border border-white/90 backdrop-blur-sm"
+                aria-label="Next slide"
+              >
+                <ChevronRight className="w-5 h-5 text-gray-800" />
+              </button>
+            </>
+          )}
 
-        {/* Main Content:
-            - Mobile: NO card layout! Unboxed, fluid, sits directly on smooth background
-            - Desktop: Luxury frosted glass card floating on the left */}
-        {slide && (
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-6 sm:py-8 lg:py-10 w-full">
-            <div className="max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl bg-transparent p-0 border-0 shadow-none space-y-2 md:bg-white/65 md:backdrop-blur-md md:p-6 md:rounded-3xl md:border md:border-white/70 md:shadow-[0_8px_30px_rgba(0,0,0,0.06)] md:space-y-3">
+          {/* Main Content:
+              - Mobile: NO card layout! Unboxed, fluid, sits directly on smooth background
+              - Desktop: Luxury frosted glass card floating on the left */}
+          {slide && (
+            <div className="max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-[620px] 2xl:max-w-[660px] bg-transparent p-0 border-0 shadow-none space-y-2 md:bg-white/70 md:backdrop-blur-md md:p-6 lg:p-7 xl:p-8 md:rounded-3xl md:border md:border-white/80 md:shadow-[0_8px_30px_rgba(0,0,0,0.06)] md:space-y-3">
               {/* Eyebrow Pill Badge */}
               {slide.eyebrow && (
                 <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50/95 sm:bg-white/90 backdrop-blur-md border border-[#F3D5DF] shadow-[0_2px_8px_rgba(200,90,120,0.06)] self-start">
@@ -275,8 +276,8 @@ export default function HeroSection({
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Slide Indicator Dots (Centered with safe clearance) */}
         {slides.length > 1 && (
