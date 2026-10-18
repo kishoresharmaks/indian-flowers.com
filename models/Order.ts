@@ -60,8 +60,21 @@ export interface IOrder extends Document {
   isRestocked?: boolean;
   restockedAt?: Date;
   refundNotes?: string;
+  revision?: number;
+  revisions?: IOrderRevision[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface IOrderRevision {
+  revisionNumber: number;
+  revisedAt: Date;
+  revisedBy?: string;
+  reason: string;
+  previousTotal: number;
+  newTotal: number;
+  snapshot: any;
+  changeSummary?: string;
 }
 
 const OrderItemSchema = new Schema({
@@ -74,6 +87,17 @@ const OrderItemSchema = new Schema({
   taxCode: { type: String, default: '' },
   gst: { type: Number, default: 0 },
   image: { type: String },
+});
+
+const OrderRevisionSchema = new Schema({
+  revisionNumber: { type: Number, required: true },
+  revisedAt: { type: Date, default: Date.now },
+  revisedBy: { type: String, default: 'Admin' },
+  reason: { type: String, default: 'Order updated' },
+  previousTotal: { type: Number, required: true },
+  newTotal: { type: Number, required: true },
+  snapshot: { type: Schema.Types.Mixed, required: true },
+  changeSummary: { type: String, default: '' },
 });
 
 const OrderSchema: Schema = new Schema(
@@ -141,6 +165,8 @@ const OrderSchema: Schema = new Schema(
     isRestocked: { type: Boolean, default: false },
     restockedAt: { type: Date },
     refundNotes: { type: String, default: '' },
+    revision: { type: Number, default: 0 },
+    revisions: [OrderRevisionSchema],
   },
   { timestamps: true }
 );

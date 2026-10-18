@@ -16,6 +16,31 @@ export interface ISaleDocItem {
   lineTotal: number;
 }
 
+export interface ISaleDocRevision {
+  revisionNumber: number;
+  revisedAt: Date;
+  revisedBy?: string;
+  reason: string;
+  previousTotal: number;
+  newTotal: number;
+  snapshot: {
+    items: ISaleDocItem[];
+    subtotal: number;
+    totalTax?: number;
+    totalGst?: number;
+    discountAmount?: number;
+    grandTotal: number;
+    paidAmount?: number;
+    balanceAmount?: number;
+    customerName: string;
+    customerPhone: string;
+    customerEmail?: string;
+    billingAddress?: string;
+    notes?: string;
+  };
+  changeSummary?: string;
+}
+
 export interface ISaleDocument extends Document {
   docType: 'SALE_INVOICE' | 'QUOTATION' | 'PROFORMA' | 'SALE_ORDER' | 'SALE_RETURN';
   docNumber: string;
@@ -40,6 +65,9 @@ export interface ISaleDocument extends Document {
   status: 'Draft' | 'Active' | 'Converted' | 'Completed' | 'Cancelled';
   convertedToDocId?: string;
   notes?: string;
+  revision?: number;
+  revisions?: ISaleDocRevision[];
+  isFinalized?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,6 +86,17 @@ const SaleDocItemSchema = new Schema({
   lineSubtotal: { type: Number, required: true },
   lineGst: { type: Number, default: 0 },
   lineTotal: { type: Number, required: true },
+});
+
+const SaleDocRevisionSchema = new Schema({
+  revisionNumber: { type: Number, required: true },
+  revisedAt: { type: Date, default: Date.now },
+  revisedBy: { type: String, default: 'Admin' },
+  reason: { type: String, default: 'Document updated' },
+  previousTotal: { type: Number, required: true },
+  newTotal: { type: Number, required: true },
+  snapshot: { type: Schema.Types.Mixed, required: true },
+  changeSummary: { type: String, default: '' },
 });
 
 const SaleDocumentSchema: Schema = new Schema(
@@ -102,6 +141,9 @@ const SaleDocumentSchema: Schema = new Schema(
     },
     convertedToDocId: { type: String, default: '' },
     notes: { type: String, default: '' },
+    revision: { type: Number, default: 0 },
+    revisions: [SaleDocRevisionSchema],
+    isFinalized: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

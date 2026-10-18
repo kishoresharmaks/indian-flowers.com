@@ -10,6 +10,8 @@ interface SaleInvoiceFormProps {
   products: any[];
   onClose: () => void;
   onSuccess: () => void;
+  initialData?: any;
+  isEdit?: boolean;
 }
 
 export default function SaleInvoiceForm({
@@ -17,18 +19,46 @@ export default function SaleInvoiceForm({
   products,
   onClose,
   onSuccess,
+  initialData,
+  isEdit,
 }: SaleInvoiceFormProps) {
+  const isEditing = Boolean(isEdit || initialData);
   const [parties, setParties] = useState<any[]>([]);
-  const [selectedPartyId, setSelectedPartyId] = useState('');
-  const [customerName, setCustomerName] = useState('Walk-in Customer');
-  const [customerPhone, setCustomerPhone] = useState('9876543210');
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [billingAddress, setBillingAddress] = useState('');
+  const [selectedPartyId, setSelectedPartyId] = useState(initialData?.partyId || '');
+  const [customerName, setCustomerName] = useState(
+    initialData?.customerName || (isEditing ? '' : 'Walk-in Customer')
+  );
+  const [customerPhone, setCustomerPhone] = useState(
+    initialData?.customerPhone || (isEditing ? '' : '9876543210')
+  );
+  const [customerEmail, setCustomerEmail] = useState(initialData?.customerEmail || '');
+  const [billingAddress, setBillingAddress] = useState(
+    initialData?.billingAddress || initialData?.shippingAddress || ''
+  );
 
-  const [items, setItems] = useState<any[]>([]);
-  const [paidAmount, setPaidAmount] = useState('0');
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'RAZORPAY' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT' | 'UPI'>('CASH');
-  const [notes, setNotes] = useState('');
+  const [items, setItems] = useState<any[]>(
+    initialData?.items
+      ? initialData.items.map((it: any) => ({
+          productId: it.productId,
+          name: it.name,
+          variantName: it.variantName || '',
+          price: Number(it.price || 0),
+          quantity: Number(it.quantity || 1),
+          gst: Number(it.gst || it.taxRate || 0),
+          lineSubtotal: Number(it.lineSubtotal || (it.price || 0) * (it.quantity || 1)),
+          lineGst: Number(it.lineGst || 0),
+          lineTotal: Number(it.lineTotal || (it.lineSubtotal || (it.price || 0) * (it.quantity || 1)) + (it.lineGst || 0)),
+        }))
+      : []
+  );
+  const [paidAmount, setPaidAmount] = useState(
+    initialData?.paidAmount !== undefined ? String(initialData.paidAmount) : '0'
+  );
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'RAZORPAY' | 'CREDIT_CARD' | 'CreditCard' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT' | 'UPI'>(
+    initialData?.paymentMethod || 'CASH'
+  );
+  const [notes, setNotes] = useState(initialData?.notes || '');
+  const [revisionReason, setRevisionReason] = useState('');
 
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,22 +152,46 @@ export default function SaleInvoiceForm({
       setIsSubmitting(true);
       setError('');
 
-      const res = await fetch('/api/billing/sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          docType,
-          partyId: selectedPartyId,
-          customerName,
-          customerPhone,
-          customerEmail,
-          billingAddress,
-          items,
-          paidAmount: Number(paidAmount || 0),
-          paymentMethod,
-          notes,
-        }),
-      });
+      let res: Response;
+      if (isEditing && initialData?._id) {
+        res = await fetch('/api/billing/sales', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'edit_document',
+            docId: initialData._id,
+            orderSource: initialData.orderSource,
+            partyId: selectedPartyId,
+            customerName,
+            customerPhone,
+            customerEmail,
+            billingAddress,
+            items,
+            paidAmount: Number(paidAmount || 0),
+            paymentMethod,
+            notes,
+            revisionReason: revisionReason.trim() || undefined,
+            revisedBy: 'Admin',
+          }),
+        });
+      } else {
+        res = await fetch('/api/billing/sales', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            docType,
+            partyId: selectedPartyId,
+            customerName,
+            customerPhone,
+            customerEmail,
+            billingAddress,
+            items,
+            paidAmount: Number(paidAmount || 0),
+            paymentMethod,
+            notes,
+          }),
+        });
+      }
 
       const data = await res.json();
       if (data.success) {
@@ -147,7 +201,7 @@ export default function SaleInvoiceForm({
         setError(data.message || 'Failed to save sales document.');
       }
     } catch (err: any) {
-      setError(err.message || 'Server error creating sales document.');
+      setError(err.message || 'Server error saving sales document.');
     } finally {
       setIsSubmitting(false);
     }
@@ -166,9 +220,15 @@ export default function SaleInvoiceForm({
 
         <div>
           <h3 className="font-extrabold text-xl text-[#163B5C]">
-            Create New {docType === 'SALE_ORDER' ? 'Sales Order' : docType === 'QUOTATION' ? 'Quotation' : docType === 'PROFORMA' ? 'Proforma Invoice' : docType === 'SALE_RETURN' ? 'Sales Return' : 'Sale Invoice'}
+            {isEditing
+              ? `Edit ${docType === 'SALE_ORDER' ? 'Sales Order' : docType === 'QUOTATION' ? 'Quotation' : docType === 'PROFORMA' ? 'Proforma Invoice' : docType === 'SALE_RETURN' ? 'Sales Return' : 'Sale Invoice'} #${initialData?.docNumber || ''}`
+              : `Create New ${docType === 'SALE_ORDER' ? 'Sales Order' : docType === 'QUOTATION' ? 'Quotation' : docType === 'PROFORMA' ? 'Proforma Invoice' : docType === 'SALE_RETURN' ? 'Sales Return' : 'Sale Invoice'}`}
           </h3>
-          <p className="text-xs text-[#64748B]">Fill in items, customer info, tax, and payment status.</p>
+          <p className="text-xs text-[#64748B]">
+            {isEditing
+              ? 'Update items, pricing, or customer information. Finalized invoices and quotations will record a revision history snapshot.'
+              : 'Fill in items, customer info, tax, and payment status.'}
+          </p>
         </div>
 
         {error && (
@@ -375,21 +435,44 @@ export default function SaleInvoiceForm({
             </div>
           </div>
 
+          {/* Revision Reason / Audit Note for Edit Mode */}
+          {isEditing && (
+            <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-1.5">
+              <label className="block text-xs font-extrabold text-indigo-900 uppercase tracking-wide">
+                Revision Reason / Audit Note
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Customer requested quantity adjustment, negotiated price, or revised delivery specs"
+                value={revisionReason}
+                onChange={(e) => setRevisionReason(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-medium bg-white text-slate-800 placeholder-indigo-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+              />
+              <span className="text-[10px] text-indigo-600 block">
+                This note will be permanently recorded in the document&apos;s immutable revision history log.
+              </span>
+            </div>
+          )}
+
           <div className="pt-2 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-3 rounded-xl border border-[#E8EDF2] font-bold text-xs text-[#64748B]"
+              className="px-5 py-3 rounded-xl border border-[#E8EDF2] font-bold text-xs text-[#64748B] hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-3 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[#ED3500]/25 transition-all flex items-center gap-1.5"
+              className="px-6 py-3 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[#ED3500]/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
-              {isSubmitting ? 'Saving Document...' : `Save & Issue ${docType === 'SALE_ORDER' ? 'Sales Order' : docType === 'QUOTATION' ? 'Quotation' : docType === 'PROFORMA' ? 'Proforma Invoice' : docType === 'SALE_RETURN' ? 'Sales Return' : 'Sale Invoice'}`}
+              {isSubmitting
+                ? 'Saving Document...'
+                : isEditing
+                ? `Update & Save Revision (${docType === 'SALE_ORDER' ? 'Sales Order' : docType === 'QUOTATION' ? 'Quotation' : docType === 'PROFORMA' ? 'Proforma Invoice' : docType === 'SALE_RETURN' ? 'Sales Return' : 'Sale Invoice'})`
+                : `Save & Issue ${docType === 'SALE_ORDER' ? 'Sales Order' : docType === 'QUOTATION' ? 'Quotation' : docType === 'PROFORMA' ? 'Proforma Invoice' : docType === 'SALE_RETURN' ? 'Sales Return' : 'Sale Invoice'}`}
             </button>
           </div>
         </form>

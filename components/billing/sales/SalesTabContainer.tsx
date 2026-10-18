@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Printer, RefreshCw, Filter, FileText, ArrowRight, DollarSign, Trash2 } from 'lucide-react';
+import { Plus, Printer, RefreshCw, Filter, FileText, ArrowRight, DollarSign, Trash2, Edit, History } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import SaleInvoiceForm from './SaleInvoiceForm';
 import PaymentInModal from './PaymentInModal';
 import PrintableDocumentModal from '../shared/PrintableDocumentModal';
+import RevisionHistoryModal from './RevisionHistoryModal';
 
 interface SalesTabContainerProps {
   products: any[];
@@ -21,6 +22,8 @@ export default function SalesTabContainer({ products }: SalesTabContainerProps) 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedDocForPrint, setSelectedDocForPrint] = useState<any | null>(null);
   const [selectedDocForPayment, setSelectedDocForPayment] = useState<any | null>(null);
+  const [selectedDocForEdit, setSelectedDocForEdit] = useState<any | null>(null);
+  const [selectedDocForRevisions, setSelectedDocForRevisions] = useState<any | null>(null);
 
   const fetchSalesData = async () => {
     try {
@@ -200,7 +203,7 @@ export default function SalesTabContainer({ products }: SalesTabContainerProps) 
                 {documents.map((d) => (
                   <tr key={d._id} className="hover:bg-[#FFFCFB]/80 transition-colors">
                     <td className="p-4">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-extrabold text-[#163B5C]">{d.docNumber}</span>
                         {d.orderSource && (
                           <span
@@ -212,6 +215,17 @@ export default function SalesTabContainer({ products }: SalesTabContainerProps) 
                           >
                             {d.orderSource}
                           </span>
+                        )}
+                        {(Boolean(d.revision && d.revision > 0) || (d.revisions && d.revisions.length > 0)) && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDocForRevisions(d)}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-black uppercase bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors cursor-pointer"
+                            title="Click to view revision history"
+                          >
+                            <History className="w-2.5 h-2.5" />
+                            <span>Rev #{d.revision || d.revisions.length}</span>
+                          </button>
                         )}
                       </div>
                       <span className="text-[11px] text-[#64748B] block mt-0.5">
@@ -259,12 +273,34 @@ export default function SalesTabContainer({ products }: SalesTabContainerProps) 
                         d.status !== 'Completed' && (
                           <button
                             onClick={() => handleConvertToInvoice(d._id)}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold border border-emerald-200"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold border border-emerald-200 cursor-pointer"
                             title="Convert to Sale Invoice"
                           >
                             Convert to Invoice ➔
                           </button>
                         )}
+
+                      {/* Edit Action - Sale Invoices, Quotations, Sale Orders */}
+                      {d.status !== 'Cancelled' && (
+                        <button
+                          onClick={() => setSelectedDocForEdit(d)}
+                          className="px-2.5 py-1 rounded-lg bg-[#FFFCFB] border border-[#E8EDF2] hover:border-[#163B5C] hover:bg-[#163B5C] hover:text-white font-bold text-[#163B5C] transition-all cursor-pointer"
+                          title={`Edit ${d.docType?.replace('_', ' ') || 'document'} #${d.docNumber}`}
+                        >
+                          <Edit className="w-3.5 h-3.5 inline mr-1" /> Edit
+                        </button>
+                      )}
+
+                      {/* Revision History Action */}
+                      {(Boolean(d.revision && d.revision > 0) || (d.revisions && d.revisions.length > 0)) && (
+                        <button
+                          onClick={() => setSelectedDocForRevisions(d)}
+                          className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 font-bold text-xs transition-colors cursor-pointer"
+                          title="View complete revision history"
+                        >
+                          <History className="w-3.5 h-3.5 inline mr-1" /> Revs ({d.revisions?.length || d.revision || 1})
+                        </button>
+                      )}
 
                       {/* Record Payment Action for unpaid/partial invoices */}
                       {d.docType === 'SALE_INVOICE' && d.paymentStatus !== 'Paid' && (
@@ -273,7 +309,7 @@ export default function SalesTabContainer({ products }: SalesTabContainerProps) 
                             setSelectedDocForPayment(d);
                             setIsPaymentModalOpen(true);
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs"
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs cursor-pointer"
                           title="Record customer payment for this invoice"
                         >
                           <DollarSign className="w-3.5 h-3.5 inline mr-0.5" /> Record Pay
@@ -283,7 +319,7 @@ export default function SalesTabContainer({ products }: SalesTabContainerProps) 
                       {/* Print Action */}
                       <button
                         onClick={() => setSelectedDocForPrint(d)}
-                        className="px-2.5 py-1 rounded-lg bg-[#FFFCFB] border border-[#E8EDF2] hover:border-[#ED3500] font-bold text-[#163B5C]"
+                        className="px-2.5 py-1 rounded-lg bg-[#FFFCFB] border border-[#E8EDF2] hover:border-[#ED3500] font-bold text-[#163B5C] cursor-pointer"
                       >
                         <Printer className="w-3.5 h-3.5 inline mr-1" /> Print
                       </button>
@@ -292,7 +328,7 @@ export default function SalesTabContainer({ products }: SalesTabContainerProps) 
                       {d.docType === 'QUOTATION' && d.status !== 'Converted' && d.status !== 'Completed' && (
                         <button
                           onClick={() => handleDeleteDocument(d._id, d.docNumber, d.docType)}
-                          className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 font-bold text-xs transition-colors"
+                          className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 font-bold text-xs transition-colors cursor-pointer"
                           title="Delete this pending quotation"
                         >
                           <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete
@@ -314,6 +350,24 @@ export default function SalesTabContainer({ products }: SalesTabContainerProps) 
           products={products}
           onClose={() => setIsFormOpen(false)}
           onSuccess={fetchSalesData}
+        />
+      )}
+
+      {selectedDocForEdit && (
+        <SaleInvoiceForm
+          docType={selectedDocForEdit.docType || (subTab as any)}
+          products={products}
+          initialData={selectedDocForEdit}
+          isEdit={true}
+          onClose={() => setSelectedDocForEdit(null)}
+          onSuccess={fetchSalesData}
+        />
+      )}
+
+      {selectedDocForRevisions && (
+        <RevisionHistoryModal
+          document={selectedDocForRevisions}
+          onClose={() => setSelectedDocForRevisions(null)}
         />
       )}
 

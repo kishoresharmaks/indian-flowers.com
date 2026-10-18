@@ -365,6 +365,9 @@ export default function PrintableDocumentModal({
                 </span>
                 <p><strong>{docTitle} No.:</strong> {doc?.docNumber || doc?.invoiceNumber || doc?.orderId || '1'}</p>
                 <p><strong>Date:</strong> {new Date(doc?.createdAt || doc?.date || Date.now()).toLocaleDateString('en-US')}</p>
+                {Boolean(doc?.revision && doc.revision > 0) && (
+                  <p><strong>Revision:</strong> <span className="font-bold text-indigo-700">Rev #{doc.revision}</span></p>
+                )}
                 <p><strong>Place of Supply:</strong> {clientState}</p>
                 {doc?.poNumber && <p><strong>PO Number:</strong> {doc.poNumber}</p>}
                 {doc?.poDate && <p><strong>PO Date:</strong> {new Date(doc.poDate).toLocaleDateString('en-US')}</p>}

@@ -52,6 +52,8 @@ export async function GET(req: NextRequest) {
           customerName: ord.customerName || (isPos ? 'Walk-in Guest' : 'Online Customer'),
           customerPhone: ord.customerPhone || '0000000000',
           customerEmail: ord.customerEmail || '',
+          billingAddress: ord.shippingAddress || '',
+          notes: ord.notes || ord.refundNotes || '',
           items: ord.items || [],
           subtotal: ord.subtotal || ord.totalAmount,
           totalGst: ord.totalGst || 0,
@@ -62,6 +64,8 @@ export async function GET(req: NextRequest) {
           paymentStatus: ord.paymentStatus || (isPos ? 'Paid' : 'Pending'),
           status: ord.status === 'Completed' ? 'Completed' : isPaid ? 'Completed' : 'Active',
           orderSource: isPos ? 'POS' : 'ONLINE',
+          revision: ord.revision || 0,
+          revisions: ord.revisions || [],
           createdAt: ord.createdAt,
         };
       });
@@ -89,6 +93,8 @@ export async function GET(req: NextRequest) {
         customerName: ord.customerName || 'Online Customer',
         customerPhone: ord.customerPhone || '0000000000',
         customerEmail: ord.customerEmail || '',
+        billingAddress: ord.shippingAddress || '',
+        notes: ord.notes || ord.refundNotes || '',
         items: ord.items || [],
         subtotal: ord.subtotal || ord.totalAmount,
         totalGst: ord.totalGst || 0,
@@ -99,6 +105,8 @@ export async function GET(req: NextRequest) {
         paymentStatus: ord.paymentStatus || 'Pending',
         status: ord.status || 'Active',
         orderSource: ord.orderType || 'ONLINE',
+        revision: ord.revision || 0,
+        revisions: ord.revisions || [],
         createdAt: ord.createdAt,
       }));
 
@@ -436,6 +444,278 @@ export async function PUT(req: NextRequest) {
       await sourceDoc.save();
 
       return NextResponse.json({ success: true, data: invoiceDoc });
+    }
+
+    if (action === 'edit_document' && docId) {
+      const {
+        customerName,
+        customerPhone,
+        customerEmail,
+        billingAddress,
+        partyId,
+        items,
+        paidAmount,
+        paymentMethod,
+        notes,
+        revisionReason,
+        revisedBy = 'Admin',
+      } = body;
+
+      if (!customerName || !items || !Array.isArray(items) || items.length === 0) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid payload: Customer name and at least one item are required.' },
+          { status: 400 }
+        );
+      }
+
+      // 1. Check if target is a SaleDocument
+      const saleDoc = await SaleDocument.findById(docId);
+      if (saleDoc) {
+        // Compute new financial totals
+        const newSubtotal = items.reduce((s: number, i: any) => s + (Number(i.lineSubtotal) || Number(i.price) * Number(i.quantity)), 0);
+        const newTotalGst = items.reduce((s: number, i: any) => s + (Number(i.lineGst) || 0), 0);
+        const newGrandTotal = items.reduce((s: number, i: any) => s + (Number(i.lineTotal) || Number(i.price) * Number(i.quantity)), 0);
+        const newPaidAmount = Number(paidAmount !== undefined ? paidAmount : saleDoc.paidAmount || 0);
+        const newBalanceAmount = Math.max(0, newGrandTotal - newPaidAmount);
+        const newPaymentStatus = newPaidAmount >= newGrandTotal ? 'Paid' : newPaidAmount > 0 ? 'Partial' : 'Pending';
+
+        // Stock reconciliation for SALE_INVOICE
+        if (saleDoc.docType === 'SALE_INVOICE') {
+          // Revert old items stock
+          for (const oldItem of saleDoc.items) {
+            if (oldItem.variantName) {
+              await Product.updateOne(
+                { _id: oldItem.productId, 'variants.name': oldItem.variantName },
+                { $inc: { 'variants.$.quantity': oldItem.quantity, quantity: oldItem.quantity } }
+              );
+            } else {
+              await Product.updateOne(
+                { _id: oldItem.productId },
+                { $inc: { quantity: oldItem.quantity } }
+              );
+            }
+          }
+
+          // Deduct new items stock with rollback safeguard
+          const deductedItems: { productId: string; variantName?: string; quantity: number }[] = [];
+          for (const newItem of items) {
+            let res: any;
+            if (newItem.variantName) {
+              res = await Product.updateOne(
+                {
+                  _id: newItem.productId,
+                  'variants.name': newItem.variantName,
+                  'variants.quantity': { $gte: newItem.quantity },
+                  quantity: { $gte: newItem.quantity },
+                },
+                {
+                  $inc: {
+                    'variants.$.quantity': -newItem.quantity,
+                    quantity: -newItem.quantity,
+                  },
+                }
+              );
+            } else {
+              res = await Product.updateOne(
+                { _id: newItem.productId, quantity: { $gte: newItem.quantity } },
+                { $inc: { quantity: -newItem.quantity } }
+              );
+            }
+
+            if (res.modifiedCount === 0) {
+              // Rollback deducted items
+              for (const roll of deductedItems) {
+                if (roll.variantName) {
+                  await Product.updateOne(
+                    { _id: roll.productId, 'variants.name': roll.variantName },
+                    { $inc: { 'variants.$.quantity': roll.quantity, quantity: roll.quantity } }
+                  );
+                } else {
+                  await Product.updateOne(
+                    { _id: roll.productId },
+                    { $inc: { quantity: roll.quantity } }
+                  );
+                }
+              }
+
+              // Re-apply original items stock
+              for (const oldItem of saleDoc.items) {
+                if (oldItem.variantName) {
+                  await Product.updateOne(
+                    { _id: oldItem.productId, 'variants.name': oldItem.variantName },
+                    { $inc: { 'variants.$.quantity': -oldItem.quantity, quantity: -oldItem.quantity } }
+                  );
+                } else {
+                  await Product.updateOne(
+                    { _id: oldItem.productId },
+                    { $inc: { quantity: -oldItem.quantity } }
+                  );
+                }
+              }
+
+              return NextResponse.json(
+                {
+                  success: false,
+                  message: `Insufficient stock for "${newItem.name}${newItem.variantName ? ` (${newItem.variantName})` : ''}". Cannot apply revision.`,
+                },
+                { status: 400 }
+              );
+            }
+
+            deductedItems.push({
+              productId: newItem.productId,
+              variantName: newItem.variantName,
+              quantity: newItem.quantity,
+            });
+          }
+        }
+
+        // Party balance reconciliation for SALE_INVOICE or SALE_RETURN
+        if (saleDoc.partyId && (saleDoc.docType === 'SALE_INVOICE' || saleDoc.docType === 'SALE_RETURN')) {
+          const oldBalanceEffect = saleDoc.docType === 'SALE_RETURN' ? -saleDoc.grandTotal : saleDoc.balanceAmount;
+          const newBalanceEffect = saleDoc.docType === 'SALE_RETURN' ? -newGrandTotal : newBalanceAmount;
+          const balanceDelta = newBalanceEffect - oldBalanceEffect;
+          if (balanceDelta !== 0) {
+            await Party.findByIdAndUpdate(saleDoc.partyId, { $inc: { currentBalance: balanceDelta } });
+          }
+        }
+
+        // Maintain revision history for Finalized Invoices, Quotations, and Sale Orders
+        const isQuotation = saleDoc.docType === 'QUOTATION';
+        const isSaleInvoice = saleDoc.docType === 'SALE_INVOICE';
+        const isSaleOrder = saleDoc.docType === 'SALE_ORDER';
+
+        if (isQuotation || isSaleInvoice || isSaleOrder) {
+          const currentRevNum = (saleDoc.revision || saleDoc.revisions?.length || 0);
+          const nextRevNumber = currentRevNum + 1;
+          const snapshotReason = revisionReason || (
+            isQuotation
+              ? `Quotation revised to Rev #${nextRevNumber}`
+              : isSaleOrder
+              ? `Sale order updated (Rev #${nextRevNumber})`
+              : `Invoice updated (Rev #${nextRevNumber})`
+          );
+
+          if (!saleDoc.revisions) {
+            saleDoc.revisions = [];
+          }
+
+          saleDoc.revisions.push({
+            revisionNumber: nextRevNumber,
+            revisedAt: new Date(),
+            revisedBy: revisedBy || 'Admin',
+            reason: snapshotReason,
+            previousTotal: saleDoc.grandTotal,
+            newTotal: newGrandTotal,
+            snapshot: {
+              items: JSON.parse(JSON.stringify(saleDoc.items)),
+              subtotal: saleDoc.subtotal,
+              totalTax: saleDoc.totalTax || 0,
+              totalGst: saleDoc.totalGst || 0,
+              discountAmount: saleDoc.discountAmount || 0,
+              grandTotal: saleDoc.grandTotal,
+              paidAmount: saleDoc.paidAmount,
+              balanceAmount: saleDoc.balanceAmount,
+              customerName: saleDoc.customerName,
+              customerPhone: saleDoc.customerPhone,
+              customerEmail: saleDoc.customerEmail || '',
+              billingAddress: saleDoc.billingAddress || '',
+              notes: saleDoc.notes || '',
+            },
+            changeSummary: `Total changed from $${saleDoc.grandTotal?.toFixed(2)} to $${newGrandTotal?.toFixed(2)}`,
+          });
+
+          saleDoc.revision = nextRevNumber;
+          saleDoc.isFinalized = true;
+        }
+
+        // Update document fields
+        saleDoc.customerName = customerName;
+        saleDoc.customerPhone = customerPhone;
+        if (customerEmail !== undefined) saleDoc.customerEmail = customerEmail;
+        if (billingAddress !== undefined) saleDoc.billingAddress = billingAddress;
+        if (partyId !== undefined) saleDoc.partyId = partyId;
+        saleDoc.items = items;
+        saleDoc.subtotal = newSubtotal;
+        saleDoc.totalGst = newTotalGst;
+        saleDoc.grandTotal = newGrandTotal;
+        saleDoc.paidAmount = newPaidAmount;
+        saleDoc.balanceAmount = newBalanceAmount;
+        saleDoc.paymentStatus = newPaymentStatus;
+        if (paymentMethod) saleDoc.paymentMethod = paymentMethod;
+        if (notes !== undefined) saleDoc.notes = notes;
+        if (newPaymentStatus === 'Paid') {
+          saleDoc.status = 'Completed';
+        }
+
+        await saleDoc.save();
+
+        await captureServerEvent(req, 'sales_document_revised', {
+          doc_id: String(saleDoc._id),
+          doc_number: saleDoc.docNumber,
+          doc_type: saleDoc.docType,
+          revision: saleDoc.revision,
+          new_total: newGrandTotal,
+        }, 'admin-billing');
+
+        return NextResponse.json({ success: true, data: saleDoc });
+      }
+
+      // 2. Check if target is an Order (online/POS order)
+      const order = await Order.findById(docId);
+      if (order) {
+        const newSubtotal = items.reduce((s: number, i: any) => s + (Number(i.lineSubtotal) || Number(i.price) * Number(i.quantity)), 0);
+        const newGrandTotal = items.reduce((s: number, i: any) => s + (Number(i.lineTotal) || Number(i.price) * Number(i.quantity)), 0);
+        const currentRevNum = (order.revision || order.revisions?.length || 0);
+        const nextRevNumber = currentRevNum + 1;
+
+        if (!order.revisions) {
+          order.revisions = [];
+        }
+
+        order.revisions.push({
+          revisionNumber: nextRevNumber,
+          revisedAt: new Date(),
+          revisedBy: revisedBy || 'Admin',
+          reason: revisionReason || `Order updated (Rev #${nextRevNumber})`,
+          previousTotal: order.totalAmount,
+          newTotal: newGrandTotal,
+          snapshot: {
+            items: JSON.parse(JSON.stringify(order.items)),
+            subtotal: order.subtotal,
+            totalTax: order.totalTax || 0,
+            grandTotal: order.totalAmount,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            customerEmail: order.customerEmail || '',
+            shippingAddress: order.shippingAddress || '',
+          },
+          changeSummary: `Total changed from $${order.totalAmount?.toFixed(2)} to $${newGrandTotal?.toFixed(2)}`,
+        });
+
+        order.revision = nextRevNumber;
+        order.customerName = customerName;
+        order.customerPhone = customerPhone;
+        if (customerEmail) order.customerEmail = customerEmail;
+        if (billingAddress) order.shippingAddress = billingAddress;
+        order.items = items.map((it: any) => ({
+          productId: it.productId,
+          name: it.name,
+          variantName: it.variantName || '',
+          price: Number(it.price),
+          quantity: Number(it.quantity),
+          isTaxable: it.isTaxable !== false,
+          taxCode: it.taxCode || '',
+          gst: Number(it.gst || 0),
+        }));
+        order.subtotal = newSubtotal;
+        order.totalAmount = newGrandTotal;
+        await order.save();
+
+        return NextResponse.json({ success: true, data: order });
+      }
+
+      return NextResponse.json({ success: false, message: 'Document not found.' }, { status: 404 });
     }
 
     return NextResponse.json({ success: false, message: 'Invalid action.' }, { status: 400 });
