@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
     const paymentStatus = searchParams.get('paymentStatus') || undefined;
     const paymentMethod = searchParams.get('paymentMethod') || undefined;
     const orderType = searchParams.get('orderType') || undefined;
+    const refundFilter = searchParams.get('refundFilter') || undefined;
     const customerStatus = searchParams.get('customerStatus') || undefined;
     const state = searchParams.get('state') || undefined;
 
@@ -56,17 +57,72 @@ export async function GET(req: NextRequest) {
     // 1. ORDERS REPORT
     // ========================================================================
     if (type === 'orders') {
-      const query: any = { ...dateQuery };
+      const conditions: any[] = [];
+
+      if (dateQuery.createdAt) {
+        conditions.push({ createdAt: dateQuery.createdAt });
+      }
 
       if (status && status !== 'ALL') {
-        query.status = status;
+        if (status === 'Refunded') {
+          conditions.push({
+            $or: [
+              { status: 'Refunded' },
+              { status: 'Returned' },
+              { paymentStatus: 'Refunded' },
+              { refundAmount: { $gt: 0 } },
+            ],
+          });
+        } else if (status === 'Returned') {
+          conditions.push({
+            $or: [{ status: 'Returned' }, { isRestocked: true }],
+          });
+        } else {
+          conditions.push({ status });
+        }
       }
+
       if (paymentStatus && paymentStatus !== 'ALL') {
-        query.paymentStatus = paymentStatus;
+        if (paymentStatus === 'Refunded') {
+          conditions.push({
+            $or: [
+              { paymentStatus: 'Refunded' },
+              { status: 'Refunded' },
+              { refundAmount: { $gt: 0 } },
+            ],
+          });
+        } else if (paymentStatus === 'Partially_Refunded') {
+          conditions.push({ paymentStatus: 'Partially_Refunded' });
+        } else {
+          conditions.push({ paymentStatus });
+        }
       }
+
+      if (refundFilter && refundFilter !== 'ALL') {
+        if (refundFilter === 'REFUNDED_ONLY') {
+          conditions.push({
+            $or: [
+              { refundAmount: { $gt: 0 } },
+              { status: { $in: ['Refunded', 'Returned'] } },
+              { paymentStatus: { $in: ['Refunded', 'Partially_Refunded'] } },
+            ],
+          });
+        } else if (refundFilter === 'EXCLUDE_REFUNDS') {
+          conditions.push({
+            $and: [
+              { $or: [{ refundAmount: { $exists: false } }, { refundAmount: 0 }, { refundAmount: null }] },
+              { status: { $nin: ['Refunded', 'Returned'] } },
+              { paymentStatus: { $nin: ['Refunded', 'Partially_Refunded'] } },
+            ],
+          });
+        }
+      }
+
       if (orderType && orderType !== 'ALL') {
-        query.orderType = orderType;
+        conditions.push({ orderType });
       }
+
+      const query = conditions.length > 0 ? { $and: conditions } : {};
 
       const orders = await Order.find(query).sort({ createdAt: -1 }).lean();
 
@@ -77,6 +133,7 @@ export async function GET(req: NextRequest) {
           status,
           paymentStatus,
           orderType,
+          refundFilter,
         });
         const buffer = workbookToBuffer(workbook);
         return new NextResponse(buffer as any, {
@@ -93,13 +150,26 @@ export async function GET(req: NextRequest) {
       let totalRevenue = 0;
       let totalTax = 0;
       let totalUnits = 0;
+      let totalRefunds = 0;
+
       orders.forEach((ord: any) => {
-        totalRevenue += ord.totalAmount || 0;
+        const orderTotal = ord.totalAmount || 0;
+        const refund =
+          ord.refundAmount !== undefined && ord.refundAmount !== null
+            ? Number(ord.refundAmount)
+            : ord.status === 'Refunded' || ord.paymentStatus === 'Refunded'
+            ? orderTotal
+            : 0;
+
+        totalRevenue += orderTotal;
+        totalRefunds += refund;
         totalTax += ord.totalTax || ord.taxSnapshot?.taxAmount || ord.totalGst || 0;
         (ord.items || []).forEach((it: any) => {
           totalUnits += Number(it.quantity) || 1;
         });
       });
+
+      const netRevenue = Math.max(0, totalRevenue - totalRefunds);
 
       return NextResponse.json({
         success: true,
@@ -108,6 +178,8 @@ export async function GET(req: NextRequest) {
         summary: {
           totalOrders: orders.length,
           totalRevenue: Math.round(totalRevenue * 100) / 100,
+          totalRefunds: Math.round(totalRefunds * 100) / 100,
+          netRevenue: Math.round(netRevenue * 100) / 100,
           totalTax: Math.round(totalTax * 100) / 100,
           totalUnits,
         },
@@ -119,17 +191,57 @@ export async function GET(req: NextRequest) {
     // 2. PAYMENTS REPORT
     // ========================================================================
     if (type === 'payments') {
-      const query: any = { ...dateQuery };
+      const conditions: any[] = [];
+
+      if (dateQuery.createdAt) {
+        conditions.push({ createdAt: dateQuery.createdAt });
+      }
 
       if (paymentStatus && paymentStatus !== 'ALL') {
-        query.paymentStatus = paymentStatus;
+        if (paymentStatus === 'Refunded') {
+          conditions.push({
+            $or: [
+              { paymentStatus: 'Refunded' },
+              { status: 'Refunded' },
+              { refundAmount: { $gt: 0 } },
+            ],
+          });
+        } else if (paymentStatus === 'Partially_Refunded') {
+          conditions.push({ paymentStatus: 'Partially_Refunded' });
+        } else {
+          conditions.push({ paymentStatus });
+        }
       }
+
+      if (refundFilter && refundFilter !== 'ALL') {
+        if (refundFilter === 'REFUNDED_ONLY') {
+          conditions.push({
+            $or: [
+              { refundAmount: { $gt: 0 } },
+              { status: { $in: ['Refunded', 'Returned'] } },
+              { paymentStatus: { $in: ['Refunded', 'Partially_Refunded'] } },
+            ],
+          });
+        } else if (refundFilter === 'EXCLUDE_REFUNDS') {
+          conditions.push({
+            $and: [
+              { $or: [{ refundAmount: { $exists: false } }, { refundAmount: 0 }, { refundAmount: null }] },
+              { status: { $nin: ['Refunded', 'Returned'] } },
+              { paymentStatus: { $nin: ['Refunded', 'Partially_Refunded'] } },
+            ],
+          });
+        }
+      }
+
       if (paymentMethod && paymentMethod !== 'ALL') {
-        query.paymentMethod = paymentMethod;
+        conditions.push({ paymentMethod });
       }
+
       if (orderType && orderType !== 'ALL') {
-        query.orderType = orderType;
+        conditions.push({ orderType });
       }
+
+      const query = conditions.length > 0 ? { $and: conditions } : {};
 
       const orders = await Order.find(query).sort({ createdAt: -1 }).lean();
 
@@ -140,6 +252,7 @@ export async function GET(req: NextRequest) {
           paymentStatus,
           paymentMethod,
           orderType,
+          refundFilter,
         });
         const buffer = workbookToBuffer(workbook);
         return new NextResponse(buffer as any, {
@@ -154,13 +267,23 @@ export async function GET(req: NextRequest) {
 
       let totalGross = 0;
       let totalTax = 0;
+      let totalRefunds = 0;
       let totalNet = 0;
+
       orders.forEach((ord: any) => {
         const gross = ord.totalAmount || 0;
         const tax = ord.totalTax || ord.taxSnapshot?.taxAmount || ord.totalGst || 0;
+        const refund =
+          ord.refundAmount !== undefined && ord.refundAmount !== null
+            ? Number(ord.refundAmount)
+            : ord.status === 'Refunded' || ord.paymentStatus === 'Refunded'
+            ? gross
+            : 0;
+
         totalGross += gross;
         totalTax += tax;
-        totalNet += gross - tax;
+        totalRefunds += refund;
+        totalNet += Math.max(0, gross - tax - refund);
       });
 
       return NextResponse.json({
@@ -171,6 +294,7 @@ export async function GET(req: NextRequest) {
           totalPayments: orders.length,
           totalGross: Math.round(totalGross * 100) / 100,
           totalTax: Math.round(totalTax * 100) / 100,
+          totalRefunds: Math.round(totalRefunds * 100) / 100,
           totalNet: Math.round(totalNet * 100) / 100,
         },
         data: orders,

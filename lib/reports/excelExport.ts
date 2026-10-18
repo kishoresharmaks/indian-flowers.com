@@ -46,6 +46,7 @@ export interface OrdersExportFilters {
   status?: string;
   paymentStatus?: string;
   orderType?: string;
+  refundFilter?: string;
 }
 
 export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilters = {}) {
@@ -56,6 +57,15 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     `Date Range: ${filters.startDate || 'Inception'} to ${filters.endDate || 'Present'}`,
     `Order Status: ${filters.status || 'All'}`,
     `Payment Status: ${filters.paymentStatus || 'All'}`,
+    `Refund Filter: ${
+      filters.refundFilter
+        ? filters.refundFilter === 'REFUNDED_ONLY'
+          ? 'Refunded Orders Only'
+          : filters.refundFilter === 'EXCLUDE_REFUNDS'
+          ? 'Exclude Refunds'
+          : filters.refundFilter
+        : 'All'
+    }`,
     `Channel: ${filters.orderType || 'All'}`,
     `Generated On: ${nowStr} (US Eastern Time)`,
   ].join(' | ');
@@ -85,6 +95,11 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
       'Shipping Fee ($)',
       'Discount ($)',
       'Total Amount ($)',
+      'Refund Amount ($)',
+      'Net Settled ($)',
+      'Refund Reason',
+      'Refund Date',
+      'Restocked',
       'Payment Method',
       'Payment Status',
       'Fulfillment Status',
@@ -97,6 +112,8 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
   let sumShipping = 0;
   let sumDiscount = 0;
   let sumTotal = 0;
+  let sumRefund = 0;
+  let sumNetSettled = 0;
   let totalUnits = 0;
 
   const masterRows = orders.map((ord) => {
@@ -111,12 +128,29 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     const shipping = round2(ord.shippingFee || ord.deliveryCharge || 0);
     const discount = round2(ord.discountAmount || 0);
     const total = round2(ord.totalAmount || 0);
+    const refund = round2(
+      ord.refundAmount !== undefined && ord.refundAmount !== null
+        ? ord.refundAmount
+        : ord.status === 'Refunded' || ord.paymentStatus === 'Refunded'
+        ? total
+        : 0
+    );
+    const netSettled = round2(Math.max(0, total - refund));
+    const refundReason = ord.refundReason || (refund > 0 ? 'Refund processed' : '-');
+    const refundDate = ord.refundDate
+      ? formatDateTime(ord.refundDate)
+      : refund > 0 && ord.updatedAt
+      ? formatDateTime(ord.updatedAt)
+      : '-';
+    const restocked = ord.isRestocked ? 'Yes (Restocked)' : refund > 0 ? 'No' : '-';
 
     sumSubtotal += subtotal;
     sumTax += tax;
     sumShipping += shipping;
     sumDiscount += discount;
     sumTotal += total;
+    sumRefund += refund;
+    sumNetSettled += netSettled;
     totalUnits += units;
 
     return [
@@ -138,6 +172,11 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
       shipping,
       discount,
       total,
+      refund,
+      netSettled,
+      refundReason,
+      refundDate,
+      restocked,
       ord.paymentMethod || 'N/A',
       ord.paymentStatus || 'Pending',
       ord.status || 'Pending',
@@ -165,6 +204,11 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     round2(sumShipping),
     round2(sumDiscount),
     round2(sumTotal),
+    round2(sumRefund),
+    round2(sumNetSettled),
+    '',
+    '',
+    '',
     '',
     '',
     '',
@@ -194,6 +238,11 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     { wch: 14 }, // Shipping
     { wch: 14 }, // Discount
     { wch: 16 }, // Total Amount
+    { wch: 16 }, // Refund Amount
+    { wch: 16 }, // Net Settled
+    { wch: 28 }, // Refund Reason
+    { wch: 22 }, // Refund Date
+    { wch: 16 }, // Restocked
     { wch: 16 }, // Payment Method
     { wch: 16 }, // Payment Status
     { wch: 18 }, // Fulfillment Status
@@ -218,6 +267,7 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
       'Unit Price ($)',
       'Line Total ($)',
       'Taxable',
+      'Refund Status',
       'Payment Status',
       'Order Status',
     ],
@@ -225,6 +275,17 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
 
   const lineItemRows: any[] = [];
   orders.forEach((ord) => {
+    const refundTag =
+      ord.refundAmount && ord.refundAmount > 0
+        ? ord.status === 'Refunded' || ord.paymentStatus === 'Refunded'
+          ? 'Full Refund'
+          : 'Partial Refund'
+        : ord.status === 'Refunded'
+        ? 'Refunded'
+        : ord.status === 'Returned'
+        ? 'Returned'
+        : 'None';
+
     (ord.items || []).forEach((it: any) => {
       const unitPrice = round2(it.price || 0);
       const qty = Number(it.quantity) || 1;
@@ -240,6 +301,7 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
         unitPrice,
         lineTotal,
         it.isTaxable !== false ? 'Yes' : 'No',
+        refundTag,
         ord.paymentStatus || 'Pending',
         ord.status || 'Pending',
       ]);
@@ -258,6 +320,7 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     { wch: 14 },
     { wch: 14 },
     { wch: 10 },
+    { wch: 16 }, // Refund Status
     { wch: 16 },
     { wch: 16 },
   ];
@@ -280,6 +343,7 @@ export interface PaymentsExportFilters {
   paymentStatus?: string;
   paymentMethod?: string;
   orderType?: string;
+  refundFilter?: string;
 }
 
 export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportFilters = {}) {
@@ -289,6 +353,15 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
   const filterSummary = [
     `Date Range: ${filters.startDate || 'Inception'} to ${filters.endDate || 'Present'}`,
     `Payment Status: ${filters.paymentStatus || 'All'}`,
+    `Refund Filter: ${
+      filters.refundFilter
+        ? filters.refundFilter === 'REFUNDED_ONLY'
+          ? 'Refunded Payments Only'
+          : filters.refundFilter === 'EXCLUDE_REFUNDS'
+          ? 'Exclude Refunds'
+          : filters.refundFilter
+        : 'All'
+    }`,
     `Payment Method: ${filters.paymentMethod || 'All'}`,
     `Channel: ${filters.orderType || 'All'}`,
     `Generated On: ${nowStr} (US Eastern Time)`,
@@ -297,7 +370,9 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
   const header = [
     ['INDIAN-FLOWERS.COM — PAYMENTS & SETTLEMENTS AUDIT REPORT'],
     [filterSummary],
-    ['All currency values in US Dollars (USD $). Sales tax is separated as a statutory liability.'],
+    [
+      'All currency values in US Dollars (USD $). Sales tax is separated as a statutory liability, and customer refunds are accounted for net settlement.',
+    ],
     [],
     [
       'Payment / Transaction Ref',
@@ -310,7 +385,9 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
       'Payment Status',
       'Gross Total ($)',
       'Sales Tax Collected ($)',
-      'Net Revenue ($)',
+      'Refund Amount ($)',
+      'Net Settlement ($)',
+      'Refund Reason / Date',
       'Order Channel',
       'Fulfillment Status',
       'Cash Received ($)',
@@ -321,15 +398,28 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
 
   let sumGross = 0;
   let sumTax = 0;
+  let sumRefund = 0;
   let sumNet = 0;
 
   const rows = orders.map((ord) => {
     const gross = round2(ord.totalAmount || 0);
     const tax = round2(ord.totalTax || ord.taxSnapshot?.taxAmount || ord.totalGst || 0);
-    const net = round2(gross - tax);
+    const refund = round2(
+      ord.refundAmount !== undefined && ord.refundAmount !== null
+        ? ord.refundAmount
+        : ord.paymentStatus === 'Refunded' || ord.status === 'Refunded'
+        ? gross
+        : 0
+    );
+    const net = round2(Math.max(0, gross - tax - refund));
+    const refundInfo =
+      refund > 0
+        ? `${ord.refundReason || 'Refund'} (${ord.refundDate ? formatDateOnly(ord.refundDate) : 'Processed'})`
+        : '-';
 
     sumGross += gross;
     sumTax += tax;
+    sumRefund += refund;
     sumNet += net;
 
     return [
@@ -343,7 +433,9 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
       ord.paymentStatus || 'Pending',
       gross,
       tax,
+      refund,
       net,
+      refundInfo,
       ord.orderType === 'POS' ? 'POS Counter' : 'Online Store',
       ord.status || 'Pending',
       ord.cashReceived ? round2(ord.cashReceived) : '-',
@@ -363,7 +455,9 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
     '',
     round2(sumGross),
     round2(sumTax),
+    round2(sumRefund),
     round2(sumNet),
+    '',
     '',
     '',
     '',
@@ -383,7 +477,9 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
     { wch: 16 }, // Status
     { wch: 14 }, // Gross
     { wch: 18 }, // Tax
-    { wch: 16 }, // Net
+    { wch: 16 }, // Refund Amount
+    { wch: 18 }, // Net Settlement
+    { wch: 28 }, // Refund Reason/Date
     { wch: 14 }, // Channel
     { wch: 16 }, // Fulfillment
     { wch: 16 }, // Cash Received

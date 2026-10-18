@@ -50,10 +50,11 @@ export default function ReportsTab() {
   const [endDate, setEndDate] = useState('');
   const [datePreset, setDatePreset] = useState<'ALL' | 'TODAY' | 'YESTERDAY' | 'LAST_7' | 'THIS_MONTH' | 'LAST_30' | 'THIS_YEAR'>('ALL');
 
-  // Orders Filters
+  // Orders & Payments Common Filters
   const [orderStatus, setOrderStatus] = useState('ALL');
   const [paymentStatus, setPaymentStatus] = useState('ALL');
   const [orderChannel, setOrderChannel] = useState('ALL');
+  const [refundFilter, setRefundFilter] = useState('ALL'); // 'ALL' | 'REFUNDED_ONLY' | 'EXCLUDE_REFUNDS'
 
   // Payments Filters
   const [payMethod, setPayMethod] = useState('ALL');
@@ -128,6 +129,7 @@ export default function ReportsTab() {
     setOrderStatus('ALL');
     setPaymentStatus('ALL');
     setOrderChannel('ALL');
+    setRefundFilter('ALL');
     setPayMethod('ALL');
     setCustomerStatus('ALL');
     setCustomerState('ALL');
@@ -147,10 +149,12 @@ export default function ReportsTab() {
         if (orderStatus !== 'ALL') params.append('status', orderStatus);
         if (paymentStatus !== 'ALL') params.append('paymentStatus', paymentStatus);
         if (orderChannel !== 'ALL') params.append('orderType', orderChannel);
+        if (refundFilter !== 'ALL') params.append('refundFilter', refundFilter);
       } else if (tabToFetch === 'payments') {
         if (paymentStatus !== 'ALL') params.append('paymentStatus', paymentStatus);
         if (payMethod !== 'ALL') params.append('paymentMethod', payMethod);
         if (orderChannel !== 'ALL') params.append('orderType', orderChannel);
+        if (refundFilter !== 'ALL') params.append('refundFilter', refundFilter);
       } else if (tabToFetch === 'customers') {
         if (customerStatus !== 'ALL') params.append('customerStatus', customerStatus);
         if (customerState !== 'ALL') params.append('state', customerState);
@@ -222,6 +226,7 @@ export default function ReportsTab() {
     orderStatus,
     paymentStatus,
     orderChannel,
+    refundFilter,
     payMethod,
     customerStatus,
     customerState,
@@ -242,10 +247,12 @@ export default function ReportsTab() {
         if (orderStatus !== 'ALL') params.append('status', orderStatus);
         if (paymentStatus !== 'ALL') params.append('paymentStatus', paymentStatus);
         if (orderChannel !== 'ALL') params.append('orderType', orderChannel);
+        if (refundFilter !== 'ALL') params.append('refundFilter', refundFilter);
       } else if (activeTab === 'payments') {
         if (paymentStatus !== 'ALL') params.append('paymentStatus', paymentStatus);
         if (payMethod !== 'ALL') params.append('paymentMethod', payMethod);
         if (orderChannel !== 'ALL') params.append('orderType', orderChannel);
+        if (refundFilter !== 'ALL') params.append('refundFilter', refundFilter);
       } else if (activeTab === 'customers') {
         if (customerStatus !== 'ALL') params.append('customerStatus', customerStatus);
         if (customerState !== 'ALL') params.append('state', customerState);
@@ -313,16 +320,29 @@ export default function ReportsTab() {
       if (orderStatus !== 'ALL') count++;
       if (paymentStatus !== 'ALL') count++;
       if (orderChannel !== 'ALL') count++;
+      if (refundFilter !== 'ALL') count++;
     } else if (activeTab === 'payments') {
       if (paymentStatus !== 'ALL') count++;
       if (payMethod !== 'ALL') count++;
       if (orderChannel !== 'ALL') count++;
+      if (refundFilter !== 'ALL') count++;
     } else if (activeTab === 'customers') {
       if (customerStatus !== 'ALL') count++;
       if (customerState !== 'ALL') count++;
     }
     return count;
-  }, [startDate, endDate, activeTab, orderStatus, paymentStatus, orderChannel, payMethod, customerStatus, customerState]);
+  }, [
+    startDate,
+    endDate,
+    activeTab,
+    orderStatus,
+    paymentStatus,
+    orderChannel,
+    refundFilter,
+    payMethod,
+    customerStatus,
+    customerState,
+  ]);
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -583,6 +603,8 @@ export default function ReportsTab() {
                   <option value="Processing">Processing</option>
                   <option value="Completed">Completed</option>
                   <option value="Cancelled">Cancelled</option>
+                  <option value="Refunded">Refunded / Returned</option>
+                  <option value="Returned">Returned Only</option>
                 </select>
               </div>
 
@@ -597,6 +619,34 @@ export default function ReportsTab() {
                   <option value="Paid">Paid / Verified</option>
                   <option value="Pending">Pending Verification</option>
                   <option value="Failed">Failed</option>
+                  <option value="Refunded">Refunded (Full)</option>
+                  <option value="Partially_Refunded">Partially Refunded</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[#64748B] block">Refund Filter</label>
+                <select
+                  value={refundFilter}
+                  onChange={(e) => setRefundFilter(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold focus:outline-none focus:border-[#ED3500] bg-white text-rose-700 font-bold"
+                >
+                  <option value="ALL" className="text-slate-800 font-normal">All Orders (With &amp; Without Refunds)</option>
+                  <option value="REFUNDED_ONLY" className="text-rose-700 font-bold">Refunded &amp; Returned Only</option>
+                  <option value="EXCLUDE_REFUNDS" className="text-emerald-700 font-medium">Non-Refunded Orders Only</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[#64748B] block">Sales Channel</label>
+                <select
+                  value={orderChannel}
+                  onChange={(e) => setOrderChannel(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold focus:outline-none focus:border-[#ED3500] bg-white"
+                >
+                  <option value="ALL">All Channels</option>
+                  <option value="ONLINE">Online Store</option>
+                  <option value="POS">POS Counter</option>
                 </select>
               </div>
             </>
@@ -615,6 +665,21 @@ export default function ReportsTab() {
                   <option value="Paid">Paid (Verified)</option>
                   <option value="Pending">Pending Verification</option>
                   <option value="Failed">Failed</option>
+                  <option value="Refunded">Refunded (Full)</option>
+                  <option value="Partially_Refunded">Partially Refunded</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[#64748B] block">Refund Filter</label>
+                <select
+                  value={refundFilter}
+                  onChange={(e) => setRefundFilter(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold focus:outline-none focus:border-[#ED3500] bg-white text-rose-700 font-bold"
+                >
+                  <option value="ALL" className="text-slate-800 font-normal">All Payments</option>
+                  <option value="REFUNDED_ONLY" className="text-rose-700 font-bold">Refunded &amp; Partial Only</option>
+                  <option value="EXCLUDE_REFUNDS" className="text-emerald-700 font-medium">Settled Only (Exclude Refunds)</option>
                 </select>
               </div>
 
@@ -630,6 +695,19 @@ export default function ReportsTab() {
                   <option value="COD">Cash on Delivery (COD)</option>
                   <option value="CASH">In-Store Cash (POS)</option>
                   <option value="CreditCard">Credit Card</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[#64748B] block">Sales Channel</label>
+                <select
+                  value={orderChannel}
+                  onChange={(e) => setOrderChannel(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold focus:outline-none focus:border-[#ED3500] bg-white"
+                >
+                  <option value="ALL">All Channels</option>
+                  <option value="ONLINE">Online Store</option>
+                  <option value="POS">POS Counter</option>
                 </select>
               </div>
             </>
@@ -697,11 +775,16 @@ export default function ReportsTab() {
             </div>
 
             {ordersSummary && (
-              <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-3 text-xs flex-wrap">
                 <span className="text-[#64748B]">Units: <strong>{ordersSummary.totalUnits}</strong></span>
                 <span className="text-[#64748B]">Tax: <strong>{formatCurrency(ordersSummary.totalTax)}</strong></span>
+                {Number(ordersSummary.totalRefunds) > 0 && (
+                  <span className="text-rose-600 font-bold">
+                    Refunds: -{formatCurrency(ordersSummary.totalRefunds)}
+                  </span>
+                )}
                 <span className="font-extrabold text-emerald-700 text-sm">
-                  Total: {formatCurrency(ordersSummary.totalRevenue)}
+                  Net: {formatCurrency(ordersSummary.netRevenue ?? ordersSummary.totalRevenue)}
                 </span>
               </div>
             )}
@@ -739,53 +822,90 @@ export default function ReportsTab() {
                     <th className="py-2.5 px-4">Customer</th>
                     <th className="py-2.5 px-4">Items</th>
                     <th className="py-2.5 px-4">Total ($ USD)</th>
+                    <th className="py-2.5 px-4">Refund ($)</th>
+                    <th className="py-2.5 px-4">Net Settled</th>
                     <th className="py-2.5 px-4">Payment</th>
                     <th className="py-2.5 px-4">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E8EDF2]">
-                  {filteredOrders.slice(0, 50).map((ord) => (
-                    <tr key={ord._id} className="hover:bg-slate-50/70">
-                      <td className="py-3 px-4 font-bold text-[#163B5C]">
-                        {ord.orderId}
-                        <span className="block text-[10px] text-[#64748B]">
-                          {new Date(ord.createdAt).toLocaleDateString()}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 font-medium text-[#163B5C]">
-                        {ord.customerName}
-                        <span className="block text-[10px] text-[#64748B]">{ord.city}, {ord.state}</span>
-                      </td>
-                      <td className="py-3 px-4 max-w-xs truncate text-[#64748B]">
-                        {(ord.items || []).map((i: any) => `${i.name} (x${i.quantity})`).join(', ')}
-                      </td>
-                      <td className="py-3 px-4 font-extrabold text-[#163B5C]">
-                        {formatCurrency(ord.totalAmount)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            ord.paymentStatus === 'Paid'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {ord.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            ord.status === 'Completed'
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {ord.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredOrders.slice(0, 50).map((ord) => {
+                    const total = Number(ord.totalAmount) || 0;
+                    const refund = Number(
+                      ord.refundAmount !== undefined && ord.refundAmount !== null
+                        ? ord.refundAmount
+                        : ord.status === 'Refunded' || ord.paymentStatus === 'Refunded'
+                        ? total
+                        : 0
+                    );
+                    const net = Math.max(0, total - refund);
+
+                    return (
+                      <tr key={ord._id} className="hover:bg-slate-50/70">
+                        <td className="py-3 px-4 font-bold text-[#163B5C]">
+                          {ord.orderId}
+                          <span className="block text-[10px] text-[#64748B]">
+                            {new Date(ord.createdAt).toLocaleDateString()}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-medium text-[#163B5C]">
+                          {ord.customerName}
+                          <span className="block text-[10px] text-[#64748B]">{ord.city}, {ord.state}</span>
+                        </td>
+                        <td className="py-3 px-4 max-w-xs truncate text-[#64748B]">
+                          {(ord.items || []).map((i: any) => `${i.name} (x${i.quantity})`).join(', ')}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-[#163B5C]">
+                          {formatCurrency(total)}
+                        </td>
+                        <td className="py-3 px-4">
+                          {refund > 0 ? (
+                            <div>
+                              <span className="font-extrabold text-rose-600 block">-{formatCurrency(refund)}</span>
+                              {ord.refundReason && (
+                                <span className="block text-[9.5px] text-rose-500 font-normal truncate max-w-[120px]" title={ord.refundReason}>
+                                  {ord.refundReason}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[#94A3B8] font-mono">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-extrabold text-emerald-700">
+                          {formatCurrency(net)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              ord.paymentStatus === 'Paid'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : ord.paymentStatus === 'Refunded'
+                                ? 'bg-rose-100 text-rose-800'
+                                : ord.paymentStatus === 'Partially_Refunded'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-slate-100 text-slate-800'
+                            }`}
+                          >
+                            {ord.paymentStatus === 'Partially_Refunded' ? 'Part. Refunded' : ord.paymentStatus}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              ord.status === 'Completed'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : ord.status === 'Refunded' || ord.status === 'Returned'
+                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {ord.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -810,9 +930,14 @@ export default function ReportsTab() {
             </div>
 
             {paymentsSummary && (
-              <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-3 text-xs flex-wrap">
                 <span className="text-[#64748B]">Gross: <strong>{formatCurrency(paymentsSummary.totalGross)}</strong></span>
                 <span className="text-amber-600">Tax: <strong>{formatCurrency(paymentsSummary.totalTax)}</strong></span>
+                {Number(paymentsSummary.totalRefunds) > 0 && (
+                  <span className="text-rose-600 font-bold">
+                    Refunds: -{formatCurrency(paymentsSummary.totalRefunds)}
+                  </span>
+                )}
                 <span className="font-extrabold text-emerald-700 text-sm">
                   Net: {formatCurrency(paymentsSummary.totalNet)}
                 </span>
@@ -829,14 +954,22 @@ export default function ReportsTab() {
                   <th className="py-2.5 px-4">Method &amp; Status</th>
                   <th className="py-2.5 px-4">Gross Total</th>
                   <th className="py-2.5 px-4">Sales Tax</th>
-                  <th className="py-2.5 px-4">Net Revenue</th>
+                  <th className="py-2.5 px-4">Refund</th>
+                  <th className="py-2.5 px-4">Net Settlement</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8EDF2]">
                 {filteredPayments.slice(0, 50).map((p) => {
                   const gross = Number(p.totalAmount) || 0;
                   const tax = Number(p.totalTax || p.taxSnapshot?.taxAmount || 0);
-                  const net = Math.max(0, gross - tax);
+                  const refund = Number(
+                    p.refundAmount !== undefined && p.refundAmount !== null
+                      ? p.refundAmount
+                      : p.paymentStatus === 'Refunded' || p.status === 'Refunded'
+                      ? gross
+                      : 0
+                  );
+                  const net = Math.max(0, gross - tax - refund);
                   return (
                     <tr key={p._id} className="hover:bg-slate-50/70">
                       <td className="py-3 px-4">
@@ -848,14 +981,23 @@ export default function ReportsTab() {
                         <span className="font-semibold block">{p.paymentMethod}</span>
                         <span
                           className={`inline-flex px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                            p.paymentStatus === 'Paid' ? 'text-emerald-700' : 'text-amber-700'
+                            p.paymentStatus === 'Paid'
+                              ? 'text-emerald-700'
+                              : p.paymentStatus === 'Refunded'
+                              ? 'text-rose-700 font-extrabold'
+                              : p.paymentStatus === 'Partially_Refunded'
+                              ? 'text-amber-700 font-extrabold'
+                              : 'text-slate-600'
                           }`}
                         >
-                          {p.paymentStatus}
+                          {p.paymentStatus === 'Partially_Refunded' ? 'Part. Refunded' : p.paymentStatus}
                         </span>
                       </td>
                       <td className="py-3 px-4 font-bold">{formatCurrency(gross)}</td>
                       <td className="py-3 px-4 text-[#B45309] font-medium">{formatCurrency(tax)}</td>
+                      <td className="py-3 px-4 font-bold text-rose-600">
+                        {refund > 0 ? `-${formatCurrency(refund)}` : <span className="text-[#94A3B8] font-mono">-</span>}
+                      </td>
                       <td className="py-3 px-4 font-extrabold text-emerald-700">{formatCurrency(net)}</td>
                     </tr>
                   );
