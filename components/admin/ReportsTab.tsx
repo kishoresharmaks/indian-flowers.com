@@ -5,6 +5,7 @@ import { formatCurrency } from '@/lib/currency';
 import { US_STATES } from '@/lib/tax/jurisdiction';
 import {
   FileSpreadsheet,
+  FileText,
   Download,
   Filter,
   RefreshCw,
@@ -35,6 +36,7 @@ export default function ReportsTab() {
   const [activeTab, setActiveTab] = useState<ReportTab>('orders');
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Global KPI Metrics
   const [kpiStats, setKpiStats] = useState({
@@ -269,6 +271,46 @@ export default function ReportsTab() {
       console.error('Download error:', e);
     } finally {
       setTimeout(() => setDownloading(false), 1200);
+    }
+  };
+
+  // Direct Vector PDF Download Handler
+  const handleDownloadPdf = () => {
+    setDownloadingPdf(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('type', activeTab);
+      params.append('format', 'pdf');
+      params.append('download', 'true');
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      if (activeTab === 'orders') {
+        if (orderStatus !== 'ALL') params.append('status', orderStatus);
+        if (paymentStatus !== 'ALL') params.append('paymentStatus', paymentStatus);
+        if (orderChannel !== 'ALL') params.append('orderType', orderChannel);
+        if (refundFilter !== 'ALL') params.append('refundFilter', refundFilter);
+      } else if (activeTab === 'payments') {
+        if (paymentStatus !== 'ALL') params.append('paymentStatus', paymentStatus);
+        if (payMethod !== 'ALL') params.append('paymentMethod', payMethod);
+        if (orderChannel !== 'ALL') params.append('orderType', orderChannel);
+        if (refundFilter !== 'ALL') params.append('refundFilter', refundFilter);
+      } else if (activeTab === 'customers') {
+        if (customerStatus !== 'ALL') params.append('customerStatus', customerStatus);
+        if (customerState !== 'ALL') params.append('state', customerState);
+      }
+
+      const downloadUrl = `/api/admin/reports?${params.toString()}`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', '');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('PDF Download error:', e);
+    } finally {
+      setTimeout(() => setDownloadingPdf(false), 1200);
     }
   };
 
@@ -513,12 +555,26 @@ export default function ReportsTab() {
               </button>
             )}
 
+            {/* Export to PDF Button */}
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              className="px-4 py-2 rounded-xl bg-[#C85A78] hover:bg-[#B34B68] active:bg-[#9B3C56] text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-rose-900/15 transition-all disabled:opacity-50"
+              title="Export structured vector PDF report"
+            >
+              <FileText className="w-4 h-4 text-rose-200" />
+              <span>{downloadingPdf ? 'Preparing PDF Report...' : 'Export to PDF (.pdf)'}</span>
+              <Download className="w-3.5 h-3.5 opacity-80" />
+            </button>
+
             {/* Main Export to Excel Button */}
             <button
               type="button"
               onClick={handleDownloadExcel}
               disabled={downloading}
               className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-emerald-700/20 transition-all disabled:opacity-50"
+              title="Export multi-sheet Excel workbook"
             >
               <FileSpreadsheet className="w-4 h-4 text-[#86efac]" />
               <span>{downloading ? 'Preparing Excel File...' : 'Export to Excel (.xlsx)'}</span>
@@ -1097,16 +1153,31 @@ export default function ReportsTab() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={handleDownloadExcel}
-              disabled={downloading}
-              className="px-4 py-2 rounded-xl bg-white text-[#163B5C] font-extrabold text-xs flex items-center gap-2 shadow-sm transition-all"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-              <span>{downloading ? 'Exporting...' : 'Export Complete P&L Workbook (.xlsx)'}</span>
-              <Download className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf}
+                className="px-4 py-2 rounded-xl bg-white text-[#C85A78] hover:bg-rose-50 font-extrabold text-xs flex items-center gap-2 shadow-sm transition-all"
+                title="Export executive vector P&L PDF statement"
+              >
+                <FileText className="w-4 h-4 text-[#C85A78]" />
+                <span>{downloadingPdf ? 'Exporting PDF...' : 'Export P&L Statement (.pdf)'}</span>
+                <Download className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadExcel}
+                disabled={downloading}
+                className="px-4 py-2 rounded-xl bg-white text-[#163B5C] hover:bg-slate-50 font-extrabold text-xs flex items-center gap-2 shadow-sm transition-all"
+                title="Export complete P&L Excel workbook"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+                <span>{downloading ? 'Exporting...' : 'Export Complete P&L Workbook (.xlsx)'}</span>
+                <Download className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

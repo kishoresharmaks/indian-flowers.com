@@ -1,13 +1,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, TrendingUp, TrendingDown, DollarSign, PieChart, ShieldCheck, Printer } from 'lucide-react';
+import {
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  PieChart,
+  ShieldCheck,
+  Printer,
+  FileText,
+  Download,
+} from 'lucide-react';
 import PrintablePnLModal from './PrintablePnLModal';
 import { formatCurrency } from '@/lib/currency';
 
 export default function PnLReportView() {
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -28,6 +39,30 @@ export default function PnLReportView() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    setDownloadingPdf(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('type', 'pnl');
+      params.append('format', 'pdf');
+      params.append('download', 'true');
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const downloadUrl = `/api/admin/reports?${params.toString()}`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', '');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('PDF download error:', e);
+    } finally {
+      setTimeout(() => setDownloadingPdf(false), 1200);
     }
   };
 
@@ -76,12 +111,26 @@ export default function PnLReportView() {
           </button>
         </div>
 
-        <button
-          onClick={() => setIsPrintModalOpen(true)}
-          className="px-4 py-2 rounded-xl bg-[#163B5C] hover:bg-[#0F2A42] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
-        >
-          <Printer className="w-4 h-4" /> Print / Export Formal P&L PDF
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            className="px-4 py-2 rounded-xl bg-[#C85A78] hover:bg-[#B34B68] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+            title="Download structured vector PDF report"
+          >
+            <FileText className="w-4 h-4 text-rose-200" />
+            <span>{downloadingPdf ? 'Preparing PDF...' : 'Download PDF Report (.pdf)'}</span>
+            <Download className="w-3.5 h-3.5 opacity-80" />
+          </button>
+
+          <button
+            onClick={() => setIsPrintModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-[#163B5C] hover:bg-[#0F2A42] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+            title="Open printable browser preview modal"
+          >
+            <Printer className="w-4 h-4" /> Print / Browser Preview
+          </button>
+        </div>
       </div>
 
       {/* Net Profit Banner */}

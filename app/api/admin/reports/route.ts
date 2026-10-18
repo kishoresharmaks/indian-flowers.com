@@ -13,6 +13,13 @@ import {
   generatePnLWorkbook,
   workbookToBuffer,
 } from '@/lib/reports/excelExport';
+import {
+  generateOrdersPDF,
+  generatePaymentsPDF,
+  generateCustomersPDF,
+  generatePnLPDF,
+  pdfToBuffer,
+} from '@/lib/reports/pdfExport';
 
 export async function GET(req: NextRequest) {
   if (!isAuthenticatedAdmin(req)) {
@@ -25,7 +32,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const type = (searchParams.get('type') || 'orders').toLowerCase();
     const format = (searchParams.get('format') || 'json').toLowerCase();
-    const isDownload = searchParams.get('download') === 'true' || format === 'excel';
+    const isPdf = format === 'pdf';
+    const isDownload = searchParams.get('download') === 'true' || format === 'excel' || isPdf;
 
     const startDate = searchParams.get('startDate') || undefined;
     const endDate = searchParams.get('endDate') || undefined;
@@ -127,6 +135,26 @@ export async function GET(req: NextRequest) {
       const orders = await Order.find(query).sort({ createdAt: -1 }).lean();
 
       if (isDownload) {
+        if (isPdf) {
+          const { doc, filename } = generateOrdersPDF(orders, {
+            startDate,
+            endDate,
+            status,
+            paymentStatus,
+            orderType,
+            refundFilter,
+          });
+          const buffer = pdfToBuffer(doc);
+          return new NextResponse(buffer as any, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${filename}"`,
+              'Cache-Control': 'no-store',
+            },
+          });
+        }
+
         const { workbook, filename } = generateOrdersWorkbook(orders, {
           startDate,
           endDate,
@@ -255,6 +283,26 @@ export async function GET(req: NextRequest) {
       const orders = await Order.find(query).sort({ createdAt: -1 }).lean();
 
       if (isDownload) {
+        if (isPdf) {
+          const { doc, filename } = generatePaymentsPDF(orders, {
+            startDate,
+            endDate,
+            paymentStatus,
+            paymentMethod,
+            orderType,
+            refundFilter,
+          });
+          const buffer = pdfToBuffer(doc);
+          return new NextResponse(buffer as any, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${filename}"`,
+              'Cache-Control': 'no-store',
+            },
+          });
+        }
+
         const { workbook, filename } = generatePaymentsWorkbook(orders, {
           startDate,
           endDate,
@@ -363,6 +411,24 @@ export async function GET(req: NextRequest) {
       });
 
       if (isDownload) {
+        if (isPdf) {
+          const { doc, filename } = generateCustomersPDF(enrichedCustomers, {
+            startDate,
+            endDate,
+            status: customerStatus,
+            state,
+          });
+          const buffer = pdfToBuffer(doc);
+          return new NextResponse(buffer as any, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${filename}"`,
+              'Cache-Control': 'no-store',
+            },
+          });
+        }
+
         const { workbook, filename } = generateCustomersWorkbook(enrichedCustomers, {
           startDate,
           endDate,
@@ -418,6 +484,23 @@ export async function GET(req: NextRequest) {
       ]);
 
       if (isDownload) {
+        if (isPdf) {
+          const { doc, filename } = generatePnLPDF(
+            pnlSummary,
+            { expenses, purchases },
+            { startDate, endDate }
+          );
+          const buffer = pdfToBuffer(doc);
+          return new NextResponse(buffer as any, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${filename}"`,
+              'Cache-Control': 'no-store',
+            },
+          });
+        }
+
         const { workbook, filename } = generatePnLWorkbook(
           pnlSummary,
           { expenses, purchases },
