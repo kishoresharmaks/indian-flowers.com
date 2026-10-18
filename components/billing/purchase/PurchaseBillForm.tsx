@@ -154,34 +154,42 @@ export default function PurchaseBillForm({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 space-y-6 border border-[#E8EDF2] shadow-2xl relative my-8">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full hover:bg-gray-100 text-[#64748B]"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/75 backdrop-blur-xs overflow-hidden">
+      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col border border-[#E8EDF2] shadow-2xl overflow-hidden relative animate-fadeIn">
+        {/* Sticky Pinned Header */}
+        <div className="px-5 sm:px-6 py-4 border-b border-[#E8EDF2] flex items-center justify-between shrink-0 bg-white z-10">
+          <div>
+            <h3 className="font-extrabold text-lg sm:text-xl text-[#163B5C]">
+              Create New {docType === 'PURCHASE_ORDER' ? 'Purchase Order' : docType === 'PURCHASE_RETURN' ? 'Purchase Return' : 'Purchase Bill'}
+            </h3>
+            <p className="text-xs text-[#64748B] mt-0.5">
+              {docType === 'PURCHASE_BILL'
+                ? 'Inward stock purchase bill from farmers & suppliers (Adds stock to inventory).'
+                : 'Official purchase document with vendor details.'}
+            </p>
+          </div>
 
-        <div>
-          <h3 className="font-extrabold text-xl text-[#163B5C]">
-            Create New {docType === 'PURCHASE_ORDER' ? 'Purchase Order' : docType === 'PURCHASE_RETURN' ? 'Purchase Return' : 'Purchase Bill'}
-          </h3>
-          <p className="text-xs text-[#64748B]">
-            {docType === 'PURCHASE_BILL'
-              ? 'Inward stock purchase bill from farmers & suppliers (Adds stock to inventory).'
-              : 'Official purchase document with vendor details.'}
-          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
+            title="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {error && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Scrollable Form Body */}
+        <form
+          id="purchase-bill-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5"
+        >
+          {error && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+              {error}
+            </div>
+          )}
           {/* Vendor Selection Grid */}
           <div className="p-4 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] space-y-3">
             <div className="flex items-center justify-between">
@@ -378,24 +386,27 @@ export default function PurchaseBillForm({
             </div>
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-3 rounded-xl border border-[#E8EDF2] font-bold text-xs text-[#64748B]"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-3 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-[#ED3500]/25 transition-all flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              {isSubmitting ? 'Saving Document...' : `Save & Issue ${docType === 'PURCHASE_ORDER' ? 'Purchase Order' : docType === 'PURCHASE_RETURN' ? 'Purchase Return' : 'Purchase Bill'}`}
-            </button>
-          </div>
         </form>
+
+        {/* Pinned Sticky Footer */}
+        <div className="px-5 sm:px-6 py-4 border-t border-[#E8EDF2] flex items-center justify-end gap-3 shrink-0 bg-[#FFFCFB] z-10">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl border border-[#E8EDF2] font-bold text-xs text-[#64748B] hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="purchase-bill-form"
+            disabled={isSubmitting}
+            className="px-6 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider shadow-md shadow-[#ED3500]/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            {isSubmitting ? 'Saving Document...' : `Save & Issue ${docType === 'PURCHASE_ORDER' ? 'Purchase Order' : docType === 'PURCHASE_RETURN' ? 'Purchase Return' : 'Purchase Bill'}`}
+          </button>
+        </div>
       </div>
 
       {isPartyModalOpen && (

@@ -727,8 +727,8 @@ export default function PolicyManagerTab() {
 
       {/* Confirmation Modal: Reset Policy to Default Template */}
       {confirmResetSlug && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-stone-200 animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col p-6 space-y-4 shadow-xl border border-stone-200 animate-fadeIn overflow-y-auto">
             <div className="flex items-center gap-3 text-amber-600">
               <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />

@@ -68,8 +68,8 @@ export default function PaymentInModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 border border-[#E8EDF2] shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-hidden">
+      <div className="bg-white rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col p-6 space-y-5 border border-[#E8EDF2] shadow-2xl relative overflow-hidden">
         <button
           type="button"
           onClick={onClose}
@@ -78,7 +78,7 @@ export default function PaymentInModal({
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
             <DollarSign className="w-5 h-5" />
           </div>
@@ -91,12 +91,12 @@ export default function PaymentInModal({
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold shrink-0">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto pr-1">
           <div className="space-y-1">
             <label className="text-xs font-bold text-[#163B5C] uppercase">Customer Name *</label>
             <input

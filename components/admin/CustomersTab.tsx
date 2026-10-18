@@ -1109,9 +1109,9 @@ export default function CustomersTab() {
 
       {/* 5. ADJUST POINTS MODAL */}
       {isAdjustPointsOpen && selectedCustomer && (
-        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl border border-[#E8EDF2] w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="p-4 bg-[#163B5C] text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fadeIn overflow-hidden">
+          <div className="bg-white rounded-2xl border border-[#E8EDF2] w-full max-w-md max-h-[92vh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-4 bg-[#163B5C] text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-amber-400" />
                 <h3 className="font-bold text-sm">Adjust Customer Loyalty Points</h3>
@@ -1125,7 +1125,7 @@ export default function CustomersTab() {
               </button>
             </div>
 
-            <form onSubmit={handleAdjustPointsSubmit} className="p-5 space-y-4">
+            <form onSubmit={handleAdjustPointsSubmit} className="p-5 space-y-4 flex-1 overflow-y-auto">
               <div>
                 <p className="text-xs text-[#64748B]">Customer:</p>
                 <p className="font-bold text-sm text-[#163B5C]">{selectedCustomer.name}</p>

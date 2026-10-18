@@ -21,6 +21,10 @@ export default function FloralCornerDecorations({
             src="/images/floral-decorations/jasmine-corner.webp"
             alt=""
             className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-85 sm:opacity-90"
+            style={{
+              WebkitMaskImage: 'radial-gradient(ellipse at 15% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+              maskImage: 'radial-gradient(ellipse at 15% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+            }}
             loading="eager"
           />
         </div>
@@ -31,6 +35,10 @@ export default function FloralCornerDecorations({
             src="/images/floral-decorations/lotus-corner.webp"
             alt=""
             className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-85 sm:opacity-90"
+            style={{
+              WebkitMaskImage: 'radial-gradient(ellipse at 85% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+              maskImage: 'radial-gradient(ellipse at 85% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+            }}
             loading="eager"
           />
         </div>
@@ -43,6 +51,10 @@ export default function FloralCornerDecorations({
             src="/images/floral-decorations/varmala-left-strand.webp"
             alt=""
             className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.06)]"
+            style={{
+              WebkitMaskImage: 'radial-gradient(ellipse at 0% 50%, rgba(0,0,0,1) 45%, rgba(0,0,0,0.75) 75%, transparent 100%)',
+              maskImage: 'radial-gradient(ellipse at 0% 50%, rgba(0,0,0,1) 45%, rgba(0,0,0,0.75) 75%, transparent 100%)',
+            }}
             loading="lazy"
           />
         </div>
@@ -53,6 +65,10 @@ export default function FloralCornerDecorations({
             src="/images/floral-decorations/marigold-right-cascade.webp"
             alt=""
             className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.06)]"
+            style={{
+              WebkitMaskImage: 'radial-gradient(ellipse at 100% 50%, rgba(0,0,0,1) 45%, rgba(0,0,0,0.75) 75%, transparent 100%)',
+              maskImage: 'radial-gradient(ellipse at 100% 50%, rgba(0,0,0,1) 45%, rgba(0,0,0,0.75) 75%, transparent 100%)',
+            }}
             loading="lazy"
           />
         </div>
@@ -85,6 +101,10 @@ export default function FloralCornerDecorations({
             src="/images/floral-decorations/jasmine-foliage-corner.webp"
             alt=""
             className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-80 sm:opacity-85"
+            style={{
+              WebkitMaskImage: 'radial-gradient(ellipse at 15% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+              maskImage: 'radial-gradient(ellipse at 15% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+            }}
             loading="lazy"
           />
         </div>
@@ -95,6 +115,10 @@ export default function FloralCornerDecorations({
             src="/images/floral-decorations/lotus-petal-accent.webp"
             alt=""
             className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-85 sm:opacity-90"
+            style={{
+              WebkitMaskImage: 'radial-gradient(ellipse at 85% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+              maskImage: 'radial-gradient(ellipse at 85% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+            }}
             loading="lazy"
           />
         </div>

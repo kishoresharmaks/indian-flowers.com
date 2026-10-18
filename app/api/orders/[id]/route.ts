@@ -131,11 +131,12 @@ export async function PATCH(
       );
     }
 
-    // Lock Completed Orders from moving backwards unless refunding or returning
+    // Lock Completed / Delivered Orders from moving backwards unless refunding or returning
     if (
-      existingOrder.status === 'Completed' &&
+      (existingOrder.status === 'Completed' || existingOrder.status === 'Delivered') &&
       body.status &&
       body.status !== 'Completed' &&
+      body.status !== 'Delivered' &&
       body.status !== 'Refunded' &&
       body.status !== 'Returned'
     ) {
@@ -143,7 +144,7 @@ export async function PATCH(
         {
           success: false,
           message:
-            'A completed order status can only be transitioned to Returned or Refunded.',
+            'A delivered or completed order status can only be transitioned to Returned or Refunded.',
         },
         { status: 400 }
       );

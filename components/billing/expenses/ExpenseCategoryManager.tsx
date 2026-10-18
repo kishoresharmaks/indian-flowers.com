@@ -52,8 +52,8 @@ export default function ExpenseCategoryManager({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 border border-[#E8EDF2] shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-hidden">
+      <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col p-6 space-y-5 border border-[#E8EDF2] shadow-2xl relative overflow-hidden">
         <button
           type="button"
           onClick={onClose}
@@ -62,7 +62,7 @@ export default function ExpenseCategoryManager({
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="w-10 h-10 rounded-2xl bg-[#163B5C]/10 text-[#163B5C] flex items-center justify-center font-bold">
             <Layers className="w-5 h-5" />
           </div>
@@ -73,12 +73,13 @@ export default function ExpenseCategoryManager({
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold shrink-0">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleAddCategory} className="space-y-3 p-4 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2]">
+        <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+          <form onSubmit={handleAddCategory} className="space-y-3 p-4 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2]">
           <h4 className="text-xs font-extrabold text-[#163B5C] uppercase">+ Add New Custom Category</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
@@ -120,5 +121,6 @@ export default function ExpenseCategoryManager({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }

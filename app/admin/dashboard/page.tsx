@@ -1410,6 +1410,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   const filteredOrders = orders.filter((o) => {
     if (orderStatusFilter === 'Refunded') {
       if (o.status !== 'Refunded' && o.status !== 'Returned' && o.paymentStatus !== 'Refunded' && o.paymentStatus !== 'Partially_Refunded') return false;
+    } else if (orderStatusFilter === 'Delivered') {
+      if (o.status !== 'Delivered' && o.status !== 'Completed') return false;
     } else if (orderStatusFilter !== 'All' && o.status !== orderStatusFilter) {
       return false;
     }
@@ -2860,12 +2862,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     { id: 'All', label: 'All', count: orders.length },
                     { id: 'Pending', label: 'Pending', count: orders.filter((o) => o.status === 'Pending').length },
                     { id: 'Processing', label: 'Processing', count: orders.filter((o) => o.status === 'Processing').length },
-                    { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length },
-                    { id: 'Completed', label: 'Completed', count: orders.filter((o) => o.status === 'Completed').length },
+                    {
+                      id: 'Delivered',
+                      label: 'Delivered (Completed)',
+                      count: orders.filter((o) => o.status === 'Delivered' || o.status === 'Completed').length,
+                    },
                     { id: 'Cancelled', label: 'Cancelled', count: orders.filter((o) => o.status === 'Cancelled').length },
                     {
                       id: 'Refunded',
-                      label: 'Refunded / Returns',
+                      label: 'Returned / Refunded',
                       count: orders.filter(
                         (o) =>
                           o.status === 'Refunded' ||
@@ -3083,9 +3088,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                               className="py-3.5 px-4 whitespace-nowrap"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {order.status === 'Completed' ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-xs">
-                                  <Check className="w-3.5 h-3.5" /> Completed
+                              {order.status === 'Completed' || order.status === 'Delivered' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-xs border border-emerald-200">
+                                  <Check className="w-3.5 h-3.5 text-emerald-700" /> Delivered (Completed)
                                 </span>
                               ) : order.status === 'Cancelled' ? (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-extrabold text-xs">
@@ -3094,9 +3099,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                               ) : order.status === 'Refunded' || order.status === 'Returned' || order.paymentStatus === 'Refunded' ? (
                                 <span
                                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-extrabold text-xs"
-                                  title={order.refundReason || 'Order Refunded'}
+                                  title={order.refundReason || 'Order Returned & Refunded'}
                                 >
-                                  <RotateCcw className="w-3.5 h-3.5" /> Refunded
+                                  <RotateCcw className="w-3.5 h-3.5" /> Returned / Refunded
                                 </span>
                               ) : (
                                 <select
@@ -3106,13 +3111,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                                   }
                                   className="bg-[#FFFCFB] border border-[#E8EDF2] rounded-lg px-2.5 py-1 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
                                 >
-                                  <option value="Pending">Pending</option>
-                                  <option value="Processing">Processing</option>
-                                  <option value="Delivered">Delivered</option>
-                                  <option value="Completed">Completed</option>
+                                  <option value="Pending">Pending (Awaiting Pack)</option>
+                                  <option value="Processing">Processing (Floral Prep)</option>
+                                  <option value="Delivered">Delivered (Completed)</option>
                                   <option value="Cancelled">Cancelled</option>
-                                  <option value="Refunded">Refunded</option>
-                                  <option value="Returned">Returned</option>
                                 </select>
                               )}
                             </td>
@@ -4791,8 +4793,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
       {/* Edit Category Modal */}
       {isEditCatModalOpen && editingCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-hidden">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative">
             <button
               onClick={() => {
                 setIsEditCatModalOpen(false);
@@ -4908,8 +4910,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
       {/* Edit Hero Banner Modal */}
       {isEditBannerModalOpen && editingBanner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative my-8 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-hidden">
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => {
                 setIsEditBannerModalOpen(false);
@@ -5093,8 +5095,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
       {/* Admin Password Security Challenge Modal */}
       {isSecModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-[#E8EDF2] space-y-6 relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-[#E8EDF2] space-y-6 relative animate-in fade-in zoom-in duration-200">
             <button
               onClick={() => {
                 setIsSecModalOpen(false);
@@ -5161,8 +5163,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
       {/* Order Details Comprehensive Modal */}
       {selectedOrderForDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-[#E8EDF2] shadow-2xl max-w-4xl w-full overflow-hidden my-auto max-h-[92vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-hidden">
+          <div className="bg-white rounded-3xl border border-[#E8EDF2] shadow-2xl max-w-4xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden relative">
             {/* Modal Header */}
             <div className="px-5 sm:px-6 py-4 bg-[#FFFCFB] border-b border-[#E8EDF2] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
@@ -5210,10 +5212,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       <span className="px-3 py-1.5 rounded-xl bg-rose-100 text-rose-800 font-extrabold flex items-center gap-1 border border-rose-300">
                         <RotateCcw className="w-3.5 h-3.5" /> Returned / Refunded
                       </span>
-                    ) : selectedOrderForDetails.status === 'Completed' ? (
+                    ) : selectedOrderForDetails.status === 'Completed' || selectedOrderForDetails.status === 'Delivered' ? (
                       <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold flex items-center gap-1.5 border border-emerald-300">
-                        <Lock className="w-3.5 h-3.5 text-emerald-700" />
-                        <span>Completed</span>
+                        <Check className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Delivered (Completed)</span>
                       </span>
                     ) : (
                       <select
@@ -5223,13 +5225,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         }
                         className="bg-white border border-[#E8EDF2] rounded-xl px-3 py-1.5 text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
                       >
-                        <option value="Pending">Pending</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Completed">Completed</option>
+                        <option value="Pending">Pending (Awaiting Pack)</option>
+                        <option value="Processing">Processing (Floral Prep)</option>
+                        <option value="Delivered">Delivered (Completed)</option>
                         <option value="Cancelled">Cancelled</option>
-                        <option value="Refunded">Refunded</option>
-                        <option value="Returned">Returned</option>
                       </select>
                     )}
                   </div>
@@ -5285,6 +5284,22 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         <span>Process Return / Refund</span>
                       </button>
                     )}
+                </div>
+
+                {/* Status Guidance Banner */}
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>
+                      <strong className="text-slate-800">Fulfillment Stages:</strong> Tracks delivery logistics (<span className="text-[#163B5C] font-semibold">Pending</span> → <span className="text-[#163B5C] font-semibold">Processing</span> → <span className="text-emerald-700 font-bold">Delivered</span>). Customer loyalty points are credited once marked Delivered.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                    <span>
+                      <strong className="text-slate-800">Returns &amp; Refunds:</strong> For damaged florals or customer disputes, click <strong className="text-rose-700">Process Return / Refund</strong> to automatically restock inventory, reconcile ledger accounting, and reverse loyalty points.
+                    </span>
+                  </div>
                 </div>
 
                 {/* Return / Refund Record Banner if already refunded */}
@@ -5607,10 +5622,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
       {/* Return & Refund Modal Dialog */}
       {refundOrderTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-lg w-full border border-[#E8EDF2] shadow-2xl overflow-hidden animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-hidden">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col border border-[#E8EDF2] shadow-2xl overflow-hidden animate-fadeIn">
             {/* Header */}
-            <div className="p-5 border-b border-[#E8EDF2] flex items-center justify-between bg-[#FFFCFB]">
+            <div className="p-5 border-b border-[#E8EDF2] flex items-center justify-between bg-[#FFFCFB] shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold">
                   <RotateCcw className="w-5 h-5" />
@@ -5630,9 +5645,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             </div>
 
             {/* Form */}
-            <form onSubmit={handleProcessRefundSubmit} className="p-5 space-y-4 text-xs">
+            <form id="process-refund-form" onSubmit={handleProcessRefundSubmit} className="p-5 space-y-4 text-xs flex-1 overflow-y-auto">
               {refundError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-bold">
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-bold shrink-0">
                   {refundError}
                 </div>
               )}
@@ -5749,25 +5764,31 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 </div>
               </label>
 
-              {/* Footer Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRefundOrderTarget(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isProcessingRefund}
-                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold flex items-center gap-2 shadow-md shadow-rose-600/20 transition-all disabled:opacity-50"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>{isProcessingRefund ? 'Processing Refund...' : 'Confirm Return & Refund'}</span>
-                </button>
-              </div>
             </form>
+
+            {/* Pinned Sticky Footer */}
+            <div className="px-5 py-3.5 border-t border-[#E8EDF2] bg-[#FFFCFB] flex items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setRefundOrderTarget(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 font-bold hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="process-refund-form"
+                disabled={isProcessingRefund}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold flex items-center gap-2 shadow-md shadow-rose-600/20 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isProcessingRefund ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                <span>{isProcessingRefund ? 'Processing Refund...' : 'Confirm Return & Refund'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

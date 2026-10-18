@@ -374,8 +374,8 @@ export default function POSCounter({
 
       {/* Held Bills Modal */}
       {isHeldModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-[#E8EDF2] shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-hidden">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col p-6 space-y-4 border border-[#E8EDF2] shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-[#E8EDF2] pb-3">
               <h3 className="font-extrabold text-base text-[#163B5C]">Parked / Held Bills ({heldBills.length})</h3>
               <button onClick={() => setIsHeldModalOpen(false)} className="text-[#64748B] hover:text-[#163B5C]">
@@ -424,8 +424,8 @@ export default function POSCounter({
 
       {/* Mobile Screen Warning Popup Modal */}
       {showMobileWarning && (
-        <div className="fixed inset-0 z-[9999999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 border border-[#E8EDF2] shadow-2xl text-center relative overflow-hidden">
+        <div className="fixed inset-0 z-[9999999] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fadeIn overflow-hidden">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6 space-y-5 border border-[#E8EDF2] shadow-2xl text-center relative">
             {/* Header Icon */}
             <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
               <Monitor className="w-8 h-8" />

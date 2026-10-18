@@ -70,8 +70,8 @@ export default function RevisionHistoryModal({ document, onClose }: RevisionHist
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs overflow-y-auto animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-5 sm:p-7 space-y-6 border border-[#E8EDF2] shadow-2xl relative my-8 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/75 backdrop-blur-xs overflow-hidden animate-fadeIn">
+      <div className="bg-white rounded-3xl max-w-3xl w-full p-5 sm:p-7 space-y-6 border border-[#E8EDF2] shadow-2xl relative max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-[#E8EDF2] pb-4 shrink-0">
           <div className="flex items-center gap-3">
