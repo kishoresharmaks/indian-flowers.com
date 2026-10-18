@@ -18,6 +18,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, customer: null }, { status: 200 });
     }
 
+    const { getLoyaltyConfig } = await import('@/lib/loyalty/loyaltyEngine');
+    const loyaltyConfig = await getLoyaltyConfig();
+
     const safeCustomer = {
       id: String(customer._id),
       name: customer.name,
@@ -30,12 +33,17 @@ export async function GET(request: NextRequest) {
       state: customer.state,
       zipCode: customer.zipCode,
       country: customer.country || 'US',
+      pointsBalance: customer.pointsBalance || 0,
+      totalPointsEarned: customer.totalPointsEarned || 0,
+      totalPointsRedeemed: customer.totalPointsRedeemed || 0,
+      pointsHistory: Array.isArray(customer.pointsHistory) ? customer.pointsHistory : [],
       createdAt: customer.createdAt,
     };
 
     return NextResponse.json({
       success: true,
       customer: safeCustomer,
+      loyaltyConfig,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, customer: null }, { status: 200 });

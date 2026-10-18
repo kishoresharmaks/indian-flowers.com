@@ -151,6 +151,9 @@ export async function GET(req: NextRequest) {
       let totalTax = 0;
       let totalUnits = 0;
       let totalRefunds = 0;
+      let totalPointsRedeemed = 0;
+      let totalPointsDiscount = 0;
+      let totalPointsEarned = 0;
 
       orders.forEach((ord: any) => {
         const orderTotal = ord.totalAmount || 0;
@@ -164,6 +167,9 @@ export async function GET(req: NextRequest) {
         totalRevenue += orderTotal;
         totalRefunds += refund;
         totalTax += ord.totalTax || ord.taxSnapshot?.taxAmount || ord.totalGst || 0;
+        totalPointsRedeemed += Number(ord.pointsRedeemed) || 0;
+        totalPointsDiscount += Number(ord.pointsDiscount) || 0;
+        totalPointsEarned += Number(ord.pointsEarned) || 0;
         (ord.items || []).forEach((it: any) => {
           totalUnits += Number(it.quantity) || 1;
         });
@@ -182,6 +188,9 @@ export async function GET(req: NextRequest) {
           netRevenue: Math.round(netRevenue * 100) / 100,
           totalTax: Math.round(totalTax * 100) / 100,
           totalUnits,
+          totalPointsRedeemed,
+          totalPointsDiscount: Math.round(totalPointsDiscount * 100) / 100,
+          totalPointsEarned,
         },
         data: orders,
       });

@@ -22,6 +22,8 @@ import {
   ChevronDown,
   LogOut,
   Package,
+  Award,
+  Sparkles,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -449,6 +451,10 @@ export default function Header({
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9.5px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
                               Active Account
                             </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                              <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                              <span>⭐ {activeCustomer.pointsBalance || 0} pts</span>
+                            </span>
                           </div>
                         </div>
                         <div className="py-1">
@@ -467,6 +473,14 @@ export default function Header({
                           >
                             <Package className="w-4 h-4 text-emerald-700 shrink-0" />
                             <span>My Order History</span>
+                          </Link>
+                          <Link
+                            href="/account?tab=loyalty"
+                            onClick={() => setIsAccountDropdownOpen(false)}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:text-[#0B3B24] flex items-center gap-2.5 transition-colors"
+                          >
+                            <Award className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>Loyalty Rewards ({activeCustomer.pointsBalance || 0} pts)</span>
                           </Link>
                         </div>
                         <div className="pt-1 border-t border-gray-100">
@@ -705,9 +719,18 @@ export default function Header({
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-900 truncate">{activeCustomer.name}</p>
                       <p className="text-[11px] text-gray-500 truncate">{activeCustomer.email}</p>
+                      <p className="text-[10.5px] font-bold text-amber-800 mt-0.5">⭐ {activeCustomer.pointsBalance || 0} pts</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <Link
+                      href="/account?tab=loyalty"
+                      onClick={() => toggleMobileMenu(false)}
+                      className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors"
+                      title="Loyalty Rewards"
+                    >
+                      Rewards
+                    </Link>
                     <Link
                       href="/account"
                       onClick={() => toggleMobileMenu(false)}

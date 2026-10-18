@@ -94,7 +94,10 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
       'Sales Tax ($)',
       'Shipping Fee ($)',
       'Discount ($)',
+      'Points Redeemed',
+      'Points Discount ($)',
       'Total Amount ($)',
+      'Points Earned',
       'Refund Amount ($)',
       'Net Settled ($)',
       'Refund Reason',
@@ -111,6 +114,9 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
   let sumTax = 0;
   let sumShipping = 0;
   let sumDiscount = 0;
+  let sumPointsRedeemed = 0;
+  let sumPointsDiscount = 0;
+  let sumPointsEarned = 0;
   let sumTotal = 0;
   let sumRefund = 0;
   let sumNetSettled = 0;
@@ -127,6 +133,9 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     const tax = round2(ord.totalTax || ord.taxSnapshot?.taxAmount || ord.totalGst || 0);
     const shipping = round2(ord.shippingFee || ord.deliveryCharge || 0);
     const discount = round2(ord.discountAmount || 0);
+    const pointsRedeemed = Number(ord.pointsRedeemed) || 0;
+    const pointsDiscount = round2(ord.pointsDiscount || 0);
+    const pointsEarned = Number(ord.pointsEarned) || 0;
     const total = round2(ord.totalAmount || 0);
     const refund = round2(
       ord.refundAmount !== undefined && ord.refundAmount !== null
@@ -148,6 +157,9 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     sumTax += tax;
     sumShipping += shipping;
     sumDiscount += discount;
+    sumPointsRedeemed += pointsRedeemed;
+    sumPointsDiscount += pointsDiscount;
+    sumPointsEarned += pointsEarned;
     sumTotal += total;
     sumRefund += refund;
     sumNetSettled += netSettled;
@@ -171,7 +183,10 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
       tax,
       shipping,
       discount,
+      pointsRedeemed,
+      pointsDiscount,
       total,
+      pointsEarned,
       refund,
       netSettled,
       refundReason,
@@ -203,7 +218,10 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     round2(sumTax),
     round2(sumShipping),
     round2(sumDiscount),
+    sumPointsRedeemed,
+    round2(sumPointsDiscount),
     round2(sumTotal),
+    sumPointsEarned,
     round2(sumRefund),
     round2(sumNetSettled),
     '',
@@ -237,7 +255,10 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     { wch: 14 }, // Sales Tax
     { wch: 14 }, // Shipping
     { wch: 14 }, // Discount
+    { wch: 16 }, // Points Redeemed
+    { wch: 18 }, // Points Discount ($)
     { wch: 16 }, // Total Amount
+    { wch: 14 }, // Points Earned
     { wch: 16 }, // Refund Amount
     { wch: 16 }, // Net Settled
     { wch: 28 }, // Refund Reason
@@ -384,6 +405,7 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
       'Payment Method',
       'Payment Status',
       'Gross Total ($)',
+      'Points Discount ($)',
       'Sales Tax Collected ($)',
       'Refund Amount ($)',
       'Net Settlement ($)',
@@ -397,12 +419,14 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
   ];
 
   let sumGross = 0;
+  let sumPointsDiscount = 0;
   let sumTax = 0;
   let sumRefund = 0;
   let sumNet = 0;
 
   const rows = orders.map((ord) => {
     const gross = round2(ord.totalAmount || 0);
+    const pointsDiscount = round2(ord.pointsDiscount || 0);
     const tax = round2(ord.totalTax || ord.taxSnapshot?.taxAmount || ord.totalGst || 0);
     const refund = round2(
       ord.refundAmount !== undefined && ord.refundAmount !== null
@@ -418,6 +442,7 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
         : '-';
 
     sumGross += gross;
+    sumPointsDiscount += pointsDiscount;
     sumTax += tax;
     sumRefund += refund;
     sumNet += net;
@@ -432,6 +457,7 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
       ord.paymentMethod || 'N/A',
       ord.paymentStatus || 'Pending',
       gross,
+      pointsDiscount,
       tax,
       refund,
       net,
@@ -454,6 +480,7 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
     '',
     '',
     round2(sumGross),
+    round2(sumPointsDiscount),
     round2(sumTax),
     round2(sumRefund),
     round2(sumNet),
@@ -476,6 +503,7 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
     { wch: 18 }, // Method
     { wch: 16 }, // Status
     { wch: 14 }, // Gross
+    { wch: 18 }, // Points Discount
     { wch: 18 }, // Tax
     { wch: 16 }, // Refund Amount
     { wch: 18 }, // Net Settlement
@@ -536,6 +564,9 @@ export function generateCustomersWorkbook(customers: any[], filters: CustomersEx
       'Country',
       'Account Status',
       'Joined Date',
+      'Loyalty Points Balance',
+      'Lifetime Points Earned',
+      'Lifetime Points Redeemed',
       'Total Orders Placed',
       'Lifetime Spend ($)',
       'Average Order Value ($)',
@@ -546,15 +577,24 @@ export function generateCustomersWorkbook(customers: any[], filters: CustomersEx
 
   let sumOrders = 0;
   let sumSpend = 0;
+  let sumPointsBalance = 0;
+  let sumPointsEarned = 0;
+  let sumPointsRedeemed = 0;
 
   const rows = customers.map((c) => {
     const ordersCount = Number(c.totalOrders) || (c.orders ? c.orders.length : 0);
     const spend = round2(c.totalSpent || 0);
     const aov = ordersCount > 0 ? round2(spend / ordersCount) : 0;
     const orderNumbers = (c.orders || []).map((o: any) => o.orderId || o._id).join(', ');
+    const pointsBalance = Number(c.pointsBalance) || 0;
+    const pointsEarned = Number(c.totalPointsEarned) || 0;
+    const pointsRedeemed = Number(c.totalPointsRedeemed) || 0;
 
     sumOrders += ordersCount;
     sumSpend += spend;
+    sumPointsBalance += pointsBalance;
+    sumPointsEarned += pointsEarned;
+    sumPointsRedeemed += pointsRedeemed;
 
     return [
       c._id,
@@ -570,6 +610,9 @@ export function generateCustomersWorkbook(customers: any[], filters: CustomersEx
       c.country || 'US',
       c.isActive !== false ? 'Active' : 'Suspended',
       formatDateOnly(c.createdAt),
+      pointsBalance,
+      pointsEarned,
+      pointsRedeemed,
       ordersCount,
       spend,
       aov,
@@ -593,6 +636,9 @@ export function generateCustomersWorkbook(customers: any[], filters: CustomersEx
     '',
     '',
     '',
+    sumPointsBalance,
+    sumPointsEarned,
+    sumPointsRedeemed,
     sumOrders,
     round2(sumSpend),
     overallAOV,
@@ -615,6 +661,9 @@ export function generateCustomersWorkbook(customers: any[], filters: CustomersEx
     { wch: 10 }, // Country
     { wch: 14 }, // Status
     { wch: 14 }, // Joined
+    { wch: 22 }, // Points Balance
+    { wch: 22 }, // Lifetime Earned
+    { wch: 22 }, // Lifetime Redeemed
     { wch: 18 }, // Total Orders
     { wch: 18 }, // Spend
     { wch: 22 }, // AOV
@@ -653,6 +702,7 @@ export function generatePnLWorkbook(pnlData: any, rawData?: { orders?: any[]; ex
   const returns = round2(pnlData.salesReturnTotal || 0);
   const b2bCreditNotes = round2(pnlData.b2bSalesReturns || 0);
   const orderRefunds = round2(pnlData.orderRefundsTotal || 0);
+  const loyaltyPointsDiscount = round2(pnlData.loyaltyPointsDiscountTotal || 0);
   const netRev = round2(pnlData.netSalesRevenue || 0);
 
   const purchaseBills = round2(pnlData.purchaseBillTotal || 0);
@@ -688,6 +738,9 @@ export function generatePnLWorkbook(pnlData: any, rawData?: { orders?: any[]; ex
   }
   if (orderRefunds > 0) {
     statementRows.push(['     - Online & POS Customer Order Refunds', '', -orderRefunds]);
+  }
+  if (loyaltyPointsDiscount > 0) {
+    statementRows.push(['   Less: Customer Loyalty Points Redemption Discounts', '', -loyaltyPointsDiscount]);
   }
 
   statementRows.push(

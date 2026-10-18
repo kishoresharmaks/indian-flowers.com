@@ -25,6 +25,11 @@ import {
   AlertCircle,
   ChevronDown,
   X,
+  Tag,
+  Award,
+  Sparkles,
+  Plus,
+  Minus,
 } from 'lucide-react';
 
 interface OrderItem {
@@ -49,6 +54,9 @@ interface CustomerOrder {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  pointsEarned?: number;
+  pointsRedeemed?: number;
+  pointsDiscount?: number;
   items: OrderItem[];
 }
 
@@ -72,6 +80,18 @@ interface CustomerRecord {
   totalSpent: number;
   lastOrderDate?: string | null;
   orders: CustomerOrder[];
+  pointsBalance?: number;
+  totalPointsEarned?: number;
+  totalPointsRedeemed?: number;
+  pointsHistory?: Array<{
+    date: string;
+    type: string;
+    points: number;
+    balanceAfter: number;
+    orderId?: string;
+    reason?: string;
+    dollarEquivalent?: number;
+  }>;
 }
 
 export default function CustomersTab() {
@@ -83,6 +103,8 @@ export default function CustomersTab() {
     activeCustomers: 0,
     totalOrders: 0,
     totalRevenue: 0,
+    totalPointsInCirculation: 0,
+    totalPointsRedeemedAll: 0,
   });
 
   // Filters & Search
@@ -94,6 +116,14 @@ export default function CustomersTab() {
   // Selected customer for modal
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerRecord | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+
+  // Manual Adjust Points State
+  const [isAdjustPointsOpen, setIsAdjustPointsOpen] = useState(false);
+  const [adjustPointsDelta, setAdjustPointsDelta] = useState<string>('');
+  const [adjustPointsReason, setAdjustPointsReason] = useState<string>('');
+  const [adjustingPoints, setAdjustingPoints] = useState(false);
+  const [adjustPointsError, setAdjustPointsError] = useState('');
+  const [adjustPointsSuccess, setAdjustPointsSuccess] = useState('');
 
   const fetchCustomers = async (showRefreshSpinner = false) => {
     try {
@@ -159,6 +189,49 @@ export default function CustomersTab() {
       alert('Network error while updating customer status.');
     } finally {
       setUpdatingStatusId(null);
+    }
+  };
+
+  const handleAdjustPointsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCustomer) return;
+    const delta = parseInt(adjustPointsDelta, 10);
+    if (isNaN(delta) || delta === 0) {
+      setAdjustPointsError('Please enter a non-zero whole number (e.g. +50 or -20)');
+      return;
+    }
+    setAdjustPointsError('');
+    setAdjustPointsSuccess('');
+    try {
+      setAdjustingPoints(true);
+      const res = await fetch('/api/admin/customers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: selectedCustomer._id,
+          action: 'adjust_points',
+          pointsAdjustment: delta,
+          reason: adjustPointsReason.trim() || 'Admin manual balance adjustment',
+          adminUsername: 'Admin',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAdjustPointsSuccess(`Points updated. New balance: ${data.newBalance} pts`);
+        setTimeout(() => {
+          setIsAdjustPointsOpen(false);
+          setAdjustPointsDelta('');
+          setAdjustPointsReason('');
+          setAdjustPointsSuccess('');
+        }, 1500);
+        fetchCustomers(true);
+      } else {
+        setAdjustPointsError(data.message || 'Failed to adjust points');
+      }
+    } catch (err: any) {
+      setAdjustPointsError(err.message || 'Connection error');
+    } finally {
+      setAdjustingPoints(false);
     }
   };
 
@@ -254,7 +327,7 @@ export default function CustomersTab() {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* 1. METRIC CARDS ROW */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* Total Customers */}
         <div className="bg-white rounded-2xl border border-[#E8EDF2] p-4 sm:p-5 shadow-xs flex items-center justify-between">
           <div>
@@ -265,7 +338,7 @@ export default function CustomersTab() {
               {stats.totalCustomers}
             </span>
             <span className="text-[10px] text-emerald-600 font-semibold mt-0.5 block">
-              100% US Customer Accounts
+              100% US Accounts
             </span>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs">
@@ -303,7 +376,7 @@ export default function CustomersTab() {
               {stats.totalOrders}
             </span>
             <span className="text-[10px] text-[#64748B] font-medium mt-0.5 block">
-              Online &amp; Walk-In orders
+              Online &amp; Walk-In
             </span>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
@@ -315,7 +388,7 @@ export default function CustomersTab() {
         <div className="bg-white rounded-2xl border border-[#E8EDF2] p-4 sm:p-5 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
-              Lifetime Revenue
+              Lifetime Spend
             </span>
             <span className="text-xl sm:text-2xl font-black text-[#ED3500] mt-1 block">
               {formatCurrency(stats.totalRevenue)}
@@ -326,6 +399,24 @@ export default function CustomersTab() {
           </div>
           <div className="w-11 h-11 rounded-2xl bg-[#FFF8F5] text-[#ED3500] flex items-center justify-center shrink-0 shadow-2xs">
             <DollarSign className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Loyalty Points In Circulation */}
+        <div className="col-span-2 sm:col-span-1 bg-white rounded-2xl border border-[#E8EDF2] p-4 sm:p-5 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
+              Loyalty Points
+            </span>
+            <span className="text-xl sm:text-2xl font-black text-amber-600 mt-1 block">
+              ⭐ {stats.totalPointsInCirculation || 0}
+            </span>
+            <span className="text-[10px] text-[#64748B] font-medium mt-0.5 block">
+              Claimed: {stats.totalPointsRedeemedAll || 0} pts
+            </span>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
+            <Tag className="w-5 h-5" />
           </div>
         </div>
       </div>
@@ -472,6 +563,7 @@ export default function CustomersTab() {
                     <th className="py-3 px-4">Contact Info</th>
                     <th className="py-3 px-4">US Postal Address</th>
                     <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-center">Loyalty Points</th>
                     <th className="py-3 px-4 text-right">Orders</th>
                     <th className="py-3 px-4 text-right">Lifetime Spend</th>
                     <th className="py-3 px-4 text-right">Actions</th>
@@ -536,6 +628,13 @@ export default function CustomersTab() {
                           )}
                           <span>{c.isActive ? 'Active' : 'Suspended'}</span>
                         </button>
+                      </td>
+
+                      {/* Loyalty Points */}
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-800 border border-amber-200">
+                          ⭐ {c.pointsBalance || 0}
+                        </span>
                       </td>
 
                       {/* Orders */}
@@ -621,7 +720,11 @@ export default function CustomersTab() {
                   </div>
 
                   <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center gap-4 text-xs">
+                    <div className="flex items-center gap-3 sm:gap-4 text-xs">
+                      <div>
+                        <span className="text-[10px] text-[#64748B] block uppercase">Points</span>
+                        <span className="font-bold text-amber-600">⭐ {c.pointsBalance || 0}</span>
+                      </div>
                       <div>
                         <span className="text-[10px] text-[#64748B] block uppercase">Orders</span>
                         <span className="font-bold text-[#163B5C]">{c.totalOrders}</span>
@@ -747,6 +850,141 @@ export default function CustomersTab() {
                 </div>
               </div>
 
+              {/* Customer Loyalty Points Card */}
+              <div className="bg-gradient-to-br from-amber-50/70 via-orange-50/40 to-yellow-50/30 rounded-2xl border border-amber-200/80 p-4 sm:p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-200/60">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                      <Award className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
+                        Customer Loyalty Rewards &amp; Points
+                      </h4>
+                      <p className="text-[11px] text-[#64748B]">
+                        Reward points earned from purchases and available for checkout redemption
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdjustPointsDelta('');
+                      setAdjustPointsReason('');
+                      setAdjustPointsError('');
+                      setAdjustPointsSuccess('');
+                      setIsAdjustPointsOpen(true);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Adjust Points</span>
+                  </button>
+                </div>
+
+                {/* Point Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="bg-white p-3.5 rounded-xl border border-amber-200/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-[#64748B] uppercase block tracking-wider">
+                      Available Balance
+                    </span>
+                    <div className="flex items-baseline gap-2 mt-0.5">
+                      <span className="text-xl font-extrabold text-amber-700">
+                        ⭐ {selectedCustomer.pointsBalance || 0} pts
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-emerald-700 font-semibold block mt-0.5">
+                      ≈ {formatCurrency((selectedCustomer.pointsBalance || 0) / 10)} discount value
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-amber-200/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-[#64748B] uppercase block tracking-wider">
+                      Lifetime Points Earned
+                    </span>
+                    <span className="text-lg font-bold text-[#163B5C] block mt-0.5">
+                      +{selectedCustomer.totalPointsEarned || 0} pts
+                    </span>
+                    <span className="text-[11px] text-[#64748B] block mt-0.5">
+                      Accumulated across completed orders
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-amber-200/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-[#64748B] uppercase block tracking-wider">
+                      Lifetime Points Redeemed
+                    </span>
+                    <span className="text-lg font-bold text-rose-700 block mt-0.5">
+                      -{selectedCustomer.totalPointsRedeemed || 0} pts
+                    </span>
+                    <span className="text-[11px] text-[#64748B] block mt-0.5">
+                      Converted to order discounts
+                    </span>
+                  </div>
+                </div>
+
+                {/* Points Transaction History Ledger */}
+                <div className="space-y-2 pt-1">
+                  <span className="text-[11px] font-bold text-[#163B5C] uppercase tracking-wider block">
+                    Points Activity Ledger
+                  </span>
+
+                  {(!selectedCustomer.pointsHistory || selectedCustomer.pointsHistory.length === 0) ? (
+                    <div className="bg-white/80 rounded-xl border border-dashed border-amber-200 p-4 text-center text-[#64748B] text-xs">
+                      No points transactions recorded yet for this customer.
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-xl border border-amber-200/80 overflow-hidden shadow-xs">
+                      <div className="max-h-56 overflow-y-auto divide-y divide-[#E8EDF2]">
+                        {selectedCustomer.pointsHistory.slice().reverse().map((entry, idx) => (
+                          <div key={idx} className="p-2.5 sm:p-3 flex items-center justify-between gap-3 text-xs hover:bg-slate-50">
+                            <div className="flex items-center gap-2.5">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                                  entry.type === 'EARNED'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : entry.type === 'REDEEMED'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : entry.type === 'REFUND_RESTORED'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : entry.type === 'REFUND_DEDUCTED'
+                                    ? 'bg-rose-100 text-rose-800'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}
+                              >
+                                {entry.type.replace('_', ' ')}
+                              </span>
+                              <div>
+                                <span className="font-semibold text-[#163B5C] block">
+                                  {entry.orderId ? `Order #${entry.orderId}` : entry.reason || 'Points balance adjustment'}
+                                </span>
+                                <span className="text-[10px] text-[#64748B]">
+                                  {new Date(entry.date).toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="text-right">
+                              <span
+                                className={`font-black text-xs ${
+                                  entry.points >= 0 ? 'text-emerald-700' : 'text-rose-600'
+                                }`}
+                              >
+                                {entry.points >= 0 ? `+${entry.points}` : entry.points} pts
+                              </span>
+                              <span className="text-[10px] text-[#64748B] block">
+                                Balance: {entry.balanceAfter} pts
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Order History */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -814,6 +1052,24 @@ export default function CustomersTab() {
                           ))}
                         </div>
 
+                        {/* Loyalty Points Applied / Earned info if available */}
+                        {((order.pointsEarned && order.pointsEarned > 0) || (order.pointsRedeemed && order.pointsRedeemed > 0)) && (
+                          <div className="flex flex-wrap items-center gap-3 text-[11px] bg-amber-50/70 border border-amber-200/60 px-3 py-1.5 rounded-xl">
+                            {order.pointsEarned && order.pointsEarned > 0 && (
+                              <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                                <Award className="w-3 h-3 text-emerald-600" />
+                                <span>Earned: +{order.pointsEarned} pts</span>
+                              </span>
+                            )}
+                            {order.pointsRedeemed && order.pointsRedeemed > 0 && (
+                              <span className="text-purple-700 font-semibold flex items-center gap-1">
+                                <Sparkles className="w-3 h-3 text-purple-600" />
+                                <span>Redeemed: {order.pointsRedeemed} pts (-{formatCurrency(order.pointsDiscount || 0)})</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         {/* Total Footer */}
                         <div className="flex justify-between items-center pt-2 border-t border-[#E8EDF2] font-bold text-xs">
                           <span className="text-[#64748B]">Order Total:</span>
@@ -833,11 +1089,116 @@ export default function CustomersTab() {
               <button
                 type="button"
                 onClick={() => setSelectedCustomer(null)}
-                className="px-5 py-2 rounded-xl bg-[#163B5C] text-white text-xs font-bold hover:bg-[#0F2A42] transition-colors"
+                className="px-5 py-2 rounded-xl bg-[#163B5C] text-white text-xs font-bold hover:bg-[#0F2A42] transition-colors cursor-pointer"
               >
                 Close Profile
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. ADJUST POINTS MODAL */}
+      {isAdjustPointsOpen && selectedCustomer && (
+        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-[#E8EDF2] w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="p-4 bg-[#163B5C] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <h3 className="font-bold text-sm">Adjust Customer Loyalty Points</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAdjustPointsOpen(false)}
+                className="p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAdjustPointsSubmit} className="p-5 space-y-4">
+              <div>
+                <p className="text-xs text-[#64748B]">Customer:</p>
+                <p className="font-bold text-sm text-[#163B5C]">{selectedCustomer.name}</p>
+                <p className="text-xs text-[#64748B]">{selectedCustomer.email}</p>
+              </div>
+
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex justify-between items-center">
+                <span className="text-xs text-amber-800 font-medium">Current Balance:</span>
+                <span className="text-base font-extrabold text-amber-900">
+                  ⭐ {selectedCustomer.pointsBalance || 0} pts
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#163B5C] mb-1">
+                  Points Adjustment (+ to credit, - to debit)
+                </label>
+                <input
+                  type="number"
+                  step="1"
+                  required
+                  placeholder="e.g. 50 or -25"
+                  value={adjustPointsDelta}
+                  onChange={(e) => setAdjustPointsDelta(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#CBD5E1] rounded-xl text-sm font-semibold focus:outline-none focus:border-amber-500"
+                />
+                <p className="text-[11px] text-[#64748B] mt-1">
+                  Example: Enter <code className="font-mono text-emerald-700 font-bold">+50</code> to award bonus points, or <code className="font-mono text-rose-700 font-bold">-25</code> to deduct.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#163B5C] mb-1">
+                  Adjustment Reason / Memo
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. VIP loyalty bonus, phone order correction"
+                  value={adjustPointsReason}
+                  onChange={(e) => setAdjustPointsReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {adjustPointsError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                  {adjustPointsError}
+                </div>
+              )}
+
+              {adjustPointsSuccess && (
+                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+                  {adjustPointsSuccess}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E8EDF2]">
+                <button
+                  type="button"
+                  onClick={() => setIsAdjustPointsOpen(false)}
+                  disabled={adjustingPoints}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-[#64748B] hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={adjustingPoints}
+                  className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  {adjustingPoints ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Points Adjustment</span>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

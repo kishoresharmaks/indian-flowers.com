@@ -41,9 +41,9 @@ import {
   CreditCard,
   Lock,
   Wallet,
-  Banknote,
   DollarSign,
   Loader2,
+  Award,
   AlertCircle,
 } from 'lucide-react';
 
@@ -140,6 +140,13 @@ export default function CustomerStore() {
   const [checkoutTaxResult, setCheckoutTaxResult] = useState<any>(null);
   const [checkoutTaxAmount, setCheckoutTaxAmount] = useState<number>(0);
   const [calculatingTax, setCalculatingTax] = useState<boolean>(false);
+
+  // Loyalty Points State
+  const [redeemPoints, setRedeemPoints] = useState<number>(0);
+  const [pointsDiscount, setPointsDiscount] = useState<number>(0);
+  const [estimatedPointsEarned, setEstimatedPointsEarned] = useState<number>(0);
+  const [loyaltyConfig, setLoyaltyConfig] = useState<any>(null);
+  const [isApplyingPoints, setIsApplyingPoints] = useState<boolean>(false);
 
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [formError, setFormError] = useState('');
@@ -249,6 +256,9 @@ export default function CustomerStore() {
       .then((data) => {
         if (data && data.success && data.customer) {
           setCustomer(data.customer);
+          if (data.loyaltyConfig) {
+            setLoyaltyConfig(data.loyaltyConfig);
+          }
           setCheckoutForm((prev) => ({
             ...prev,
             customerName: data.customer.name || prev.customerName,
@@ -544,14 +554,19 @@ export default function CustomerStore() {
       sum + (item.selectedVariant ? item.selectedVariant.price : item.product.price) * item.quantity,
     0
   );
-  const cartGrandTotal = Number((cartSubtotal + (checkoutTaxAmount || 0)).toFixed(2));
+  const effectivePointsDiscount = isApplyingPoints ? pointsDiscount : 0;
+  const cartGrandTotal = Number(
+    Math.max(0, cartSubtotal - effectivePointsDiscount + (checkoutTaxAmount || 0)).toFixed(2)
+  );
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Recalculate US Sales Tax dynamically whenever destination state, zip, or cart items change
+  // Recalculate US Sales Tax dynamically whenever destination state, zip, cart items, or points change
   useEffect(() => {
     if (!isCheckoutOpen || cart.length === 0) {
       setCheckoutTaxResult(null);
       setCheckoutTaxAmount(0);
+      setPointsDiscount(0);
+      setEstimatedPointsEarned(0);
       return;
     }
 
@@ -583,6 +598,9 @@ export default function CustomerStore() {
             })),
             discountAmount: 0,
             shippingFee: 0,
+            redeemPoints: isApplyingPoints ? redeemPoints : 0,
+            customerId: customer?._id || customer?.id || undefined,
+            customerPointsBalance: customer?.pointsBalance || 0,
           }),
           signal: controller.signal,
         });
@@ -591,6 +609,11 @@ export default function CustomerStore() {
         if (data.success && data.data) {
           setCheckoutTaxResult(data.data.taxSnapshot);
           setCheckoutTaxAmount(Number(data.data.taxAmount) || 0);
+          setPointsDiscount(Number(data.data.pointsDiscount) || 0);
+          setEstimatedPointsEarned(Number(data.data.estimatedPointsEarned) || 0);
+          if (data.data.loyaltyConfig) {
+            setLoyaltyConfig(data.data.loyaltyConfig);
+          }
         }
       } catch (err: any) {
         if (err.name !== 'AbortError') {
@@ -607,7 +630,15 @@ export default function CustomerStore() {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [isCheckoutOpen, cart, checkoutForm.state, checkoutForm.zipCode]);
+  }, [
+    isCheckoutOpen,
+    cart,
+    checkoutForm.state,
+    checkoutForm.zipCode,
+    isApplyingPoints,
+    redeemPoints,
+    customer,
+  ]);
 
   // Search tracking
   const handleSearchTracking = async (e: React.FormEvent) => {
@@ -680,7 +711,7 @@ export default function CustomerStore() {
       }, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zipCode}`;
 
       const payload = {
-        customerId: customer?.id || undefined,
+        customerId: customer?._id || customer?.id || undefined,
         customerName: checkoutForm.customerName.trim(),
         customerPhone: checkoutForm.customerPhone.trim(),
         customerEmail: checkoutForm.customerEmail.trim(),
@@ -695,6 +726,7 @@ export default function CustomerStore() {
         pincode: checkoutForm.zipCode.trim(),
         paymentMethod: currentMethod,
         transactionId: '',
+        redeemPoints: isApplyingPoints ? redeemPoints : 0,
         items: cart.map((item) => ({
           productId: item.product._id,
           name: item.selectedVariant
@@ -707,6 +739,19 @@ export default function CustomerStore() {
           image: item.product.image,
         })),
         totalAmount: cartGrandTotal,
+      };
+
+      const refreshCustomerAccount = () => {
+        fetch('/api/customer/me')
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.success && data.customer) {
+              setCustomer(data.customer);
+            }
+          })
+          .catch(() => {});
+        setIsApplyingPoints(false);
+        setRedeemPoints(0);
       };
 
       if (currentMethod === 'Razorpay') {
@@ -723,6 +768,8 @@ export default function CustomerStore() {
             zipCode: payload.zipCode,
             customerEmail: payload.customerEmail,
             customerPhone: payload.customerPhone,
+            customerId: customer?._id || customer?.id || undefined,
+            redeemPoints: isApplyingPoints ? redeemPoints : 0,
           }),
         });
 
@@ -755,6 +802,7 @@ export default function CustomerStore() {
             setIsCheckoutOpen(false);
             setIsCartOpen(false);
             localStorage.removeItem('if_cart');
+            refreshCustomerAccount();
           } else {
             setFormError(verifyData.message || 'Payment verification failed.');
           }
@@ -796,6 +844,7 @@ export default function CustomerStore() {
                 setIsCheckoutOpen(false);
                 setIsCartOpen(false);
                 localStorage.removeItem('if_cart');
+                refreshCustomerAccount();
               } else {
                 setFormError(verifyData.message || 'Payment verification failed.');
               }
@@ -850,6 +899,7 @@ export default function CustomerStore() {
         setIsCheckoutOpen(false);
         setIsCartOpen(false);
         localStorage.removeItem('if_cart');
+        refreshCustomerAccount();
       } else {
         setFormError(data.message || 'Unable to place order. Please check details and try again.');
       }
@@ -1817,6 +1867,114 @@ export default function CustomerStore() {
                   </div>
                 </div>
 
+                {/* CUSTOMER LOYALTY REWARDS & POINTS REDEMPTION */}
+                {customer && loyaltyConfig?.enabled !== false && (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-yellow-50/40 border border-amber-200/90 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
+                            Customer Loyalty Rewards
+                          </h4>
+                          <p className="text-[11px] text-[#64748B]">
+                            Your balance: <strong className="text-amber-800 font-bold">⭐ {customer.pointsBalance || 0} pts</strong>
+                            {customer.pointsBalance ? ` (≈ ${formatCurrency((customer.pointsBalance || 0) / (loyaltyConfig?.pointsPerDollar || 10))} value)` : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      {estimatedPointsEarned > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                          +{estimatedPointsEarned} pts on this order
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Redemption Controls */}
+                    {loyaltyConfig?.redemptionEnabled !== false && (customer.pointsBalance || 0) > 0 ? (
+                      <div className="pt-2 border-t border-amber-200/60 space-y-2">
+                        <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={isApplyingPoints}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setIsApplyingPoints(checked);
+                              if (checked && redeemPoints === 0) {
+                                const ptsPerDollar = loyaltyConfig?.pointsPerDollar || 10;
+                                const maxOrderPts = Math.floor(cartSubtotal * ptsPerDollar);
+                                const available = customer.pointsBalance || 0;
+                                const defaultPts = Math.min(available, maxOrderPts);
+                                setRedeemPoints(defaultPts);
+                              }
+                            }}
+                            className="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer"
+                          />
+                          <div className="text-xs">
+                            <span className="font-bold text-[#163B5C]">
+                              Redeem Loyalty Points for an instant discount
+                            </span>
+                            <p className="text-[11px] text-[#64748B]">
+                              Apply your points towards this order ({loyaltyConfig?.pointsPerDollar || 10} pts = $1.00 USD).
+                            </p>
+                          </div>
+                        </label>
+
+                        {isApplyingPoints && (
+                          <div className="pl-6 pt-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min={loyaltyConfig?.minPointsToRedeem || 1}
+                                max={customer.pointsBalance || 0}
+                                step="1"
+                                value={redeemPoints || ''}
+                                onChange={(e) => {
+                                  const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                  const max = customer.pointsBalance || 0;
+                                  setRedeemPoints(Math.min(val, max));
+                                }}
+                                className="w-28 px-3 py-1.5 rounded-lg border border-amber-300 text-xs font-bold text-amber-900 focus:outline-none focus:border-amber-500 bg-white"
+                                placeholder="Points"
+                              />
+                              <span className="text-xs text-[#64748B]">pts</span>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const ptsPerDollar = loyaltyConfig?.pointsPerDollar || 10;
+                                  const maxOrderPts = Math.floor(cartSubtotal * ptsPerDollar);
+                                  const maxAllowed = Math.min(customer.pointsBalance || 0, maxOrderPts);
+                                  setRedeemPoints(maxAllowed);
+                                }}
+                                className="text-[11px] font-bold text-amber-700 hover:text-amber-800 underline ml-2 cursor-pointer"
+                              >
+                                Use Max Points
+                              </button>
+                            </div>
+
+                            {effectivePointsDiscount > 0 && (
+                              <p className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                                <Check className="w-3.5 h-3.5" />
+                                Instant discount applied: -{formatCurrency(effectivePointsDiscount)}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-[#64748B] pt-1">
+                        {loyaltyConfig?.redemptionEnabled === false
+                          ? 'Points redemption is currently disabled by store administration.'
+                          : `Earn reward points on every order! (${loyaltyConfig?.pointsEarned || 10} pts for every $${loyaltyConfig?.spendAmount || 100} spent)`}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* REAL BACKEND PAYMENT OPTIONS (SOURCED DIRECTLY FROM DATABASE SETTINGS) */}
                 <div className="pt-2 border-t border-gray-100 space-y-2.5">
                   <div className="flex items-center justify-between">
@@ -1914,6 +2072,15 @@ export default function CustomerStore() {
                     <span>Subtotal:</span>
                     <span className="tabular-nums font-medium text-gray-900">{formatCurrency(cartSubtotal)}</span>
                   </div>
+                  {effectivePointsDiscount > 0 && (
+                    <div className="flex justify-between items-center text-purple-700 font-semibold bg-purple-50 px-2.5 py-1.5 rounded-xl border border-purple-100">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                        <span>Loyalty Points Discount ({redeemPoints} pts):</span>
+                      </span>
+                      <span className="tabular-nums">-{formatCurrency(effectivePointsDiscount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-gray-600 font-normal">
                     <span>
                       Estimated Sales Tax{checkoutTaxResult?.effectiveRate ? ` (${(checkoutTaxResult.effectiveRate * 100).toFixed(1)}%)` : ''}:
@@ -1989,6 +2156,21 @@ export default function CustomerStore() {
                     {orderSuccess.paymentMethod === 'Razorpay' ? 'Razorpay Payment ID:' : 'Transaction ID:'}
                   </span>
                   <code className="font-mono font-medium text-gray-800">{orderSuccess.transactionId}</code>
+                </div>
+              )}
+              {orderSuccess.pointsEarned > 0 && (
+                <div className="flex justify-between items-center text-[11px] bg-emerald-50 text-emerald-800 p-2 rounded-lg border border-emerald-100 font-semibold">
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Loyalty Points Earned:</span>
+                  </span>
+                  <span>+{orderSuccess.pointsEarned} pts</span>
+                </div>
+              )}
+              {orderSuccess.pointsRedeemed > 0 && (
+                <div className="flex justify-between items-center text-[11px] bg-purple-50 text-purple-800 p-2 rounded-lg border border-purple-100 font-semibold">
+                  <span>Points Redeemed:</span>
+                  <span>{orderSuccess.pointsRedeemed} pts (-{formatCurrency(orderSuccess.pointsDiscount || 0)})</span>
                 </div>
               )}
               <div className="flex justify-between items-start pt-1 border-t border-gray-200/60">

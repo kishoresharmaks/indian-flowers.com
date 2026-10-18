@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/db';
 import Customer from '@/models/Customer';
 import Order from '@/models/Order';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+import { manualAdjustCustomerPoints } from '@/lib/loyalty/loyaltyEngine';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +59,10 @@ export async function GET(req: NextRequest) {
         role: c.role || 'CUSTOMER',
         createdAt: c.createdAt,
         updatedAt: c.updatedAt,
+        pointsBalance: Number(c.pointsBalance) || 0,
+        totalPointsEarned: Number(c.totalPointsEarned) || 0,
+        totalPointsRedeemed: Number(c.totalPointsRedeemed) || 0,
+        pointsHistory: Array.isArray(c.pointsHistory) ? c.pointsHistory : [],
         totalOrders: userOrders.length,
         totalSpent: Math.round(totalSpent * 100) / 100,
         lastOrderDate,
@@ -75,6 +80,9 @@ export async function GET(req: NextRequest) {
           customerName: ord.customerName,
           customerPhone: ord.customerPhone,
           customerEmail: ord.customerEmail,
+          pointsEarned: Number(ord.pointsEarned) || 0,
+          pointsRedeemed: Number(ord.pointsRedeemed) || 0,
+          pointsDiscount: Number(ord.pointsDiscount) || 0,
           items: Array.isArray(ord.items)
             ? ord.items.map((it: any) => ({
                 productId: it.productId,
@@ -100,6 +108,8 @@ export async function GET(req: NextRequest) {
     const activeCount = customersWithOrders.filter((c) => c.isActive).length;
     const totalCustomerOrders = customersWithOrders.reduce((sum, c) => sum + c.totalOrders, 0);
     const totalCustomerRevenue = Math.round(customersWithOrders.reduce((sum, c) => sum + c.totalSpent, 0) * 100) / 100;
+    const totalPointsInCirculation = customersWithOrders.reduce((sum, c) => sum + (c.pointsBalance || 0), 0);
+    const totalPointsRedeemedAll = customersWithOrders.reduce((sum, c) => sum + (c.totalPointsRedeemed || 0), 0);
 
     return NextResponse.json({
       success: true,
@@ -109,6 +119,8 @@ export async function GET(req: NextRequest) {
         activeCustomers: activeCount,
         totalOrders: totalCustomerOrders,
         totalRevenue: totalCustomerRevenue,
+        totalPointsInCirculation,
+        totalPointsRedeemedAll,
       },
     });
   } catch (error: any) {
@@ -127,6 +139,29 @@ export async function PATCH(req: NextRequest) {
 
     if (!customerId) {
       return NextResponse.json({ success: false, message: 'Customer ID is required.' }, { status: 400 });
+    }
+
+    // Support manual loyalty points adjustment
+    if (body.action === 'adjust_points') {
+      const { pointsAdjustment, reason, adminUsername } = body;
+      const numAdjustment = Number(pointsAdjustment);
+      if (isNaN(numAdjustment) || numAdjustment === 0) {
+        return NextResponse.json({ success: false, message: 'Valid non-zero points adjustment is required.' }, { status: 400 });
+      }
+      const result = await manualAdjustCustomerPoints(
+        customerId,
+        numAdjustment,
+        reason || 'Admin manual balance adjustment',
+        adminUsername || 'Admin'
+      );
+      if (!result.success) {
+        return NextResponse.json({ success: false, message: result.message }, { status: 400 });
+      }
+      return NextResponse.json({
+        success: true,
+        message: result.message,
+        newBalance: result.newBalance,
+      });
     }
 
     const updateFields: any = {};

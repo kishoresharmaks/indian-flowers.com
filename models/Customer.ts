@@ -1,5 +1,15 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
 
+export interface IPointHistoryEntry {
+  date: Date;
+  type: 'EARNED' | 'REDEEMED' | 'REFUND_DEDUCTED' | 'REFUND_RESTORED' | 'ADJUSTED';
+  points: number;
+  balanceAfter: number;
+  orderId?: string;
+  reason: string;
+  dollarEquivalent?: number;
+}
+
 export interface ICustomer extends Document {
   name: string;
   email: string;
@@ -14,6 +24,11 @@ export interface ICustomer extends Document {
   country: string; // Default: 'US'
   isActive: boolean;
   role: 'CUSTOMER';
+  // Customer Loyalty / Reward Pointing System
+  pointsBalance: number;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+  pointsHistory: IPointHistoryEntry[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +48,25 @@ const CustomerSchema = new Schema<ICustomer>(
     country: { type: String, default: 'US', trim: true },
     isActive: { type: Boolean, default: true },
     role: { type: String, default: 'CUSTOMER' },
+    // Loyalty Pointing Fields
+    pointsBalance: { type: Number, default: 0, min: 0 },
+    totalPointsEarned: { type: Number, default: 0, min: 0 },
+    totalPointsRedeemed: { type: Number, default: 0, min: 0 },
+    pointsHistory: [
+      {
+        date: { type: Date, default: Date.now },
+        type: {
+          type: String,
+          enum: ['EARNED', 'REDEEMED', 'REFUND_DEDUCTED', 'REFUND_RESTORED', 'ADJUSTED'],
+          required: true,
+        },
+        points: { type: Number, required: true },
+        balanceAfter: { type: Number, required: true },
+        orderId: { type: String, default: '' },
+        reason: { type: String, default: '' },
+        dollarEquivalent: { type: Number, default: 0 },
+      },
+    ],
   },
   { timestamps: true }
 );
@@ -40,6 +74,7 @@ const CustomerSchema = new Schema<ICustomer>(
 CustomerSchema.index({ phone: 1 });
 CustomerSchema.index({ state: 1 });
 CustomerSchema.index({ zipCode: 1 });
+CustomerSchema.index({ pointsBalance: -1 });
 
 const Customer: Model<ICustomer> =
   mongoose.models.Customer || mongoose.model<ICustomer>('Customer', CustomerSchema);

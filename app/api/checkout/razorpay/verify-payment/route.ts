@@ -3,12 +3,20 @@ import connectToDatabase from '@/lib/db';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
 import Party from '@/models/Party';
+import Customer from '@/models/Customer';
 import { getRazorpayConfig, verifyRazorpaySignature } from '@/lib/razorpay';
 import { calculateSalesTax, TaxLineItem } from '@/lib/tax';
 import { toCents, fromCents } from '@/lib/tax/taxProvider';
 import { validateTaxAddress, normalizeStateCode, formatUSZip } from '@/lib/tax/jurisdiction';
 import { getCustomerFromToken } from '@/lib/customerAuth';
 import { captureServerEvent } from '@/lib/telemetry';
+import {
+  getLoyaltyConfig,
+  calculatePointsEarned,
+  calculatePointsDiscount,
+  creditOrderPoints,
+  debitOrderPoints,
+} from '@/lib/loyalty/loyaltyEngine';
 
 export async function POST(request: Request) {
   try {
@@ -68,6 +76,7 @@ export async function POST(request: Request) {
       items,
       shippingFee = 0,
       discountAmount = 0,
+      redeemPoints = 0,
     } = orderDetails;
 
     if (!customerName || !customerPhone || !items || !Array.isArray(items) || items.length === 0) {
@@ -144,8 +153,37 @@ export async function POST(request: Request) {
     }
 
     const subtotal = fromCents(subtotalCents);
-    const safeDiscount = Math.max(0, Number(discountAmount) || 0);
-    const safeDiscountCents = toCents(safeDiscount);
+
+    // Resolve customer ID from orderDetails or active customer session cookie
+    const customerSession = getCustomerFromToken(request);
+    const finalCustomerId = providedCustomerId || customerSession?.customerId || undefined;
+
+    // Calculate loyalty points redemption discount if requested
+    const loyaltyConfig = await getLoyaltyConfig();
+    let pointsToRedeem = 0;
+    let pointsDiscountUSD = 0;
+
+    if (finalCustomerId && Number(redeemPoints) > 0) {
+      const customer = await Customer.findById(finalCustomerId);
+      const availablePoints = customer?.pointsBalance || 0;
+      const requestedPoints = Math.min(Math.floor(Number(redeemPoints)), availablePoints);
+
+      if (requestedPoints > 0) {
+        const loyaltyCalc = calculatePointsDiscount(requestedPoints, subtotal, loyaltyConfig);
+        if (loyaltyCalc.isValid && loyaltyCalc.discountAmount > 0) {
+          pointsToRedeem = loyaltyCalc.pointsUsed;
+          pointsDiscountUSD = loyaltyCalc.discountAmount;
+        }
+      }
+    }
+
+    const couponDiscountCents = Math.min(toCents(discountAmount), subtotalCents);
+    const pointsDiscountCents = Math.min(
+      toCents(pointsDiscountUSD),
+      Math.max(0, subtotalCents - couponDiscountCents)
+    );
+    const totalDiscountCents = couponDiscountCents + pointsDiscountCents;
+    const safeDiscount = fromCents(totalDiscountCents);
 
     // 5. Authoritative US Tax Calculation
     const taxResult = await calculateSalesTax({
@@ -165,7 +203,7 @@ export async function POST(request: Request) {
     const calculatedTax = taxResult.taxAmount || 0;
     const safeShippingFee = Math.max(0, Number(shippingFee) || 0);
     const totalAmountCents =
-      subtotalCents - safeDiscountCents + toCents(calculatedTax) + toCents(safeShippingFee);
+      subtotalCents - totalDiscountCents + toCents(calculatedTax) + toCents(safeShippingFee);
     const totalAmount = fromCents(Math.max(0, totalAmountCents));
 
     // 6. Generate Sequential Order ID
@@ -173,9 +211,9 @@ export async function POST(request: Request) {
     const nextSeqNumber = 1001 + orderCount;
     const orderId = `ORD-${nextSeqNumber}`;
 
-    // Resolve customer ID from orderDetails or active customer session cookie
-    const customerSession = getCustomerFromToken(request);
-    const finalCustomerId = providedCustomerId || customerSession?.customerId || undefined;
+    // Calculate points earned on net merchandise spend
+    const netMerchandiseSpend = Math.max(0, subtotal - fromCents(totalDiscountCents));
+    const pointsEarned = calculatePointsEarned(netMerchandiseSpend, loyaltyConfig);
 
     // 7. Persist Confirmed & Paid Order
     const newOrder = await Order.create({
@@ -198,6 +236,10 @@ export async function POST(request: Request) {
       items: processedItems,
       subtotal,
       discountAmount: safeDiscount,
+      pointsRedeemed: pointsToRedeem,
+      pointsDiscount: fromCents(pointsDiscountCents),
+      pointsEarned,
+      pointsAwarded: true,
       shippingFee: safeShippingFee,
       totalTax: calculatedTax,
       totalGst: 0,
@@ -208,6 +250,24 @@ export async function POST(request: Request) {
       transactionId: razorpay_payment_id,
       status: 'Processing',
     });
+
+    // Debit redeemed points from customer profile
+    if (finalCustomerId && pointsToRedeem > 0) {
+      try {
+        await debitOrderPoints(finalCustomerId, orderId, pointsToRedeem, fromCents(pointsDiscountCents));
+      } catch (loyaltyErr) {
+        console.error('Failed to debit redeemed loyalty points:', loyaltyErr);
+      }
+    }
+
+    // Credit points earned for paid order
+    if (finalCustomerId && pointsEarned > 0) {
+      try {
+        await creditOrderPoints(finalCustomerId, orderId, netMerchandiseSpend, loyaltyConfig);
+      } catch (creditErr) {
+        console.error('Failed to credit loyalty points earned:', creditErr);
+      }
+    }
 
     // 8. Auto-sync Customer into Party Directory
     try {

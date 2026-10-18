@@ -41,6 +41,11 @@ export interface IOrder extends Document {
   discountType?: 'FLAT' | 'PERCENTAGE';
   discountValue?: number;
   discountAmount?: number;
+  // Customer Loyalty / Reward Points
+  pointsRedeemed?: number;
+  pointsDiscount?: number;
+  pointsEarned?: number;
+  pointsAwarded?: boolean;
   paymentMethod: 'CreditCard' | 'COD' | 'ApplePay' | 'PayPal' | 'CASH' | 'Razorpay';
   paymentStatus: 'Pending' | 'Paid' | 'Failed' | 'Refunded' | 'Partially_Refunded';
   transactionId?: string;
@@ -105,6 +110,11 @@ const OrderSchema: Schema = new Schema(
     discountType: { type: String, enum: ['FLAT', 'PERCENTAGE'] },
     discountValue: { type: Number, default: 0 },
     discountAmount: { type: Number, default: 0 },
+    // Loyalty Pointing
+    pointsRedeemed: { type: Number, default: 0 },
+    pointsDiscount: { type: Number, default: 0 },
+    pointsEarned: { type: Number, default: 0 },
+    pointsAwarded: { type: Boolean, default: false },
     paymentMethod: {
       type: String,
       enum: ['CreditCard', 'COD', 'ApplePay', 'PayPal', 'CASH', 'Razorpay'],

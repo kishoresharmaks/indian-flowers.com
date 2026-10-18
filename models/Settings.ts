@@ -29,6 +29,14 @@ export interface ISettings extends Document {
   bankAccountNo?: string;
   bankRoutingNo?: string;
   bankHolder?: string;
+  // Customer Loyalty / Reward Pointing System Configuration
+  loyaltyEnabled?: boolean;
+  loyaltySpendAmount?: number;
+  loyaltyPointsEarned?: number;
+  loyaltyRedemptionEnabled?: boolean;
+  loyaltyPointsPerDollar?: number;
+  loyaltyMinPointsToRedeem?: number;
+  loyaltyMaxRedemptionPercent?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,6 +71,14 @@ const SettingsSchema: Schema = new Schema(
     bankAccountNo: { type: String, default: 'Checking •••• 4829' },
     bankRoutingNo: { type: String, default: '121000247' },
     bankHolder: { type: String, default: 'The Indian Flowers LLC' },
+    // Loyalty Pointing Configuration Defaults
+    loyaltyEnabled: { type: Boolean, default: true },
+    loyaltySpendAmount: { type: Number, default: 100 },
+    loyaltyPointsEarned: { type: Number, default: 10 },
+    loyaltyRedemptionEnabled: { type: Boolean, default: true },
+    loyaltyPointsPerDollar: { type: Number, default: 10 },
+    loyaltyMinPointsToRedeem: { type: Number, default: 10 },
+    loyaltyMaxRedemptionPercent: { type: Number, default: 100 },
   },
   { timestamps: true }
 );

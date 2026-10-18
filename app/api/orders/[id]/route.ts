@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/db';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
 import { captureServerEvent, captureServerException } from '@/lib/telemetry';
+import { reversePointsOnRefund, creditOrderPoints } from '@/lib/loyalty/loyaltyEngine';
 
 export async function PATCH(
   request: Request,
@@ -87,6 +88,13 @@ export async function PATCH(
         } catch (restockErr) {
           console.error('Inventory restocking warning on refund:', restockErr);
         }
+      }
+
+      // Reverse loyalty points (deduct points awarded, restore points redeemed)
+      try {
+        await reversePointsOnRefund(existingOrder, requestedRefund);
+      } catch (loyaltyErr) {
+        console.error('Failed to reverse loyalty points on refund:', loyaltyErr);
       }
 
       const updatedOrder = await Order.findByIdAndUpdate(id, updateFields, {
@@ -195,6 +203,38 @@ export async function PATCH(
         );
       }
       updateFields.paymentStatus = body.paymentStatus;
+    }
+
+    // Award loyalty points if transitioning to 'Paid' or 'Completed' for customer order
+    const willBePaid =
+      updateFields.paymentStatus === 'Paid' ||
+      (!updateFields.paymentStatus && existingOrder.paymentStatus === 'Paid');
+    const willBeCompleted =
+      updateFields.status === 'Completed' ||
+      (!updateFields.status && existingOrder.status === 'Completed');
+
+    if (
+      (willBePaid || willBeCompleted) &&
+      !existingOrder.pointsAwarded &&
+      existingOrder.customerId
+    ) {
+      try {
+        const netSpend = Math.max(
+          0,
+          (existingOrder.subtotal || 0) - (existingOrder.discountAmount || 0)
+        );
+        const awarded = await creditOrderPoints(
+          String(existingOrder.customerId),
+          existingOrder.orderId,
+          netSpend
+        );
+        if (awarded > 0) {
+          updateFields.pointsEarned = awarded;
+          updateFields.pointsAwarded = true;
+        }
+      } catch (creditErr) {
+        console.error('Failed to credit loyalty points on order status update:', creditErr);
+      }
     }
 
     const updatedOrder = await Order.findByIdAndUpdate(id, updateFields, {

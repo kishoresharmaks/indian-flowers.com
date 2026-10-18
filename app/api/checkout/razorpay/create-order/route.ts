@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server';
 import { createRazorpayOrder, getRazorpayConfig } from '@/lib/razorpay';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
+import Customer from '@/models/Customer';
 import { calculateSalesTax, TaxLineItem } from '@/lib/tax';
 import { toCents, fromCents } from '@/lib/tax/taxProvider';
 import { validateCheckoutForm } from '@/lib/checkoutValidation';
+import { getCustomerFromToken } from '@/lib/customerAuth';
+import { getLoyaltyConfig, calculatePointsDiscount } from '@/lib/loyalty/loyaltyEngine';
 
 export async function POST(request: Request) {
   try {
@@ -12,9 +15,11 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const {
+      customerId: providedCustomerId,
       items,
       shippingFee = 0,
       discountAmount = 0,
+      redeemPoints = 0,
       customerName,
       streetAddress,
       aptSuite,
@@ -90,7 +95,33 @@ export async function POST(request: Request) {
       });
     }
 
-    // 2. Authoritative US Sales Tax Calculation
+    // 2. Authoritative US Sales Tax Calculation & Loyalty Points Discount
+    const customerSession = getCustomerFromToken(request);
+    const finalCustomerId = providedCustomerId || customerSession?.customerId || undefined;
+
+    const loyaltyConfig = await getLoyaltyConfig();
+    let pointsDiscountUSD = 0;
+    if (finalCustomerId && Number(redeemPoints) > 0) {
+      const customer = await Customer.findById(finalCustomerId);
+      const availablePoints = customer?.pointsBalance || 0;
+      const requestedPoints = Math.min(Math.floor(Number(redeemPoints)), availablePoints);
+
+      if (requestedPoints > 0) {
+        const loyaltyCalc = calculatePointsDiscount(requestedPoints, calculatedSubtotal, loyaltyConfig);
+        if (loyaltyCalc.isValid && loyaltyCalc.discountAmount > 0) {
+          pointsDiscountUSD = loyaltyCalc.discountAmount;
+        }
+      }
+    }
+
+    const couponDiscountCents = Math.min(toCents(discountAmount), toCents(calculatedSubtotal));
+    const pointsDiscountCents = Math.min(
+      toCents(pointsDiscountUSD),
+      Math.max(0, toCents(calculatedSubtotal) - couponDiscountCents)
+    );
+    const totalDiscountCents = couponDiscountCents + pointsDiscountCents;
+    const safeDiscount = fromCents(totalDiscountCents);
+
     const taxResult = await calculateSalesTax({
       shippingAddress: {
         streetAddress: streetAddress || '',
@@ -102,16 +133,15 @@ export async function POST(request: Request) {
       },
       items: taxItems,
       shippingFee: Number(shippingFee) || 0,
-      discountAmount: Number(discountAmount) || 0,
+      discountAmount: safeDiscount,
     });
 
     const calculatedTax = taxResult.taxAmount || 0;
     const safeShipping = Math.max(0, Number(shippingFee) || 0);
-    const safeDiscount = Math.max(0, Number(discountAmount) || 0);
 
     const totalCents =
       toCents(calculatedSubtotal) -
-      toCents(safeDiscount) +
+      totalDiscountCents +
       toCents(calculatedTax) +
       toCents(safeShipping);
 

@@ -460,6 +460,14 @@ export default function AdminDashboard() {
     bankRoutingNo: '121000247',
     bankHolder: 'Indian Flowers LLC',
     logoDataUrl: '/indian-flowers-logo.svg',
+    // Loyalty Points Program Settings
+    loyaltyEnabled: true,
+    loyaltySpendAmount: 100,
+    loyaltyPointsEarned: 10,
+    loyaltyRedemptionEnabled: true,
+    loyaltyPointsPerDollar: 10,
+    loyaltyMinPointsToRedeem: 10,
+    loyaltyMaxRedemptionPercent: 100,
   });
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
@@ -670,6 +678,13 @@ export default function AdminDashboard() {
           bankRoutingNo: data.data.bankRoutingNo || '121000247',
           bankHolder: data.data.bankHolder || 'Indian Flowers LLC',
           logoDataUrl: data.data.logoDataUrl || '/indian-flowers-logo.svg',
+          loyaltyEnabled: data.data.loyaltyEnabled !== false,
+          loyaltySpendAmount: data.data.loyaltySpendAmount ?? 100,
+          loyaltyPointsEarned: data.data.loyaltyPointsEarned ?? 10,
+          loyaltyRedemptionEnabled: data.data.loyaltyRedemptionEnabled !== false,
+          loyaltyPointsPerDollar: data.data.loyaltyPointsPerDollar ?? 10,
+          loyaltyMinPointsToRedeem: data.data.loyaltyMinPointsToRedeem ?? 10,
+          loyaltyMaxRedemptionPercent: data.data.loyaltyMaxRedemptionPercent ?? 100,
         });
       }
     } catch (err) {
@@ -3762,6 +3777,175 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   </label>
                 </div>
 
+                {/* Customer Loyalty Points & Rewards System Card */}
+                <div className="p-5 sm:p-6 rounded-2xl border border-[#E8EDF2] bg-[#FFFCFB] space-y-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-black">
+                        <Tag className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-[#163B5C]">Customer Loyalty Points &amp; Rewards Program</h3>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              paymentSettings.loyaltyEnabled
+                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                : 'bg-rose-100 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            {paymentSettings.loyaltyEnabled ? 'Active' : 'Disabled'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#64748B] mt-0.5">
+                          Award customers reward points for completed purchases in US Dollars ($ USD) and allow them to redeem points as order discounts.
+                        </p>
+                      </div>
+                    </div>
+
+                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={paymentSettings.loyaltyEnabled}
+                        onChange={(e) =>
+                          setPaymentSettings({ ...paymentSettings, loyaltyEnabled: e.target.checked })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-12 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#0B3B24]"></div>
+                    </label>
+                  </div>
+
+                  {paymentSettings.loyaltyEnabled && (
+                    <div className="pt-4 border-t border-[#E8EDF2] space-y-4">
+                      <div>
+                        <h4 className="font-bold text-xs text-[#163B5C] uppercase tracking-wider mb-2">Points Earning Rule</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <label className="text-xs font-bold text-[#163B5C] block">
+                            Spend Amount ($ USD)
+                            <div className="mt-1 relative rounded-xl border border-[#E8EDF2] bg-white">
+                              <span className="absolute left-3 top-2.5 text-xs text-gray-500 font-bold">$</span>
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={paymentSettings.loyaltySpendAmount}
+                                onChange={(e) =>
+                                  setPaymentSettings({
+                                    ...paymentSettings,
+                                    loyaltySpendAmount: Math.max(1, Number(e.target.value) || 1),
+                                  })
+                                }
+                                className="w-full pl-7 pr-3 py-2 text-xs font-medium outline-none rounded-xl"
+                              />
+                            </div>
+                            <span className="text-[10px] text-[#64748B] mt-0.5 block">Amount customer must spend (e.g. $100)</span>
+                          </label>
+
+                          <label className="text-xs font-bold text-[#163B5C] block">
+                            Points Earned
+                            <div className="mt-1 relative rounded-xl border border-[#E8EDF2] bg-white">
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={paymentSettings.loyaltyPointsEarned}
+                                onChange={(e) =>
+                                  setPaymentSettings({
+                                    ...paymentSettings,
+                                    loyaltyPointsEarned: Math.max(1, Number(e.target.value) || 1),
+                                  })
+                                }
+                                className="w-full px-3 py-2 text-xs font-medium outline-none rounded-xl"
+                              />
+                            </div>
+                            <span className="text-[10px] text-[#64748B] mt-0.5 block">Points awarded per spend tier (e.g. 10 points)</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-[#E8EDF2]">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <h4 className="font-bold text-xs text-[#163B5C] uppercase tracking-wider">Points Redemption &amp; Claiming</h4>
+                            <p className="text-[11px] text-[#64748B]">Allow customers to convert accrued reward points into cash discounts at checkout.</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={paymentSettings.loyaltyRedemptionEnabled}
+                              onChange={(e) =>
+                                setPaymentSettings({ ...paymentSettings, loyaltyRedemptionEnabled: e.target.checked })
+                              }
+                              className="sr-only peer"
+                            />
+                            <div className="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0B3B24]"></div>
+                          </label>
+                        </div>
+
+                        {paymentSettings.loyaltyRedemptionEnabled && (
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label className="text-xs font-bold text-[#163B5C] block">
+                              Points per $1.00 USD Discount
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={paymentSettings.loyaltyPointsPerDollar}
+                                onChange={(e) =>
+                                  setPaymentSettings({
+                                    ...paymentSettings,
+                                    loyaltyPointsPerDollar: Math.max(1, Number(e.target.value) || 1),
+                                  })
+                                }
+                                className="mt-1 w-full px-3 py-2 rounded-xl border border-[#E8EDF2] bg-white text-xs font-medium outline-none focus:border-[#ED3500]"
+                              />
+                              <span className="text-[10px] text-[#64748B] mt-0.5 block">e.g. 10 pts = $1.00 (1 pt = $0.10)</span>
+                            </label>
+
+                            <label className="text-xs font-bold text-[#163B5C] block">
+                              Min Points to Claim
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={paymentSettings.loyaltyMinPointsToRedeem}
+                                onChange={(e) =>
+                                  setPaymentSettings({
+                                    ...paymentSettings,
+                                    loyaltyMinPointsToRedeem: Math.max(0, Number(e.target.value) || 0),
+                                  })
+                                }
+                                className="mt-1 w-full px-3 py-2 rounded-xl border border-[#E8EDF2] bg-white text-xs font-medium outline-none focus:border-[#ED3500]"
+                              />
+                              <span className="text-[10px] text-[#64748B] mt-0.5 block">Minimum threshold to redeem (e.g. 10)</span>
+                            </label>
+
+                            <label className="text-xs font-bold text-[#163B5C] block">
+                              Max Discount (% of Subtotal)
+                              <input
+                                type="number"
+                                min="1"
+                                max="100"
+                                step="1"
+                                value={paymentSettings.loyaltyMaxRedemptionPercent}
+                                onChange={(e) =>
+                                  setPaymentSettings({
+                                    ...paymentSettings,
+                                    loyaltyMaxRedemptionPercent: Math.min(100, Math.max(1, Number(e.target.value) || 100)),
+                                  })
+                                }
+                                className="mt-1 w-full px-3 py-2 rounded-xl border border-[#E8EDF2] bg-white text-xs font-medium outline-none focus:border-[#ED3500]"
+                              />
+                              <span className="text-[10px] text-[#64748B] mt-0.5 block">Max cap per order (e.g. 100%)</span>
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
                   disabled={isSubmittingSettings}
@@ -3770,7 +3954,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   {isSubmittingSettings ? (
                     <RefreshCw className="w-5 h-5 animate-spin" />
                   ) : (
-                    'Save Payment Settings'
+                    'Save Settings & Loyalty Configuration'
                   )}
                 </button>
               </form>

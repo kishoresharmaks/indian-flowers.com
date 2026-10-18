@@ -52,8 +52,25 @@ export async function POST(request: NextRequest) {
     if (typeof enableCOD === 'boolean') updateFields.enableCOD = enableCOD;
     if (typeof razorpayKeyId === 'string') updateFields.razorpayKeyId = razorpayKeyId.trim();
     if (typeof razorpayKeySecret === 'string') updateFields.razorpayKeySecret = razorpayKeySecret.trim();
-    updateFields.currency = STORE_CURRENCY;
-    updateFields.locale = STORE_LOCALE;
+    // Loyalty System Configurations
+    if (typeof body.loyaltyEnabled === 'boolean') updateFields.loyaltyEnabled = body.loyaltyEnabled;
+    if (typeof body.loyaltyRedemptionEnabled === 'boolean') updateFields.loyaltyRedemptionEnabled = body.loyaltyRedemptionEnabled;
+    if (body.loyaltySpendAmount !== undefined) {
+      updateFields.loyaltySpendAmount = Math.max(1, Number(body.loyaltySpendAmount) || 100);
+    }
+    if (body.loyaltyPointsEarned !== undefined) {
+      updateFields.loyaltyPointsEarned = Math.max(1, Number(body.loyaltyPointsEarned) || 10);
+    }
+    if (body.loyaltyPointsPerDollar !== undefined) {
+      updateFields.loyaltyPointsPerDollar = Math.max(0.1, Number(body.loyaltyPointsPerDollar) || 10);
+    }
+    if (body.loyaltyMinPointsToRedeem !== undefined) {
+      updateFields.loyaltyMinPointsToRedeem = Math.max(0, Number(body.loyaltyMinPointsToRedeem) || 0);
+    }
+    if (body.loyaltyMaxRedemptionPercent !== undefined) {
+      updateFields.loyaltyMaxRedemptionPercent = Math.min(100, Math.max(1, Number(body.loyaltyMaxRedemptionPercent) || 100));
+    }
+
     const companyStringFields = [
       'siteName', 'tagline', 'businessName', 'domain', 'contactEmail', 'contactPhone',
       'companyAddress', 'companyCity', 'companyState', 'companyZip', 'companyCountry',

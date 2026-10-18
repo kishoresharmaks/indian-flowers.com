@@ -68,6 +68,43 @@ export async function POST(request: Request) {
     const safeDiscountCents = Math.min(toCents(discountAmount), calculatedSubtotalCents);
     const safeDiscount = fromCents(safeDiscountCents);
 
+    // Loyalty Points Redemption Evaluation
+    const { getLoyaltyConfig, calculatePointsDiscount, calculatePointsEarned } = await import(
+      '@/lib/loyalty/loyaltyEngine'
+    );
+    const loyaltyConfig = await getLoyaltyConfig();
+
+    let pointsDiscount = 0;
+    let actualPointsRedeemed = 0;
+
+    if (body.redeemPoints && Number(body.redeemPoints) > 0) {
+      let availablePoints = Infinity;
+      const { getCustomerFromToken } = await import('@/lib/customerAuth');
+      const customerSession = getCustomerFromToken(request as any);
+      const effectiveCustId = body.customerId || customerSession?.customerId;
+      if (effectiveCustId) {
+        const CustomerModel = (await import('@/models/Customer')).default;
+        const custDoc = await CustomerModel.findById(effectiveCustId).lean();
+        if (custDoc) {
+          availablePoints = custDoc.pointsBalance || 0;
+        }
+      }
+
+      const pointsToRedeemAttempt = Math.min(Number(body.redeemPoints) || 0, availablePoints);
+      const discountCalculation = calculatePointsDiscount(
+        pointsToRedeemAttempt,
+        calculatedSubtotal,
+        loyaltyConfig
+      );
+      if (discountCalculation.isValid) {
+        pointsDiscount = discountCalculation.discountAmount;
+        actualPointsRedeemed = discountCalculation.pointsUsed;
+      }
+    }
+
+    const totalDiscountCents = safeDiscountCents + toCents(pointsDiscount);
+    const totalDiscount = fromCents(totalDiscountCents);
+
     // 2. Authoritative US Sales Tax Calculation
     const taxRequest = {
       shippingAddress: {
@@ -79,7 +116,7 @@ export async function POST(request: Request) {
         country: shippingAddress?.country || 'US',
       },
       items: verifiedItems,
-      discountAmount: safeDiscount,
+      discountAmount: totalDiscount,
       shippingFee: Number(shippingFee) || 0,
     };
 
@@ -87,18 +124,25 @@ export async function POST(request: Request) {
 
     const safeShippingFee = Math.max(0, Number(shippingFee) || 0);
     const totalAmountCents =
-      calculatedSubtotalCents - safeDiscountCents + toCents(taxResult.taxAmount) + toCents(safeShippingFee);
+      calculatedSubtotalCents - totalDiscountCents + toCents(taxResult.taxAmount) + toCents(safeShippingFee);
     const totalAmount = fromCents(Math.max(0, totalAmountCents));
+
+    // Calculate estimated reward points customer will earn upon payment
+    const estimatedPointsEarned = calculatePointsEarned(totalAmount, loyaltyConfig);
 
     return NextResponse.json({
       success: true,
       data: {
         subtotal: calculatedSubtotal,
         discountAmount: safeDiscount,
+        pointsDiscount,
+        pointsRedeemed: actualPointsRedeemed,
+        estimatedPointsEarned,
         shippingFee: safeShippingFee,
         taxAmount: taxResult.taxAmount,
         totalAmount,
         taxSnapshot: taxResult,
+        loyaltyConfig,
       },
     });
   } catch (error: any) {

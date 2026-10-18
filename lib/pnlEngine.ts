@@ -14,6 +14,7 @@ export interface PnLSummary {
   salesReturnTotal: number;  // Combined Sales Returns & Refunds
   b2bSalesReturns: number;   // B2B Credit Notes Issued
   orderRefundsTotal: number; // Online & POS Customer Order Refunds
+  loyaltyPointsDiscountTotal: number; // Customer Loyalty Points Redemption Discounts
   netSalesRevenue: number;
 
   purchaseBillTotal: number; // Purchase Bills - Purchase Returns
@@ -96,6 +97,7 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
   let onlineStoreSales = 0;
   let posCounterSales = 0;
   let orderRefundsTotal = 0;
+  let loyaltyPointsDiscountTotal = 0;
 
   for (const ord of allOrders) {
     const ordTax = ord.totalTax || ord.taxSnapshot?.taxAmount || ord.totalGst || 0;
@@ -107,6 +109,11 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
       onlineStoreSales += ordSubtotal;
     }
     totalSalesTax += ordTax;
+
+    // Track points discounts redeemed by customers
+    if (ord.pointsDiscount && Number(ord.pointsDiscount) > 0) {
+      loyaltyPointsDiscountTotal += Number(ord.pointsDiscount);
+    }
 
     // Check for customer returns & refunds on this order
     const isFullRefund =
@@ -190,6 +197,7 @@ export async function calculatePnL(startDate?: string, endDate?: string): Promis
     salesReturnTotal: Math.round(salesReturnTotal * 100) / 100,
     b2bSalesReturns: Math.round(b2bSalesReturns * 100) / 100,
     orderRefundsTotal: Math.round(orderRefundsTotal * 100) / 100,
+    loyaltyPointsDiscountTotal: Math.round(loyaltyPointsDiscountTotal * 100) / 100,
     netSalesRevenue: Math.round(netSalesRevenue * 100) / 100,
     purchaseBillTotal: Math.round(purchaseBillTotal * 100) / 100,
     purchaseReturnTotal: Math.round(purchaseReturnTotal * 100) / 100,
