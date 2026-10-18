@@ -47,6 +47,8 @@ import {
   Eye,
   Printer,
   RotateCcw,
+  Sparkles,
+  Award,
 } from 'lucide-react';
 import POSCounter from './components/pos/POSCounter';
 import POSReceipt from './components/pos/POSReceipt';
@@ -139,6 +141,10 @@ interface Order {
   discountType?: 'FLAT' | 'PERCENTAGE';
   discountValue?: number;
   discountAmount?: number;
+  pointsRedeemed?: number;
+  pointsDiscount?: number;
+  pointsEarned?: number;
+  pointsAwarded?: boolean;
   paymentMethod: 'COD' | 'CASH' | 'CreditCard' | 'Razorpay' | 'ApplePay' | 'PayPal';
   paymentStatus: 'Pending' | 'Paid' | 'Failed' | 'Refunded' | 'Partially_Refunded';
   transactionId?: string;
@@ -146,7 +152,7 @@ interface Order {
   changeReturned?: number;
   cashierName?: string;
   cashierId?: string;
-  status: 'Pending' | 'Processing' | 'Completed' | 'Cancelled' | 'Refunded' | 'Returned';
+  status: 'Pending' | 'Processing' | 'Delivered' | 'Completed' | 'Cancelled' | 'Refunded' | 'Returned';
   refundAmount?: number;
   refundReason?: string;
   refundDate?: string;
@@ -1377,9 +1383,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       const data = await res.json();
       if (data.success) {
         fetchOrders();
-        setSelectedOrderForDetails((prev) =>
-          prev && prev._id === orderId ? ({ ...prev, ...updates } as Order) : prev
-        );
+        setSelectedOrderForDetails((prev) => {
+          if (!prev || prev._id !== orderId) return prev;
+          return { ...prev, ...updates, ...(data.data || {}) } as Order;
+        });
       }
     } catch (err) {
       console.error(err);
@@ -2854,6 +2861,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     { id: 'All', label: 'All', count: orders.length },
                     { id: 'Pending', label: 'Pending', count: orders.filter((o) => o.status === 'Pending').length },
                     { id: 'Processing', label: 'Processing', count: orders.filter((o) => o.status === 'Processing').length },
+                    { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length },
                     { id: 'Completed', label: 'Completed', count: orders.filter((o) => o.status === 'Completed').length },
                     { id: 'Cancelled', label: 'Cancelled', count: orders.filter((o) => o.status === 'Cancelled').length },
                     {
@@ -3101,6 +3109,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                                 >
                                   <option value="Pending">Pending</option>
                                   <option value="Processing">Processing</option>
+                                  <option value="Delivered">Delivered</option>
                                   <option value="Completed">Completed</option>
                                   <option value="Cancelled">Cancelled</option>
                                   <option value="Refunded">Refunded</option>
@@ -3115,7 +3124,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex items-center justify-end gap-1.5">
-                                {(order.paymentStatus === 'Paid' || order.status === 'Completed') &&
+                                {(order.paymentStatus === 'Paid' || order.status === 'Completed' || order.status === 'Delivered') &&
                                   order.status !== 'Refunded' &&
                                   order.status !== 'Returned' &&
                                   order.paymentStatus !== 'Refunded' && (
@@ -5213,6 +5222,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       >
                         <option value="Pending">Pending</option>
                         <option value="Processing">Processing</option>
+                        <option value="Delivered">Delivered</option>
                         <option value="Completed">Completed</option>
                         <option value="Cancelled">Cancelled</option>
                         <option value="Refunded">Refunded</option>
@@ -5255,7 +5265,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   </div>
 
                   {/* Return & Refund Action Button in Details Modal */}
-                  {(selectedOrderForDetails.paymentStatus === 'Paid' || selectedOrderForDetails.status === 'Completed') &&
+                  {(selectedOrderForDetails.paymentStatus === 'Paid' ||
+                    selectedOrderForDetails.status === 'Completed' ||
+                    selectedOrderForDetails.status === 'Delivered') &&
                     selectedOrderForDetails.status !== 'Refunded' &&
                     selectedOrderForDetails.status !== 'Returned' &&
                     selectedOrderForDetails.paymentStatus !== 'Refunded' && (
@@ -5516,12 +5528,38 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           <span>-{formatCurrency(selectedOrderForDetails.discountAmount)}</span>
                         </div>
                       ) : null}
+                      {Boolean(selectedOrderForDetails.pointsRedeemed && selectedOrderForDetails.pointsRedeemed > 0) && (
+                        <div className="flex justify-between text-purple-700 font-medium">
+                          <span className="flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                            <span>Claimed Points Discount ({selectedOrderForDetails.pointsRedeemed} pts):</span>
+                          </span>
+                          <span>-{formatCurrency(selectedOrderForDetails.pointsDiscount || 0)}</span>
+                        </div>
+                      )}
                       <div className="pt-2 border-t border-slate-200 flex justify-between items-center font-black text-sm text-[#163B5C]">
                         <span>Grand Total:</span>
                         <span className="text-base text-[#ED3500]">
                           {formatCurrency(selectedOrderForDetails.totalAmount)}
                         </span>
                       </div>
+                      {Boolean(selectedOrderForDetails.pointsEarned && selectedOrderForDetails.pointsEarned > 0) && (
+                        <div className="pt-2 border-t border-slate-200 flex flex-wrap justify-between items-center gap-1 text-xs">
+                          <span className="font-semibold text-amber-800 flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Reward Points:</span>
+                          </span>
+                          {selectedOrderForDetails.pointsAwarded ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              ✓ +{selectedOrderForDetails.pointsEarned} pts (Credited upon Delivery)
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
+                              ⏳ +{selectedOrderForDetails.pointsEarned} pts (Pending Delivery)
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

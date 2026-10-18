@@ -275,7 +275,7 @@ export async function POST(request: Request) {
       pointsRedeemed: pointsToRedeem,
       pointsDiscount: fromCents(pointsDiscountCents),
       pointsEarned,
-      pointsAwarded: pStatus === 'Paid',
+      pointsAwarded: false, // Loyalty points are awarded ONLY AFTER order is Delivered
       shippingFee: safeShippingFee,
       totalTax: calculatedTax,
       totalGst: 0, // Kept 0 for backward compatibility
@@ -296,14 +296,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Credit points earned if order is already Paid (e.g. online payment methods)
-    if (finalCustomerId && pStatus === 'Paid' && pointsEarned > 0) {
-      try {
-        await creditOrderPoints(finalCustomerId, orderId, netMerchandiseSpend, loyaltyConfig);
-      } catch (creditErr) {
-        console.error('Failed to credit loyalty points earned:', creditErr);
-      }
-    }
+    // Note: Earned reward points are credited ONLY after the order is Delivered or Completed (handled in order status updates).
 
     // 5. Auto-sync Customer into Party Directory for billing & accounting
     if (customerPhone && customerPhone !== '0000000000') {

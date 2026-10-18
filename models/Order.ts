@@ -53,7 +53,7 @@ export interface IOrder extends Document {
   changeReturned?: number;
   cashierName?: string;
   cashierId?: string;
-  status: 'Pending' | 'Processing' | 'Completed' | 'Cancelled' | 'Refunded' | 'Returned';
+  status: 'Pending' | 'Processing' | 'Delivered' | 'Completed' | 'Cancelled' | 'Refunded' | 'Returned';
   refundAmount?: number;
   refundReason?: string;
   refundDate?: Date;
@@ -132,7 +132,7 @@ const OrderSchema: Schema = new Schema(
     cashierId: { type: String, default: '' },
     status: {
       type: String,
-      enum: ['Pending', 'Processing', 'Completed', 'Cancelled', 'Refunded', 'Returned'],
+      enum: ['Pending', 'Processing', 'Delivered', 'Completed', 'Cancelled', 'Refunded', 'Returned'],
       default: 'Pending',
     },
     refundAmount: { type: Number, default: 0 },

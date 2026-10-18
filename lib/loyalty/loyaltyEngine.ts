@@ -117,6 +117,20 @@ export function calculatePointsDiscount(
 }
 
 /**
+ * Helper to check if an order's status qualifies it for loyalty points crediting.
+ * CRITICAL RULE: Points are awarded ONLY after the order is Delivered or Completed.
+ */
+export function isOrderEligibleForPointsCredit(order: {
+  status?: string;
+  pointsAwarded?: boolean;
+  customerId?: string;
+}): boolean {
+  if (!order || !order.customerId) return false;
+  if (order.pointsAwarded) return false;
+  return order.status === 'Delivered' || order.status === 'Completed';
+}
+
+/**
  * Credit earned points to customer account and record in ledger
  */
 export async function creditOrderPoints(

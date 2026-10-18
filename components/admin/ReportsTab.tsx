@@ -601,6 +601,7 @@ export default function ReportsTab() {
                   <option value="ALL">All Order Statuses</option>
                   <option value="Pending">Pending</option>
                   <option value="Processing">Processing</option>
+                  <option value="Delivered">Delivered</option>
                   <option value="Completed">Completed</option>
                   <option value="Cancelled">Cancelled</option>
                   <option value="Refunded">Refunded / Returned</option>

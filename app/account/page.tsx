@@ -490,10 +490,12 @@ export default function AccountPage() {
                         </span>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            ord.status === 'Completed'
+                            ord.status === 'Completed' || ord.status === 'Delivered'
                               ? 'bg-emerald-100 text-emerald-800'
                               : ord.status === 'Processing'
                               ? 'bg-blue-100 text-blue-800'
+                              : ord.status === 'Cancelled' || ord.status === 'Refunded' || ord.status === 'Returned'
+                              ? 'bg-rose-100 text-rose-800'
                               : 'bg-amber-100 text-amber-800'
                           }`}
                         >
@@ -542,10 +544,17 @@ export default function AccountPage() {
                   {((ord.pointsEarned && ord.pointsEarned > 0) || (ord.pointsRedeemed && ord.pointsRedeemed > 0)) && (
                     <div className="my-2 p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/80 flex flex-wrap items-center gap-3 text-xs">
                       {ord.pointsEarned && ord.pointsEarned > 0 && (
-                        <span className="text-emerald-800 font-semibold flex items-center gap-1">
-                          <Award className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Earned: +{ord.pointsEarned} Points</span>
-                        </span>
+                        ord.pointsAwarded ? (
+                          <span className="text-emerald-800 font-semibold flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Earned: +{ord.pointsEarned} Points (Credited to Wallet)</span>
+                          </span>
+                        ) : (
+                          <span className="text-amber-800 font-semibold flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5 text-amber-600" />
+                            <span>+{ord.pointsEarned} Points (Will be credited upon delivery)</span>
+                          </span>
+                        )
                       )}
                       {ord.pointsRedeemed && ord.pointsRedeemed > 0 && (
                         <span className="text-purple-800 font-semibold flex items-center gap-1">

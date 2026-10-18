@@ -173,6 +173,7 @@ export async function PATCH(
         ![
           'Pending',
           'Processing',
+          'Delivered',
           'Completed',
           'Cancelled',
           'Refunded',
@@ -205,16 +206,15 @@ export async function PATCH(
       updateFields.paymentStatus = body.paymentStatus;
     }
 
-    // Award loyalty points if transitioning to 'Paid' or 'Completed' for customer order
-    const willBePaid =
-      updateFields.paymentStatus === 'Paid' ||
-      (!updateFields.paymentStatus && existingOrder.paymentStatus === 'Paid');
-    const willBeCompleted =
+    // Award loyalty points ONLY after the order is Delivered or Completed for customer orders
+    const isNowDeliveredOrCompleted =
+      updateFields.status === 'Delivered' ||
       updateFields.status === 'Completed' ||
-      (!updateFields.status && existingOrder.status === 'Completed');
+      (!updateFields.status &&
+        (existingOrder.status === 'Delivered' || existingOrder.status === 'Completed'));
 
     if (
-      (willBePaid || willBeCompleted) &&
+      isNowDeliveredOrCompleted &&
       !existingOrder.pointsAwarded &&
       existingOrder.customerId
     ) {
@@ -233,7 +233,7 @@ export async function PATCH(
           updateFields.pointsAwarded = true;
         }
       } catch (creditErr) {
-        console.error('Failed to credit loyalty points on order status update:', creditErr);
+        console.error('Failed to credit loyalty points on order delivery/completion:', creditErr);
       }
     }
 

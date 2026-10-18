@@ -2162,9 +2162,9 @@ export default function CustomerStore() {
                 <div className="flex justify-between items-center text-[11px] bg-emerald-50 text-emerald-800 p-2 rounded-lg border border-emerald-100 font-semibold">
                   <span className="flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Loyalty Points Earned:</span>
+                    <span>Loyalty Points:</span>
                   </span>
-                  <span>+{orderSuccess.pointsEarned} pts</span>
+                  <span>+{orderSuccess.pointsEarned} pts (Credited upon delivery)</span>
                 </div>
               )}
               {orderSuccess.pointsRedeemed > 0 && (
