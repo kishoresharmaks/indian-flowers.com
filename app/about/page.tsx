@@ -25,6 +25,79 @@ export const metadata: Metadata = {
   title: 'About Us | The Indian Flowers — Fresh Indian Garlands & Blooms USA',
   description:
     'Learn about The Indian Flowers. We pride ourselves on delivering fresh, quality handcrafted garlands, jasmine strings, and sacred pooja flowers across the United States.',
+  alternates: {
+    canonical: 'https://indian-flowers.com/about',
+  },
+  openGraph: {
+    title: 'About Us | The Indian Flowers — Handcrafted Garlands & Blooms USA',
+    description:
+      'Learn about The Indian Flowers. We pride ourselves on delivering fresh, quality handcrafted garlands, jasmine strings, and sacred pooja flowers across the United States.',
+    url: 'https://indian-flowers.com/about',
+    siteName: 'Indian-Flowers.com',
+    images: [
+      {
+        url: '/images/banners/hero-wedding-1920x650.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'About Indian-Flowers.com USA',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About Us | The Indian Flowers',
+    description:
+      'Authentic fresh Indian flowers and handcrafted garlands delivered across the United States.',
+    images: ['/images/banners/hero-wedding-1920x650.jpg'],
+  },
+};
+
+const ABOUT_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'AboutPage',
+      '@id': 'https://indian-flowers.com/about#webpage',
+      url: 'https://indian-flowers.com/about',
+      name: 'About Indian-Flowers.com — Fresh Indian Flowers, Garlands & Pooja Essentials in USA',
+      description:
+        'Learn about The Indian Flowers. We pride ourselves on delivering fresh, quality handcrafted garlands, jasmine strings, and sacred pooja flowers across the United States.',
+      publisher: {
+        '@type': 'Florist',
+        name: 'Indian-Flowers.com',
+        url: 'https://indian-flowers.com',
+        telephone: '+1-909-379-3678',
+        email: 'indianflowersorder@gmail.com',
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: '14922 Bobcat Lane',
+          addressLocality: 'Fontana',
+          addressRegion: 'CA',
+          postalCode: '92336',
+          addressCountry: 'US',
+        },
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: 'https://indian-flowers.com',
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'About Us',
+          item: 'https://indian-flowers.com/about',
+        },
+      ],
+    },
+  ],
 };
 
 const PICKUP_HUBS = [
@@ -102,6 +175,12 @@ const VALUES = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-[#FAF6F0]/50 text-stone-900 font-sans flex flex-col justify-between">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(ABOUT_JSON_LD),
+        }}
+      />
       {/* Storefront Header */}
       <Header />
 

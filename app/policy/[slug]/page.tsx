@@ -55,12 +55,39 @@ export async function generateMetadata({ params }: PolicyPageProps): Promise<Met
   if (!policy) {
     return {
       title: 'Policy Not Found | Indian-Flowers.com',
+      robots: { index: false, follow: true },
     };
   }
 
+  const title = `${policy.title} | Indian-Flowers.com USA`;
+  const description =
+    policy.metaDescription ||
+    policy.subtitle ||
+    `Official ${policy.title} for Indian-Flowers.com US storefront.`;
+
   return {
-    title: `${policy.title} | Indian-Flowers.com USA`,
-    description: policy.metaDescription || policy.subtitle || `Official ${policy.title} for Indian-Flowers.com US storefront.`,
+    title,
+    description,
+    alternates: {
+      canonical: `https://indian-flowers.com/policy/${params.slug}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://indian-flowers.com/policy/${params.slug}`,
+      siteName: 'Indian-Flowers.com',
+      locale: 'en_US',
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
   };
 }
 
@@ -80,8 +107,64 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
     notFound();
   }
 
+  const policyJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `https://indian-flowers.com/policy/${params.slug}#webpage`,
+        url: `https://indian-flowers.com/policy/${params.slug}`,
+        name: `${policy.title} | Indian-Flowers.com USA`,
+        description:
+          policy.metaDescription ||
+          policy.subtitle ||
+          `Official ${policy.title} for Indian-Flowers.com storefront.`,
+        isPartOf: {
+          '@type': 'WebSite',
+          '@id': 'https://indian-flowers.com/#website',
+          url: 'https://indian-flowers.com',
+          name: 'Indian-Flowers.com',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Indian-Flowers.com',
+          url: 'https://indian-flowers.com',
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://indian-flowers.com',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Store Policies',
+            item: 'https://indian-flowers.com/policy/privacy-policy',
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: policy.title,
+            item: `https://indian-flowers.com/policy/${params.slug}`,
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF6F0]/60 text-stone-900 font-sans flex flex-col justify-between">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(policyJsonLd),
+        }}
+      />
       {/* Storefront Header */}
       <Header />
 
