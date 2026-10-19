@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileText,
   Check,
   Save,
   RefreshCw,
   Eye,
-  Edit3,
   ExternalLink,
   AlertTriangle,
   RotateCcw,
@@ -18,8 +17,25 @@ import {
   Cookie,
   Info,
   CheckCircle2,
+  Sparkles,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  Heading2,
+  Heading3,
+  Table as TableIcon,
+  Quote,
+  Minus,
+  RemoveFormatting,
+  Undo2,
+  Redo2,
+  Code,
+  Type,
 } from 'lucide-react';
 import PolicyContentRenderer from '@/components/policies/PolicyContentRenderer';
+import { isHtmlContent, markdownToHtml, htmlToPlainText } from '@/lib/richTextFormatters';
 
 export interface IPolicyItem {
   _id?: string;
@@ -48,7 +64,7 @@ export default function PolicyManagerTab() {
   const [policies, setPolicies] = useState<IPolicyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSlug, setSelectedSlug] = useState<string>('privacy-policy');
-  const [activeMode, setActiveMode] = useState<'edit' | 'preview'>('edit');
+  const [activeMode, setActiveMode] = useState<'visual' | 'preview' | 'code'>('visual');
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | ''; text: string }>({
     type: '',
@@ -59,9 +75,19 @@ export default function PolicyManagerTab() {
   const [formData, setFormData] = useState<Partial<IPolicyItem>>({});
   const [isDirty, setIsDirty] = useState(false);
 
+  // ContentEditable ref for WYSIWYG editing
+  const editorRef = useRef<HTMLDivElement>(null);
+  const lastHtmlRef = useRef<string>('');
+
   // Reset confirmation modal
   const [confirmResetSlug, setConfirmResetSlug] = useState<string | null>(null);
   const [isResetting, setIsResetting] = useState(false);
+
+  // Helper to normalize policy content into rich semantic HTML so the user never sees raw markdown
+  const normalizePolicy = (p: IPolicyItem): IPolicyItem => {
+    const content = isHtmlContent(p.content) ? p.content : markdownToHtml(p.content);
+    return { ...p, content };
+  };
 
   const fetchPolicies = async () => {
     try {
@@ -69,12 +95,17 @@ export default function PolicyManagerTab() {
       const res = await fetch(`/api/policies?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
-        setPolicies(data.data);
+        const normalizedList: IPolicyItem[] = data.data.map(normalizePolicy);
+        setPolicies(normalizedList);
         // If current selected slug doesn't exist, pick the first
-        const current = data.data.find((p: IPolicyItem) => p.slug === selectedSlug) || data.data[0];
+        const current = normalizedList.find((p: IPolicyItem) => p.slug === selectedSlug) || normalizedList[0];
         if (current) {
           setSelectedSlug(current.slug);
           setFormData(current);
+          lastHtmlRef.current = current.content;
+          if (editorRef.current) {
+            editorRef.current.innerHTML = current.content;
+          }
           setIsDirty(false);
         }
       }
@@ -90,6 +121,18 @@ export default function PolicyManagerTab() {
     fetchPolicies();
   }, []);
 
+  // Synchronize contentEditable div when policy changes or switching back to visual mode
+  useEffect(() => {
+    if (activeMode === 'visual' && editorRef.current) {
+      const currentEditorHtml = editorRef.current.innerHTML;
+      const targetHtml = formData.content || '';
+      if (currentEditorHtml !== targetHtml && lastHtmlRef.current !== targetHtml) {
+        editorRef.current.innerHTML = targetHtml;
+        lastHtmlRef.current = targetHtml;
+      }
+    }
+  }, [activeMode, formData.content, selectedSlug]);
+
   const handleSelectPolicy = (policy: IPolicyItem) => {
     if (isDirty) {
       const confirmLeave = window.confirm(
@@ -97,8 +140,13 @@ export default function PolicyManagerTab() {
       );
       if (!confirmLeave) return;
     }
-    setSelectedSlug(policy.slug);
-    setFormData(policy);
+    const normalized = normalizePolicy(policy);
+    setSelectedSlug(normalized.slug);
+    setFormData(normalized);
+    lastHtmlRef.current = normalized.content;
+    if (editorRef.current) {
+      editorRef.current.innerHTML = normalized.content;
+    }
     setIsDirty(false);
     setStatusMessage({ type: '', text: '' });
   };
@@ -106,6 +154,34 @@ export default function PolicyManagerTab() {
   const handleChange = (field: keyof IPolicyItem, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setIsDirty(true);
+  };
+
+  const handleEditorInput = () => {
+    if (editorRef.current) {
+      const currentHtml = editorRef.current.innerHTML;
+      lastHtmlRef.current = currentHtml;
+      handleChange('content', currentHtml);
+    }
+  };
+
+  const execFormat = (command: string, value: string | undefined = undefined) => {
+    if (editorRef.current) {
+      editorRef.current.focus();
+      document.execCommand(command, false, value);
+      const currentHtml = editorRef.current.innerHTML;
+      lastHtmlRef.current = currentHtml;
+      handleChange('content', currentHtml);
+    }
+  };
+
+  const insertHtmlBlock = (htmlBlock: string) => {
+    if (editorRef.current) {
+      editorRef.current.focus();
+      document.execCommand('insertHTML', false, htmlBlock);
+      const currentHtml = editorRef.current.innerHTML;
+      lastHtmlRef.current = currentHtml;
+      handleChange('content', currentHtml);
+    }
   };
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -131,16 +207,21 @@ export default function PolicyManagerTab() {
 
       const data = await res.json();
       if (data.success && data.data) {
+        const normalized = normalizePolicy(data.data);
         setStatusMessage({
           type: 'success',
-          text: `"${data.data.title}" updated successfully! Changes are live on the storefront.`,
+          text: `"${normalized.title}" updated successfully! Changes are live on the storefront.`,
         });
         setIsDirty(false);
         // Refresh local list
         setPolicies((prev) =>
-          prev.map((p) => (p.slug === selectedSlug ? data.data : p))
+          prev.map((p) => (p.slug === selectedSlug ? normalized : p))
         );
-        setFormData(data.data);
+        setFormData(normalized);
+        lastHtmlRef.current = normalized.content;
+        if (editorRef.current) {
+          editorRef.current.innerHTML = normalized.content;
+        }
       } else {
         setStatusMessage({
           type: 'error',
@@ -168,6 +249,7 @@ export default function PolicyManagerTab() {
 
       const data = await res.json();
       if (data.success && data.data) {
+        const normalized = normalizePolicy(data.data);
         setStatusMessage({
           type: 'success',
           text: `Policy "${slugToReset}" has been reset to official US Perishable Flora template.`,
@@ -175,10 +257,14 @@ export default function PolicyManagerTab() {
         setConfirmResetSlug(null);
         setIsDirty(false);
         setPolicies((prev) =>
-          prev.map((p) => (p.slug === slugToReset ? data.data : p))
+          prev.map((p) => (p.slug === slugToReset ? normalized : p))
         );
         if (selectedSlug === slugToReset) {
-          setFormData(data.data);
+          setFormData(normalized);
+          lastHtmlRef.current = normalized.content;
+          if (editorRef.current) {
+            editorRef.current.innerHTML = normalized.content;
+          }
         }
       } else {
         setStatusMessage({
@@ -192,15 +278,6 @@ export default function PolicyManagerTab() {
     } finally {
       setIsResetting(false);
     }
-  };
-
-  const insertMarkdownSnippet = (snippet: string) => {
-    const current = formData.content || '';
-    setFormData((prev) => ({
-      ...prev,
-      content: current + '\n\n' + snippet,
-    }));
-    setIsDirty(true);
   };
 
   const activePolicy = policies.find((p) => p.slug === selectedSlug);
@@ -401,19 +478,19 @@ export default function PolicyManagerTab() {
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Mode Switch: Edit vs Preview */}
+                {/* Mode Switch: Visual (Easy) vs Preview vs Source */}
                 <div className="bg-white border border-stone-300 rounded-xl p-0.5 flex items-center shadow-xs">
                   <button
                     type="button"
-                    onClick={() => setActiveMode('edit')}
+                    onClick={() => setActiveMode('visual')}
                     className={`px-3 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
-                      activeMode === 'edit'
+                      activeMode === 'visual'
                         ? 'bg-[#0B3B24] text-white shadow-xs'
                         : 'text-stone-600 hover:text-stone-900'
                     }`}
                   >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>Markdown</span>
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>Visual Editor (Easy)</span>
                   </button>
                   <button
                     type="button"
@@ -426,6 +503,19 @@ export default function PolicyManagerTab() {
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>Live Preview</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMode('code')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
+                      activeMode === 'code'
+                        ? 'bg-[#0B3B24] text-white shadow-xs'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                    title="View HTML Source Code"
+                  >
+                    <Code className="w-3.5 h-3.5" />
+                    <span>Source</span>
                   </button>
                 </div>
 
@@ -560,83 +650,271 @@ export default function PolicyManagerTab() {
               </div>
             </div>
 
-            {/* Document Content View: Markdown Editor or Preview */}
+            {/* Document Content View: Visual Editor, Source Code, or Preview */}
             <div className="p-4 sm:p-5">
-              {activeMode === 'edit' ? (
+              {activeMode === 'visual' ? (
                 <div className="space-y-3">
-                  {/* Markdown Helper Toolbar */}
-                  <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-stone-100 text-xs text-stone-600">
-                    <span className="text-[10px] font-bold text-stone-400 uppercase mr-1">
-                      Insert:
-                    </span>
+                  {/* Rich Text Visual Toolbar */}
+                  <div className="bg-stone-50 border border-stone-200 rounded-xl p-2 flex flex-wrap items-center gap-1.5 shadow-2xs">
+                    {/* Block Style Dropdown */}
+                    <div className="flex items-center gap-1 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs">
+                      <Type className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                      <select
+                        aria-label="Text Formatting Block"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'p') execFormat('formatBlock', '<p>');
+                          else if (val === 'h2') execFormat('formatBlock', '<h2>');
+                          else if (val === 'h3') execFormat('formatBlock', '<h3>');
+                          e.target.value = '';
+                        }}
+                        defaultValue=""
+                        className="bg-transparent font-medium text-stone-700 focus:outline-none cursor-pointer text-xs"
+                      >
+                        <option value="" disabled>
+                          Format Style...
+                        </option>
+                        <option value="p">Paragraph (Normal)</option>
+                        <option value="h2">Section Title (H2)</option>
+                        <option value="h3">Sub-heading (H3)</option>
+                      </select>
+                    </div>
+
+                    <div className="h-5 w-px bg-stone-200 mx-0.5 hidden sm:block" />
+
+                    {/* Quick Heading buttons */}
                     <button
                       type="button"
-                      onClick={() => insertMarkdownSnippet('## Section Title')}
-                      className="px-2 py-1 rounded bg-stone-100 hover:bg-stone-200 font-mono text-[11px]"
+                      title="Make Large Heading (H2)"
+                      onClick={() => execFormat('formatBlock', '<h2>')}
+                      className="p-1.5 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-200/80 hover:text-[#0B3B24] transition-colors flex items-center gap-1"
                     >
-                      H2 Heading
+                      <Heading2 className="w-4 h-4" />
+                      <span className="hidden sm:inline text-[11px]">H2</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => insertMarkdownSnippet('### Subsection Title')}
-                      className="px-2 py-1 rounded bg-stone-100 hover:bg-stone-200 font-mono text-[11px]"
+                      title="Make Subsection Heading (H3)"
+                      onClick={() => execFormat('formatBlock', '<h3>')}
+                      className="p-1.5 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-200/80 hover:text-[#0B3B24] transition-colors flex items-center gap-1"
                     >
-                      H3 Heading
+                      <Heading3 className="w-4 h-4" />
+                      <span className="hidden sm:inline text-[11px]">H3</span>
+                    </button>
+
+                    <div className="h-5 w-px bg-stone-200 mx-0.5" />
+
+                    {/* Bold, Italic, Underline */}
+                    <button
+                      type="button"
+                      title="Bold"
+                      onClick={() => execFormat('bold')}
+                      className="p-1.5 rounded-lg text-stone-700 hover:bg-stone-200/80 hover:text-[#0B3B24] transition-colors font-bold"
+                    >
+                      <Bold className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => insertMarkdownSnippet('**bold text**')}
-                      className="px-2 py-1 rounded bg-stone-100 hover:bg-stone-200 font-bold text-[11px]"
+                      title="Italic"
+                      onClick={() => execFormat('italic')}
+                      className="p-1.5 rounded-lg text-stone-700 hover:bg-stone-200/80 hover:text-[#0B3B24] transition-colors italic"
                     >
-                      Bold
+                      <Italic className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => insertMarkdownSnippet('* Bullet item 1\n* Bullet item 2')}
-                      className="px-2 py-1 rounded bg-stone-100 hover:bg-stone-200 text-[11px]"
+                      title="Underline"
+                      onClick={() => execFormat('underline')}
+                      className="p-1.5 rounded-lg text-stone-700 hover:bg-stone-200/80 hover:text-[#0B3B24] transition-colors underline"
                     >
-                      List
+                      <Underline className="w-4 h-4" />
+                    </button>
+
+                    <div className="h-5 w-px bg-stone-200 mx-0.5" />
+
+                    {/* Lists */}
+                    <button
+                      type="button"
+                      title="Bullet List"
+                      onClick={() => execFormat('insertUnorderedList')}
+                      className="p-1.5 rounded-lg text-stone-700 hover:bg-stone-200/80 hover:text-[#0B3B24] transition-colors flex items-center gap-1"
+                    >
+                      <List className="w-4 h-4" />
+                      <span className="hidden sm:inline text-[11px] font-medium">Bullet List</span>
                     </button>
                     <button
                       type="button"
+                      title="Numbered List"
+                      onClick={() => execFormat('insertOrderedList')}
+                      className="p-1.5 rounded-lg text-stone-700 hover:bg-stone-200/80 hover:text-[#0B3B24] transition-colors flex items-center gap-1"
+                    >
+                      <ListOrdered className="w-4 h-4" />
+                      <span className="hidden sm:inline text-[11px] font-medium">Numbered</span>
+                    </button>
+
+                    <div className="h-5 w-px bg-stone-200 mx-0.5" />
+
+                    {/* Pre-styled Blocks */}
+                    <button
+                      type="button"
+                      title="Insert Legal Notice / Alert Card"
                       onClick={() =>
-                        insertMarkdownSnippet(
-                          '| Delivery Option | Estimated Arrival | Pricing (USD) |\n| :--- | :--- | :--- |\n| Priority Overnight | Next Morning by 10:30 AM | Free over $150 |'
+                        insertHtmlBlock(
+                          '<div class="policy-alert-box my-4 p-4 rounded-xl bg-amber-50 border-l-4 border-amber-500 text-amber-900 text-xs sm:text-sm shadow-2xs"><strong class="block font-bold text-amber-950 uppercase tracking-wider mb-1">Important Notice:</strong>All fresh floral arrangements are non-edible and intended strictly for ceremonial, prayer, and decorative purposes.</div><p><br></p>'
                         )
                       }
-                      className="px-2 py-1 rounded bg-stone-100 hover:bg-stone-200 text-[11px]"
+                      className="p-1.5 px-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold flex items-center gap-1 transition-colors"
                     >
-                      Table
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Notice Box</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      title="Insert Quote / Highlight"
+                      onClick={() =>
+                        insertHtmlBlock(
+                          '<blockquote class="my-3 pl-4 border-l-4 border-[#0B3B24] italic text-stone-600 text-sm bg-[#F4F8F4] py-2 px-3 rounded-r-lg">Express morning cold-chain floral deliveries guaranteed fresh across the contiguous United States.</blockquote><p><br></p>'
+                        )
+                      }
+                      className="p-1.5 px-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#0B3B24] border border-emerald-200 text-xs font-semibold flex items-center gap-1 transition-colors"
+                    >
+                      <Quote className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Quote</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      title="Insert Table"
+                      onClick={() =>
+                        insertHtmlBlock(
+                          '<div class="overflow-x-auto my-4 rounded-xl border border-stone-200"><table class="w-full text-left border-collapse text-sm"><thead class="bg-[#FAF6F0] border-b border-stone-200"><tr><th class="py-2.5 px-3.5 font-bold text-stone-900">Delivery Tier</th><th class="py-2.5 px-3.5 font-bold text-stone-900">Estimated Arrival</th><th class="py-2.5 px-3.5 font-bold text-stone-900">Pricing (USD)</th></tr></thead><tbody class="divide-y divide-stone-100"><tr><td class="py-2.5 px-3.5 text-stone-700">Priority Overnight</td><td class="py-2.5 px-3.5 text-stone-700">Next Morning by 10:30 AM</td><td class="py-2.5 px-3.5 text-stone-700">Free over $150</td></tr><tr><td class="py-2.5 px-3.5 text-stone-700">Standard Cold-Chain</td><td class="py-2.5 px-3.5 text-stone-700">1–2 Business Days</td><td class="py-2.5 px-3.5 text-stone-700">$29.00</td></tr></tbody></table></div><p><br></p>'
+                        )
+                      }
+                      className="p-1.5 px-2 rounded-lg text-stone-700 hover:bg-stone-200/80 hover:text-stone-900 transition-colors flex items-center gap-1 text-xs"
+                    >
+                      <TableIcon className="w-3.5 h-3.5 text-stone-500" />
+                      <span className="hidden sm:inline text-[11px]">Table</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      title="Horizontal Divider"
+                      onClick={() => insertHtmlBlock('<hr class="my-6 border-stone-200" /><p><br></p>')}
+                      className="p-1.5 rounded-lg text-stone-700 hover:bg-stone-200/80 hover:text-stone-900 transition-colors"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+
+                    <div className="h-5 w-px bg-stone-200 mx-0.5" />
+
+                    {/* Clear Formatting, Undo, Redo */}
+                    <button
+                      type="button"
+                      title="Clear Formatting"
+                      onClick={() => execFormat('removeFormat')}
+                      className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/80 hover:text-stone-800 transition-colors"
+                    >
+                      <RemoveFormatting className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() =>
-                        insertMarkdownSnippet(
-                          '> **Important Legal Notice:** All fresh floral arrangements are non-edible and intended strictly for ceremonial use.'
-                        )
-                      }
-                      className="px-2 py-1 rounded bg-stone-100 hover:bg-stone-200 text-[11px]"
+                      title="Undo"
+                      onClick={() => execFormat('undo')}
+                      className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/80 hover:text-stone-800 transition-colors"
                     >
-                      Alert Box
+                      <Undo2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Redo"
+                      onClick={() => execFormat('redo')}
+                      className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/80 hover:text-stone-800 transition-colors"
+                    >
+                      <Redo2 className="w-4 h-4" />
                     </button>
                   </div>
 
-                  {/* Textarea Editor */}
+                  {/* WYSIWYG ContentEditable Area */}
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    suppressContentEditableWarning
+                    onInput={handleEditorInput}
+                    onBlur={handleEditorInput}
+                    className="min-h-[460px] max-h-[750px] overflow-y-auto p-5 sm:p-6 bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B3B24] focus:border-transparent text-stone-800 leading-relaxed font-sans text-sm sm:text-base space-y-3 shadow-inner
+                      [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-[#0B3B24] [&_h2]:tracking-tight [&_h2]:mt-6 [&_h2]:mb-2 [&_h2]:pb-2 [&_h2]:border-b [&_h2]:border-stone-200
+                      [&_h3]:text-base [&_h3]:sm:text-lg [&_h3]:font-semibold [&_h3]:text-stone-900 [&_h3]:mt-4 [&_h3]:mb-1
+                      [&_p]:my-2 [&_p]:leading-relaxed
+                      [&_ul]:my-2.5 [&_ul]:pl-6 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:marker:text-[#0B3B24]
+                      [&_ol]:my-2.5 [&_ol]:pl-6 [&_ol]:list-decimal [&_ol]:space-y-1.5 [&_ol]:marker:text-[#0B3B24]
+                      [&_li]:leading-relaxed
+                      [&_strong]:font-semibold [&_strong]:text-stone-900
+                      [&_em]:italic [&_em]:text-stone-800
+                      [&_blockquote]:my-3 [&_blockquote]:pl-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[#0B3B24] [&_blockquote]:italic [&_blockquote]:text-stone-600 [&_blockquote]:text-sm [&_blockquote]:bg-[#F4F8F4] [&_blockquote]:py-2 [&_blockquote]:px-3 [&_blockquote]:rounded-r-lg
+                      [&_table]:w-full [&_table]:text-left [&_table]:border-collapse [&_table]:text-xs [&_table]:sm:text-sm [&_table]:my-4 [&_table]:border [&_table]:border-stone-200
+                      [&_th]:py-2.5 [&_th]:px-3.5 [&_th]:font-bold [&_th]:text-stone-900 [&_th]:bg-[#FAF6F0] [&_th]:border [&_th]:border-stone-200
+                      [&_td]:py-2.5 [&_td]:px-3.5 [&_td]:text-stone-700 [&_td]:border [&_td]:border-stone-200
+                      [&_hr]:my-4 [&_hr]:border-stone-200"
+                  />
+
+                  {/* Visual Mode Helper Bar */}
+                  <div className="flex flex-wrap items-center justify-between text-xs text-stone-500 pt-2 border-t border-stone-100 gap-2">
+                    <div className="flex items-center gap-2 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 text-[11px]">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="font-bold">Visual Easy Mode:</span>
+                      <span className="text-emerald-700">
+                        Type directly like in Word or Google Docs. No code or markdown needed.
+                      </span>
+                    </div>
+                    <div className="text-stone-500 font-medium text-[11px]">
+                      {htmlToPlainText(formData.content || '').length} characters &bull;{' '}
+                      {
+                        htmlToPlainText(formData.content || '')
+                          .split(/\s+/)
+                          .filter(Boolean).length
+                      }{' '}
+                      words
+                    </div>
+                  </div>
+                </div>
+              ) : activeMode === 'code' ? (
+                /* Source Code Mode */
+                <div className="space-y-3">
+                  <div className="bg-stone-100 p-3 rounded-xl border border-stone-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Code className="w-4 h-4 text-stone-600" />
+                      <span className="text-xs font-bold text-stone-700">HTML Source Code Mode</span>
+                      <span className="text-[10px] text-stone-500 bg-white px-2 py-0.5 rounded border border-stone-200">
+                        Advanced
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMode('visual')}
+                      className="px-3 py-1 rounded-lg bg-[#0B3B24] text-white text-xs font-bold hover:bg-[#134633] flex items-center gap-1.5 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Switch to Easy Visual Editor</span>
+                    </button>
+                  </div>
+
                   <textarea
                     rows={18}
                     value={formData.content || ''}
-                    onChange={(e) => handleChange('content', e.target.value)}
-                    placeholder="Enter policy markdown text here..."
-                    className="w-full font-mono text-xs sm:text-sm p-4 bg-stone-50 border border-stone-200 rounded-xl leading-relaxed focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B3B24] transition-all"
+                    onChange={(e) => {
+                      handleChange('content', e.target.value);
+                      lastHtmlRef.current = e.target.value;
+                    }}
+                    placeholder="Enter HTML or text markup here..."
+                    className="w-full font-mono text-xs sm:text-sm p-4 bg-stone-900 text-stone-100 border border-stone-700 rounded-xl leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0B3B24] transition-all"
                   />
 
                   <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1">
+                    <span>Clean HTML format saved directly to database.</span>
                     <span>
-                      Markdown formatted: headings (`##`), bullet lists (`*`), tables (`|`), and blockquotes (`&gt;`).
-                    </span>
-                    <span>
-                      {(formData.content || '').length} characters &bull;{' '}
-                      {(formData.content || '').split(/\s+/).filter(Boolean).length} words
+                      {(formData.content || '').length} raw characters &bull;{' '}
+                      {htmlToPlainText(formData.content || '').split(/\s+/).filter(Boolean).length} words
                     </span>
                   </div>
                 </div>
@@ -646,7 +924,7 @@ export default function PolicyManagerTab() {
                   <div className="bg-[#FAF6F0] p-4 rounded-xl border border-stone-200 flex items-center justify-between">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                        Live Preview Mode
+                        Live Storefront Preview
                       </span>
                       <p className="text-xs text-stone-600 mt-1">
                         Rendering with standard Plus Jakarta Sans typography exactly as your customers experience it.
@@ -654,10 +932,11 @@ export default function PolicyManagerTab() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setActiveMode('edit')}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-xs font-bold text-stone-800 hover:bg-stone-50"
+                      onClick={() => setActiveMode('visual')}
+                      className="px-3.5 py-1.5 rounded-lg bg-[#0B3B24] text-white text-xs font-bold hover:bg-[#134633] flex items-center gap-1.5 transition-colors shadow-2xs"
                     >
-                      Back to Editor
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Back to Visual Editor</span>
                     </button>
                   </div>
 

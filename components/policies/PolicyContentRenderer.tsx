@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { isHtmlContent } from '@/lib/richTextFormatters';
 
 interface PolicyContentRendererProps {
   content: string;
@@ -9,7 +10,30 @@ interface PolicyContentRendererProps {
 export default function PolicyContentRenderer({ content }: PolicyContentRendererProps) {
   if (!content) return null;
 
-  // Split into lines for structured block rendering
+  // If content contains rich HTML from the visual editor, render it directly with styled typography
+  if (isHtmlContent(content)) {
+    return (
+      <div
+        className="policy-prose font-sans text-stone-700 leading-relaxed text-sm sm:text-base space-y-4
+          [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-[#0B3B24] [&_h2]:tracking-tight [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:pb-2 [&_h2]:border-b [&_h2]:border-stone-200/80
+          [&_h3]:text-base [&_h3]:sm:text-lg [&_h3]:font-semibold [&_h3]:text-stone-900 [&_h3]:mt-6 [&_h3]:mb-2
+          [&_p]:my-2.5 [&_p]:leading-relaxed
+          [&_ul]:my-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:marker:text-[#0B3B24]
+          [&_ol]:my-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_ol]:space-y-1.5 [&_ol]:marker:text-[#0B3B24]
+          [&_li]:leading-relaxed
+          [&_strong]:font-semibold [&_strong]:text-stone-900
+          [&_em]:italic [&_em]:text-stone-800
+          [&_blockquote]:my-3 [&_blockquote]:pl-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[#0B3B24] [&_blockquote]:italic [&_blockquote]:text-stone-600 [&_blockquote]:text-sm [&_blockquote]:bg-[#F4F8F4] [&_blockquote]:py-2.5 [&_blockquote]:px-3.5 [&_blockquote]:rounded-r-lg
+          [&_table]:w-full [&_table]:text-left [&_table]:border-collapse [&_table]:text-xs [&_table]:sm:text-sm [&_table]:my-5 [&_table]:overflow-x-auto [&_table]:rounded-xl [&_table]:border [&_table]:border-stone-200
+          [&_th]:py-2.5 [&_th]:px-3.5 [&_th]:font-bold [&_th]:text-stone-900 [&_th]:bg-[#FAF6F0] [&_th]:border-b [&_th]:border-stone-200
+          [&_td]:py-2.5 [&_td]:px-3.5 [&_td]:text-stone-700 [&_td]:border-b [&_td]:border-stone-100
+          [&_hr]:my-6 [&_hr]:border-stone-200"
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+
+  // Fallback: Line-by-line parser for legacy raw markdown strings
   const lines = content.split('\n');
   const renderedElements: React.ReactNode[] = [];
 
