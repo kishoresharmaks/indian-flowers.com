@@ -53,7 +53,7 @@ async function runSeed() {
   await Review.deleteMany({});
   const reviewResults = await Review.insertMany(SEED_REVIEWS);
 
-  // 5. Clear old products and seed the exact 20 products (5 per category)
+  // 5. Clear old products and seed the 12 new products from new image assets
   await Product.deleteMany({});
   const productResults = await Product.insertMany(
     SEED_PRODUCTS.map(({ _id, ...rest }) => rest)
