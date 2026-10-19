@@ -40,23 +40,25 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFCFB] flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl border border-[#E8EDF2] p-8 shadow-2xl space-y-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl border border-[#E5E7EB] p-8 shadow-2xl space-y-6 relative overflow-hidden">
         {/* Brand Accent Top Line */}
-        <div className="absolute top-0 left-0 right-0 h-2 bg-[#ED3500]"></div>
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#0B3B24] via-[#1C563F] to-[#C85A78]"></div>
 
         <div className="text-center space-y-2">
-          <img
-            src="/nexus-mark.svg"
-            alt="Nexus Ecom CMS admin logo"
-            className="w-16 h-16 object-contain rounded-2xl mx-auto shadow-md border border-[#E8EDF2]"
-            onError={(e) => {
-              (e.target as HTMLElement).style.display = 'none';
-            }}
-          />
-          <h2 className="text-2xl font-black text-[#163B5C]">Nexus Ecom CMS</h2>
-          <p className="text-xs text-[#64748B]">
-            Sign in with registered admin credentials to manage products & orders
+          <div className="w-16 h-16 rounded-2xl mx-auto shadow-md border border-[#E5E7EB] bg-[#F4F8F4] flex items-center justify-center p-2.5 overflow-hidden">
+            <img
+              src="/indian-flowers-logo.svg"
+              alt="The Indian Flowers logo"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+          </div>
+          <h2 className="text-2xl font-bold text-[#0B3B24] tracking-tight">The Indian Flowers</h2>
+          <p className="text-xs text-[#6B7280]">
+            Sign in with admin credentials to manage products, orders & store settings
           </p>
         </div>
 
@@ -69,34 +71,34 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
-              Admin Email Address
+            <label className="text-xs font-bold text-[#0B3B24] uppercase tracking-wider">
+              Admin Email or Username
             </label>
             <div className="relative">
-              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <input
-                type="email"
+                type="text"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500] text-[#163B5C]"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E5E7EB] text-sm focus:outline-none focus:border-[#2F6B4F] text-[#111827] focus:ring-1 focus:ring-[#2F6B4F]"
                 placeholder="admin@example.com"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
+            <label className="text-xs font-bold text-[#0B3B24] uppercase tracking-wider">
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500] text-[#163B5C]"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E5E7EB] text-sm focus:outline-none focus:border-[#2F6B4F] text-[#111827] focus:ring-1 focus:ring-[#2F6B4F]"
                 placeholder="••••••••"
               />
             </div>
@@ -105,7 +107,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-2xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-bold text-sm uppercase tracking-wider shadow-lg shadow-[#ED3500]/25 transition-all flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-2xl bg-[#0B3B24] hover:bg-[#1C563F] text-white font-semibold text-sm tracking-wider shadow-lg shadow-[#0B3B24]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             {loading ? (
               <RefreshCw className="w-5 h-5 animate-spin" />
@@ -120,7 +122,7 @@ export default function AdminLoginPage() {
         <div className="text-center pt-2">
           <Link
             href="/"
-            className="text-xs text-[#64748B] hover:text-[#163B5C] font-semibold underline"
+            className="text-xs text-[#6B7280] hover:text-[#0B3B24] font-semibold underline"
           >
             ← Return to Customer Store
           </Link>

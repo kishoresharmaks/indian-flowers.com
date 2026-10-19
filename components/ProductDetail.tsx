@@ -248,7 +248,7 @@ export default function ProductDetail({
               {/* Trust & Support */}
               <div className="space-y-2 pt-4 border-t border-border">
                 <a
-                  href={`https://wa.me/919578784431?text=Hi, I'm interested in ${encodeURIComponent(product.name)}`}
+                  href={`https://wa.me/19093793678?text=Hi, I'm interested in ${encodeURIComponent(product.name)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-2.5 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white font-medium text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-emerald-200/80 transition-all"

@@ -954,7 +954,7 @@ export default function SetupPage() {
                           readOnly={isCompletedInstance}
                           value={details.contactPhone}
                           onChange={(e) => setDetails({ ...details, contactPhone: e.target.value })}
-                          placeholder="+91 98765 43210"
+                          placeholder="+1 (909) 379-3678"
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm outline-none transition ${
                             isCompletedInstance
                               ? 'bg-[#F8FAFC] border-[#E8EDF2] text-[#163B5C] cursor-default'
