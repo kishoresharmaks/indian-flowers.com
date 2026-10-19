@@ -168,196 +168,6 @@ export const SEED_REVIEWS: SeedReview[] = [
 
 export const SEED_PRODUCTS: SeedProduct[] = [
   {
-    "name": "Royal Pink & Ivory Carnation Wedding Garland (Jai Mala)",
-    "description": "Exquisite handcrafted wedding Jai Mala featuring densely packed blush pink and ivory carnation blooms, accented with shimmering golden brocade rose medallions and velvety crimson red rose accents. Designed for traditional Indian wedding ceremonies, Anand Karaj, and mandap rituals with lasting freshness delivered across the USA.",
-    "image": "/images/products/new/01.webp",
-    "mrp": 105,
-    "price": 85,
-    "discount": 19,
-    "quantity": 25,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "gst": 0,
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.9,
-    "reviewsCount": 42,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 105,
-        "price": 85,
-        "quantity": 20,
-        "discount": 19
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 130,
-        "price": 105,
-        "quantity": 15,
-        "discount": 19
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 240,
-        "price": 195,
-        "quantity": 10,
-        "discount": 19
-      }
-    ]
-  },
-  {
-    "name": "White Carnation & Red Rose Wedding Varmala with Golden Tassels",
-    "description": "Traditional handcrafted bridal Varmala featuring pristine white carnations interspersed with layered crimson red rose petal rings, fresh green filler foliage, delicate gold bead accents, and grand twin red rosebud pendant tassels. Ideal for North and South Indian weddings.",
-    "image": "/images/products/new/02.webp",
-    "mrp": 115,
-    "price": 89,
-    "discount": 23,
-    "quantity": 20,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "gst": 0,
-    "category": "Wedding & Temple Garlands",
-    "rating": 5,
-    "reviewsCount": 58,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 115,
-        "price": 89,
-        "quantity": 18,
-        "discount": 23
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 140,
-        "price": 110,
-        "quantity": 12,
-        "discount": 21
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 260,
-        "price": 205,
-        "quantity": 8,
-        "discount": 21
-      }
-    ]
-  },
-  {
-    "name": "Peach & Ivory Pastel Carnation Garland with Pearl Drop Tassels",
-    "description": "Contemporary pastel wedding garland crafted with soft peach and ivory carnation petals, adorned with golden tissue rose rings and an elegant clustered pendant featuring hanging pearl strings with rosebuds. Perfect for pastel wedding themes and reception ceremonies.",
-    "image": "/images/products/new/03.webp",
-    "mrp": 120,
-    "price": 92,
-    "discount": 23,
-    "quantity": 22,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "gst": 0,
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.9,
-    "reviewsCount": 36,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 120,
-        "price": 92,
-        "quantity": 15,
-        "discount": 23
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 145,
-        "price": 115,
-        "quantity": 10,
-        "discount": 21
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 270,
-        "price": 215,
-        "quantity": 8,
-        "discount": 20
-      }
-    ]
-  },
-  {
-    "name": "Crimson Rose Petal & Peach Carnation Grand Varmala",
-    "description": "Opulent full-length Indian wedding garland featuring alternating sections of deep crimson Dutch rose petals and soft peach carnations, bound by handcrafted golden flower rings and a rich ceremonial medallion base. Delivers a regal bridal aesthetic.",
-    "image": "/images/products/new/04.webp",
-    "mrp": 125,
-    "price": 98,
-    "discount": 22,
-    "quantity": 18,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "gst": 0,
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.8,
-    "reviewsCount": 49,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 125,
-        "price": 98,
-        "quantity": 15,
-        "discount": 22
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 150,
-        "price": 120,
-        "quantity": 10,
-        "discount": 20
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 280,
-        "price": 225,
-        "quantity": 6,
-        "discount": 20
-      }
-    ]
-  },
-  {
-    "name": "Fresh Pink Rosebud & White Carnation Wedding Garland",
-    "description": "Classic Hindu and South Indian wedding garland composed of fluffy white carnation bloom segments punctuated by whole fresh pink roses, baby's breath (gypsophila), and delicate rosebud tassels. Lightweight, fragrant, and gracefully balanced.",
-    "image": "/images/products/new/5-1.png",
-    "mrp": 100,
-    "price": 82,
-    "discount": 18,
-    "quantity": 28,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "gst": 0,
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.9,
-    "reviewsCount": 63,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 100,
-        "price": 82,
-        "quantity": 20,
-        "discount": 18
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 125,
-        "price": 99,
-        "quantity": 15,
-        "discount": 21
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 230,
-        "price": 185,
-        "quantity": 10,
-        "discount": 20
-      }
-    ]
-  },
-  {
     "name": "Fresh Fragrant Madurai Jasmine & Red Rose Traditional Garland (Mallipoo Mala)",
     "description": "Authentic South Indian Sambac Jasmine (Madurai Mallipoo / Mogra) tightly woven strand garland adorned with fresh fragrant red rosebuds and hanging twin rose pendant. Unmatched natural sweet floral fragrance, flown fresh directly to your doorstep across the USA.",
     "image": "/images/products/new/5-2.png",
@@ -365,9 +175,9 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     "price": 75,
     "discount": 21,
     "quantity": 30,
+    "gst": 0,
     "isTaxable": true,
     "taxCode": "TAX_FLORAL_JASMINE",
-    "gst": 0,
     "category": "Fresh Flower Strings & Jasmine",
     "rating": 5,
     "reviewsCount": 112,
@@ -393,7 +203,345 @@ export const SEED_PRODUCTS: SeedProduct[] = [
         "quantity": 10,
         "discount": 23
       }
-    ]
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa6e"
+  },
+  {
+    "name": "Fresh Madurai Jasmine (Mallipoo) String",
+    "description": "Authentic Grade-A Madurai Mallipoo hand-strung tightly on auspicious red cotton thread. Packed in insulated temperature-controlled cold boxes for overnight USA nationwide delivery.",
+    "image": "/images/products/prod-madurai-mallipoo.jpg",
+    "mrp": 30,
+    "price": 24,
+    "discount": 20,
+    "quantity": 50,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_JASMINE",
+    "category": "Fresh Flower Strings & Jasmine",
+    "rating": 5,
+    "reviewsCount": 128,
+    "variants": [
+      {
+        "name": "1 Yard",
+        "mrp": 30,
+        "price": 24,
+        "quantity": 25,
+        "discount": 20
+      },
+      {
+        "name": "2 Yards",
+        "mrp": 55,
+        "price": 44,
+        "quantity": 20,
+        "discount": 20
+      },
+      {
+        "name": "5 Yards (Festive Length)",
+        "mrp": 125,
+        "price": 99,
+        "quantity": 15,
+        "discount": 21
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa6f"
+  },
+  {
+    "name": "Fresh Sampangi (Tuberose) Flower String",
+    "description": "Intensely fragrant double-bloom Indian Tuberose (Sampangi / Rajnigandha) hand-strung for home deity decoration, door toranams, and festive archana.",
+    "image": "/images/products/prod-sampangi-string.jpg",
+    "mrp": 28,
+    "price": 22,
+    "discount": 21,
+    "quantity": 40,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_STRINGS",
+    "category": "Fresh Flower Strings & Jasmine",
+    "rating": 4.8,
+    "reviewsCount": 94,
+    "variants": [
+      {
+        "name": "1 Yard",
+        "mrp": 28,
+        "price": 22,
+        "quantity": 20,
+        "discount": 21
+      },
+      {
+        "name": "2 Yards",
+        "mrp": 50,
+        "price": 40,
+        "quantity": 15,
+        "discount": 20
+      },
+      {
+        "name": "4 Yards",
+        "mrp": 95,
+        "price": 75,
+        "quantity": 10,
+        "discount": 21
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa70"
+  },
+  {
+    "name": "Fragrant White Button Flower (Kakada) String",
+    "description": "Delicate star-shaped Kakada jasmine buds strung continuously. Lightweight, highly fragrant, and long-lasting for deity decoration and personal adornment.",
+    "image": "/images/products/prod-kakada-string.jpg",
+    "mrp": 25,
+    "price": 20,
+    "discount": 20,
+    "quantity": 35,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_STRINGS",
+    "category": "Fresh Flower Strings & Jasmine",
+    "rating": 4.7,
+    "reviewsCount": 61,
+    "variants": [
+      {
+        "name": "1 Yard",
+        "mrp": 25,
+        "price": 20,
+        "quantity": 20,
+        "discount": 20
+      },
+      {
+        "name": "2 Yards",
+        "mrp": 48,
+        "price": 38,
+        "quantity": 15,
+        "discount": 21
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa71"
+  },
+  {
+    "name": "Traditional Jasmine & Rose Bridal Hair Veni / Gajra",
+    "description": "Handcrafted South Indian semi-circular hair veni composed of fresh white jasmine and deep red rose petals. Perfect for Bharatanatyam, weddings, and baby showers.",
+    "image": "/images/products/prod-jasmine-rose-veni.jpg",
+    "mrp": 35,
+    "price": 28,
+    "discount": 20,
+    "quantity": 30,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_VENI",
+    "category": "Fresh Flower Strings & Jasmine",
+    "rating": 4.9,
+    "reviewsCount": 83,
+    "variants": [
+      {
+        "name": "Single Veni",
+        "mrp": 35,
+        "price": 28,
+        "quantity": 20,
+        "discount": 20
+      },
+      {
+        "name": "Set of 2 Venis",
+        "mrp": 65,
+        "price": 50,
+        "quantity": 15,
+        "discount": 23
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa72"
+  },
+  {
+    "name": "Royal Pink & Ivory Carnation Wedding Garland (Jai Mala)",
+    "description": "Exquisite handcrafted wedding Jai Mala featuring densely packed blush pink and ivory carnation blooms, accented with shimmering golden brocade rose medallions and velvety crimson red rose accents. Designed for traditional Indian wedding ceremonies, Anand Karaj, and mandap rituals with lasting freshness delivered across the USA.",
+    "image": "/images/products/new/01.webp",
+    "mrp": 105,
+    "price": 85,
+    "discount": 19,
+    "quantity": 25,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_GARLAND",
+    "category": "Wedding & Temple Garlands",
+    "rating": 4.9,
+    "reviewsCount": 42,
+    "variants": [
+      {
+        "name": "Standard (4.5 ft)",
+        "mrp": 105,
+        "price": 85,
+        "quantity": 20,
+        "discount": 19
+      },
+      {
+        "name": "Grand Bridal (5 ft)",
+        "mrp": 130,
+        "price": 105,
+        "quantity": 15,
+        "discount": 19
+      },
+      {
+        "name": "Matching Pair (Set of 2)",
+        "mrp": 240,
+        "price": 195,
+        "quantity": 10,
+        "discount": 19
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa73"
+  },
+  {
+    "name": "White Carnation & Red Rose Wedding Varmala with Golden Tassels",
+    "description": "Traditional handcrafted bridal Varmala featuring pristine white carnations interspersed with layered crimson red rose petal rings, fresh green filler foliage, delicate gold bead accents, and grand twin red rosebud pendant tassels. Ideal for North and South Indian weddings.",
+    "image": "/images/products/new/02.webp",
+    "mrp": 115,
+    "price": 89,
+    "discount": 23,
+    "quantity": 20,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_GARLAND",
+    "category": "Wedding & Temple Garlands",
+    "rating": 5,
+    "reviewsCount": 58,
+    "variants": [
+      {
+        "name": "Standard (4.5 ft)",
+        "mrp": 115,
+        "price": 89,
+        "quantity": 18,
+        "discount": 23
+      },
+      {
+        "name": "Grand Bridal (5 ft)",
+        "mrp": 140,
+        "price": 110,
+        "quantity": 12,
+        "discount": 21
+      },
+      {
+        "name": "Matching Pair (Set of 2)",
+        "mrp": 260,
+        "price": 205,
+        "quantity": 8,
+        "discount": 21
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa74"
+  },
+  {
+    "name": "Peach & Ivory Pastel Carnation Garland with Pearl Drop Tassels",
+    "description": "Contemporary pastel wedding garland crafted with soft peach and ivory carnation petals, adorned with golden tissue rose rings and an elegant clustered pendant featuring hanging pearl strings with rosebuds. Perfect for pastel wedding themes and reception ceremonies.",
+    "image": "/images/products/new/03.webp",
+    "mrp": 120,
+    "price": 92,
+    "discount": 23,
+    "quantity": 22,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_GARLAND",
+    "category": "Wedding & Temple Garlands",
+    "rating": 4.9,
+    "reviewsCount": 36,
+    "variants": [
+      {
+        "name": "Standard (4.5 ft)",
+        "mrp": 120,
+        "price": 92,
+        "quantity": 15,
+        "discount": 23
+      },
+      {
+        "name": "Grand Bridal (5 ft)",
+        "mrp": 145,
+        "price": 115,
+        "quantity": 10,
+        "discount": 21
+      },
+      {
+        "name": "Matching Pair (Set of 2)",
+        "mrp": 270,
+        "price": 215,
+        "quantity": 8,
+        "discount": 20
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa75"
+  },
+  {
+    "name": "Crimson Rose Petal & Peach Carnation Grand Varmala",
+    "description": "Opulent full-length Indian wedding garland featuring alternating sections of deep crimson Dutch rose petals and soft peach carnations, bound by handcrafted golden flower rings and a rich ceremonial medallion base. Delivers a regal bridal aesthetic.",
+    "image": "/images/products/new/04.webp",
+    "mrp": 125,
+    "price": 98,
+    "discount": 22,
+    "quantity": 18,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_GARLAND",
+    "category": "Wedding & Temple Garlands",
+    "rating": 4.8,
+    "reviewsCount": 49,
+    "variants": [
+      {
+        "name": "Standard (4.5 ft)",
+        "mrp": 125,
+        "price": 98,
+        "quantity": 15,
+        "discount": 22
+      },
+      {
+        "name": "Grand Bridal (5 ft)",
+        "mrp": 150,
+        "price": 120,
+        "quantity": 10,
+        "discount": 20
+      },
+      {
+        "name": "Matching Pair (Set of 2)",
+        "mrp": 280,
+        "price": 225,
+        "quantity": 6,
+        "discount": 20
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa76"
+  },
+  {
+    "name": "Fresh Pink Rosebud & White Carnation Wedding Garland",
+    "description": "Classic Hindu and South Indian wedding garland composed of fluffy white carnation bloom segments punctuated by whole fresh pink roses, baby's breath (gypsophila), and delicate rosebud tassels. Lightweight, fragrant, and gracefully balanced.",
+    "image": "/images/products/new/5-1.png",
+    "mrp": 100,
+    "price": 82,
+    "discount": 18,
+    "quantity": 28,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_GARLAND",
+    "category": "Wedding & Temple Garlands",
+    "rating": 4.9,
+    "reviewsCount": 63,
+    "variants": [
+      {
+        "name": "Standard (4.5 ft)",
+        "mrp": 100,
+        "price": 82,
+        "quantity": 20,
+        "discount": 18
+      },
+      {
+        "name": "Grand Bridal (5 ft)",
+        "mrp": 125,
+        "price": 99,
+        "quantity": 15,
+        "discount": 21
+      },
+      {
+        "name": "Matching Pair (Set of 2)",
+        "mrp": 230,
+        "price": 185,
+        "quantity": 10,
+        "discount": 20
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa77"
   },
   {
     "name": "Sacred Pink Lotus Petal Temple & Wedding Garland (Kamal Mala)",
@@ -403,9 +551,9 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     "price": 95,
     "discount": 24,
     "quantity": 16,
+    "gst": 0,
     "isTaxable": true,
     "taxCode": "TAX_FLORAL_LOTUS",
-    "gst": 0,
     "category": "Loose Flowers for Daily Pooja",
     "rating": 5,
     "reviewsCount": 54,
@@ -431,7 +579,8 @@ export const SEED_PRODUCTS: SeedProduct[] = [
         "quantity": 5,
         "discount": 22
       }
-    ]
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa78"
   },
   {
     "name": "Auspicious Red Rose Petal & Golden Marigold Temple Garland",
@@ -441,9 +590,9 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     "price": 68,
     "discount": 20,
     "quantity": 32,
+    "gst": 0,
     "isTaxable": true,
     "taxCode": "TAX_FLORAL_MARIGOLD",
-    "gst": 0,
     "category": "Loose Flowers for Daily Pooja",
     "rating": 4.8,
     "reviewsCount": 76,
@@ -469,158 +618,284 @@ export const SEED_PRODUCTS: SeedProduct[] = [
         "quantity": 10,
         "discount": 21
       }
-    ]
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa79"
   },
   {
-    "name": "Classic White Carnation & Crimson Rose Royal Garland",
-    "description": "Elegant symmetric wedding garland displaying layered tiers of snow-white carnations, bold crimson rose petal segments, and shimmering golden flower trims with delicate baby's breath greenery borders.",
-    "image": "/images/products/new/5-5.png",
-    "mrp": 110,
-    "price": 86,
-    "discount": 22,
-    "quantity": 24,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
+    "name": "Fresh Orange & Yellow Marigold Loose (Genda)",
+    "description": "Vibrant, fresh-plucked orange and golden-yellow marigold flower heads (Genda Phool) ideal for daily puja, Rangoli floor art, temple garlands, and Diwali decorations.",
+    "image": "/images/products/prod-orange-marigold-loose.jpg",
+    "mrp": 24,
+    "price": 19,
+    "discount": 21,
+    "quantity": 60,
     "gst": 0,
-    "category": "Wedding & Temple Garlands",
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_MARIGOLD",
+    "category": "Loose Flowers for Daily Pooja",
     "rating": 4.9,
-    "reviewsCount": 39,
+    "reviewsCount": 115,
     "variants": [
       {
-        "name": "Standard (4.5 ft)",
-        "mrp": 110,
-        "price": 86,
-        "quantity": 18,
-        "discount": 22
+        "name": "250g Box (Half Pound)",
+        "mrp": 24,
+        "price": 19,
+        "quantity": 30,
+        "discount": 21
       },
       {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 135,
-        "price": 108,
-        "quantity": 12,
-        "discount": 20
+        "name": "500g Box (One Pound)",
+        "mrp": 42,
+        "price": 34,
+        "quantity": 20,
+        "discount": 19
       },
       {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 250,
-        "price": 198,
-        "quantity": 8,
+        "name": "1kg Bulk Box (2.2 lbs)",
+        "mrp": 75,
+        "price": 59,
+        "quantity": 10,
         "discount": 21
       }
-    ]
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa7a"
   },
   {
-    "name": "Ruby Red & Peach Carnation Bridal Varmala with Rose Pendant",
-    "description": "Majestic bridal Varmala featuring deep ruby red rose petals seamlessly blended with pastel peach carnation tiers and gold-plated floral rings, finished with a heavy clustered rose pendant and golden cord bells.",
-    "image": "/images/products/new/5-6.png",
-    "mrp": 118,
-    "price": 90,
+    "name": "Fresh Pink Lotus Blooms (Kamal Pushpa)",
+    "description": "Pristine sacred Indian pink lotus blooms (Kamal Pushpa), handpicked with fresh long stems. Auspicious for Goddess Lakshmi worship, temple alankaram, and housewarmings.",
+    "image": "/images/products/prod-pink-lotus-blooms.jpg",
+    "mrp": 38,
+    "price": 29,
     "discount": 24,
-    "quantity": 20,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
+    "quantity": 25,
     "gst": 0,
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.9,
-    "reviewsCount": 47,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_LOTUS",
+    "category": "Loose Flowers for Daily Pooja",
+    "rating": 5,
+    "reviewsCount": 88,
     "variants": [
       {
-        "name": "Standard (4.5 ft)",
-        "mrp": 118,
-        "price": 90,
+        "name": "Box of 2 Blooms",
+        "mrp": 38,
+        "price": 29,
         "quantity": 15,
         "discount": 24
       },
       {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 145,
-        "price": 115,
+        "name": "Box of 4 Blooms",
+        "mrp": 68,
+        "price": 52,
         "quantity": 10,
+        "discount": 24
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa7b"
+  },
+  {
+    "name": "Fresh Yellow Sevvanthi (Chrysanthemum) Loose",
+    "description": "Fresh, firm yellow Chrysanthemum (Sevvanthi / Chamomile) loose flower heads. Long shelf-life, vibrant golden hue, ideal for archana and festive decor.",
+    "image": "/images/products/prod-yellow-sevanthi-loose.jpg",
+    "mrp": 22,
+    "price": 18,
+    "discount": 18,
+    "quantity": 45,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_LOOSE",
+    "category": "Loose Flowers for Daily Pooja",
+    "rating": 4.8,
+    "reviewsCount": 72,
+    "variants": [
+      {
+        "name": "250g Box",
+        "mrp": 22,
+        "price": 18,
+        "quantity": 25,
+        "discount": 18
+      },
+      {
+        "name": "500g Box",
+        "mrp": 40,
+        "price": 32,
+        "quantity": 20,
+        "discount": 20
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa7c"
+  },
+  {
+    "name": "Fresh Indian Mango Leaves (Mavilai for Kalasam & Toran)",
+    "description": "Fresh green glossy mango tree leaves (Mavilai) harvested with intact stems. Essential for decorating Puja Kalasam, entrance door Toranam, and Vedic havans.",
+    "image": "/images/products/prod-mango-leaves-mavilai.jpg",
+    "mrp": 18,
+    "price": 14,
+    "discount": 22,
+    "quantity": 50,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_LEAVES",
+    "category": "Sacred Pooja Leaves & Greenery",
+    "rating": 4.9,
+    "reviewsCount": 97,
+    "variants": [
+      {
+        "name": "Bunch of 11 Leaves",
+        "mrp": 18,
+        "price": 14,
+        "quantity": 25,
+        "discount": 22
+      },
+      {
+        "name": "Bunch of 21 Leaves",
+        "mrp": 28,
+        "price": 22,
+        "quantity": 15,
         "discount": 21
       },
       {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 265,
-        "price": 210,
-        "quantity": 6,
-        "discount": 21
+        "name": "Festivity Pack of 51 Leaves",
+        "mrp": 58,
+        "price": 45,
+        "quantity": 10,
+        "discount": 22
       }
-    ]
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa7d"
   },
   {
-    "name": "Devotional White Carnation & Red Petal Swirl Garland",
-    "description": "Handcrafted devotional garland featuring fluffy white carnations structured with circular flower cuffs, a dense center cylinder of red rose petals, and twin fresh rosebud pendant bells. Ideal for wedding exchanges, temple vigraha alankaram, and milestone anniversaries.",
-    "image": "/images/products/new/5-7.png",
-    "mrp": 108,
-    "price": 84,
-    "discount": 22,
-    "quantity": 26,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
+    "name": "Fresh Paan / Betel Leaves (Vethalai)",
+    "description": "Crisp, heart-shaped fresh Indian betel leaves (Paan / Vethalai) with vibrant green color and intact petioles. Vital for Tamboolam, Satyanarayan Puja, and wedding rituals.",
+    "image": "/images/products/prod-betel-leaves-paan.jpg",
+    "mrp": 20,
+    "price": 16,
+    "discount": 20,
+    "quantity": 45,
     "gst": 0,
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.8,
-    "reviewsCount": 31,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_LEAVES",
+    "category": "Sacred Pooja Leaves & Greenery",
+    "rating": 4.9,
+    "reviewsCount": 104,
     "variants": [
       {
-        "name": "Standard (4.5 ft)",
-        "mrp": 108,
-        "price": 84,
+        "name": "Pack of 15 Leaves",
+        "mrp": 20,
+        "price": 16,
+        "quantity": 20,
+        "discount": 20
+      },
+      {
+        "name": "Pack of 30 Leaves",
+        "mrp": 35,
+        "price": 28,
+        "quantity": 15,
+        "discount": 20
+      },
+      {
+        "name": "Bulk Pack of 100 Leaves",
+        "mrp": 95,
+        "price": 75,
+        "quantity": 10,
+        "discount": 21
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa7e"
+  },
+  {
+    "name": "Fresh Banana Leaves (Vazhai Ilai Cuts for Bhojan)",
+    "description": "Traditional fresh broad Indian plantain / banana leaf cuts. Clean, food-grade, ideal for serving ceremonial festive meals (Sadhya), prasadam, and deity altar lining.",
+    "image": "/images/products/prod-banana-leaves-cuts.jpg",
+    "mrp": 24,
+    "price": 18,
+    "discount": 25,
+    "quantity": 40,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_LEAVES",
+    "category": "Sacred Pooja Leaves & Greenery",
+    "rating": 4.8,
+    "reviewsCount": 68,
+    "variants": [
+      {
+        "name": "Pack of 5 Cuts",
+        "mrp": 24,
+        "price": 18,
+        "quantity": 25,
+        "discount": 25
+      },
+      {
+        "name": "Pack of 10 Cuts",
+        "mrp": 42,
+        "price": 32,
+        "quantity": 15,
+        "discount": 24
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa7f"
+  },
+  {
+    "name": "Sacred Tulsi (Holy Basil) Leaves & Manjari Sprigs",
+    "description": "Auspicious Krishna Tulsi and Rama Tulsi sprigs with aromatic leaves and flower manjari. Essential for Lord Vishnu, Krishna, and Satyanarayan pujas.",
+    "image": "/images/products/prod-sacred-tulsi-sprigs.jpg",
+    "mrp": 19,
+    "price": 15,
+    "discount": 21,
+    "quantity": 40,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_LEAVES",
+    "category": "Sacred Pooja Leaves & Greenery",
+    "rating": 5,
+    "reviewsCount": 119,
+    "variants": [
+      {
+        "name": "Fresh Pack 100g",
+        "mrp": 19,
+        "price": 15,
+        "quantity": 25,
+        "discount": 21
+      },
+      {
+        "name": "Double Pack 250g",
+        "mrp": 38,
+        "price": 30,
+        "quantity": 15,
+        "discount": 21
+      }
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa80"
+  },
+  {
+    "name": "Sacred Durva Grass (Arugampul) & Bilva Leaves Combo",
+    "description": "Divine combination of fresh 3-blade green Durva grass (for Lord Ganesha) and sacred trifoliate Bilva (Bel Patra) leaves (for Lord Shiva Abhishekam). Packed fresh.",
+    "image": "/images/products/prod-durva-bilva-combo.jpg",
+    "mrp": 18,
+    "price": 14,
+    "discount": 22,
+    "quantity": 35,
+    "gst": 0,
+    "isTaxable": true,
+    "taxCode": "TAX_FLORAL_LEAVES",
+    "category": "Sacred Pooja Leaves & Greenery",
+    "rating": 4.9,
+    "reviewsCount": 67,
+    "variants": [
+      {
+        "name": "Standard Altar Combo",
+        "mrp": 18,
+        "price": 14,
         "quantity": 20,
         "discount": 22
       },
       {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 130,
-        "price": 102,
-        "quantity": 12,
+        "name": "Festival Special Pack",
+        "mrp": 32,
+        "price": 25,
+        "quantity": 15,
         "discount": 22
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 240,
-        "price": 190,
-        "quantity": 8,
-        "discount": 21
       }
-    ]
-  },
-  {
-    "name": "Blush Pink & Ivory Carnation Heritage Varmala",
-    "description": "Exquisite handcrafted heritage wedding garland composed of soft blush pink and ivory carnation blooms with golden zari flower dividers and rich crimson rose tips. Designed for lightweight comfort during prolonged wedding rituals and photo sessions.",
-    "image": "/images/products/new/8.webp",
-    "mrp": 112,
-    "price": 88,
-    "discount": 21,
-    "quantity": 22,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "gst": 0,
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.9,
-    "reviewsCount": 53,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 112,
-        "price": 88,
-        "quantity": 18,
-        "discount": 21
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 138,
-        "price": 110,
-        "quantity": 12,
-        "discount": 20
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 250,
-        "price": 200,
-        "quantity": 8,
-        "discount": 20
-      }
-    ]
+    ],
+    "_id": "6ad5a976230c1ab9bd4baa81"
   }
 ];

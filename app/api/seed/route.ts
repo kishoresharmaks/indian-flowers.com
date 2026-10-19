@@ -61,7 +61,7 @@ async function runSeed() {
 
   return {
     success: true,
-    message: 'Database seeded successfully with 4 categories, 20 products, 3 sliders, and local images!',
+    message: 'Database seeded successfully with 4 categories, 20 products (5 per category), 3 sliders, and local images!',
     counts: {
       categories: categoryResults.length,
       banners: bannerResults.length,
