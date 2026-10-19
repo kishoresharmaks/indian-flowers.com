@@ -268,7 +268,7 @@ export default function AdminBillingPage() {
                           <th className="p-4">Party Type</th>
                           <th className="p-4">Name</th>
                           <th className="p-4">Mobile Phone</th>
-                          <th className="p-4">GSTIN</th>
+                          <th className="p-4">Tax ID / EIN</th>
                           <th className="p-4 text-right">Account Balance</th>
                           <th className="p-4 text-center">Actions</th>
                         </tr>
@@ -297,7 +297,7 @@ export default function AdminBillingPage() {
                               </td>
                               <td className="p-4 font-bold text-[#163B5C]">{p.name}</td>
                               <td className="p-4 font-semibold text-gray-600">{p.phone}</td>
-                              <td className="p-4 font-mono text-gray-500">{p.gstin || 'Unregistered'}</td>
+                              <td className="p-4 font-mono text-gray-500">{(p as any).taxId || p.gstin || 'None / Exempt'}</td>
                               <td className="p-4 text-right">
                                 {p.currentBalance > 0 ? (
                                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">

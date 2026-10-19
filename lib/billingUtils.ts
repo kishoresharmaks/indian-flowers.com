@@ -35,16 +35,22 @@ export async function generateNextDocNumber(
   field: string = 'docNumber'
 ): Promise<string> {
   const now = new Date();
-  const istDateStr = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-    .format(now)
-    .replace(/-/g, '');
+  const timeZone = process.env.STORE_TIMEZONE || 'America/Los_Angeles';
+  let dateFormatted: string;
+  try {
+    dateFormatted = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+      .format(now)
+      .replace(/-/g, '');
+  } catch {
+    dateFormatted = now.toISOString().slice(0, 10).replace(/-/g, '');
+  }
 
-  const pattern = new RegExp(`^${prefix}-${istDateStr}-`);
+  const pattern = new RegExp(`^${prefix}-${dateFormatted}-`);
   const latest = await model
     .findOne({ [field]: pattern })
     .sort({ [field]: -1 })
@@ -60,10 +66,10 @@ export async function generateNextDocNumber(
     }
   }
 
-  let docNumber = `${prefix}-${istDateStr}-${String(nextSeq).padStart(4, '0')}`;
+  let docNumber = `${prefix}-${dateFormatted}-${String(nextSeq).padStart(4, '0')}`;
   while (await model.exists({ [field]: docNumber })) {
     nextSeq++;
-    docNumber = `${prefix}-${istDateStr}-${String(nextSeq).padStart(4, '0')}`;
+    docNumber = `${prefix}-${dateFormatted}-${String(nextSeq).padStart(4, '0')}`;
   }
 
   return docNumber;

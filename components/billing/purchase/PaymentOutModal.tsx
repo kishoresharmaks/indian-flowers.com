@@ -98,14 +98,14 @@ export default function PaymentOutModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto pr-1">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#163B5C] uppercase">Vendor / Farmer Name *</label>
+            <label className="text-xs font-bold text-[#163B5C] uppercase">Vendor / Grower Name *</label>
             <input
               type="text"
               required
-              placeholder="e.g. Honey Producer Co-op"
+              placeholder="e.g. Fresh Flower Grower / Farm Wholesale Direct"
               value={partyName}
               onChange={(e) => setPartyName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold focus:outline-none focus:border-[#ED3500]"
+              className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold focus:outline-none focus:border-[#2F6B4F]"
             />
           </div>
 

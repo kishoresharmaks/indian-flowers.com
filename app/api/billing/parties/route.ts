@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
           customerMap.set(ord.customerPhone.trim(), {
             name: ord.customerName.trim(),
             phone: ord.customerPhone.trim(),
-            email: emailVal === 'pos@beeshubfarmland.com' ? '' : emailVal,
+            email: emailVal === 'pos@beeshubfarmland.com' || emailVal === 'pos@indian-flowers.com' ? '' : emailVal,
             address: ord.shippingAddress || '',
           });
         }
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
           customerMap.set(doc.customerPhone.trim(), {
             name: doc.customerName.trim(),
             phone: doc.customerPhone.trim(),
-            email: emailVal === 'pos@beeshubfarmland.com' ? '' : emailVal,
+            email: emailVal === 'pos@beeshubfarmland.com' || emailVal === 'pos@indian-flowers.com' ? '' : emailVal,
             address: doc.billingAddress || '',
           });
         }

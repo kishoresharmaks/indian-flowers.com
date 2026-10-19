@@ -45,7 +45,7 @@ export async function GET() {
           contactPhone: settings?.contactPhone || '',
           currency: STORE_CURRENCY,
           locale: STORE_LOCALE,
-          timezone: settings?.timezone || 'Asia/Kolkata',
+          timezone: settings?.timezone || process.env.STORE_TIMEZONE || 'America/Los_Angeles',
           logoDataUrl: settings?.logoDataUrl || '',
           faviconDataUrl: settings?.faviconDataUrl || '',
           adminEmail: admin?.email || '',

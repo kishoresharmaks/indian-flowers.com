@@ -403,7 +403,7 @@ export default function PrintableDocumentModal({
                         <tr key={idx} className="hover:bg-slate-50/50">
                           <td className="py-2.5 px-3 border border-slate-200 text-slate-500 font-medium">{idx + 1}</td>
                           <td className="py-2.5 px-3 border border-slate-200 font-bold text-slate-800">
-                            {item.name || item.productName || 'Organic Product Item'}
+                            {item.name || item.productName || 'Fresh Floral Item'}
                             {item.variantName && (
                               <span className="block text-[10px] text-slate-500 font-normal">({item.variantName})</span>
                             )}

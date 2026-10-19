@@ -1765,15 +1765,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             <div className="h-16 px-4 border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <img
-                  src="/nexus-mark.svg"
-                  alt="Nexus Ecom CMS logo"
+                  src="/indian-flowers-logo.svg"
+                  alt="The Indian Flowers logo"
                   className="w-9 h-9 object-contain rounded-xl border border-[#E8EDF2]"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
                 <div>
-                  <h2 className="font-extrabold text-sm text-[#163B5C]">Nexus Ecom</h2>
+                  <h2 className="font-extrabold text-sm text-[#0B3B24]">The Indian Flowers</h2>
                   <span className="text-[11px] text-[#64748B]">Admin Portal</span>
                 </div>
               </div>
@@ -1917,8 +1917,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         <div className="h-16 sm:h-20 px-4 border-b border-[#E2E8F0] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <img
-              src="/nexus-mark.svg"
-              alt="Nexus Ecom CMS admin logo"
+              src="/indian-flowers-logo.svg"
+              alt="The Indian Flowers admin logo"
               className="w-10 h-10 object-contain rounded-xl shadow-xs border border-[#E8EDF2] shrink-0"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';
@@ -1927,15 +1927,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             {!isSidebarCollapsed && (
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h2 className="font-extrabold text-sm text-[#163B5C] truncate">
-                    Nexus Ecom
+                  <h2 className="font-extrabold text-sm text-[#0B3B24] truncate">
+                    The Indian Flowers
                   </h2>
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-[#ED3500]/10 text-[#ED3500] px-1.5 py-0.2 rounded">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-[#0B3B24]/10 text-[#0B3B24] px-1.5 py-0.5 rounded">
                     Admin
                   </span>
                 </div>
                 <span className="text-[11px] text-[#64748B] block truncate">
-                  The Indian Flowers
+                  Storefront Management
                 </span>
               </div>
             )}
@@ -4512,10 +4512,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Organic Wild Honey 500g"
+                    placeholder="e.g. Fresh Jasmine Strings (Mallipoo) 5ft"
                     value={productForm.name}
                     onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#2F6B4F]"
                   />
                 </div>
 
@@ -5803,7 +5803,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
       {/* Footer */}
       <footer className="bg-white border-t border-[#E8EDF2] py-4 px-6 text-center text-xs text-[#64748B]">
-        Nexus Ecom CMS administration • The Indian Flowers Portal
+        The Indian Flowers Commerce Administration • US Storefront Management
       </footer>
     </div>
   </div>

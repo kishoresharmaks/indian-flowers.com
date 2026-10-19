@@ -13,11 +13,11 @@ export async function GET(req: NextRequest) {
     if (categories.length === 0) {
       const defaults = [
         { name: 'Rent', description: 'Store & warehouse rent' },
-        { name: 'Electricity & Utilities', description: 'Power and water bills' },
-        { name: 'Logistics & Transport', description: 'Honey delivery & farmland shipping' },
-        { name: 'Packaging Supplies', description: 'Bottles, jars, labels, tape' },
-        { name: 'Labor & Salary', description: 'Staff wages & worker payouts' },
-        { name: 'Maintenance & Repairs', description: 'Equipment upkeep' },
+        { name: 'Electricity & Utilities', description: 'Power and cold-storage refrigeration bills' },
+        { name: 'Logistics & Transport', description: 'Overnight floral air cargo & FedEx priority shipping' },
+        { name: 'Packaging Supplies', description: 'Insulated thermal boxes, hydration gel packs, floral wraps' },
+        { name: 'Labor & Salary', description: 'Staff wages & florist garland artisan payouts' },
+        { name: 'Maintenance & Repairs', description: 'Refrigeration & floral cold-room upkeep' },
       ];
       await ExpenseCategory.insertMany(defaults);
       categories = await ExpenseCategory.find().sort({ name: 1 }).lean();

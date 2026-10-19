@@ -23,7 +23,11 @@ export default function PartyModal({
   );
   const [name, setName] = useState(initialData?.name || '');
   const [phone, setPhone] = useState(initialData?.phone || '');
-  const [email, setEmail] = useState(initialData?.email === 'pos@beeshubfarmland.com' ? '' : (initialData?.email || ''));
+  const [email, setEmail] = useState(
+    initialData?.email === 'pos@beeshubfarmland.com' || initialData?.email === 'pos@indian-flowers.com'
+      ? ''
+      : initialData?.email || ''
+  );
   const [address, setAddress] = useState(initialData?.address || '');
   const [gstin, setGstin] = useState(initialData?.gstin || '');
   const [openingBalance, setOpeningBalance] = useState(String(initialData?.openingBalance || 0));
@@ -147,13 +151,13 @@ export default function PartyModal({
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[#163B5C] uppercase">GSTIN (Optional)</label>
+              <label className="text-xs font-bold text-[#163B5C] uppercase">Tax ID / EIN / Resale # (Optional)</label>
               <input
                 type="text"
-                placeholder="33AAOCB0453D1Z3"
+                placeholder="e.g. 12-3456789 or State Resale #"
                 value={gstin}
                 onChange={(e) => setGstin(e.target.value.toUpperCase())}
-                className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#ED3500] uppercase"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#2F6B4F] uppercase"
               />
             </div>
           </div>
@@ -162,10 +166,10 @@ export default function PartyModal({
             <label className="text-xs font-bold text-[#163B5C] uppercase">Email Address (Optional)</label>
             <input
               type="email"
-              placeholder="vendor@beeshubfarmland.com"
+              placeholder="vendor@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#ED3500]"
+              className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#2F6B4F]"
             />
           </div>
 

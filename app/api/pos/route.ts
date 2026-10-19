@@ -251,13 +251,17 @@ export async function POST(request: NextRequest) {
       orderType: 'POS',
       customerName: customerName.trim() || 'Walk-in Guest',
       customerPhone: customerPhone.trim() || '0000000000',
-      customerEmail: customerEmail.trim() === 'pos@beeshubfarmland.com' ? '' : customerEmail.trim(),
+      customerEmail:
+        customerEmail.trim() === 'pos@beeshubfarmland.com' ||
+        customerEmail.trim() === 'pos@indian-flowers.com'
+          ? ''
+          : customerEmail.trim(),
       streetAddress: 'Counter POS Sale',
       city: 'Storefront',
       state: process.env.NEXT_PUBLIC_COMPANY_STATE || 'CA',
       zipCode: process.env.NEXT_PUBLIC_COMPANY_ZIP || '94538',
       country: 'US',
-      shippingAddress: 'Nexus Ecom Counter Sale',
+      shippingAddress: 'The Indian Flowers Store Counter Sale',
       pincode: '94538',
       items: verifiedItems,
       subtotal: calculatedSubtotal,

@@ -112,10 +112,10 @@ export default function ExpenseFormModal({
             <input
               type="text"
               required
-              placeholder="e.g. Honey Jar Packaging Tape & Labels"
+              placeholder="e.g. Floral Cold-Chain Packaging, Gel Packs & Insulation Boxes"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold focus:outline-none focus:border-[#ED3500]"
+              className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-semibold focus:outline-none focus:border-[#2F6B4F]"
             />
           </div>
 

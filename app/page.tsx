@@ -1878,7 +1878,7 @@ export default function CustomerStore() {
                           <Gift className="w-4 h-4" />
                         </div>
                         <div>
-                          <h4 className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
+                          <h4 className="text-xs font-bold text-[#0B3B24] uppercase tracking-wider">
                             Customer Loyalty Rewards
                           </h4>
                           <p className="text-[11px] text-[#64748B]">
@@ -1917,7 +1917,7 @@ export default function CustomerStore() {
                             className="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer"
                           />
                           <div className="text-xs">
-                            <span className="font-bold text-[#163B5C]">
+                            <span className="font-bold text-[#0B3B24]">
                               Redeem Loyalty Points for an instant discount
                             </span>
                             <p className="text-[11px] text-[#64748B]">

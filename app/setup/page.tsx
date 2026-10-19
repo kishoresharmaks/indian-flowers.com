@@ -65,9 +65,10 @@ const LOCALES = [
 ];
 
 const TIMEZONES = [
-  { code: 'Asia/Kolkata', label: 'Asia/Kolkata (IST • UTC+05:30)' },
-  { code: 'Asia/Tokyo', label: 'Asia/Tokyo (JST • UTC+09:00)' },
-  { code: 'Australia/Sydney', label: 'Australia/Sydney (AEST • UTC+10:00)' },
+  { code: 'America/Los_Angeles', label: 'America/Los_Angeles (Pacific • UTC-08:00)' },
+  { code: 'America/Denver', label: 'America/Denver (Mountain • UTC-07:00)' },
+  { code: 'America/Chicago', label: 'America/Chicago (Central • UTC-06:00)' },
+  { code: 'America/New_York', label: 'America/New_York (Eastern • UTC-05:00)' },
   { code: 'UTC', label: 'Coordinated Universal Time (UTC)' },
 ];
 
@@ -94,7 +95,7 @@ export default function SetupPage() {
     password: '',
     currency: 'USD',
     locale: 'en-US',
-    timezone: 'Asia/Kolkata',
+    timezone: 'America/Los_Angeles',
     logoDataUrl: '',
     faviconDataUrl: '',
   });
@@ -319,12 +320,12 @@ export default function SetupPage() {
       <header className="border-b border-[#E8EDF2] bg-white/90 backdrop-blur-md sticky top-0 z-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-[#163B5C] flex items-center justify-center text-white font-bold text-sm shadow-sm">
-              N
+            <div className="h-9 w-9 rounded-xl bg-[#0B3B24] flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden p-1.5">
+              <img src="/indian-flowers-logo.svg" alt="The Indian Flowers" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-[#163B5C] text-sm tracking-tight">Nexus Ecom CMS</span>
+                <span className="font-bold text-[#0B3B24] text-sm tracking-tight">The Indian Flowers Setup</span>
                 <span className="text-[11px] font-medium text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded-md">
                   {isCompletedInstance ? 'Configuration (Active)' : 'Installation'}
                 </span>
@@ -529,7 +530,7 @@ export default function SetupPage() {
                       <p className="mt-1 text-xs sm:text-sm text-[#64748B] leading-relaxed">
                         {isCompletedInstance
                           ? 'The primary MongoDB database connected to this store instance.'
-                          : 'Nexus stores products, categories, orders, customers, and administrative configurations in MongoDB.'}
+                          : 'Indian Flowers stores products, categories, orders, customers, and administrative configurations in MongoDB.'}
                       </p>
                     </div>
                     {isCompletedInstance && (
@@ -550,8 +551,8 @@ export default function SetupPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setUri('mongodb+srv://admin:password@cluster0.example.mongodb.net/nexus_store?retryWrites=true&w=majority');
-                            setDatabaseName('nexus_store');
+                            setUri('mongodb+srv://admin:password@cluster0.example.mongodb.net/indian_flowers?retryWrites=true&w=majority');
+                            setDatabaseName('indian_flowers');
                           }}
                           className="text-left p-3 rounded-xl border border-[#E8EDF2] hover:border-[#163B5C] hover:bg-[#F8FAFC] transition-colors"
                         >
@@ -562,8 +563,8 @@ export default function SetupPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setUri('mongodb://127.0.0.1:27017/nexus_store');
-                            setDatabaseName('nexus_store');
+                            setUri('mongodb://127.0.0.1:27017/indian_flowers');
+                            setDatabaseName('indian_flowers');
                           }}
                           className="text-left p-3 rounded-xl border border-[#E8EDF2] hover:border-[#163B5C] hover:bg-[#F8FAFC] transition-colors"
                         >
@@ -574,8 +575,8 @@ export default function SetupPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setUri('mongodb://mongo1:27017,mongo2:27017/nexus_store?replicaSet=rs0');
-                            setDatabaseName('nexus_store');
+                            setUri('mongodb://mongo1:27017,mongo2:27017/indian_flowers?replicaSet=rs0');
+                            setDatabaseName('indian_flowers');
                           }}
                           className="text-left p-3 rounded-xl border border-[#E8EDF2] hover:border-[#163B5C] hover:bg-[#F8FAFC] transition-colors"
                         >
@@ -623,7 +624,7 @@ export default function SetupPage() {
                           type={showUriPassword ? 'text' : 'password'}
                           value={uri}
                           onChange={(e) => handleUriChange(e.target.value)}
-                          placeholder="mongodb+srv://username:password@cluster.mongodb.net/nexus_store"
+                          placeholder="mongodb+srv://username:password@cluster.mongodb.net/indian_flowers"
                           className={`w-full rounded-xl border px-3.5 py-3 pr-12 font-mono text-xs sm:text-sm outline-none transition ${
                             isCompletedInstance
                               ? 'bg-[#F8FAFC] border-[#E8EDF2] text-[#163B5C] cursor-default'
@@ -657,7 +658,7 @@ export default function SetupPage() {
                         type="text"
                         value={databaseName}
                         onChange={(e) => setDatabaseName(e.target.value)}
-                        placeholder="nexus_store"
+                        placeholder="indian_flowers"
                         className={`w-full rounded-xl border px-3.5 py-3 font-mono text-xs sm:text-sm outline-none transition ${
                           isCompletedInstance
                             ? 'bg-[#F8FAFC] border-[#E8EDF2] text-[#163B5C] cursor-default'
@@ -716,7 +717,7 @@ export default function SetupPage() {
                       <p className="mt-1 text-xs sm:text-sm text-[#64748B] leading-relaxed">
                         {isCompletedInstance
                           ? 'Commercial license registered and tokenized for this instance.'
-                          : 'Every independent deployment of Nexus Ecom CMS is authenticated by your designated licensing authority.'}
+                          : 'Every independent deployment of The Indian Flowers platform is authenticated by your designated licensing authority.'}
                       </p>
                     </div>
                     {isCompletedInstance && (
@@ -861,7 +862,7 @@ export default function SetupPage() {
                           readOnly={isCompletedInstance}
                           value={details.siteName}
                           onChange={(e) => setDetails({ ...details, siteName: e.target.value })}
-                          placeholder="e.g. Nexus Apparel"
+                          placeholder="e.g. The Indian Flowers"
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm outline-none transition ${
                             isCompletedInstance
                               ? 'bg-[#F8FAFC] border-[#E8EDF2] text-[#163B5C] cursor-default'
@@ -880,7 +881,7 @@ export default function SetupPage() {
                           readOnly={isCompletedInstance}
                           value={details.businessName}
                           onChange={(e) => setDetails({ ...details, businessName: e.target.value })}
-                          placeholder="e.g. Nexus Retail Pvt Ltd"
+                          placeholder="e.g. The Indian Flowers LLC"
                           className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm outline-none transition ${
                             isCompletedInstance
                               ? 'bg-[#F8FAFC] border-[#E8EDF2] text-[#163B5C] cursor-default'
@@ -1218,8 +1219,8 @@ export default function SetupPage() {
                   </div>
 
                   <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-[#163B5C] tracking-tight">
-                      Nexus Ecom CMS is ready
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#0B3B24] tracking-tight">
+                      The Indian Flowers is ready
                     </h2>
                     <p className="mt-2 text-xs sm:text-sm text-[#64748B] max-w-md mx-auto leading-relaxed">
                       Your database is connected, license is active, and administrator account is created. The public setup route is now sealed.
@@ -1236,7 +1237,7 @@ export default function SetupPage() {
                     </div>
                     <div className="flex items-center justify-between text-xs text-[#64748B]">
                       <span>Store name:</span>
-                      <span className="font-semibold text-[#163B5C]">{details.siteName || 'Nexus Store'}</span>
+                      <span className="font-semibold text-[#163B5C]">{details.siteName || 'The Indian Flowers'}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-[#64748B]">
                       <span>Database:</span>
@@ -1256,7 +1257,7 @@ export default function SetupPage() {
                   <div className="max-w-xs mx-auto space-y-3 pt-2">
                     <Link
                       href="/admin/login"
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] px-6 py-3.5 font-bold text-xs sm:text-sm uppercase tracking-wider text-white shadow-sm transition"
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B3B24] hover:bg-[#1C563F] px-6 py-3.5 font-bold text-xs sm:text-sm uppercase tracking-wider text-white shadow-sm transition"
                     >
                       <span>Sign in to dashboard</span>
                       <ChevronRight className="h-4 w-4" />
@@ -1288,7 +1289,7 @@ export default function SetupPage() {
       {/* Editorial Footer */}
       <footer className="border-t border-[#E8EDF2] bg-white py-4 text-center text-xs text-[#64748B]">
         <div className="mx-auto max-w-6xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Nexus Ecom CMS · Configurable commerce for independent business</span>
+          <span>The Indian Flowers · US Floral Commerce Platform</span>
           <span className="text-[11px] text-[#94A3B8]">Production-ready installation wizard</span>
         </div>
       </footer>

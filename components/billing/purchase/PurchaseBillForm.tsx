@@ -209,7 +209,7 @@ export default function PurchaseBillForm({
                 onChange={handleSelectVendor}
                 className="w-full px-3 py-2 rounded-xl border border-[#E8EDF2] text-xs font-semibold bg-white"
               >
-                <option value="">-- Direct Supplier / Farmer --</option>
+                <option value="">-- Direct Floral Supplier / Grower --</option>
                 {vendors.map((v) => (
                   <option key={v._id} value={v._id}>
                     {v.name} ({v.phone})
@@ -219,7 +219,7 @@ export default function PurchaseBillForm({
               <input
                 type="text"
                 required
-                placeholder="Vendor / Farmer Name *"
+                placeholder="Vendor / Grower Name *"
                 value={vendorName}
                 onChange={(e) => setVendorName(e.target.value)}
                 className="px-3 py-2 rounded-xl border border-[#E8EDF2] text-xs font-semibold"
