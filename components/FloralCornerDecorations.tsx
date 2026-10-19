@@ -4,10 +4,12 @@ import React from 'react';
 
 interface FloralCornerDecorationsProps {
   className?: string;
+  showCorners?: boolean;
 }
 
 export default function FloralCornerDecorations({
   className = '',
+  showCorners = false, // Hidden for now per user request
 }: FloralCornerDecorationsProps) {
   return (
     <div
@@ -15,33 +17,37 @@ export default function FloralCornerDecorations({
       className={`pointer-events-none select-none absolute inset-0 overflow-hidden z-0 ${className}`}
     >
       <div className="relative w-full max-w-[1920px] 3xl:max-w-[2040px] h-full mx-auto">
-        {/* 1. TOP-LEFT: Fresh Madurai Jasmine Blossoms with Glossy Leaves */}
-        <div className="absolute top-2 left-2 sm:top-0 sm:left-0 w-28 sm:w-36 md:w-44 lg:w-56 xl:w-64 max-w-[260px] aspect-[762/812] transform origin-top-left transition-all duration-500">
-          <img
-            src="/images/floral-decorations/jasmine-corner.webp"
-            alt=""
-            className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-85 sm:opacity-90"
-            style={{
-              WebkitMaskImage: 'radial-gradient(ellipse at 15% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
-              maskImage: 'radial-gradient(ellipse at 15% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
-            }}
-            loading="eager"
-          />
-        </div>
+        {/* 1. TOP-LEFT: Fresh Madurai Jasmine Blossoms with Glossy Leaves (Hidden for now) */}
+        {showCorners && (
+          <div className="absolute top-2 left-2 sm:top-0 sm:left-0 w-28 sm:w-36 md:w-44 lg:w-56 xl:w-64 max-w-[260px] aspect-[762/812] transform origin-top-left transition-all duration-500">
+            <img
+              src="/images/floral-decorations/jasmine-corner.webp"
+              alt=""
+              className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-85 sm:opacity-90"
+              style={{
+                WebkitMaskImage: 'radial-gradient(ellipse at 15% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+                maskImage: 'radial-gradient(ellipse at 15% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+              }}
+              loading="eager"
+            />
+          </div>
+        )}
 
-        {/* 2. TOP-RIGHT: Soft Pink Sacred Lotus in Bloom */}
-        <div className="absolute top-2 right-2 sm:top-0 sm:right-0 w-20 sm:w-28 md:w-36 lg:w-44 xl:w-52 max-w-[220px] aspect-[568/992] transform origin-top-right transition-all duration-500">
-          <img
-            src="/images/floral-decorations/lotus-corner.webp"
-            alt=""
-            className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-85 sm:opacity-90"
-            style={{
-              WebkitMaskImage: 'radial-gradient(ellipse at 85% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
-              maskImage: 'radial-gradient(ellipse at 85% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
-            }}
-            loading="eager"
-          />
-        </div>
+        {/* 2. TOP-RIGHT: Soft Pink Sacred Lotus in Bloom (Hidden for now) */}
+        {showCorners && (
+          <div className="absolute top-2 right-2 sm:top-0 sm:right-0 w-20 sm:w-28 md:w-36 lg:w-44 xl:w-52 max-w-[220px] aspect-[568/992] transform origin-top-right transition-all duration-500">
+            <img
+              src="/images/floral-decorations/lotus-corner.webp"
+              alt=""
+              className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-85 sm:opacity-90"
+              style={{
+                WebkitMaskImage: 'radial-gradient(ellipse at 85% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+                maskImage: 'radial-gradient(ellipse at 85% 15%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+              }}
+              loading="eager"
+            />
+          </div>
+        )}
 
         {/* 3. MID-HEIGHT SIDE ACCENTS & CREATIVE IN-BETWEEN DESIGNS */}
 
@@ -95,33 +101,37 @@ export default function FloralCornerDecorations({
           <span className="block w-full h-full rounded-[50%_50%_50%_50%/70%_70%_30%_30%] bg-gradient-to-br from-rose-300 to-pink-400/60 rotate-15 shadow-xs" />
         </div>
 
-        {/* 4. BOTTOM-LEFT: Botanical Jasmine Arch with Lotus Petals & Greenery */}
-        <div className="absolute bottom-2 left-2 sm:bottom-0 sm:left-0 w-28 sm:w-36 md:w-48 lg:w-56 xl:w-64 max-w-[250px] aspect-[917/954] transform origin-bottom-left transition-all duration-500">
-          <img
-            src="/images/floral-decorations/jasmine-foliage-corner.webp"
-            alt=""
-            className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-80 sm:opacity-85"
-            style={{
-              WebkitMaskImage: 'radial-gradient(ellipse at 15% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
-              maskImage: 'radial-gradient(ellipse at 15% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
-            }}
-            loading="lazy"
-          />
-        </div>
+        {/* 4. BOTTOM-LEFT: Botanical Jasmine Arch with Lotus Petals & Greenery (Hidden for now) */}
+        {showCorners && (
+          <div className="absolute bottom-2 left-2 sm:bottom-0 sm:left-0 w-28 sm:w-36 md:w-48 lg:w-56 xl:w-64 max-w-[250px] aspect-[917/954] transform origin-bottom-left transition-all duration-500">
+            <img
+              src="/images/floral-decorations/jasmine-foliage-corner.webp"
+              alt=""
+              className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-80 sm:opacity-85"
+              style={{
+                WebkitMaskImage: 'radial-gradient(ellipse at 15% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+                maskImage: 'radial-gradient(ellipse at 15% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+              }}
+              loading="lazy"
+            />
+          </div>
+        )}
 
-        {/* 5. BOTTOM-RIGHT: Jasmine Blossoms & Floating Pink Lotus Petals */}
-        <div className="absolute bottom-2 right-2 sm:bottom-0 sm:right-0 w-24 sm:w-32 md:w-44 lg:w-52 xl:w-60 max-w-[240px] aspect-[904/913] transform origin-bottom-right transition-all duration-500">
-          <img
-            src="/images/floral-decorations/lotus-petal-accent.webp"
-            alt=""
-            className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-85 sm:opacity-90"
-            style={{
-              WebkitMaskImage: 'radial-gradient(ellipse at 85% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
-              maskImage: 'radial-gradient(ellipse at 85% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
-            }}
-            loading="lazy"
-          />
-        </div>
+        {/* 5. BOTTOM-RIGHT: Jasmine Blossoms & Floating Pink Lotus Petals (Hidden for now) */}
+        {showCorners && (
+          <div className="absolute bottom-2 right-2 sm:bottom-0 sm:right-0 w-24 sm:w-32 md:w-44 lg:w-52 xl:w-60 max-w-[240px] aspect-[904/913] transform origin-bottom-right transition-all duration-500">
+            <img
+              src="/images/floral-decorations/lotus-petal-accent.webp"
+              alt=""
+              className="w-full h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.05)] opacity-85 sm:opacity-90"
+              style={{
+                WebkitMaskImage: 'radial-gradient(ellipse at 85% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+                maskImage: 'radial-gradient(ellipse at 85% 85%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0.2) 90%, transparent 100%)',
+              }}
+              loading="lazy"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
