@@ -119,14 +119,23 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <div className="text-center pt-2">
+        <div className="pt-4 border-t border-[#E5E7EB] flex items-center justify-between text-xs text-[#6B7280]">
           <Link
             href="/"
-            className="text-xs text-[#6B7280] hover:text-[#0B3B24] font-semibold underline"
+            className="hover:text-[#0B3B24] font-semibold underline text-[11px]"
           >
-            ← Return to Customer Store
+            ← Return to Store
           </Link>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+            <span>Powered by</span>
+            <span className="font-bold text-slate-800 tracking-wider">NEXUS CMS</span>
+            <span className="text-[10px] font-mono text-slate-400">v2.4</span>
+          </div>
         </div>
+      </div>
+
+      <div className="mt-4 text-center text-xs text-slate-400 select-none">
+        NEXUS CMS Enterprise Commerce Platform • Secure Admin Gateway
       </div>
     </div>
   );

@@ -88,11 +88,16 @@ export default function AdminBillingPage() {
               }}
             />
             <div>
-              <h1 className="font-extrabold text-base sm:text-xl text-[#163B5C]">
-                Nexus Ecom Billing & Accounting
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-extrabold text-base sm:text-xl text-[#163B5C]">
+                  Billing &amp; Accounting
+                </h1>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-slate-900 text-emerald-400 px-2 py-0.5 rounded-md">
+                  NEXUS CMS
+                </span>
+              </div>
               <span className="text-xs text-[#64748B] hidden sm:block">
-                Invoices, Purchases, Daily Expenses & Profit & Loss Statement
+                Invoices, Purchases, Daily Expenses &amp; Profit &amp; Loss Statement
               </span>
             </div>
           </div>
@@ -365,6 +370,19 @@ export default function AdminBillingPage() {
           onClose={() => setSelectedPartyForLedger(null)}
         />
       )}
+
+      {/* Permanent NEXUS CMS Engine Footer */}
+      <footer className="bg-white border-t border-[#E8EDF2] py-4 px-6 text-xs text-[#64748B] flex flex-col sm:flex-row items-center justify-between gap-2 mt-auto">
+        <span className="font-medium text-slate-600">The Indian Flowers • B2B Billing &amp; Accounting Engine</span>
+        <div className="flex items-center gap-2 text-slate-500">
+          <span>Commerce Platform:</span>
+          <span className="inline-flex items-center gap-1.5 font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            NEXUS CMS Enterprise
+          </span>
+          <span className="text-[11px] text-slate-400 font-mono">v2.4</span>
+        </div>
+      </footer>
     </div>
   );
 }

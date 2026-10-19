@@ -1773,7 +1773,12 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   }}
                 />
                 <div>
-                  <h2 className="font-extrabold text-sm text-[#0B3B24]">The Indian Flowers</h2>
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="font-extrabold text-sm text-[#0B3B24]">The Indian Flowers</h2>
+                    <span className="text-[9px] font-black uppercase tracking-wider bg-slate-900 text-emerald-400 px-1.5 py-0.5 rounded shadow-2xs">
+                      NEXUS
+                    </span>
+                  </div>
                   <span className="text-[11px] text-[#64748B]">Admin Portal</span>
                 </div>
               </div>
@@ -1902,6 +1907,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 <LogOut className="w-4 h-4" />
                 <span>Logout Session</span>
               </button>
+
+              {/* Permanent NEXUS CMS Platform Badge */}
+              <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-[11px] text-slate-500">
+                <span className="flex items-center gap-1.5 font-bold text-slate-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  NEXUS CMS
+                </span>
+                <span className="font-mono text-[10px] text-slate-400">Enterprise Core</span>
+              </div>
             </div>
           </aside>
         </div>
@@ -1930,8 +1944,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   <h2 className="font-extrabold text-sm text-[#0B3B24] truncate">
                     The Indian Flowers
                   </h2>
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-[#0B3B24]/10 text-[#0B3B24] px-1.5 py-0.5 rounded">
-                    Admin
+                  <span className="text-[9px] font-black uppercase tracking-wider bg-slate-900 text-emerald-400 px-1.5 py-0.5 rounded shadow-2xs">
+                    NEXUS CMS
                   </span>
                 </div>
                 <span className="text-[11px] text-[#64748B] block truncate">
@@ -2096,6 +2110,34 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             <LogOut className="w-4 h-4 shrink-0" />
             {!isSidebarCollapsed && <span>Logout</span>}
           </button>
+
+          {/* Permanent Platform Branding: NEXUS CMS */}
+          <div className="pt-2 border-t border-slate-200">
+            {!isSidebarCollapsed ? (
+              <div className="p-2 rounded-xl bg-slate-900 text-white flex items-center gap-2.5 shadow-sm border border-slate-800 select-none">
+                <img
+                  src="/nexus-mark.svg"
+                  alt="NEXUS CMS"
+                  className="w-5 h-5 object-contain shrink-0"
+                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black tracking-widest uppercase text-emerald-400">NEXUS CMS</span>
+                    <span className="text-[9px] font-mono text-slate-400">v2.4</span>
+                  </div>
+                  <span className="text-[10px] text-slate-300 block truncate">Enterprise Ecom Core</span>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="p-1.5 rounded-lg bg-slate-900 text-white flex items-center justify-center shadow-xs cursor-default select-none"
+                title="Powered by NEXUS CMS Enterprise"
+              >
+                <img src="/nexus-mark.svg" alt="NEXUS CMS" className="w-4 h-4 object-contain" />
+              </div>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -2138,6 +2180,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
             {/* Right: Quick Action Controls */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Permanent NEXUS CMS Platform Indicator */}
+              <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-white shadow-2xs select-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-black tracking-wider uppercase">NEXUS CMS</span>
+                <span className="text-[9px] font-mono text-slate-400">Enterprise</span>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setActiveTab('subscription')}
@@ -3968,6 +4017,61 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   )}
                 </button>
               </form>
+            </div>
+
+            {/* Permanent NEXUS CMS Architecture & Core Platform Information Card */}
+            <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl max-w-3xl select-none">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-slate-800 gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center p-2.5 shrink-0 shadow-md">
+                    <img
+                      src="/nexus-mark.svg"
+                      alt="NEXUS CMS"
+                      className="w-full h-full object-contain"
+                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-black tracking-wide text-white">NEXUS CMS Enterprise</h3>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        Active Engine
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Proprietary Multi-Channel Ecommerce &amp; Content Management Platform
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right sm:block hidden">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">Build Version</span>
+                  <span className="text-xs font-mono font-bold text-slate-200">v2.4.0-US-ENTERPRISE</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
+                <div className="bg-slate-800/60 rounded-2xl p-4 border border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Commerce Core</span>
+                  <span className="text-sm font-bold text-slate-100 block">NEXUS Next.js Engine</span>
+                  <span className="text-[11px] text-slate-400 mt-1 block">Full-stack SSR / ISR Architecture</span>
+                </div>
+                <div className="bg-slate-800/60 rounded-2xl p-4 border border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Database Layer</span>
+                  <span className="text-sm font-bold text-slate-100 block">MongoDB Sharded Cluster</span>
+                  <span className="text-[11px] text-slate-400 mt-1 block">ACID Sessions &amp; Strict Indexing</span>
+                </div>
+                <div className="bg-slate-800/60 rounded-2xl p-4 border border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Tenant License</span>
+                  <span className="text-sm font-bold text-emerald-400 block">Verified &amp; Protected</span>
+                  <span className="text-[11px] text-slate-400 mt-1 block">Immutable Vendor Signature</span>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
+                <span>© {new Date().getFullYear()} NEXUS CMS Platform. All engine rights reserved.</span>
+                <span className="font-mono text-[10px] text-slate-500">System Signature: NEXUS-CORE-AUTH-SECURE</span>
+              </div>
             </div>
           </div>
         )}
@@ -5802,8 +5906,16 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       )}
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#E8EDF2] py-4 px-6 text-center text-xs text-[#64748B]">
-        The Indian Flowers Commerce Administration • US Storefront Management
+      <footer className="bg-white border-t border-[#E8EDF2] py-4 px-6 text-xs text-[#64748B] flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span className="font-medium text-slate-600">The Indian Flowers Commerce Administration • US Storefront Management</span>
+        <div className="flex items-center gap-2 text-slate-500">
+          <span>Engine Platform:</span>
+          <span className="inline-flex items-center gap-1.5 font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            NEXUS CMS Enterprise
+          </span>
+          <span className="text-[11px] text-slate-400 font-mono">v2.4</span>
+        </div>
       </footer>
     </div>
   </div>

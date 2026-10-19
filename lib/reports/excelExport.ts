@@ -74,7 +74,7 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
   const masterHeader = [
     ['INDIAN-FLOWERS.COM — ORDERS & FULFILLMENT REPORT'],
     [filterSummary],
-    ['All amounts displayed in US Dollars (USD $) strictly.'],
+    ['All amounts displayed in US Dollars (USD $) strictly. Powered by NEXUS CMS Enterprise.'],
     [], // Blank separator
     [
       'Order ID',
@@ -392,7 +392,7 @@ export function generatePaymentsWorkbook(orders: any[], filters: PaymentsExportF
     ['INDIAN-FLOWERS.COM — PAYMENTS & SETTLEMENTS AUDIT REPORT'],
     [filterSummary],
     [
-      'All currency values in US Dollars (USD $). Sales tax is separated as a statutory liability, and customer refunds are accounted for net settlement.',
+      'All currency values in US Dollars (USD $). Sales tax is separated as a statutory liability, and customer refunds are accounted for net settlement. Powered by NEXUS CMS Enterprise.',
     ],
     [],
     [
@@ -548,7 +548,7 @@ export function generateCustomersWorkbook(customers: any[], filters: CustomersEx
   const header = [
     ['INDIAN-FLOWERS.COM — REGISTERED CUSTOMERS DIRECTORY & SPEND ANALYTICS'],
     [filterSummary],
-    ['Customer contact and order analytics for Indian-Flowers US operations.'],
+    ['Customer contact and order analytics for Indian-Flowers US operations. Powered by NEXUS CMS Enterprise.'],
     [],
     [
       'Customer ID',
@@ -722,7 +722,7 @@ export function generatePnLWorkbook(pnlData: any, rawData?: { orders?: any[]; ex
   const statementRows: any[] = [
     ['INDIAN-FLOWERS.COM — PROFIT & LOSS (P&L) STATEMENT'],
     [`Reporting Period: ${periodStr} | Generated On: ${nowStr} (US Eastern Time)`],
-    ['All amounts in US Dollars (USD $). Sales tax collected is excluded from revenue as a fiduciary liability.'],
+    ['All amounts in US Dollars (USD $). Sales tax collected is excluded from revenue as a fiduciary liability. Powered by NEXUS CMS Enterprise.'],
     [],
     ['LINE ITEM / ACCOUNT', 'BREAKDOWN', 'TOTAL ($ USD)'],
     ['1. OPERATIONAL SALES REVENUE', '', ''],

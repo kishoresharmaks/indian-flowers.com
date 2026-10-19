@@ -195,7 +195,7 @@ function attachPageNumbersAndRunningHeaders(doc: jsPDF, reportTitle: string) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.5);
     doc.setTextColor(...COLOR_TEXT_MUTED);
-    doc.text('Confidential • Internal Business & Financial Record • Indian-Flowers.com', 14, pageHeight - 5.5);
+    doc.text('Confidential • Internal Business & Financial Record • Powered by NEXUS CMS Enterprise', 14, pageHeight - 5.5);
     doc.text(`Page ${i} of ${totalPages}`, pageWidth - 14, pageHeight - 5.5, { align: 'right' });
   }
 }
