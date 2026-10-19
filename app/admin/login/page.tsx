@@ -129,7 +129,6 @@ export default function AdminLoginPage() {
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
             <span>Powered by</span>
             <span className="font-bold text-slate-800 tracking-wider">NEXUS CMS</span>
-            <span className="text-[10px] font-mono text-slate-400">v2.4</span>
           </div>
         </div>
       </div>

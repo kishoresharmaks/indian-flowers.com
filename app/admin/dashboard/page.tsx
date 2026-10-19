@@ -2124,7 +2124,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black tracking-widest uppercase text-emerald-400">NEXUS CMS</span>
-                    <span className="text-[9px] font-mono text-slate-400">v2.4</span>
+                    <span className="text-[9px] font-bold text-slate-400 tracking-wider uppercase">Enterprise</span>
                   </div>
                   <span className="text-[10px] text-slate-300 block truncate">Enterprise Ecom Core</span>
                 </div>
@@ -4045,8 +4045,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 </div>
 
                 <div className="text-right sm:block hidden">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">Build Version</span>
-                  <span className="text-xs font-mono font-bold text-slate-200">v2.4.0-US-ENTERPRISE</span>
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">Platform Release</span>
+                  <span className="text-xs font-bold text-emerald-400">Enterprise Edition</span>
                 </div>
               </div>
 
@@ -5906,15 +5906,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       )}
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#E8EDF2] py-4 px-6 text-xs text-[#64748B] flex flex-col sm:flex-row items-center justify-between gap-2">
-        <span className="font-medium text-slate-600">The Indian Flowers Commerce Administration • US Storefront Management</span>
-        <div className="flex items-center gap-2 text-slate-500">
-          <span>Engine Platform:</span>
-          <span className="inline-flex items-center gap-1.5 font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+      <footer className="bg-white border-t border-[#E8EDF2] py-3.5 px-6 text-xs text-[#64748B] flex items-center justify-center">
+        <div className="flex items-center gap-2 text-slate-600">
+          <span className="text-[11px]">Powered by</span>
+          <span className="inline-flex items-center gap-1.5 font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             NEXUS CMS Enterprise
           </span>
-          <span className="text-[11px] text-slate-400 font-mono">v2.4</span>
         </div>
       </footer>
     </div>

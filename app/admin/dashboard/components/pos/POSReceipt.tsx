@@ -47,6 +47,7 @@ ${order.discountAmount ? `🏷️ *Discount:* -${formatCurrency(order.discountAm
 💳 *Payment Mode:* ${order.paymentMethod}
 ${order.paymentMethod === 'CASH' ? `💵 *Cash Received:* ${formatCurrency(order.cashReceived || 0)}\n🪙 *Change Returned:* ${formatCurrency(order.changeReturned || 0)}\n` : ''}
 Thank you for shopping with Indian-Flowers.com!
+Powered by NEXUS CMS
 Visit: https://indian-flowers.com`;
 
     const targetPhone = phone.length === 10 ? `1${phone}` : phone;
@@ -234,6 +235,12 @@ Visit: https://indian-flowers.com`;
             <p>Thank you for shopping with Indian-Flowers.com!</p>
             <p>Fresh Authentic Indian Flowers Delivered Across USA</p>
           </div>
+
+          {/* NEXUS CMS Engine Branding at Bottom of POS Bill */}
+          <div className="text-center pt-2.5 border-t border-gray-200 text-[10px] text-gray-500 flex items-center justify-center gap-1.5 select-none">
+            <span>Powered by</span>
+            <strong className="font-extrabold text-gray-900 tracking-wider">NEXUS CMS</strong>
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -261,6 +268,10 @@ Visit: https://indian-flowers.com`;
           >
             <RefreshCw className="w-4 h-4" /> Start Next Counter Sale
           </button>
+
+          <div className="pt-2 text-center text-[10px] text-gray-400 select-none">
+            Powered by <strong className="font-bold text-gray-600">NEXUS CMS</strong>
+          </div>
         </div>
       </div>
     </div>
