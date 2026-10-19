@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Subscriber from '@/models/Subscriber';
+import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,8 +82,9 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
     const subscribers = await Subscriber.find({}).sort({ createdAt: -1 });
     return NextResponse.json({
@@ -98,8 +100,9 @@ export async function GET() {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) {

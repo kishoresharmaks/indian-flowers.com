@@ -4,7 +4,7 @@ import Settings from '@/models/Settings';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 import { STORE_CURRENCY, STORE_LOCALE } from '@/lib/currency';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
     let settings = await Settings.findOne({ key: 'global' }).lean();
@@ -25,7 +25,12 @@ export async function GET() {
       settings = await Settings.findOne({ key: 'global' }).lean();
     }
     return NextResponse.json(
-      { success: true, data: settings },
+      {
+        success: true,
+        data: isAuthenticatedAdmin(request)
+          ? settings
+          : { ...settings, razorpayKeySecret: undefined },
+      },
       {
         headers: {
           'Cache-Control': 'no-store, max-age=0',

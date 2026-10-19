@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Category from '@/models/Category';
 import Product from '@/models/Product';
@@ -11,6 +11,7 @@ import {
   SEED_REVIEWS,
   SEED_PRODUCTS,
 } from '@/lib/seedData';
+import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,8 +77,9 @@ async function runSeed() {
   };
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     const result = await runSeed();
     return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
@@ -88,8 +90,9 @@ export async function POST() {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     const result = await runSeed();
     return NextResponse.json(result, { status: 200 });
   } catch (error: any) {

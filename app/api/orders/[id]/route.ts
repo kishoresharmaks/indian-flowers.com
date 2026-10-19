@@ -1,15 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Order from '@/models/Order';
-import Product from '@/models/Product';
 import { captureServerEvent, captureServerException } from '@/lib/telemetry';
 import { reversePointsOnRefund, creditOrderPoints } from '@/lib/loyalty/loyaltyEngine';
+import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+import { releaseInventory } from '@/lib/inventory';
 
 export async function PATCH(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
     const { id } = params;
     const body = await request.json();
@@ -61,28 +63,13 @@ export async function PATCH(
       // Restock inventory if requested and not already restocked
       if (body.restockItems === true && !existingOrder.isRestocked) {
         try {
-          if (Array.isArray(existingOrder.items)) {
-            for (const item of existingOrder.items) {
-              const qtyToReturn = Number(item.quantity) || 1;
-              if (item.productId) {
-                const product = await Product.findById(item.productId);
-                if (product) {
-                  product.quantity = (product.quantity || 0) + qtyToReturn;
-                  if (item.variantName && Array.isArray(product.variants)) {
-                    const variant = product.variants.find(
-                      (v) =>
-                        v.name.toLowerCase().trim() ===
-                        item.variantName?.toLowerCase().trim()
-                    );
-                    if (variant) {
-                      variant.quantity = (variant.quantity || 0) + qtyToReturn;
-                    }
-                  }
-                  await product.save();
-                }
-              }
-            }
-          }
+          await releaseInventory(
+            (existingOrder.items || []).map((item) => ({
+              productId: item.productId,
+              quantity: Number(item.quantity) || 1,
+              variantName: item.variantName || undefined,
+            }))
+          );
           updateFields.isRestocked = true;
           updateFields.restockedAt = new Date();
         } catch (restockErr) {

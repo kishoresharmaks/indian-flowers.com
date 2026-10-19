@@ -373,27 +373,27 @@ export default function Footer({
                   className="px-4 pb-3 pt-2 border-t border-white/5 space-y-2.5 text-xs"
                 >
                   {/* Combined Hub Card */}
-                  <div className="bg-emerald-950/70 border border-emerald-800/60 rounded-xl p-3 space-y-2">
+                  <div className="bg-emerald-950/80 border border-emerald-800/70 rounded-xl p-3 space-y-2.5">
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
-                        <MapPin className="w-3 h-3 text-[#F5C542] shrink-0" />
+                      <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
                         <span>Main Location (HQ)</span>
                       </span>
-                      <p className="text-white font-medium text-[11px] leading-snug pl-4 mt-0.5">
+                      <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
                         14922 Bobcat lane, Fontana, CA 92336, USA
                       </p>
-                      <p className="text-[10.5px] text-emerald-200/90 pt-0.5 flex items-center gap-1 pl-4">
+                      <p className="text-[11px] text-emerald-100 pt-1 flex items-center gap-1.5 pl-5">
                         <Clock className="w-3 h-3 text-[#F5C542] shrink-0" />
                         <span>Mon &ndash; Sun: 7:00 AM &ndash; 8:00 PM PST</span>
                       </p>
                     </div>
 
-                    <div className="border-t border-emerald-800/40 pt-1.5">
-                      <span className="text-[10px] uppercase tracking-wider font-semibold text-[#F5C542] flex items-center gap-1.5">
-                        <Building2 className="w-3 h-3 text-[#F5C542] shrink-0" />
+                    <div className="border-t border-emerald-800/50 pt-2">
+                      <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
                         <span>Branch Location (Midwest)</span>
                       </span>
-                      <p className="text-white/90 text-[10.5px] leading-tight pl-4 mt-0.5">
+                      <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
                         6893 Alverno ln, Inver Grove Heights, MN 55077
                       </p>
                     </div>
@@ -603,27 +603,27 @@ export default function Footer({
               </h4>
 
               {/* Combined Sleek Hubs Card */}
-              <div className="bg-emerald-950/60 border border-emerald-800/50 rounded-xl p-3 space-y-2 text-xs">
+              <div className="bg-emerald-950/80 border border-emerald-800/70 rounded-xl p-3.5 space-y-2.5 text-xs">
                 <div>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-[#F5C542]" />
+                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
                     <span>Main Location (HQ)</span>
                   </span>
-                  <p className="text-white font-medium text-[11px] leading-tight pl-4 mt-0.5">
+                  <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
                     14922 Bobcat lane, Fontana, CA 92336, USA
                   </p>
-                  <p className="text-[10px] text-emerald-200/80 pl-4 mt-0.5 flex items-center gap-1">
-                    <Clock className="w-2.5 h-2.5 text-[#F5C542] shrink-0" />
+                  <p className="text-[11px] text-emerald-100 pl-5 mt-1 flex items-center gap-1.5">
+                    <Clock className="w-3 h-3 text-[#F5C542] shrink-0" />
                     <span>Mon &ndash; Sun: 7:00 AM &ndash; 8:00 PM PST</span>
                   </p>
                 </div>
 
-                <div className="border-t border-emerald-800/40 pt-1.5">
-                  <span className="text-[10px] uppercase tracking-wider font-semibold text-[#F5C542] flex items-center gap-1">
-                    <Building2 className="w-3 h-3 text-[#F5C542]" />
+                <div className="border-t border-emerald-800/50 pt-2">
+                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
                     <span>Branch Location (Midwest)</span>
                   </span>
-                  <p className="text-white/90 text-[11px] leading-tight pl-4 mt-0.5">
+                  <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
                     6893 Alverno ln, Inver Grove Heights, MN 55077
                   </p>
                 </div>

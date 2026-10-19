@@ -1,14 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Category from '@/models/Category';
+import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
 export const dynamic = 'force-dynamic';
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
     const { id } = params;
 
@@ -34,10 +36,11 @@ export async function DELETE(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
     const { id } = params;
     const body = await request.json();

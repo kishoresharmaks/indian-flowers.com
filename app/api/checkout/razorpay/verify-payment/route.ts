@@ -10,6 +10,8 @@ import { toCents, fromCents } from '@/lib/tax/taxProvider';
 import { validateTaxAddress, normalizeStateCode, formatUSZip } from '@/lib/tax/jurisdiction';
 import { getCustomerFromToken } from '@/lib/customerAuth';
 import { captureServerEvent } from '@/lib/telemetry';
+import { releaseInventory, reserveInventory, type InventoryReservation } from '@/lib/inventory';
+import { randomUUID } from 'crypto';
 import {
   getLoyaltyConfig,
   calculatePointsEarned,
@@ -19,6 +21,7 @@ import {
 } from '@/lib/loyalty/loyaltyEngine';
 
 export async function POST(request: Request) {
+  let reservedInventory: InventoryReservation[] = [];
   try {
     await connectToDatabase();
     const body = await request.json();
@@ -62,7 +65,6 @@ export async function POST(request: Request) {
     }
 
     const {
-      customerId: providedCustomerId,
       customerName,
       customerPhone,
       customerEmail,
@@ -75,7 +77,6 @@ export async function POST(request: Request) {
       country = 'US',
       items,
       shippingFee = 0,
-      discountAmount = 0,
       redeemPoints = 0,
     } = orderDetails;
 
@@ -120,9 +121,10 @@ export async function POST(request: Request) {
       let authoritativePrice = dbProduct.price;
       if (item.variantName && dbProduct.variants && dbProduct.variants.length > 0) {
         const matchingVariant = dbProduct.variants.find((v: any) => v.name === item.variantName);
-        if (matchingVariant) {
-          authoritativePrice = matchingVariant.price;
+        if (!matchingVariant) {
+          return NextResponse.json({ success: false, message: 'Selected product variant is unavailable.' }, { status: 400 });
         }
+        authoritativePrice = matchingVariant.price;
       }
 
       const safeQuantity = Math.max(1, parseInt(item.quantity) || 1);
@@ -154,9 +156,9 @@ export async function POST(request: Request) {
 
     const subtotal = fromCents(subtotalCents);
 
-    // Resolve customer ID from orderDetails or active customer session cookie
+    // A submitted customer ID is untrusted; only a signed session can redeem points.
     const customerSession = getCustomerFromToken(request);
-    const finalCustomerId = providedCustomerId || customerSession?.customerId || undefined;
+    const finalCustomerId = customerSession?.customerId;
 
     // Calculate loyalty points redemption discount if requested
     const loyaltyConfig = await getLoyaltyConfig();
@@ -177,7 +179,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const couponDiscountCents = Math.min(toCents(discountAmount), subtotalCents);
+    const couponDiscountCents = 0; // Coupons are not implemented; never trust a client-supplied discount.
     const pointsDiscountCents = Math.min(
       toCents(pointsDiscountUSD),
       Math.max(0, subtotalCents - couponDiscountCents)
@@ -206,14 +208,20 @@ export async function POST(request: Request) {
       subtotalCents - totalDiscountCents + toCents(calculatedTax) + toCents(safeShippingFee);
     const totalAmount = fromCents(Math.max(0, totalAmountCents));
 
-    // 6. Generate Sequential Order ID
-    const orderCount = await Order.countDocuments();
-    const nextSeqNumber = 1001 + orderCount;
-    const orderId = `ORD-${nextSeqNumber}`;
+    // 6. Generate a collision-resistant order ID.
+    const orderId = `ORD-${randomUUID()}`;
 
     // Calculate points earned on net merchandise spend
     const netMerchandiseSpend = Math.max(0, subtotal - fromCents(totalDiscountCents));
     const pointsEarned = calculatePointsEarned(netMerchandiseSpend, loyaltyConfig);
+
+    reservedInventory = await reserveInventory(
+      processedItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        variantName: item.variantName || undefined,
+      }))
+    );
 
     // 7. Persist Confirmed & Paid Order
     const newOrder = await Order.create({
@@ -292,6 +300,7 @@ export async function POST(request: Request) {
       data: newOrder,
     });
   } catch (error: any) {
+    if (reservedInventory.length > 0) await releaseInventory(reservedInventory);
     console.error('Error verifying Razorpay payment:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'Payment verification failed' },

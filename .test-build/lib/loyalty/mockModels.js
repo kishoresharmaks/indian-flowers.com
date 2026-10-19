@@ -1,0 +1,1 @@
+module.exports = { findOne: () => ({ lean: () => Promise.resolve(null) }), findById: () => ({ select: () => Promise.resolve(null) }) };

@@ -12,7 +12,6 @@ export async function POST(request: Request) {
     const {
       shippingAddress,
       items,
-      discountAmount = 0,
       shippingFee = 0,
     } = body;
 
@@ -35,18 +34,26 @@ export async function POST(request: Request) {
       const dbProduct = productMap.get(String(item.productId));
       const qty = Math.max(1, Number(item.quantity) || 1);
 
+      if (!dbProduct) {
+        return NextResponse.json(
+          { success: false, message: `Product ${item.productId || item.name || ''} no longer exists.` },
+          { status: 400 }
+        );
+      }
+
       // Price determination: check variant first, fallback to base price
-      let unitPrice = dbProduct ? Number(dbProduct.price) : Number(item.price) || 0;
+      let unitPrice = Number(dbProduct.price);
       let variantName = item.variantName || '';
-      let isTaxable = dbProduct ? dbProduct.isTaxable !== false : true;
+      let isTaxable = dbProduct.isTaxable !== false;
       let taxCode = dbProduct?.taxCode || '';
 
       if (dbProduct && item.variantName && Array.isArray(dbProduct.variants)) {
         const variant = dbProduct.variants.find((v: any) => v.name === item.variantName);
-        if (variant) {
-          unitPrice = Number(variant.price);
-          variantName = variant.name;
+        if (!variant) {
+          return NextResponse.json({ success: false, message: 'Selected product variant is unavailable.' }, { status: 400 });
         }
+        unitPrice = Number(variant.price);
+        variantName = variant.name;
       }
 
       const lineSubtotalCents = toCents(unitPrice) * qty;
@@ -65,7 +72,7 @@ export async function POST(request: Request) {
     }
 
     const calculatedSubtotal = fromCents(calculatedSubtotalCents);
-    const safeDiscountCents = Math.min(toCents(discountAmount), calculatedSubtotalCents);
+    const safeDiscountCents = 0; // Coupons are not implemented; never trust a client-supplied discount.
     const safeDiscount = fromCents(safeDiscountCents);
 
     // Loyalty Points Redemption Evaluation
@@ -78,10 +85,10 @@ export async function POST(request: Request) {
     let actualPointsRedeemed = 0;
 
     if (body.redeemPoints && Number(body.redeemPoints) > 0) {
-      let availablePoints = Infinity;
+      let availablePoints = 0;
       const { getCustomerFromToken } = await import('@/lib/customerAuth');
       const customerSession = getCustomerFromToken(request as any);
-      const effectiveCustId = body.customerId || customerSession?.customerId;
+      const effectiveCustId = customerSession?.customerId;
       if (effectiveCustId) {
         const CustomerModel = (await import('@/models/Customer')).default;
         const custDoc = await CustomerModel.findById(effectiveCustId).lean();

@@ -1,10 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import connectToDatabase from '@/lib/db';
 import AdminUser from '@/models/AdminUser';
+import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     const body = await request.json().catch(() => ({}));
     const password = typeof body.password === 'string' ? body.password : '';
 

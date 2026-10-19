@@ -1369,37 +1369,19 @@ export default function CustomerStore() {
         </div>
       </section>
 
-      {/* 8. NEWSLETTER SIGNUP BANNER WITH AUTHENTIC FLORAL & BOTANICAL GARLANDS */}
-      <section className="relative py-12 sm:py-16 md:py-20 lg:py-24 bg-white overflow-hidden border-t border-gray-100">
-        {/* Background Traditional Indian Floral Garlands Framing Bottom (Mango Leaves + Marigolds + Jasmine + Rose Petals) */}
-        <div className="absolute inset-0 pointer-events-none select-none z-0">
-          {/* Bottom Left Garland (Mango leaves, yellow & orange marigolds, jasmine strands, rose petals) */}
-          <img
-            src="/decorations/floral-left.png"
-            alt=""
-            aria-hidden="true"
-            className="absolute bottom-0 left-0 w-36 sm:w-56 md:w-72 lg:w-96 xl:w-[440px] 2xl:w-[500px] 3xl:w-[560px] pointer-events-none select-none object-contain object-bottom-left opacity-95 transition-opacity"
-            loading="lazy"
-          />
-
-          {/* Bottom Right Garland (Mango leaves, marigold blossoms, fragrant jasmine, red roses) */}
-          <img
-            src="/decorations/floral-right.png"
-            alt=""
-            aria-hidden="true"
-            className="absolute bottom-0 right-0 w-36 sm:w-56 md:w-72 lg:w-96 xl:w-[440px] 2xl:w-[500px] 3xl:w-[560px] pointer-events-none select-none object-contain object-bottom-right opacity-95 transition-opacity"
-            loading="lazy"
-          />
-        </div>
-
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 relative z-10 pb-6 sm:pb-3 md:pb-0">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 lg:gap-10 max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
-            <div className="space-y-1.5 text-center lg:text-left">
-              <h3 className="text-[20px] sm:text-[24px] md:text-[28px] lg:text-[30px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.25]">
+      {/* 8. NEWSLETTER SIGNUP BANNER */}
+      <section className="relative py-12 sm:py-16 md:py-20 bg-[#FAF6F0]/60 border-t border-b border-gray-100/80">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12 max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
+            <div className="space-y-2 text-center lg:text-left max-w-lg">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#C85A78]">
+                Exclusive US Offers &amp; Flower Care
+              </span>
+              <h3 className="text-[22px] sm:text-[26px] md:text-[30px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.2]">
                 Get Flower Updates &amp; Special Offers
               </h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-normal max-w-md mx-auto lg:mx-0">
-                Subscribe to our newsletter and be the first to know about new arrivals, seasonal offers and more.
+              <p className="text-xs sm:text-sm text-gray-600 font-normal leading-relaxed max-w-md mx-auto lg:mx-0">
+                Subscribe to our newsletter and be the first to know about new arrivals, seasonal festival flowers, and ceremonial discounts.
               </p>
             </div>
 

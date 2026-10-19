@@ -15,10 +15,8 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const {
-      customerId: providedCustomerId,
       items,
       shippingFee = 0,
-      discountAmount = 0,
       redeemPoints = 0,
       customerName,
       streetAddress,
@@ -78,7 +76,10 @@ export async function POST(request: Request) {
       let unitPrice = dbProd.price;
       if (item.variantName && dbProd.variants && dbProd.variants.length > 0) {
         const variant = dbProd.variants.find((v: any) => v.name === item.variantName);
-        if (variant) unitPrice = variant.price;
+        if (!variant) {
+          return NextResponse.json({ success: false, message: 'Selected product variant is unavailable.' }, { status: 400 });
+        }
+        unitPrice = variant.price;
       }
 
       const quantity = Math.max(1, parseInt(item.quantity) || 1);
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
 
     // 2. Authoritative US Sales Tax Calculation & Loyalty Points Discount
     const customerSession = getCustomerFromToken(request);
-    const finalCustomerId = providedCustomerId || customerSession?.customerId || undefined;
+    const finalCustomerId = customerSession?.customerId;
 
     const loyaltyConfig = await getLoyaltyConfig();
     let pointsDiscountUSD = 0;
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const couponDiscountCents = Math.min(toCents(discountAmount), toCents(calculatedSubtotal));
+    const couponDiscountCents = 0; // Coupons are not implemented; never trust a client-supplied discount.
     const pointsDiscountCents = Math.min(
       toCents(pointsDiscountUSD),
       Math.max(0, toCents(calculatedSubtotal) - couponDiscountCents)

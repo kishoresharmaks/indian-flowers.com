@@ -27,7 +27,9 @@ export async function getRazorpayConfig(): Promise<RazorpayConfig> {
     console.warn('Failed to load Razorpay settings from DB, falling back to process.env', err);
   }
 
-  const isMock = !keyId || !keySecret || keyId.includes('placeholder') || keySecret.includes('placeholder');
+  // Mock orders are useful locally, but must never be accepted by a live store.
+  const hasPlaceholderCredentials = !keyId || !keySecret || keyId.includes('placeholder') || keySecret.includes('placeholder');
+  const isMock = process.env.NODE_ENV !== 'production' && hasPlaceholderCredentials;
 
   return { keyId, keySecret, isMock };
 }
@@ -60,6 +62,10 @@ export async function createRazorpayOrder({
       keyId: config.keyId || 'rzp_test_placeholder',
       isMock: true,
     };
+  }
+
+  if (!config.keyId || !config.keySecret || config.keyId.includes('placeholder') || config.keySecret.includes('placeholder')) {
+    throw new Error('Razorpay is not configured for live payments.');
   }
 
   // Real Razorpay API call
@@ -105,7 +111,7 @@ export function verifyRazorpaySignature({
   }
 
   // Allow sandbox simulated signature when in test/mock mode or using placeholder keys
-  if ((!secret || secret.includes('placeholder')) && signature.startsWith('mock_sig_')) {
+  if (process.env.NODE_ENV !== 'production' && (!secret || secret.includes('placeholder')) && signature.startsWith('mock_sig_')) {
     return true;
   }
 

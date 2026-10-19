@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
@@ -9,6 +9,9 @@ import { calculateSalesTax } from '@/lib/tax';
 import { toCents, fromCents } from '@/lib/tax/taxProvider';
 import { validateTaxAddress, normalizeStateCode, formatUSZip } from '@/lib/tax/jurisdiction';
 import { getCustomerFromToken } from '@/lib/customerAuth';
+import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+import { releaseInventory, reserveInventory, type InventoryReservation } from '@/lib/inventory';
+import { randomUUID } from 'crypto';
 import {
   getLoyaltyConfig,
   calculatePointsEarned,
@@ -17,8 +20,9 @@ import {
   debitOrderPoints,
 } from '@/lib/loyalty/loyaltyEngine';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
     const orders = await Order.find({}).sort({ createdAt: -1 });
     return NextResponse.json({ success: true, count: orders.length, data: orders });
@@ -31,12 +35,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let reservedInventory: InventoryReservation[] = [];
   try {
     await connectToDatabase();
     const body = await request.json();
 
     const {
-      customerId: providedCustomerId,
       customerName,
       customerPhone,
       customerEmail,
@@ -53,9 +57,7 @@ export async function POST(request: Request) {
       pincode: legacyPincode,
       items,
       paymentMethod,
-      transactionId,
       shippingFee = 0,
-      discountAmount = 0,
       redeemPoints = 0,
     } = body;
 
@@ -118,18 +120,26 @@ export async function POST(request: Request) {
       const dbProduct = productMap.get(String(item.productId));
       const qty = Math.max(1, Number(item.quantity) || 1);
 
+      if (!dbProduct) {
+        return NextResponse.json(
+          { success: false, message: `Product ${item.productId || item.name || ''} no longer exists.` },
+          { status: 400 }
+        );
+      }
+
       // Determine authoritative price
-      let unitPrice = dbProduct ? Number(dbProduct.price) : Number(item.price) || 0;
+      let unitPrice = Number(dbProduct.price);
       let variantName = item.variantName || '';
-      let isTaxable = dbProduct ? dbProduct.isTaxable !== false : true;
+      let isTaxable = dbProduct.isTaxable !== false;
       let taxCode = dbProduct?.taxCode || '';
 
       if (dbProduct && item.variantName && Array.isArray(dbProduct.variants)) {
         const variant = dbProduct.variants.find((v: any) => v.name === item.variantName);
-        if (variant) {
-          unitPrice = Number(variant.price);
-          variantName = variant.name;
+        if (!variant) {
+          return NextResponse.json({ success: false, message: 'Selected product variant is unavailable.' }, { status: 400 });
         }
+        unitPrice = Number(variant.price);
+        variantName = variant.name;
       } else if (dbProduct && !variantName && Array.isArray(dbProduct.variants) && dbProduct.variants.length > 0) {
         const variant = dbProduct.variants.find((v: any) => Number(v.price) === Number(unitPrice));
         if (variant) {
@@ -163,19 +173,13 @@ export async function POST(request: Request) {
         taxCode,
       });
 
-      // Decrement inventory in DB
-      if (item.productId) {
-        await Product.findByIdAndUpdate(item.productId, {
-          $inc: { quantity: -qty },
-        });
-      }
     }
 
     const subtotal = fromCents(subtotalCents);
 
-    // Resolve customer ID from body or active customer session cookie
+    // Never let a request impersonate another customer to spend loyalty points.
     const customerSession = getCustomerFromToken(request);
-    const finalCustomerId = providedCustomerId || customerSession?.customerId || undefined;
+    const finalCustomerId = customerSession?.customerId;
 
     // Calculate loyalty points redemption discount if requested by customer
     const loyaltyConfig = await getLoyaltyConfig();
@@ -196,7 +200,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const couponDiscountCents = Math.min(toCents(discountAmount), subtotalCents);
+    const couponDiscountCents = 0; // Coupons are not implemented; never trust a client-supplied discount.
     const pointsDiscountCents = Math.min(
       toCents(pointsDiscountUSD),
       Math.max(0, subtotalCents - couponDiscountCents)
@@ -236,20 +240,27 @@ export async function POST(request: Request) {
     const totalAmount = fromCents(Math.max(0, totalAmountCents));
 
     // 3. Payment Method Verification
-    const allowedMethods = ['CreditCard', 'COD', 'ApplePay', 'PayPal', 'CASH', 'Razorpay'];
-    const method = allowedMethods.includes(paymentMethod) ? paymentMethod : 'COD';
-
-    // Online Razorpay and digital payments are recorded as 'Paid' when confirmed
-    const pStatus = method === 'CreditCard' || method === 'ApplePay' || method === 'PayPal' || method === 'Razorpay' ? 'Paid' : 'Pending';
-
-    // Sequential order ID
-    const orderCount = await Order.countDocuments();
-    const nextSeqNumber = 1001 + orderCount;
-    const orderId = `ORD-${nextSeqNumber}`;
+    if (paymentMethod !== 'COD') {
+      return NextResponse.json(
+        { success: false, message: 'Online payments must be created through the verified payment endpoint.' },
+        { status: 400 }
+      );
+    }
+    const method = 'COD';
+    const pStatus = 'Pending';
+    const orderId = `ORD-${randomUUID()}`;
 
     // Calculate points earned on net merchandise spend
     const netMerchandiseSpend = Math.max(0, subtotal - fromCents(totalDiscountCents));
     const pointsEarned = calculatePointsEarned(netMerchandiseSpend, loyaltyConfig);
+
+    reservedInventory = await reserveInventory(
+      processedItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        variantName: item.variantName || undefined,
+      }))
+    );
 
     // 4. Create Order with Durable Tax Snapshot and US Address
     const newOrder = await Order.create({
@@ -283,7 +294,7 @@ export async function POST(request: Request) {
       totalAmount,
       paymentMethod: method,
       paymentStatus: pStatus,
-      transactionId: transactionId || '',
+      transactionId: '',
       status: 'Pending',
     });
 
@@ -338,6 +349,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error: any) {
+    if (reservedInventory.length > 0) await releaseInventory(reservedInventory);
     await captureServerException(request, error, 'online-checkout');
     return NextResponse.json(
       { success: false, message: error.message || 'Failed to place order' },

@@ -1,9 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Order from '@/models/Order';
+import { getCustomerFromToken } from '@/lib/customerAuth';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    const customer = getCustomerFromToken(request);
+    if (!customer) {
+      return NextResponse.json(
+        { success: false, message: 'Please sign in to track an order.' },
+        { status: 401 }
+      );
+    }
     await connectToDatabase();
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('query');
@@ -16,12 +24,23 @@ export async function GET(request: Request) {
     }
 
     const cleanQuery = query.trim();
+    const escapedQuery = cleanQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     const orders = await Order.find({
-      $or: [
-        { customerPhone: { $regex: cleanQuery, $options: 'i' } },
-        { customerEmail: { $regex: cleanQuery, $options: 'i' } },
-        { orderId: { $regex: cleanQuery, $options: 'i' } },
+      $and: [
+        {
+          $or: [
+            { customerId: customer.customerId },
+            { customerEmail: customer.email.toLowerCase() },
+          ],
+        },
+        {
+          $or: [
+            { customerPhone: { $regex: escapedQuery, $options: 'i' } },
+            { customerEmail: { $regex: escapedQuery, $options: 'i' } },
+            { orderId: { $regex: escapedQuery, $options: 'i' } },
+          ],
+        },
       ],
     }).sort({ createdAt: -1 });
 
