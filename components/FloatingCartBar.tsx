@@ -144,10 +144,10 @@ export default function FloatingCartBar({
         }
       `}</style>
 
-      {/* Floating Cart Pill Wrapper with Subtle Idle Float (Moves up/down 3px, positioned above mobile toolbar) */}
+      {/* Floating Cart Pill (Desktop only to prevent mobile overlap with MobileBottomNav) */}
       <aside
         aria-label="Floating shopping cart summary"
-        className="fixed inset-x-4 bottom-[calc(4rem+env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-6 sm:bottom-6 z-36 flex justify-center pointer-events-none"
+        className="hidden md:flex fixed right-6 bottom-6 z-40 justify-center pointer-events-none"
       >
         <div
           className="pointer-events-auto [animation:cartIdleFloat_3s_ease-in-out_infinite] motion-reduce:[animation:none]"

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Store, Heart, ShoppingBag, User, ChevronUp } from 'lucide-react';
 
@@ -33,7 +32,7 @@ export function WhatsAppFloatingButton({
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
-      className={`fixed bottom-16 right-3.5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_4px_16px_rgba(37,211,102,0.4)] hover:bg-[#20ba59] hover:scale-105 active:scale-95 transition-all md:bottom-6 md:right-6 md:h-13 md:w-13 cursor-pointer ${className}`}
+      className={`fixed bottom-18 right-3.5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_4px_16px_rgba(37,211,102,0.45)] hover:bg-[#20ba59] hover:scale-105 active:scale-95 transition-all md:bottom-6 md:right-6 md:h-13 md:w-13 cursor-pointer ${className}`}
       title="Chat on WhatsApp"
     >
       <svg
@@ -69,7 +68,7 @@ export function ScrollToTopButton() {
       type="button"
       onClick={scrollToTop}
       aria-label="Scroll to top"
-      className="fixed bottom-30 right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-stone-700 shadow-[0_2px_10px_rgba(0,0,0,0.12)] border border-stone-200/90 hover:bg-[#0B3B24] hover:text-white transition-all active:scale-90 cursor-pointer md:bottom-22 md:right-7"
+      className="fixed bottom-32 right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full bg-white text-stone-700 shadow-[0_2px_10px_rgba(0,0,0,0.15)] border border-stone-200 hover:bg-[#0B3B24] hover:text-white transition-all active:scale-90 cursor-pointer md:bottom-22 md:right-7"
       title="Back to top"
     >
       <ChevronUp className="w-5 h-5 stroke-[2.2]" />
@@ -121,60 +120,62 @@ export default function MobileBottomNav({
 
   return (
     <>
+      {/* 100% Solid Opaque White Mobile Bottom Navigation Bar (z-50) */}
       <nav
         aria-label="Mobile Navigation Toolbar"
-        className="md:hidden fixed bottom-0 inset-x-0 z-35 bg-white/98 backdrop-blur-md border-t border-stone-200/80 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] px-2 py-1.5 flex items-center justify-around h-14"
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-stone-200/90 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] px-2 py-1.5 flex items-center justify-around h-14"
+        style={{ backgroundColor: '#ffffff', opacity: 1 }}
       >
         {/* 1. Shop */}
         <button
           type="button"
           onClick={handleShopClick}
-          className="flex flex-col items-center justify-center flex-1 py-1 text-stone-600 hover:text-[#0B3B24] active:scale-95 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center flex-1 py-1 text-stone-700 hover:text-[#0B3B24] active:scale-95 transition-all cursor-pointer"
         >
-          <Store className="w-4.5 h-4.5 stroke-[2]" />
-          <span className="text-[10.5px] font-medium tracking-tight mt-0.5">Shop</span>
+          <Store className="w-4.5 h-4.5 stroke-[2.2]" />
+          <span className="text-[10.5px] font-semibold tracking-tight mt-0.5">Shop</span>
         </button>
 
         {/* 2. Wishlist */}
         <button
           type="button"
           onClick={handleWishlistClick}
-          className="flex flex-col items-center justify-center flex-1 py-1 text-stone-600 hover:text-[#ed2353] active:scale-95 transition-all relative cursor-pointer"
+          className="flex flex-col items-center justify-center flex-1 py-1 text-stone-700 hover:text-[#ed2353] active:scale-95 transition-all relative cursor-pointer"
         >
           <div className="relative">
-            <Heart className="w-4.5 h-4.5 stroke-[2]" />
+            <Heart className="w-4.5 h-4.5 stroke-[2.2]" />
             {wishlistCount > 0 && (
               <span className="absolute -top-1.5 -right-2 bg-[#ed2353] text-white text-[9px] font-bold min-w-[15px] h-[15px] px-0.5 rounded-full flex items-center justify-center shadow-xs">
                 {wishlistCount}
               </span>
             )}
           </div>
-          <span className="text-[10.5px] font-medium tracking-tight mt-0.5">Wishlist</span>
+          <span className="text-[10.5px] font-semibold tracking-tight mt-0.5">Wishlist</span>
         </button>
 
-        {/* 3. Cart with Badge */}
+        {/* 3. Cart with Pink Badge */}
         <button
           type="button"
           onClick={handleCartClick}
-          className="flex flex-col items-center justify-center flex-1 py-1 text-stone-600 hover:text-[#ed2353] active:scale-95 transition-all relative cursor-pointer"
+          className="flex flex-col items-center justify-center flex-1 py-1 text-stone-700 hover:text-[#ed2353] active:scale-95 transition-all relative cursor-pointer"
         >
           <div className="relative">
-            <ShoppingBag className="w-4.5 h-4.5 stroke-[2]" />
+            <ShoppingBag className="w-4.5 h-4.5 stroke-[2.2]" />
             <span className="absolute -top-1.5 -right-2.5 bg-[#ed2353] text-white text-[9px] font-bold min-w-[15px] h-[15px] px-0.5 rounded-full flex items-center justify-center shadow-xs">
               {cartCount}
             </span>
           </div>
-          <span className="text-[10.5px] font-medium tracking-tight mt-0.5">Cart</span>
+          <span className="text-[10.5px] font-semibold tracking-tight mt-0.5">Cart</span>
         </button>
 
         {/* 4. My Account */}
         <button
           type="button"
           onClick={handleAccountClick}
-          className="flex flex-col items-center justify-center flex-1 py-1 text-stone-600 hover:text-[#0B3B24] active:scale-95 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center flex-1 py-1 text-stone-700 hover:text-[#0B3B24] active:scale-95 transition-all cursor-pointer"
         >
-          <User className="w-4.5 h-4.5 stroke-[2]" />
-          <span className="text-[10.5px] font-medium tracking-tight mt-0.5">
+          <User className="w-4.5 h-4.5 stroke-[2.2]" />
+          <span className="text-[10.5px] font-semibold tracking-tight mt-0.5">
             {customer ? 'Account' : 'My account'}
           </span>
         </button>

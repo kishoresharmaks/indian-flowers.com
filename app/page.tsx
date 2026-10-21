@@ -971,7 +971,7 @@ export default function CustomerStore() {
   );
 
   return (
-    <div className="min-h-[100dvh] flex flex-col justify-between bg-white text-gray-900 font-sans">
+    <div className="min-h-[100dvh] flex flex-col justify-between bg-white text-gray-900 font-sans pb-16 md:pb-0">
       {/* 1. TOP NAVBAR & PAGE LINKS (Retrieved from DB Categories) */}
       <Header
         cartItemCount={cartItemCount}
