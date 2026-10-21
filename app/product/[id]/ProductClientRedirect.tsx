@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductDetail from '@/components/ProductDetail';
-import LotusLoader from '@/components/LotusLoader';
 import { dispatchItemAdded } from '@/components/ItemAddedNotification';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
@@ -127,7 +126,15 @@ export default function ProductClientRedirect({ id }: { id: string }) {
   };
 
   if (loading) {
-    return <LotusLoader label="Loading floral details" />;
+    return (
+      <div className="min-h-screen bg-white flex flex-col justify-between">
+        <Header />
+        <div className="flex-1 flex items-center justify-center py-24">
+          <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
   if (error || !product) {
