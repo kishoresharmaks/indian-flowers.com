@@ -18,6 +18,7 @@ import CartDrawer from '@/components/CartDrawer';
 import WishlistDrawer from '@/components/WishlistDrawer';
 import CustomOrderSection from '@/components/CustomOrderSection';
 import FloatingCartBar from '@/components/FloatingCartBar';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import {
   ShoppingBag,
   Search,
@@ -444,8 +445,9 @@ export default function CustomerStore() {
     }
     if (lower.includes('garland') || lower.includes('wedding') || lower.includes('temple')) {
       return {
-        eyebrow: 'CEREMONIAL & BRIDAL JAI MALAS',
-        description: 'Exquisite handcrafted rose petal, jasmine, and gold-trimmed garlands for wedding ceremonies',
+        eyebrow: 'Fresh Wedding Garland',
+        title: 'Our Exclusive Collections',
+        description: 'Experience the ultimate collection of Indian florals in the USA. From the delicate scent of Jasmine strings to the majestic weight of a traditional wedding garland, we bring premium quality and prompt delivery to your doorstep. Hand-picked, hand-crafted, and heart-delivered. Elevate your rituals with the flowers you know and love.',
       };
     }
     if (lower.includes('loose') || lower.includes('daily pooja')) {
@@ -1102,7 +1104,7 @@ export default function CustomerStore() {
                     <ProductCarousel
                       products={catProducts}
                       eyebrow={meta.eyebrow}
-                      title={category.name}
+                      title={meta.title || category.name}
                       subtitle={meta.description}
                       wishlist={wishlist}
                       onToggleWishlist={handleToggleWishlist}
@@ -2184,6 +2186,20 @@ export default function CustomerStore() {
         isCartOpen={isCartOpen}
         isCheckoutOpen={isCheckoutOpen}
         isMobileMenuOpen={isMobileNavOpen}
+      />
+
+      {/* MOBILE STICKY BOTTOM TOOLBAR & WHATSAPP (matching theindianflowers.com) */}
+      <MobileBottomNav
+        cartCount={cartItemCount}
+        wishlistCount={wishlist.length}
+        onOpenCart={() => setIsCartOpen(true)}
+        onOpenWishlist={() => setIsWishlistOpen(true)}
+        onOpenShop={() => {
+          setSelectedCategory('All');
+          const el = document.getElementById('products-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+        customer={customer}
       />
     </div>
   );
