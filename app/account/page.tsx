@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BrandLogo from '@/components/BrandLogo';
+import LotusLoader from '@/components/LotusLoader';
 import {
   User,
   Phone,
@@ -162,14 +163,7 @@ export default function AccountPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center font-sans">
-        <div className="text-center">
-          <div className="w-8 h-8 border-3 border-[#0B3B24] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-xs sm:text-sm text-gray-600 font-medium">Loading customer account...</p>
-        </div>
-      </div>
-    );
+    return <LotusLoader label="Loading customer account" />;
   }
 
   return (

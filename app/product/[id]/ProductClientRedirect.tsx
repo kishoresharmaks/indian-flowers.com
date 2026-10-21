@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductDetail from '@/components/ProductDetail';
+import LotusLoader from '@/components/LotusLoader';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -114,16 +115,7 @@ export default function ProductClientRedirect({ id }: { id: string }) {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col justify-between">
-        <Header />
-        <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8">
-          <RefreshCw className="w-8 h-8 text-[#0B3B24] animate-spin" />
-          <p className="text-sm font-semibold text-stone-500">Loading fresh product details...</p>
-        </div>
-        <Footer />
-      </div>
-    );
+    return <LotusLoader label="Loading floral details" />;
   }
 
   if (error || !product) {

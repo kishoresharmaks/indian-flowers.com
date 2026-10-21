@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BrandLogo from '@/components/BrandLogo';
+import LotusLoader from '@/components/LotusLoader';
 import {
   User,
   Phone,
@@ -503,7 +504,7 @@ function RegisterFormContent() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<LotusLoader label="Loading registration" />}>
       <RegisterFormContent />
     </Suspense>
   );

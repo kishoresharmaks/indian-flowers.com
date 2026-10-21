@@ -91,3 +91,207 @@ body::-webkit-scrollbar {
     border: 1px solid #E5E7EB;
   }
 }
+
+/* ==========================================================================
+   Lotus Flower Loading Animation (Across All Storefront Pages)
+   ========================================================================== */
+.lotus-loader {
+  --pink: #ff3985;
+  --purple: #c026d3;
+  --coral: #ff9868;
+
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  z-index: 999999;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Centered animation stage */
+.lotus-orbit,
+.lotus-flower,
+.lotus-shadow,
+.lotus-label {
+  position: absolute;
+  left: 50%;
+}
+
+.lotus-orbit {
+  width: 164px;
+  height: 164px;
+  top: calc(50% - 20px);
+  margin: 0;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    conic-gradient(
+      from 0deg,
+      transparent,
+      #ffb2d3,
+      #ff9868,
+      transparent,
+      #d946ef,
+      transparent
+    ) border-box;
+  animation: orbit-spin 5s linear infinite;
+}
+
+.orbit-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff579e;
+  box-shadow: 0 0 6px #ff579e;
+}
+.orbit-dot.dot-1 { top: -3px; left: 50%; transform: translateX(-50%); }
+.orbit-dot.dot-2 { bottom: -3px; left: 50%; transform: translateX(-50%); }
+.orbit-dot.dot-3 { left: -3px; top: 50%; transform: translateY(-50%); }
+.orbit-dot.dot-4 { right: -3px; top: 50%; transform: translateY(-50%); }
+
+.lotus-flower {
+  width: 140px;
+  height: 140px;
+  top: calc(50% - 20px);
+  margin: 0;
+  transform: translate(-50%, -50%);
+  animation: flower-spin 12s linear infinite;
+}
+
+.lotus-petal {
+  position: absolute;
+  left: 52px;
+  top: 8px;
+  width: 36px;
+  height: 78px;
+  border-radius: 65% 65% 42% 42%;
+  transform-origin: 18px 62px;
+  transform: rotate(calc(var(--i) * 45deg));
+  background: linear-gradient(
+    155deg,
+    #ffd3e5,
+    #ff579e 35%,
+    #d51ac5 72%,
+    #8b35d8
+  );
+  box-shadow: inset 3px 2px 8px #ffffff77;
+  animation: petal-breathe 1.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.15s);
+}
+
+.lotus-petal:nth-child(1) { --i: 0; }
+.lotus-petal:nth-child(2) { --i: 1; }
+.lotus-petal:nth-child(3) { --i: 2; }
+.lotus-petal:nth-child(4) { --i: 3; }
+.lotus-petal:nth-child(5) { --i: 4; }
+.lotus-petal:nth-child(6) { --i: 5; }
+.lotus-petal:nth-child(7) { --i: 6; }
+.lotus-petal:nth-child(8) { --i: 7; }
+
+.lotus-core {
+  position: absolute;
+  z-index: 2;
+  left: 52px;
+  top: 52px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(
+    circle at 35% 30%,
+    #fffde7,
+    #ffd477 38%,
+    #ff9748 75%,
+    #ff6a91
+  );
+  box-shadow: 0 0 12px #ffad5eaa, 0 0 28px #ff6f9c66;
+  animation: core-pulse 1.2s ease-in-out infinite;
+}
+
+.lotus-core span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 8px white;
+}
+
+.lotus-shadow {
+  top: calc(50% + 65px);
+  width: 95px;
+  height: 15px;
+  margin: 0;
+  border-radius: 50%;
+  background: #f34cae;
+  filter: blur(13px);
+  opacity: 0.4;
+  transform: translateX(-50%);
+  animation: shadow-pulse 1.6s ease-in-out infinite;
+}
+
+.lotus-label {
+  top: calc(50% + 87px);
+  margin: 0;
+  transform: translateX(-50%);
+  color: #655b78;
+  font-family: var(--font-plus-jakarta), system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+.loading-dots::after {
+  content: "...";
+  animation: dots 1.4s steps(4, end) infinite;
+}
+
+@keyframes orbit-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes flower-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes petal-breathe {
+  0%, 100% { opacity: 0.78; scale: 0.86; }
+  50% { opacity: 1; scale: 1; }
+}
+
+@keyframes core-pulse {
+  0%, 100% { scale: 0.9; }
+  50% { scale: 1.12; }
+}
+
+@keyframes shadow-pulse {
+  0%, 100% { scale: 0.75 1; opacity: 0.25; }
+  50% { scale: 1.15 1; opacity: 0.5; }
+}
+
+@keyframes dots {
+  0% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75%, 100% { content: "..."; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lotus-loader *,
+  .lotus-loader {
+    animation: none !important;
+  }
+}

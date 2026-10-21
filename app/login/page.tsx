@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BrandLogo from '@/components/BrandLogo';
+import LotusLoader from '@/components/LotusLoader';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ShoppingBag, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 function LoginFormContent() {
@@ -203,7 +204,7 @@ function LoginFormContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<LotusLoader label="Loading sign in" />}>
       <LoginFormContent />
     </Suspense>
   );
