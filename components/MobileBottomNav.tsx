@@ -32,16 +32,33 @@ export function WhatsAppFloatingButton({
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
-      className={`fixed bottom-18 right-3.5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_4px_16px_rgba(37,211,102,0.45)] hover:bg-[#20ba59] hover:scale-105 active:scale-95 transition-all md:bottom-6 md:right-6 md:h-13 md:w-13 cursor-pointer ${className}`}
-      title="Chat on WhatsApp"
+      className={`fixed bottom-[72px] right-4 z-40 flex h-[52px] w-[52px] md:h-14 md:w-14 items-center justify-center rounded-full bg-gradient-to-tr from-[#1EBE5D] to-[#25D366] text-white shadow-[0_8px_24px_rgba(37,211,102,0.45),0_2px_6px_rgba(0,0,0,0.12)] border-2 border-white hover:shadow-[0_10px_28px_rgba(37,211,102,0.65)] hover:scale-108 active:scale-95 transition-all duration-300 md:bottom-6 md:right-6 cursor-pointer group ${className}`}
+      title="Chat with us on WhatsApp"
     >
+      {/* Soft pulse glow ring behind the button */}
+      <span className="absolute -inset-1 rounded-full bg-[#25D366]/30 animate-pulse pointer-events-none -z-10" />
+
+      {/* Online indicator live badge */}
+      <span className="absolute top-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center pointer-events-none">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 border border-white" />
+      </span>
+
+      {/* Crisp Official WhatsApp Solid Icon Vector */}
       <svg
-        className="w-6.5 h-6.5 fill-current"
-        viewBox="0 0 24 24"
+        className="w-7 h-7 md:w-8 md:h-8 fill-white drop-shadow-xs"
+        viewBox="0 0 32 32"
         xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
       >
-        <path d="M17.472 14.382c-.301-.15-1.78-.879-2.056-.98-.276-.1-.477-.15-.678.15-.201.3-.778.98-.954 1.18-.175.2-.351.226-.652.075-.301-.15-1.272-.469-2.423-1.496-.896-.799-1.501-1.787-1.677-2.088-.176-.3-.019-.463.132-.613.136-.134.301-.35.452-.525.15-.175.2-.3.301-.5.101-.2.05-.376-.025-.526-.075-.15-.678-1.634-.93-2.239-.244-.589-.493-.509-.678-.519-.176-.01-.377-.01-.578-.01-.201 0-.527.075-.803.376s-1.055 1.03-1.055 2.511 1.08 2.912 1.231 3.113c.15.2 2.126 3.247 5.15 4.555.719.311 1.281.497 1.719.636.722.23 1.378.197 1.898.12.579-.087 1.78-.727 2.03-1.43.251-.703.251-1.306.176-1.43-.075-.125-.276-.201-.577-.351zM12.04 21.785c-1.758 0-3.483-.463-5.006-1.341l-.359-.208-3.722.977.994-3.628-.233-.371A9.816 9.816 0 012.28 12.04c0-5.385 4.38-9.765 9.765-9.765 2.609 0 5.061 1.017 6.905 2.862 1.846 1.845 2.862 4.298 2.862 6.908 0 5.386-4.38 9.74-9.772 9.74zm0-17.785a8.03 8.03 0 00-6.953 12.038l.439.699-.58 2.119 2.167-.568.678.402a8.026 8.026 0 004.249 1.207c4.437 0 8.043-3.606 8.043-8.044 0-2.148-.836-4.168-2.355-5.688A8.005 8.005 0 0012.04 4z" />
+        <path d="M16 2.5C8.544 2.5 2.5 8.544 2.5 16c0 2.57.72 4.975 1.97 7.025L2.5 29.5l6.738-1.763A13.415 13.415 0 0016 29.5c7.456 0 13.5-6.044 13.5-13.5S23.456 2.5 16 2.5zm7.3 18.275c-.3.844-1.75 1.625-2.438 1.725-.631.094-1.425.131-2.3-.15-.55-.175-1.25-.4-2.125-.788-3.738-1.631-6.175-5.406-6.363-5.656-.188-.25-1.519-2.025-1.519-3.863 0-1.838.963-2.744 1.3-3.119.338-.375.738-.469 1-.469.263 0 .525.006.75.019.238.012.556-.094.869.656.325.775 1.106 2.7 1.206 2.9.1.2.169.438.038.7-.131.263-.2.425-.394.656-.194.231-.413.513-.588.688-.2.2-.413.419-.181.819.231.4 1.031 1.7 2.219 2.756 1.525 1.356 2.813 1.775 3.213 1.975.4.2.631.169.863-.1.231-.269.988-1.15 1.25-1.544.263-.394.525-.331.881-.2.356.131 2.269 1.069 2.656 1.263.388.194.65.294.75.463.1.169.1.981-.2 1.825z" />
       </svg>
+
+      {/* Desktop Tooltip Pill on Hover */}
+      <span className="hidden md:group-hover:flex absolute right-full mr-3 top-1/2 -translate-y-1/2 items-center bg-stone-900/90 text-white text-[12px] font-semibold px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap pointer-events-none transition-all">
+        Chat with us on WhatsApp
+        <span className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-stone-900/90" />
+      </span>
     </a>
   );
 }
@@ -68,7 +85,7 @@ export function ScrollToTopButton() {
       type="button"
       onClick={scrollToTop}
       aria-label="Scroll to top"
-      className="fixed bottom-32 right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full bg-white text-stone-700 shadow-[0_2px_10px_rgba(0,0,0,0.15)] border border-stone-200 hover:bg-[#0B3B24] hover:text-white transition-all active:scale-90 cursor-pointer md:bottom-22 md:right-7"
+      className="fixed bottom-[134px] right-5.5 z-40 flex h-9 w-9 items-center justify-center rounded-full bg-white text-stone-700 shadow-[0_2px_10px_rgba(0,0,0,0.15)] border border-stone-200 hover:bg-[#0B3B24] hover:text-white transition-all active:scale-90 cursor-pointer md:bottom-24 md:right-7.5"
       title="Back to top"
     >
       <ChevronUp className="w-5 h-5 stroke-[2.2]" />
