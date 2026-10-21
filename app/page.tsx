@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { dispatchItemAdded } from '@/components/ItemAddedNotification';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
@@ -160,10 +161,12 @@ export default function CustomerStore() {
   const [newsletterMessage, setNewsletterMessage] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'success' | 'already' | 'error'>('idle');
 
-  // Restore Cart on Mount
+  const isCartMountedRef = useRef(false);
+
+  // Restore Cart on Mount (supports both 'cart' and 'if_cart')
   useEffect(() => {
     try {
-      const savedCart = localStorage.getItem('if_cart');
+      const savedCart = localStorage.getItem('cart') || localStorage.getItem('if_cart');
       if (savedCart) {
         const parsed = JSON.parse(savedCart);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -175,14 +178,46 @@ export default function CustomerStore() {
     }
   }, []);
 
+  // Listen for Cart Updates from Global Nav, Cart Drawer, or other tabs
+  useEffect(() => {
+    const handleCartSync = () => {
+      try {
+        const raw = localStorage.getItem('cart') || localStorage.getItem('if_cart');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            setCart(parsed);
+            return;
+          }
+        }
+        setCart([]);
+      } catch {}
+    };
+
+    window.addEventListener('cart-updated', handleCartSync);
+    window.addEventListener('storage', handleCartSync);
+    return () => {
+      window.removeEventListener('cart-updated', handleCartSync);
+      window.removeEventListener('storage', handleCartSync);
+    };
+  }, []);
+
   // Save Cart on Change
   useEffect(() => {
+    if (!isCartMountedRef.current) {
+      isCartMountedRef.current = true;
+      return;
+    }
     try {
       if (cart.length > 0) {
-        localStorage.setItem('if_cart', JSON.stringify(cart));
+        const json = JSON.stringify(cart);
+        localStorage.setItem('cart', json);
+        localStorage.setItem('if_cart', json);
       } else {
+        localStorage.removeItem('cart');
         localStorage.removeItem('if_cart');
       }
+      window.dispatchEvent(new Event('cart-updated'));
     } catch (err) {
       console.error('Failed to persist cart:', err);
     }
@@ -532,13 +567,32 @@ export default function CustomerStore() {
             it.selectedVariant?.name === effectiveVariant?.name)
       );
 
+      let updated: CartItem[];
       if (existingIdx > -1) {
-        const updated = [...prevCart];
+        updated = [...prevCart];
         updated[existingIdx].quantity += quantity;
-        return updated;
       } else {
-        return [...prevCart, { product, selectedVariant: effectiveVariant, quantity }];
+        updated = [...prevCart, { product, selectedVariant: effectiveVariant, quantity }];
       }
+      try {
+        const json = JSON.stringify(updated);
+        localStorage.setItem('cart', json);
+        localStorage.setItem('if_cart', json);
+        window.dispatchEvent(new Event('cart-updated'));
+      } catch {}
+      return updated;
+    });
+
+    const unitPrice = effectiveVariant ? effectiveVariant.price : product.price;
+    dispatchItemAdded({
+      product: {
+        _id: product._id,
+        name: product.name,
+        image: product.image,
+        price: unitPrice,
+      },
+      variant: effectiveVariant ? { name: effectiveVariant.name, price: effectiveVariant.price } : undefined,
+      quantity,
     });
   };
 
@@ -547,22 +601,41 @@ export default function CustomerStore() {
       removeFromCart(productId, variantName);
       return;
     }
-    setCart((prevCart) =>
-      prevCart.map((item) => {
+    setCart((prevCart) => {
+      const updated = prevCart.map((item) => {
         if (item.product._id === productId && item.selectedVariant?.name === variantName) {
           return { ...item, quantity: newQty };
         }
         return item;
-      })
-    );
+      });
+      try {
+        const json = JSON.stringify(updated);
+        localStorage.setItem('cart', json);
+        localStorage.setItem('if_cart', json);
+        window.dispatchEvent(new Event('cart-updated'));
+      } catch {}
+      return updated;
+    });
   };
 
   const removeFromCart = (productId: string, variantName?: string) => {
-    setCart((prevCart) =>
-      prevCart.filter(
+    setCart((prevCart) => {
+      const updated = prevCart.filter(
         (item) => !(item.product._id === productId && item.selectedVariant?.name === variantName)
-      )
-    );
+      );
+      try {
+        if (updated.length > 0) {
+          const json = JSON.stringify(updated);
+          localStorage.setItem('cart', json);
+          localStorage.setItem('if_cart', json);
+        } else {
+          localStorage.removeItem('cart');
+          localStorage.removeItem('if_cart');
+        }
+        window.dispatchEvent(new Event('cart-updated'));
+      } catch {}
+      return updated;
+    });
   };
 
   const cartSubtotal = cart.reduce(
@@ -817,7 +890,9 @@ export default function CustomerStore() {
             setCart([]);
             setIsCheckoutOpen(false);
             setIsCartOpen(false);
+            localStorage.removeItem('cart');
             localStorage.removeItem('if_cart');
+            window.dispatchEvent(new Event('cart-updated'));
             refreshCustomerAccount();
           } else {
             setFormError(verifyData.message || 'Payment verification failed.');
@@ -859,7 +934,9 @@ export default function CustomerStore() {
                 setCart([]);
                 setIsCheckoutOpen(false);
                 setIsCartOpen(false);
-                localStorage.removeItem('if_cart');
+                localStorage.removeItem('cart');
+            localStorage.removeItem('if_cart');
+            window.dispatchEvent(new Event('cart-updated'));
                 refreshCustomerAccount();
               } else {
                 setFormError(verifyData.message || 'Payment verification failed.');
@@ -914,7 +991,9 @@ export default function CustomerStore() {
         setCart([]);
         setIsCheckoutOpen(false);
         setIsCartOpen(false);
-        localStorage.removeItem('if_cart');
+        localStorage.removeItem('cart');
+            localStorage.removeItem('if_cart');
+            window.dispatchEvent(new Event('cart-updated'));
         refreshCustomerAccount();
       } else {
         setFormError(data.message || 'Unable to place order. Please check details and try again.');

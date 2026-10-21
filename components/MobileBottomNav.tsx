@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Store, Heart, ShoppingBag, User, ChevronUp } from 'lucide-react';
 
@@ -102,6 +102,18 @@ export default function MobileBottomNav({
   customer,
 }: MobileBottomNavProps) {
   const router = useRouter();
+  const [isBouncing, setIsBouncing] = useState(false);
+  const prevCountRef = useRef(cartCount);
+
+  // Trigger playful bounce when cart item count increases
+  useEffect(() => {
+    if (cartCount > prevCountRef.current) {
+      setIsBouncing(true);
+      const timer = setTimeout(() => setIsBouncing(false), 500);
+      return () => clearTimeout(timer);
+    }
+    prevCountRef.current = cartCount;
+  }, [cartCount]);
 
   const handleShopClick = () => {
     if (onOpenShop) {
@@ -178,7 +190,11 @@ export default function MobileBottomNav({
         >
           <div className="relative">
             <ShoppingBag className="w-4.5 h-4.5 stroke-[2.2]" />
-            <span className="absolute -top-1.5 -right-2.5 bg-[#ed2353] text-white text-[9px] font-bold min-w-[15px] h-[15px] px-0.5 rounded-full flex items-center justify-center shadow-xs">
+            <span
+              className={`absolute -top-1.5 -right-2.5 bg-[#ed2353] text-white text-[9px] font-bold min-w-[15px] h-[15px] px-0.5 rounded-full flex items-center justify-center shadow-xs transition-transform duration-300 ${
+                isBouncing ? 'scale-135 ring-2 ring-pink-300' : 'scale-100'
+              }`}
+            >
               {cartCount}
             </span>
           </div>

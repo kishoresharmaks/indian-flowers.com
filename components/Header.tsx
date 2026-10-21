@@ -90,7 +90,7 @@ export default function Header({
     const updateCounts = () => {
       if (cartItemCount === undefined && typeof window !== 'undefined') {
         try {
-          const stored = localStorage.getItem('cart');
+          const stored = localStorage.getItem('cart') || localStorage.getItem('if_cart');
           if (stored) {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed)) {

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import MobileBottomNav from './MobileBottomNav';
 import CartDrawer from './CartDrawer';
 import WishlistDrawer from './WishlistDrawer';
+import ItemAddedNotification, { dispatchItemAdded } from './ItemAddedNotification';
 import { Product } from './ProductCard';
 
 interface CartItem {
@@ -33,11 +34,11 @@ export default function StorefrontGlobalNav() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
 
-  // Sync Cart from localStorage
+  // Sync Cart from localStorage (supports both 'cart' and 'if_cart')
   const syncCart = useCallback(() => {
     if (typeof window === 'undefined') return;
     try {
-      const raw = localStorage.getItem('cart');
+      const raw = localStorage.getItem('cart') || localStorage.getItem('if_cart');
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
@@ -145,7 +146,14 @@ export default function StorefrontGlobalNav() {
       });
     }
     setCartItems(nextCart);
-    localStorage.setItem('cart', JSON.stringify(nextCart));
+    const json = JSON.stringify(nextCart);
+    if (nextCart.length > 0) {
+      localStorage.setItem('cart', json);
+      localStorage.setItem('if_cart', json);
+    } else {
+      localStorage.removeItem('cart');
+      localStorage.removeItem('if_cart');
+    }
     window.dispatchEvent(new Event('cart-updated'));
   };
 
@@ -154,7 +162,14 @@ export default function StorefrontGlobalNav() {
       (i) => !(i.product._id === productId && i.selectedVariant?.name === variantName)
     );
     setCartItems(nextCart);
-    localStorage.setItem('cart', JSON.stringify(nextCart));
+    const json = JSON.stringify(nextCart);
+    if (nextCart.length > 0) {
+      localStorage.setItem('cart', json);
+      localStorage.setItem('if_cart', json);
+    } else {
+      localStorage.removeItem('cart');
+      localStorage.removeItem('if_cart');
+    }
     window.dispatchEvent(new Event('cart-updated'));
   };
 
@@ -192,8 +207,21 @@ export default function StorefrontGlobalNav() {
       ];
     }
     setCartItems(nextCart);
-    localStorage.setItem('cart', JSON.stringify(nextCart));
+    const json = JSON.stringify(nextCart);
+    localStorage.setItem('cart', json);
+    localStorage.setItem('if_cart', json);
     window.dispatchEvent(new Event('cart-updated'));
+
+    // Trigger auto-dismiss notification toast
+    dispatchItemAdded({
+      product: {
+        _id: product._id,
+        name: product.name,
+        image: product.image,
+        price: itemPrice,
+      },
+      quantity: 1,
+    });
   };
 
   const handleCheckout = () => {
@@ -228,6 +256,9 @@ export default function StorefrontGlobalNav() {
 
   return (
     <>
+      {/* Universal Auto-dismiss Notification Toast: "Item added to cart" */}
+      <ItemAddedNotification onViewCart={handleOpenCartClick} />
+
       {/* 100% Solid Opaque White Bottom Toolbar on All Storefront Mobile Pages */}
       <MobileBottomNav
         cartCount={cartItemCount}

@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductDetail from '@/components/ProductDetail';
 import LotusLoader from '@/components/LotusLoader';
+import { dispatchItemAdded } from '@/components/ItemAddedNotification';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -58,7 +59,7 @@ export default function ProductClientRedirect({ id }: { id: string }) {
   const handleAddToCart = (variant?: ProductVariant, quantity: number = 1) => {
     if (!product) return;
     try {
-      const raw = localStorage.getItem('cart');
+      const raw = localStorage.getItem('cart') || localStorage.getItem('if_cart');
       const currentCart = raw ? JSON.parse(raw) : [];
       const itemPrice = variant ? variant.price : product.price;
 
@@ -89,9 +90,20 @@ export default function ProductClientRedirect({ id }: { id: string }) {
           },
         ];
       }
-      localStorage.setItem('cart', JSON.stringify(nextCart));
+      const json = JSON.stringify(nextCart);
+      localStorage.setItem('cart', json);
+      localStorage.setItem('if_cart', json);
       window.dispatchEvent(new Event('cart-updated'));
-      window.dispatchEvent(new Event('open-cart'));
+      dispatchItemAdded({
+        product: {
+          _id: product._id,
+          name: product.name,
+          image: product.image,
+          price: itemPrice,
+        },
+        variant: variant ? { name: variant.name, price: variant.price } : undefined,
+        quantity,
+      });
     } catch (err) {
       console.error('Failed to add to cart:', err);
     }
