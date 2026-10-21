@@ -174,7 +174,7 @@ const VALUES = [
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-[#FAF6F0]/50 text-stone-900 font-sans flex flex-col justify-between">
+    <div className="min-h-screen bg-[#FAF6F0]/50 text-stone-900 font-sans flex flex-col justify-between pb-16 md:pb-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

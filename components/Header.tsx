@@ -87,30 +87,58 @@ export default function Header({
 
   // Sync localStorage cart & wishlist counts when standalone
   useEffect(() => {
-    if (cartItemCount === undefined && typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('cart');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            const count = parsed.reduce(
-              (sum: number, item: any) => sum + (Number(item.quantity) || 1),
-              0
-            );
-            setInternalCartCount(count);
+    const updateCounts = () => {
+      if (cartItemCount === undefined && typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('cart');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+              const count = parsed.reduce(
+                (sum: number, item: any) => sum + (Number(item.quantity) || 1),
+                0
+              );
+              setInternalCartCount(count);
+            } else {
+              setInternalCartCount(0);
+            }
+          } else {
+            setInternalCartCount(0);
           }
+        } catch {
+          setInternalCartCount(0);
         }
-      } catch {}
-    }
-    if (wishlistCount === undefined && typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('if_wishlist');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) setInternalWishlistCount(parsed.length);
+      }
+      if (wishlistCount === undefined && typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('if_wishlist');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+              setInternalWishlistCount(parsed.length);
+            } else {
+              setInternalWishlistCount(0);
+            }
+          } else {
+            setInternalWishlistCount(0);
+          }
+        } catch {
+          setInternalWishlistCount(0);
         }
-      } catch {}
-    }
+      }
+    };
+
+    updateCounts();
+
+    window.addEventListener('cart-updated', updateCounts);
+    window.addEventListener('wishlist-updated', updateCounts);
+    window.addEventListener('storage', updateCounts);
+
+    return () => {
+      window.removeEventListener('cart-updated', updateCounts);
+      window.removeEventListener('wishlist-updated', updateCounts);
+      window.removeEventListener('storage', updateCounts);
+    };
   }, [cartItemCount, wishlistCount]);
 
   useEffect(() => {
@@ -243,7 +271,7 @@ export default function Header({
     if (onCartClick) {
       onCartClick();
     } else {
-      router.push('/?checkout=true');
+      window.dispatchEvent(new Event('open-cart'));
     }
   };
 
@@ -259,7 +287,7 @@ export default function Header({
     if (onWishlistClick) {
       onWishlistClick();
     } else {
-      router.push('/?action=wishlist');
+      window.dispatchEvent(new Event('open-wishlist'));
     }
   };
 

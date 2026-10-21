@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
+import StorefrontGlobalNav from "@/components/StorefrontGlobalNav";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -234,6 +235,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-white text-gray-900 antialiased flex flex-col justify-between">
         {children}
+        <StorefrontGlobalNav />
         <CookieConsentBanner />
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>

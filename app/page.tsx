@@ -313,6 +313,18 @@ export default function CustomerStore() {
     setIsCheckoutOpen(true);
   };
 
+  // Listen for open-cart and open-wishlist from global navigation
+  useEffect(() => {
+    const handleOpenCart = () => setIsCartOpen(true);
+    const handleOpenWishlist = () => setIsWishlistOpen(true);
+    window.addEventListener('open-cart', handleOpenCart);
+    window.addEventListener('open-wishlist', handleOpenWishlist);
+    return () => {
+      window.removeEventListener('open-cart', handleOpenCart);
+      window.removeEventListener('open-wishlist', handleOpenWishlist);
+    };
+  }, []);
+
   // 1. Fetch Store Settings
   useEffect(() => {
     const fetchSettings = async () => {
@@ -2186,20 +2198,6 @@ export default function CustomerStore() {
         isCartOpen={isCartOpen}
         isCheckoutOpen={isCheckoutOpen}
         isMobileMenuOpen={isMobileNavOpen}
-      />
-
-      {/* MOBILE STICKY BOTTOM TOOLBAR & WHATSAPP (matching theindianflowers.com) */}
-      <MobileBottomNav
-        cartCount={cartItemCount}
-        wishlistCount={wishlist.length}
-        onOpenCart={() => setIsCartOpen(true)}
-        onOpenWishlist={() => setIsWishlistOpen(true)}
-        onOpenShop={() => {
-          setSelectedCategory('All');
-          const el = document.getElementById('products-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
-        customer={customer}
       />
     </div>
   );

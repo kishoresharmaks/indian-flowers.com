@@ -173,7 +173,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between font-sans">
+    <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between font-sans pb-16 md:pb-0">
       {/* Storefront Header */}
       <Header customer={customer} onCustomerChange={setCustomer} />
 
