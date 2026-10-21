@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import StorefrontGlobalNav from "@/components/StorefrontGlobalNav";
+import GlobalPageLoader from "@/components/GlobalPageLoader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -230,6 +231,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-white text-gray-900 antialiased flex flex-col justify-between">
+        <GlobalPageLoader />
         {children}
         <StorefrontGlobalNav />
         <CookieConsentBanner />

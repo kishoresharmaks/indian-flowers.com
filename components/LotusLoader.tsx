@@ -13,7 +13,7 @@ export default function LotusLoader({
 }: LotusLoaderProps) {
   return (
     <div
-      className={`lotus-loader ${fullScreen ? '' : '!position-relative !min-h-[340px] !w-full !z-10'}`}
+      className={`lotus-loader ${fullScreen ? '' : '!relative !min-h-[340px] !w-full !z-10'}`}
       role="status"
       aria-label={label}
     >
