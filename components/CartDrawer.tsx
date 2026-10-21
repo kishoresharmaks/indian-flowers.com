@@ -50,13 +50,13 @@ export default function CartDrawer({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[90] transition-opacity"
         onClick={onClose}
       />
 
       {/* Drawer */}
       <div
-        className={`fixed right-0 top-0 h-screen w-full md:w-96 bg-white shadow-xl z-50 flex flex-col transition-transform duration-300 ${
+        className={`fixed right-0 top-0 h-screen w-full md:w-96 bg-white shadow-xl z-[100] flex flex-col transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

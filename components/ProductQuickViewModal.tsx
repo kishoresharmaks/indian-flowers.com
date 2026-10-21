@@ -107,7 +107,7 @@ export default function ProductQuickViewModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-product-title"
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
     >
       {/* Backdrop click to dismiss */}
       <div className="fixed inset-0 -z-10" onClick={onClose} aria-hidden="true" />
@@ -268,7 +268,7 @@ export default function ProductQuickViewModal({
         </div>
 
         {/* Sticky Bottom Action Area on Mobile */}
-        <div className="p-3 sm:p-4 bg-white border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] space-y-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] shrink-0">
+        <div className="p-3.5 sm:p-4 bg-white border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] space-y-2 pb-[max(1rem,env(safe-area-inset-bottom))] shrink-0">
           <div className="flex items-center gap-2">
             {/* Quantity Stepper */}
             <div className="h-11 flex items-center border border-gray-200 rounded-xl bg-gray-50 p-1 shrink-0">
@@ -276,7 +276,7 @@ export default function ProductQuickViewModal({
                 type="button"
                 onClick={handleDecreaseQty}
                 disabled={quantity <= 1}
-                className="w-7 h-full rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-700 disabled:opacity-30 active:scale-95"
+                className="w-7 h-full rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-700 disabled:opacity-30 active:scale-95 cursor-pointer"
                 aria-label="Decrease quantity"
               >
                 <Minus className="w-3 h-3" />
@@ -287,7 +287,7 @@ export default function ProductQuickViewModal({
               <button
                 type="button"
                 onClick={handleIncreaseQty}
-                className="w-7 h-full rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-700 active:scale-95"
+                className="w-7 h-full rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-700 active:scale-95 cursor-pointer"
                 aria-label="Increase quantity"
               >
                 <Plus className="w-3 h-3" />
@@ -299,7 +299,7 @@ export default function ProductQuickViewModal({
               type="button"
               onClick={handleAdd}
               disabled={isAdding || isOutOfStock}
-              className="h-11 flex-1 px-4 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-semibold text-xs tracking-[0.01em] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] disabled:opacity-50"
+              className="h-11 flex-1 px-4 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-semibold text-xs tracking-[0.01em] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
               <ShoppingBag className="w-4 h-4 shrink-0" />
               <span>
@@ -314,7 +314,7 @@ export default function ProductQuickViewModal({
               <button
                 type="button"
                 onClick={() => onToggleWishlist(product)}
-                className={`h-11 w-11 rounded-xl border flex items-center justify-center transition-all shrink-0 active:scale-95 ${
+                className={`h-11 w-11 rounded-xl border flex items-center justify-center transition-all shrink-0 active:scale-95 cursor-pointer ${
                   isWishlisted
                     ? 'border-[#C85A78] bg-rose-50 text-[#C85A78]'
                     : 'border-gray-200 text-gray-600'

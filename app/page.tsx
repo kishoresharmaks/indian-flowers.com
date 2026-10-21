@@ -1513,7 +1513,7 @@ export default function CustomerStore() {
 
       {/* ORDER TRACKING MODAL */}
       {isTrackModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 shadow-2xl p-6 sm:p-8 relative">
             <button
               onClick={() => {
@@ -1584,7 +1584,7 @@ export default function CustomerStore() {
 
       {/* CHECKOUT MODAL (US DOLLAR ECOMMERCE) */}
       {isCheckoutOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] border border-gray-200 shadow-2xl overflow-y-auto p-6 sm:p-8 relative">
             <button
               onClick={() => setIsCheckoutOpen(false)}
@@ -2119,7 +2119,7 @@ export default function CustomerStore() {
 
       {/* ORDER SUCCESS MODAL */}
       {orderSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 text-center space-y-4 shadow-2xl border border-gray-100">
             <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#0B3B24] flex items-center justify-center mx-auto border border-emerald-100">
               <CheckCircle2 className="w-8 h-8" />
