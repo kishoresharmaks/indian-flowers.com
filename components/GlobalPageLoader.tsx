@@ -21,7 +21,9 @@ export default function GlobalPageLoader() {
     }
   };
 
-  // 1. Initial Page Load Splash Screen
+  const LOADER_DURATION_MS = 3000; // Display for exactly 3 seconds
+
+  // 1. Initial Page Load Splash Screen (3 seconds)
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsFading(true);
@@ -29,7 +31,7 @@ export default function GlobalPageLoader() {
         setVisible(false);
       }, 450);
       return () => clearTimeout(hideTimer);
-    }, 700);
+    }, LOADER_DURATION_MS);
 
     return () => clearTimeout(timer);
   }, []);
@@ -40,7 +42,7 @@ export default function GlobalPageLoader() {
       prevPathRef.current = pathname;
       clearSafetyTimeout();
 
-      // Ensure visible upon arrival, then smoothly fade out
+      // Ensure visible upon arrival, then smoothly fade out after 3 seconds
       setVisible(true);
       setIsFading(false);
 
@@ -50,7 +52,7 @@ export default function GlobalPageLoader() {
           setVisible(false);
         }, 450);
         return () => clearTimeout(hideTimer);
-      }, 500);
+      }, LOADER_DURATION_MS);
 
       return () => clearTimeout(timer);
     }
@@ -92,11 +94,11 @@ export default function GlobalPageLoader() {
           setVisible(true);
           setIsFading(false);
 
-          // Failsafe: hide loader after 3.5s if route transition doesn't complete
+          // Failsafe: hide loader after 5.5s if route transition doesn't complete
           safetyTimeoutRef.current = setTimeout(() => {
             setIsFading(true);
             setTimeout(() => setVisible(false), 450);
-          }, 3500);
+          }, 5500);
         }
       }
     };
