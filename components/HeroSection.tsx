@@ -26,21 +26,9 @@ interface HeroSectionProps {
 
 const DEFAULT_SLIDES: HeroSlide[] = [
   {
-    image: '/images/banners/hero-wedding-panoramic.jpg',
-    mobileImage: '/images/banners/hero-wedding-panoramic.jpg',
-    title: 'Indian Wedding Garlands',
-    link: '#products-section',
-  },
-  {
-    image: '/images/banners/hero-tradition-1920x650.jpg',
-    mobileImage: '/images/banners/hero-tradition-750x850.jpg',
-    title: 'Authentic Indian Blooms',
-    link: '#products-section',
-  },
-  {
-    image: '/images/banners/hero-pooja-1920x650.jpg',
-    mobileImage: '/images/banners/hero-pooja-750x850.jpg',
-    title: 'Fresh Pooja Flowers',
+    image: '/images/banners/b1.jpg',
+    mobileImage: '/images/banners/b1.jpg',
+    title: 'Indian Wedding Garlands & Fresh Pooja Flowers',
     link: '#products-section',
   },
 ];
@@ -143,15 +131,7 @@ export default function HeroSection({
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
             {activeSlides.map((slide, idx) => {
-              let desktopImageUrl = slide.image || slide.bgImage || '';
-              // Use the pristine high-resolution panoramic wedding banner if this is the wedding slide
-              if (
-                idx === 0 ||
-                (slide.title && slide.title.toLowerCase().includes('wedding')) ||
-                desktopImageUrl.includes('hero-wedding')
-              ) {
-                desktopImageUrl = '/images/banners/hero-wedding-panoramic.jpg';
-              }
+              const desktopImageUrl = slide.image || slide.bgImage || '/images/banners/b1.jpg';
               const mobileImageUrl = slide.mobileImage || desktopImageUrl;
 
               return (
