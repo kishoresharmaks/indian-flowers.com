@@ -9,7 +9,7 @@ services:
     runtime: node
     region: oregon # US West (ideal for US delivery logistics)
     plan: starter  # Starter ($7/mo recommended for persistent 24/7 cut flower ordering) or free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --prefer-offline --no-audit && npm run build
     startCommand: npm start
     autoDeploy: true
 
@@ -19,6 +19,8 @@ services:
         value: 20.18.0
       - key: NODE_ENV
         value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
 
       # Market & Currency Standard (US Market strictly USD)
       - key: STORE_CURRENCY
