@@ -1232,95 +1232,91 @@ export default function CustomerStore() {
         </div>
       </section>
 
-      {/* 5. OCCASION FEATURE DUAL BANNERS (CREATIVE BORDERLESS EDITORIAL CARDS WITH SEAMLESS PHOTO BLENDING) */}
+      {/* 5. OCCASION FEATURE DUAL BANNERS (CREATIVE BORDERLESS EDITORIAL CARDS WITH CRISP CLEAR RIGHT-SIDE PHOTOS) */}
       <section className="py-10 sm:py-16 bg-white overflow-hidden">
         <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-7">
             {/* Banner 1: Wedding & Temple Garlands */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FAF5ED] via-[#F5ECE1] to-[#EFE2D4] p-6 sm:p-8 lg:p-9 min-h-[280px] sm:min-h-[310px] flex flex-col justify-between group shadow-xs hover:shadow-[0_20px_48px_rgba(11,59,36,0.08)] transition-all duration-500">
-              {/* Photo Canvas seamlessly blended into background without borders */}
-              <div className="absolute right-0 top-0 bottom-0 w-7/12 sm:w-1/2 lg:w-7/12 pointer-events-none overflow-hidden [mask-image:linear-gradient(to_left,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_left,black_40%,transparent_100%)]">
-                <img
-                  src={weddingCategory?.image || "/images/categories/cat-wedding-garlands.jpg"}
-                  alt="Wedding & Temple Garlands"
-                  className="w-full h-full object-cover object-center scale-100 group-hover:scale-106 transition-transform duration-700 ease-out"
-                />
-                {/* Secondary atmospheric gradient washes for ultra-smooth edge feathering */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#FAF5ED] via-[#FAF5ED]/85 via-45% to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-[#FAF5ED]/70 to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#EFE2D4]/70 to-transparent pointer-events-none" />
-              </div>
-
-              {/* Text & Action Content on Left Canvas */}
-              <div className="relative z-10 max-w-[68%] sm:max-w-[58%] lg:max-w-[56%] flex flex-col justify-between h-full space-y-3">
-                <div className="space-y-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-600/10 text-amber-900 text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase self-start">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FAF5ED] via-[#F6EFE5] to-[#EFE2D4] border border-stone-200/80 shadow-xs hover:shadow-[0_12px_32px_rgba(11,59,36,0.08)] transition-all duration-500 flex flex-col sm:flex-row items-stretch group">
+              {/* Left Side: Text & Action */}
+              <div className="w-full sm:w-[54%] p-6 sm:p-7 lg:p-8 flex flex-col justify-between z-10 space-y-4">
+                <div className="space-y-2.5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-600/10 text-amber-900 text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase self-start border border-amber-600/20">
                     <Flower2 className="w-3 h-3 text-amber-600 shrink-0" />
                     <span>Traditional &amp; Custom</span>
                   </span>
 
-                  <h3 className="text-[21px] sm:text-[25px] lg:text-[28px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.2]">
+                  <h3 className="text-[20px] sm:text-[23px] lg:text-[25px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.25]">
                     Wedding &amp; Temple Garlands
                   </h3>
 
-                  <p className="text-[12.5px] sm:text-[13.5px] text-stone-600 leading-relaxed font-normal">
+                  <p className="text-[12px] sm:text-[13px] text-stone-600 leading-relaxed font-normal">
                     Handcrafted rose petal Jai Malas, fragrant jasmine, and gold-trimmed garlands designed for sacred celebrations.
                   </p>
                 </div>
 
-                <div className="pt-2 sm:pt-4">
+                <div className="pt-1 sm:pt-2">
                   <button
                     onClick={() => handleSelectCategory(weddingCategory?.name || 'Wedding & Temple Garlands')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0B3B24] hover:bg-[#134633] active:bg-[#072718] text-white text-xs sm:text-[13px] font-semibold tracking-wide shadow-[0_4px_16px_rgba(11,59,36,0.22)] hover:shadow-[0_6px_22px_rgba(11,59,36,0.32)] transition-all hover:translate-x-0.5 active:scale-95 group/btn"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0B3B24] hover:bg-[#134633] active:bg-[#072718] text-white text-xs sm:text-[13px] font-semibold tracking-wide shadow-sm hover:shadow-md transition-all hover:translate-x-0.5 active:scale-95 group/btn cursor-pointer"
                   >
                     <span>Explore Wedding Garlands</span>
                     <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
                   </button>
                 </div>
               </div>
+
+              {/* Right Side: Clear, Crisp Image Canvas */}
+              <div className="w-full sm:w-[46%] relative min-h-[220px] sm:min-h-full overflow-hidden">
+                <img
+                  src="/images/banners/occasion-wedding-garlands.jpg"
+                  alt="Wedding &amp; Temple Garlands"
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                />
+                {/* Subtle soft edge feather on left only where it meets text */}
+                <div className="hidden sm:block absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#FAF5ED] to-transparent pointer-events-none" />
+              </div>
             </div>
 
             {/* Banner 2: Pooja Flowers & Temple Decor */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FDF5F2] via-[#F8ECE7] to-[#F1DDD7] p-6 sm:p-8 lg:p-9 min-h-[280px] sm:min-h-[310px] flex flex-col justify-between group shadow-xs hover:shadow-[0_20px_48px_rgba(11,59,36,0.08)] transition-all duration-500">
-              {/* Photo Canvas seamlessly blended into background without borders */}
-              <div className="absolute right-0 top-0 bottom-0 w-7/12 sm:w-1/2 lg:w-7/12 pointer-events-none overflow-hidden [mask-image:linear-gradient(to_left,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_left,black_40%,transparent_100%)]">
-                <img
-                  src={poojaCategory?.image || "/images/categories/cat-loose-pooja.jpg"}
-                  alt="Pooja Flowers & Temple Decor"
-                  className="w-full h-full object-cover object-center scale-100 group-hover:scale-106 transition-transform duration-700 ease-out"
-                />
-                {/* Secondary atmospheric gradient washes for ultra-smooth edge feathering */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#FDF5F2] via-[#FDF5F2]/85 via-45% to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-[#FDF5F2]/70 to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#F1DDD7]/70 to-transparent pointer-events-none" />
-              </div>
-
-              {/* Text & Action Content on Left Canvas */}
-              <div className="relative z-10 max-w-[66%] sm:max-w-[58%] lg:max-w-[56%] flex flex-col justify-between h-full space-y-3">
-                <div className="space-y-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600/10 text-rose-900 text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase self-start">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FDF6F2] via-[#F8EDE6] to-[#F2DED7] border border-stone-200/80 shadow-xs hover:shadow-[0_12px_32px_rgba(11,59,36,0.08)] transition-all duration-500 flex flex-col sm:flex-row items-stretch group">
+              {/* Left Side: Text & Action */}
+              <div className="w-full sm:w-[54%] p-6 sm:p-7 lg:p-8 flex flex-col justify-between z-10 space-y-4">
+                <div className="space-y-2.5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600/10 text-rose-900 text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase self-start border border-rose-600/20">
                     <Flower2 className="w-3 h-3 text-[#C85A78] shrink-0" />
                     <span>Daily Worship &amp; Decor</span>
                   </span>
 
-                  <h3 className="text-[21px] sm:text-[25px] lg:text-[28px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.2]">
+                  <h3 className="text-[20px] sm:text-[23px] lg:text-[25px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.25]">
                     Pooja Flowers &amp; Temple Decor
                   </h3>
 
-                  <p className="text-[12.5px] sm:text-[13.5px] text-stone-600 leading-relaxed font-normal">
+                  <p className="text-[12px] sm:text-[13px] text-stone-600 leading-relaxed font-normal">
                     Fresh sacred blossoms, holy tulsi, and festive loose marigolds curated for your daily home puja rituals.
                   </p>
                 </div>
 
-                <div className="pt-2 sm:pt-4">
+                <div className="pt-1 sm:pt-2">
                   <button
                     onClick={() => handleSelectCategory(poojaCategory?.name || 'Loose Flowers for Daily Pooja')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0B3B24] hover:bg-[#134633] active:bg-[#072718] text-white text-xs sm:text-[13px] font-semibold tracking-wide shadow-[0_4px_16px_rgba(11,59,36,0.22)] hover:shadow-[0_6px_22px_rgba(11,59,36,0.32)] transition-all hover:translate-x-0.5 active:scale-95 group/btn"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0B3B24] hover:bg-[#134633] active:bg-[#072718] text-white text-xs sm:text-[13px] font-semibold tracking-wide shadow-sm hover:shadow-md transition-all hover:translate-x-0.5 active:scale-95 group/btn cursor-pointer"
                   >
                     <span>Shop Pooja Essentials</span>
                     <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
                   </button>
                 </div>
+              </div>
+
+              {/* Right Side: Clear, Crisp Image Canvas */}
+              <div className="w-full sm:w-[46%] relative min-h-[220px] sm:min-h-full overflow-hidden">
+                <img
+                  src="/images/banners/occasion-pooja-box.jpg"
+                  alt="Pooja Flowers &amp; Temple Decor"
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                />
+                {/* Subtle soft edge feather on left only where it meets text */}
+                <div className="hidden sm:block absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#FDF6F2] to-transparent pointer-events-none" />
               </div>
             </div>
           </div>
