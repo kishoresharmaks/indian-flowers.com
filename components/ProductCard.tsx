@@ -163,7 +163,7 @@ export default function ProductCard({
           </span>
         ) : null}
 
-        {/* Top-Right: Solid Pure White High-Contrast Wishlist / Like Button (♡) */}
+        {/* Top-Right: Clean Heart Icon Wishlist Button (Without round white background) */}
         <button
           type="button"
           onClick={(e) => {
@@ -174,18 +174,18 @@ export default function ProductCard({
               setLocalFavorite(!localFavorite);
             }
           }}
-          className={`absolute top-2.5 right-2.5 z-10 flex h-8.5 w-8.5 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.15)] border ${
+          className={`absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-10 p-1.5 flex items-center justify-center transition-all duration-200 hover:scale-115 active:scale-90 cursor-pointer ${
             isFavorite
-              ? 'text-[#ed2353] border-rose-300 shadow-[0_2px_10px_rgba(237,35,83,0.3)]'
-              : 'text-stone-700 hover:text-[#ed2353] border-stone-200 hover:border-rose-200'
+              ? 'text-[#ed2353] drop-shadow-[0_2px_4px_rgba(237,35,83,0.35)]'
+              : 'text-stone-700 hover:text-[#ed2353] drop-shadow-[0_1px_2px_rgba(255,255,255,0.85)]'
           }`}
           aria-label={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
           title={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
           aria-pressed={isFavorite}
         >
           <Heart
-            className={`h-4.5 w-4.5 sm:h-5 sm:w-5 transition-colors ${
-              isFavorite ? 'fill-[#ed2353] text-[#ed2353]' : 'stroke-[2]'
+            className={`h-5 w-5 sm:h-5.5 sm:w-5.5 transition-colors ${
+              isFavorite ? 'fill-[#ed2353] text-[#ed2353]' : 'stroke-[2.2]'
             }`}
           />
         </button>
