@@ -113,104 +113,112 @@ export default function HeroSection({
     onShopClick();
   };
 
-  // Pure image skeleton placeholder during initial loading (Zero cards, Zero text, Zero buttons)
+  // Sized placeholder during initial loading with matching rounded border corners
   if (loading && (!slides || slides.length === 0)) {
     return (
-      <section className="relative w-full overflow-hidden bg-stone-100">
-        <div className="w-full aspect-[750/850] md:aspect-[1920/650] animate-pulse bg-stone-200/60" />
+      <section className="w-full bg-[#FAF6F0] py-2 sm:py-3 md:py-4">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full aspect-[16/9] sm:aspect-[2.4/1] lg:aspect-[2.85/1] max-h-[440px] rounded-2xl sm:rounded-3xl bg-stone-200/60 animate-pulse border border-stone-200/80" />
+        </div>
       </section>
     );
   }
 
   return (
-    <section
-      className="relative w-full overflow-hidden bg-[#FAF6F0] select-none group"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-    >
-      {/* Horizontal Slider Track: Loaded fully, no cards, no text, no buttons, no cropping */}
-      <div
-        className="flex w-full transition-transform duration-700 ease-in-out"
-        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-      >
-        {activeSlides.map((slide, idx) => {
-          const desktopImageUrl = slide.image || slide.bgImage || '';
-          const mobileImageUrl = slide.mobileImage || desktopImageUrl;
-
-          return (
-            <div
-              key={slide._id || slide.id || idx}
-              className="w-full shrink-0 relative cursor-pointer"
-              onClick={() => handleSlideClick(slide)}
-            >
-              <picture className="w-full block">
-                {mobileImageUrl && (
-                  <source media="(max-width: 767px)" srcSet={mobileImageUrl} />
-                )}
-                <img
-                  src={desktopImageUrl}
-                  alt={slide.title || `Indian Flowers Banner ${idx + 1}`}
-                  className="w-full h-auto block select-none pointer-events-none"
-                  loading={idx === 0 ? 'eager' : 'lazy'}
-                  decoding="async"
-                />
-              </picture>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Subtle Desktop Prev Chevron (Appears on desktop hover only, 0 buttons on mobile) */}
-      {activeSlides.length > 1 && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            prevSlide();
-          }}
-          className="hidden md:flex absolute left-3 lg:left-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-white/75 hover:bg-white text-gray-800 shadow-md items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 border border-white/80 backdrop-blur-xs"
-          aria-label="Previous slide"
+    <section className="w-full bg-[#FAF6F0] py-2 sm:py-3 md:py-4">
+      {/* Contained within responsive site max-width (Proper size, not oversized) */}
+      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Frame with Proper Rounded Corners & Border */}
+        <div
+          className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-stone-200/80 bg-stone-100 select-none group"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
-          <ChevronLeft className="w-5 h-5 text-gray-800" />
-        </button>
-      )}
+          {/* Horizontal Slider Track */}
+          <div
+            className="flex w-full transition-transform duration-700 ease-in-out"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {activeSlides.map((slide, idx) => {
+              const desktopImageUrl = slide.image || slide.bgImage || '';
+              const mobileImageUrl = slide.mobileImage || desktopImageUrl;
 
-      {/* Subtle Desktop Next Chevron (Appears on desktop hover only, 0 buttons on mobile) */}
-      {activeSlides.length > 1 && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            nextSlide();
-          }}
-          className="hidden md:flex absolute right-3 lg:right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-white/75 hover:bg-white text-gray-800 shadow-md items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 border border-white/80 backdrop-blur-xs"
-          aria-label="Next slide"
-        >
-          <ChevronRight className="w-5 h-5 text-gray-800" />
-        </button>
-      )}
+              return (
+                <div
+                  key={slide._id || slide.id || idx}
+                  className="w-full shrink-0 relative cursor-pointer aspect-[16/9] sm:aspect-[2.4/1] lg:aspect-[2.85/1] max-h-[440px]"
+                  onClick={() => handleSlideClick(slide)}
+                >
+                  <picture className="w-full h-full block">
+                    {mobileImageUrl && (
+                      <source media="(max-width: 639px)" srcSet={mobileImageUrl} />
+                    )}
+                    <img
+                      src={desktopImageUrl}
+                      alt={slide.title || `Indian Flowers Banner ${idx + 1}`}
+                      className="w-full h-full object-cover object-center select-none pointer-events-none"
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                    />
+                  </picture>
+                </div>
+              );
+            })}
+          </div>
 
-      {/* Discreet Slide Indicator Dots (Centered, bottom) */}
-      {activeSlides.length > 1 && (
-        <div className="absolute bottom-2.5 sm:bottom-3.5 md:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-full bg-black/25 backdrop-blur-xs">
-          {activeSlides.map((_, idx) => (
+          {/* Subtle Desktop Prev Chevron (Appears on desktop hover only, 0 buttons on mobile) */}
+          {activeSlides.length > 1 && (
             <button
-              key={idx}
               onClick={(e) => {
                 e.stopPropagation();
-                setCurrentSlide(idx);
+                prevSlide();
               }}
-              className={`h-1.5 sm:h-2 transition-all duration-300 rounded-full ${
-                currentSlide === idx
-                  ? 'w-5 sm:w-6 bg-white shadow-xs'
-                  : 'w-1.5 sm:w-2 bg-white/50 hover:bg-white/80'
-              }`}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
-          ))}
+              className="hidden md:flex absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-white/80 hover:bg-white text-gray-800 shadow-md items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 border border-white/80 backdrop-blur-xs"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-800" />
+            </button>
+          )}
+
+          {/* Subtle Desktop Next Chevron (Appears on desktop hover only, 0 buttons on mobile) */}
+          {activeSlides.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                nextSlide();
+              }}
+              className="hidden md:flex absolute right-3 lg:right-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-white/80 hover:bg-white text-gray-800 shadow-md items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 border border-white/80 backdrop-blur-xs"
+              aria-label="Next slide"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-800" />
+            </button>
+          )}
+
+          {/* Discreet Slide Indicator Dots */}
+          {activeSlides.length > 1 && (
+            <div className="absolute bottom-2.5 sm:bottom-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-full bg-black/25 backdrop-blur-xs">
+              {activeSlides.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentSlide(idx);
+                  }}
+                  className={`h-1.5 sm:h-2 transition-all duration-300 rounded-full ${
+                    currentSlide === idx
+                      ? 'w-5 sm:w-6 bg-white shadow-xs'
+                      : 'w-1.5 sm:w-2 bg-white/50 hover:bg-white/80'
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </section>
   );
 }
