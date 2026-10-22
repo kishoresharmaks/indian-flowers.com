@@ -1112,58 +1112,6 @@ export default function CustomerStore() {
         onShopClick={() => handleSelectCategory('All')}
       />
 
-      {/* UPGRADED BOTANICAL TRUST STRIP: FedEx & Southwest Priority Air Cargo */}
-      <section className="relative w-full bg-gradient-to-b from-[#FAF8F5] via-white to-[#FAF6F0] py-3 sm:py-4 border-y border-emerald-900/10 shadow-[0_2px_12px_rgba(11,59,36,0.03)]">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 md:gap-5">
-            {/* Trust Pillar 1: FedEx & Southwest Air */}
-            <div className="flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-white/95 border border-emerald-900/10 shadow-[0_2px_8px_rgba(11,59,36,0.04)] hover:shadow-xs hover:border-emerald-600/30 transition-all">
-              <span className="flex h-9 sm:h-10 w-9 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-[#0B3B24] text-white shadow-xs">
-                <Truck className="h-4 sm:h-5 w-4 sm:w-5 text-[#8FE7B8]" />
-              </span>
-              <div className="flex flex-col text-left leading-tight">
-                <span className="text-xs sm:text-[13px] font-bold text-gray-900 tracking-tight">
-                  Fast &amp; Secure Delivery
-                </span>
-                <span className="text-[10.5px] sm:text-[11.5px] text-stone-500 font-medium mt-0.5">
-                  Via FedEx &amp; Southwest priority air cargo
-                </span>
-              </div>
-            </div>
-
-            {/* Trust Pillar 2: Priority Overnight Cold-Chain */}
-            <div className="flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-white/95 border border-emerald-900/10 shadow-[0_2px_8px_rgba(11,59,36,0.04)] hover:shadow-xs hover:border-emerald-600/30 transition-all">
-              <span className="flex h-9 sm:h-10 w-9 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#0B3B24] border border-emerald-200/80 shadow-xs">
-                <ShieldCheck className="h-4 sm:h-5 w-4 sm:w-5 text-[#0B3B24]" />
-              </span>
-              <div className="flex flex-col text-left leading-tight">
-                <span className="text-xs sm:text-[13px] font-bold text-gray-900 tracking-tight">
-                  Priority Overnight Cold-Chain
-                </span>
-                <span className="text-[10.5px] sm:text-[11.5px] text-stone-500 font-medium mt-0.5">
-                  Insulated thermal packs &amp; cooling gels
-                </span>
-              </div>
-            </div>
-
-            {/* Trust Pillar 3: Dewy Fresh across 50 States */}
-            <div className="flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-white/95 border border-emerald-900/10 shadow-[0_2px_8px_rgba(11,59,36,0.04)] hover:shadow-xs hover:border-emerald-600/30 transition-all">
-              <span className="flex h-9 sm:h-10 w-9 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#0B3B24] border border-emerald-200/80 shadow-xs">
-                <Flower2 className="h-4 sm:h-5 w-4 sm:w-5 text-[#0B3B24]" />
-              </span>
-              <div className="flex flex-col text-left leading-tight">
-                <span className="text-xs sm:text-[13px] font-bold text-gray-900 tracking-tight">
-                  All 50 US States Covered
-                </span>
-                <span className="text-[10.5px] sm:text-[11.5px] text-stone-500 font-medium mt-0.5">
-                  Delivering dewy fresh blooms to your door
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 3. UNIFIED BOTANICAL CATALOG SECTION ENCLOSING ALL CATEGORIES */}
       <section
         id="products-section"
