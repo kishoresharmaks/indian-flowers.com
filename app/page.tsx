@@ -19,7 +19,6 @@ import CartDrawer from '@/components/CartDrawer';
 import WishlistDrawer from '@/components/WishlistDrawer';
 import CustomOrderSection from '@/components/CustomOrderSection';
 import FloatingCartBar from '@/components/FloatingCartBar';
-import MobileBottomNav from '@/components/MobileBottomNav';
 import {
   ShoppingBag,
   Search,
@@ -142,7 +141,6 @@ export default function CustomerStore() {
     transactionId: '',
     notes: '',
     deliveryDate: '',
-    acknowledgedDeliveryTimeframe: false,
   });
   const [checkoutTaxResult, setCheckoutTaxResult] = useState<any>(null);
   const [checkoutTaxAmount, setCheckoutTaxAmount] = useState<number>(0);
@@ -774,12 +772,6 @@ export default function CustomerStore() {
     setFieldErrors({});
 
     // 1. Pre-flight Form Validation — Strictly verify all filled form details before initializing Razorpay
-    if (!checkoutForm.acknowledgedDeliveryTimeframe) {
-      setFormError('Please check the box confirming acknowledgment of the 1-week advance preparation & delivery timeframe.');
-      const el = document.getElementById('checkout-acknowledgedDeliveryTimeframe');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
 
     const validation = validateCheckoutForm(checkoutForm, cart.length);
     if (!validation.isValid) {
@@ -1987,53 +1979,6 @@ export default function CustomerStore() {
                   </div>
                 </div>
 
-                {/* 1-WEEK DELIVERY NOTICE & EVENT DATE SELECTION */}
-                <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200/90 space-y-3">
-                  <div className="flex items-start gap-2.5">
-                    <Clock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider">
-                        1-Week Advance Delivery Notice
-                      </h4>
-                      <p className="text-[11.5px] text-amber-800 mt-0.5 leading-relaxed font-normal">
-                        All fresh Indian floral garlands and loose puja blossoms are handcrafted to order and transported via priority cold-chain air cargo (FedEx / Southwest). A minimum 1-week preparation and dispatch timeframe is required.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-stone-700 block mb-1">
-                      Requested Event / Delivery Date
-                    </label>
-                    <input
-                      id="checkout-deliveryDate"
-                      type="date"
-                      min={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                      value={checkoutForm.deliveryDate}
-                      onChange={(e) => setCheckoutForm({ ...checkoutForm, deliveryDate: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-lg border border-amber-200 text-xs sm:text-sm bg-white focus:outline-none focus:border-[#0B3B24]"
-                    />
-                  </div>
-
-                  <label className="flex items-start gap-2.5 pt-1 cursor-pointer select-none">
-                    <input
-                      id="checkout-acknowledgedDeliveryTimeframe"
-                      type="checkbox"
-                      required
-                      checked={checkoutForm.acknowledgedDeliveryTimeframe}
-                      onChange={(e) =>
-                        setCheckoutForm({
-                          ...checkoutForm,
-                          acknowledgedDeliveryTimeframe: e.target.checked,
-                        })
-                      }
-                      className="mt-0.5 h-4 w-4 rounded border-amber-300 text-[#0B3B24] focus:ring-[#0B3B24] accent-[#0B3B24]"
-                    />
-                    <span className="text-[11.5px] text-amber-950 font-medium leading-snug">
-                      I understand and confirm that my order requires at least 1-week advance preparation &amp; cold-chain delivery. *
-                    </span>
-                  </label>
-                </div>
 
                 {/* CUSTOMER LOYALTY REWARDS & POINTS REDEMPTION */}
                 {customer && loyaltyConfig?.enabled !== false && (

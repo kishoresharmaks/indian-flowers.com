@@ -194,10 +194,6 @@ export function validateCheckoutForm(
   const zipError = validateZipCode(form.zipCode);
   if (zipError) errors.zipCode = zipError;
 
-  if (form.acknowledgedDeliveryTimeframe === false) {
-    errors.acknowledgedDeliveryTimeframe =
-      'Please confirm acknowledgment of the 1-week advance preparation & delivery timeframe.';
-  }
 
   const fieldKeys = Object.keys(errors);
   const isValid = fieldKeys.length === 0;

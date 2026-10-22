@@ -32,7 +32,7 @@ export function WhatsAppFloatingButton({
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
-      className={`fixed bottom-[72px] right-4 z-40 flex h-[52px] w-[52px] md:h-14 md:w-14 items-center justify-center rounded-full bg-gradient-to-tr from-[#1EBE5D] to-[#25D366] text-white shadow-[0_8px_24px_rgba(37,211,102,0.45),0_2px_6px_rgba(0,0,0,0.12)] border-2 border-white hover:shadow-[0_10px_28px_rgba(37,211,102,0.65)] hover:scale-108 active:scale-95 transition-all duration-300 md:bottom-6 md:right-6 cursor-pointer group ${className}`}
+      className={`fixed bottom-[72px] right-4 z-40 flex h-[52px] w-[52px] md:h-14 md:w-14 items-center justify-center rounded-full bg-gradient-to-tr from-[#1EBE5D] to-[#25D366] text-white shadow-[0_8px_24px_rgba(37,211,102,0.45),0_2px_6px_rgba(0,0,0,0.12)] border-2 border-white hover:shadow-[0_10px_28px_rgba(37,211,102,0.65)] hover:scale-108 active:scale-95 transition-all duration-300 md:bottom-6 md:left-6 md:right-auto cursor-pointer group ${className}`}
       title="Chat with us on WhatsApp"
     >
       {/* Soft pulse glow ring behind the button */}
@@ -54,10 +54,10 @@ export function WhatsAppFloatingButton({
         <path d="M16 2.5C8.544 2.5 2.5 8.544 2.5 16c0 2.57.72 4.975 1.97 7.025L2.5 29.5l6.738-1.763A13.415 13.415 0 0016 29.5c7.456 0 13.5-6.044 13.5-13.5S23.456 2.5 16 2.5zm7.3 18.275c-.3.844-1.75 1.625-2.438 1.725-.631.094-1.425.131-2.3-.15-.55-.175-1.25-.4-2.125-.788-3.738-1.631-6.175-5.406-6.363-5.656-.188-.25-1.519-2.025-1.519-3.863 0-1.838.963-2.744 1.3-3.119.338-.375.738-.469 1-.469.263 0 .525.006.75.019.238.012.556-.094.869.656.325.775 1.106 2.7 1.206 2.9.1.2.169.438.038.7-.131.263-.2.425-.394.656-.194.231-.413.513-.588.688-.2.2-.413.419-.181.819.231.4 1.031 1.7 2.219 2.756 1.525 1.356 2.813 1.775 3.213 1.975.4.2.631.169.863-.1.231-.269.988-1.15 1.25-1.544.263-.394.525-.331.881-.2.356.131 2.269 1.069 2.656 1.263.388.194.65.294.75.463.1.169.1.981-.2 1.825z" />
       </svg>
 
-      {/* Desktop Tooltip Pill on Hover */}
-      <span className="hidden md:group-hover:flex absolute right-full mr-3 top-1/2 -translate-y-1/2 items-center bg-stone-900/90 text-white text-[12px] font-semibold px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap pointer-events-none transition-all">
+      {/* Desktop Tooltip Pill on Hover (Positioned to the right of the button) */}
+      <span className="hidden md:group-hover:flex absolute left-full ml-3 top-1/2 -translate-y-1/2 items-center bg-stone-900/90 text-white text-[12px] font-semibold px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap pointer-events-none transition-all">
         Chat with us on WhatsApp
-        <span className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-stone-900/90" />
+        <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-stone-900/90" />
       </span>
     </a>
   );

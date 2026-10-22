@@ -132,7 +132,7 @@ export default function Footer({
   const mapSearchUrl = 'https://www.google.com/maps/search/?api=1&query=14922+Bobcat+lane,+Fontana,+CA+92336';
 
   return (
-    <footer className="bg-[#0B3B24] text-white pt-8 sm:pt-10 pb-20 sm:pb-8 border-t border-emerald-900/60 overflow-hidden">
+    <footer className="bg-[#0B3B24] text-white pt-8 sm:pt-10 pb-24 md:pb-28 border-t border-emerald-900/60 overflow-hidden">
       <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
 
         {/* ========================================================= */}
