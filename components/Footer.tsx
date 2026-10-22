@@ -142,17 +142,9 @@ export default function Footer({
         <div className="lg:hidden space-y-4 max-w-xl mx-auto">
           {/* A. Compact Centered Brand Header */}
           <div className="text-center space-y-2">
-            <Link href="/" className="inline-flex flex-col items-center group text-center">
-              <div className="w-10 h-10 rounded-full bg-[#F4F8F4] border border-emerald-100/90 flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform mb-1.5">
-                <LotusIcon className="w-6 h-6" />
-              </div>
-              <span className="text-lg font-bold tracking-[-0.03em] text-white block leading-tight">
-                The Indian Flowers
-              </span>
-              <span className="text-[10px] text-[#8FE7B8] font-semibold tracking-wider uppercase block mt-0.5">
-                Fresh Indian Garlands &bull; USA
-              </span>
-            </Link>
+            <div className="flex justify-center mb-1">
+              <BrandLogo variant="dark" size="md" />
+            </div>
             <p className="text-xs text-white/75 max-w-xs mx-auto text-center leading-relaxed font-normal">
               We deliver fresh, authentic Indian garlands and flowers across the United States.
             </p>

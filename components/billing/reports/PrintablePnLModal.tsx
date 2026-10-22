@@ -246,8 +246,8 @@ export default function PrintablePnLModal({
                   className="w-24 h-24 object-contain rounded-xl border border-slate-200 bg-white shadow-2xs"
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
-                    if (img && img.src.indexOf('indian-flowers-logo.svg') === -1) {
-                      img.src = '/indian-flowers-logo.svg';
+                    if (img && img.src.indexOf('the-indian-flowers-logo') === -1) {
+                      img.src = '/the-indian-flowers-logo.webp';
                     }
                   }}
                 />

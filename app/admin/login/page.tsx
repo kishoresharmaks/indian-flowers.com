@@ -45,21 +45,23 @@ export default function AdminLoginPage() {
         {/* Brand Accent Top Line */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#0B3B24] via-[#1C563F] to-[#C85A78]"></div>
 
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-2xl mx-auto shadow-md border border-[#E5E7EB] bg-[#F4F8F4] flex items-center justify-center p-2.5 overflow-hidden">
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
             <img
-              src="/indian-flowers-logo.svg"
+              src="/the-indian-flowers-logo.webp"
               alt="The Indian Flowers logo"
-              className="w-full h-full object-contain"
+              className="h-16 w-auto object-contain"
               onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
+                (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.png';
               }}
             />
           </div>
-          <h2 className="text-2xl font-bold text-[#0B3B24] tracking-tight">The Indian Flowers</h2>
-          <p className="text-xs text-[#6B7280]">
-            Sign in with admin credentials to manage products, orders & store settings
-          </p>
+          <div>
+            <h2 className="text-xl font-bold text-[#0B3B24] tracking-tight">Admin Portal</h2>
+            <p className="text-xs text-[#6B7280] mt-1">
+              Sign in with admin credentials to manage products, orders &amp; store settings
+            </p>
+          </div>
         </div>
 
         {error && (

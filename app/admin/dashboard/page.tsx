@@ -467,7 +467,7 @@ export default function AdminDashboard() {
     bankAccountNo: 'Checking •••• 4829',
     bankRoutingNo: '121000247',
     bankHolder: 'Indian Flowers LLC',
-    logoDataUrl: '/indian-flowers-logo.svg',
+    logoDataUrl: '/the-indian-flowers-logo.webp',
     // Loyalty Points Program Settings
     loyaltyEnabled: true,
     loyaltySpendAmount: 100,
@@ -703,7 +703,7 @@ export default function AdminDashboard() {
           bankAccountNo: data.data.bankAccountNo || 'Checking •••• 4829',
           bankRoutingNo: data.data.bankRoutingNo || '121000247',
           bankHolder: data.data.bankHolder || 'Indian Flowers LLC',
-          logoDataUrl: data.data.logoDataUrl || '/indian-flowers-logo.svg',
+          logoDataUrl: data.data.logoDataUrl || '/the-indian-flowers-logo.webp',
           loyaltyEnabled: data.data.loyaltyEnabled !== false,
           loyaltySpendAmount: data.data.loyaltySpendAmount ?? 100,
           loyaltyPointsEarned: data.data.loyaltyPointsEarned ?? 10,
@@ -1802,11 +1802,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             <div className="h-16 px-4 border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <img
-                  src="/indian-flowers-logo.svg"
+                  src="/the-indian-flowers-emblem.webp"
                   alt="The Indian Flowers logo"
                   className="w-9 h-9 object-contain rounded-xl border border-[#E8EDF2]"
                   onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
+                    (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png';
                   }}
                 />
                 <div>
@@ -1961,11 +1961,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         <div className="h-16 sm:h-20 px-4 border-b border-[#E2E8F0] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <img
-              src="/indian-flowers-logo.svg"
+              src="/the-indian-flowers-emblem.webp"
               alt="The Indian Flowers admin logo"
               className="w-10 h-10 object-contain rounded-xl shadow-xs border border-[#E8EDF2] shrink-0"
               onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
+                (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png';
               }}
             />
             {!isSidebarCollapsed && (
@@ -3708,7 +3708,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     <div className="sm:col-span-2 flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-200">
                       <div className="w-16 h-16 rounded-xl border border-slate-300 bg-white flex items-center justify-center overflow-hidden shrink-0">
                         <img
-                          src={paymentSettings.logoDataUrl || '/indian-flowers-logo.svg'}
+                          src={paymentSettings.logoDataUrl || '/the-indian-flowers-logo.webp'}
                           alt="Invoice Logo"
                           className="w-full h-full object-contain p-1"
                         />
@@ -3720,11 +3720,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         <input
                           value={paymentSettings.logoDataUrl}
                           onChange={(e) => setPaymentSettings({ ...paymentSettings, logoDataUrl: e.target.value })}
-                          placeholder="/indian-flowers-logo.svg"
+                          placeholder="/the-indian-flowers-logo.webp"
                           className="mt-1 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-xs font-medium outline-none focus:border-[#ED3500]"
                         />
                         <p className="text-[11px] text-[#64748B] mt-0.5">
-                          Default: <code className="text-emerald-700">/indian-flowers-logo.svg</code> (renders high-resolution vector emblem on print).
+                          Default: <code className="text-emerald-700">/the-indian-flowers-logo.webp</code> (renders high-resolution vector emblem on print).
                         </p>
                       </div>
                     </div>

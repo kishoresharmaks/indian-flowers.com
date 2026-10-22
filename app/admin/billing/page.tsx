@@ -80,11 +80,11 @@ export default function AdminBillingPage() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <img
-              src="/nexus-mark.svg"
-              alt="Nexus Ecom logo"
+              src="/the-indian-flowers-emblem.webp"
+              alt="The Indian Flowers logo"
               className="w-9 h-9 object-contain rounded-xl border border-[#E8EDF2]"
               onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
+                (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png';
               }}
             />
             <div>

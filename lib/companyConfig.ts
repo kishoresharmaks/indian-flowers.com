@@ -74,7 +74,7 @@ export const getCompanyConfig = (overrideSettings?: Partial<CompanyConfig>): Com
     bankRoutingNo: overrideSettings?.bankRoutingNo || process.env.NEXT_PUBLIC_COMPANY_BANK_ROUTING || '121000247',
     bankHolder: overrideSettings?.bankHolder || process.env.NEXT_PUBLIC_COMPANY_BANK_HOLDER || 'The Indian Flowers LLC',
     upiId: overrideSettings?.upiId || process.env.NEXT_PUBLIC_MERCHANT_UPI_ID || '',
-    logoUrl: overrideSettings?.logoUrl || process.env.NEXT_PUBLIC_COMPANY_LOGO_URL || '/indian-flowers-logo.svg',
+    logoUrl: overrideSettings?.logoUrl || process.env.NEXT_PUBLIC_COMPANY_LOGO_URL || '/the-indian-flowers-logo.webp',
     socialLinks: {
         facebook: overrideSettings?.socialLinks?.facebook || 'https://www.facebook.com/indianflowersusa',
         instagram: overrideSettings?.socialLinks?.instagram || 'https://www.instagram.com/indian_flowers_usa/',
