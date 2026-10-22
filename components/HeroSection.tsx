@@ -26,8 +26,8 @@ interface HeroSectionProps {
 
 const DEFAULT_SLIDES: HeroSlide[] = [
   {
-    image: '/images/banners/hero-wedding-1920x650.jpg',
-    mobileImage: '/images/banners/hero-wedding-750x850.jpg',
+    image: '/images/banners/hero-wedding-panoramic.jpg',
+    mobileImage: '/images/banners/hero-wedding-panoramic.jpg',
     title: 'Indian Wedding Garlands',
     link: '#products-section',
   },
@@ -117,8 +117,8 @@ export default function HeroSection({
   if (loading && (!slides || slides.length === 0)) {
     return (
       <section className="w-full bg-[#FAF6F0] py-2 sm:py-3 md:py-4">
-        <div className="w-full max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="w-full aspect-[16/9] rounded-2xl sm:rounded-3xl bg-stone-200/60 animate-pulse border border-stone-200/80" />
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.85/1] lg:aspect-[3.1/1] max-h-[460px] rounded-2xl sm:rounded-3xl lg:rounded-[28px] bg-stone-200/60 animate-pulse border border-stone-200/80" />
         </div>
       </section>
     );
@@ -126,11 +126,11 @@ export default function HeroSection({
 
   return (
     <section className="w-full bg-[#FAF6F0] py-2 sm:py-3 md:py-4">
-      {/* Contained within responsive site max-width (Proper size, not oversized) */}
-      <div className="w-full max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Frame with Proper Rounded Corners & Border */}
+      {/* Contained within responsive site max-width exactly matching reference mockup */}
+      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Frame with High-End Rounded Corners & Border */}
         <div
-          className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-stone-200/80 bg-stone-100 select-none group"
+          className="relative w-full rounded-2xl sm:rounded-3xl lg:rounded-[28px] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-stone-200/80 bg-stone-100 select-none group"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onTouchStart={onTouchStart}
@@ -143,13 +143,21 @@ export default function HeroSection({
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
             {activeSlides.map((slide, idx) => {
-              const desktopImageUrl = slide.image || slide.bgImage || '';
+              let desktopImageUrl = slide.image || slide.bgImage || '';
+              // Use the pristine high-resolution panoramic wedding banner if this is the wedding slide
+              if (
+                idx === 0 ||
+                (slide.title && slide.title.toLowerCase().includes('wedding')) ||
+                desktopImageUrl.includes('hero-wedding')
+              ) {
+                desktopImageUrl = '/images/banners/hero-wedding-panoramic.jpg';
+              }
               const mobileImageUrl = slide.mobileImage || desktopImageUrl;
 
               return (
                 <div
                   key={slide._id || slide.id || idx}
-                  className="w-full shrink-0 relative cursor-pointer aspect-[16/9]"
+                  className="w-full shrink-0 relative cursor-pointer aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.85/1] lg:aspect-[3.1/1] max-h-[460px] 2xl:max-h-[480px]"
                   onClick={() => handleSlideClick(slide)}
                 >
                   <picture className="w-full h-full block">
@@ -159,7 +167,7 @@ export default function HeroSection({
                     <img
                       src={desktopImageUrl}
                       alt={slide.title || `Indian Flowers Banner ${idx + 1}`}
-                      className="w-full h-full object-cover object-top select-none pointer-events-none"
+                      className="w-full h-full object-cover object-center select-none pointer-events-none"
                       loading={idx === 0 ? 'eager' : 'lazy'}
                       decoding="async"
                     />
@@ -169,48 +177,51 @@ export default function HeroSection({
             })}
           </div>
 
-          {/* Subtle Desktop Prev Chevron (Appears on desktop hover only, 0 buttons on mobile) */}
+          {/* Left Circular Navigation Arrow matching reference mockup */}
           {activeSlides.length > 1 && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 prevSlide();
               }}
-              className="hidden md:flex absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-white/80 hover:bg-white text-gray-800 shadow-md items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 border border-white/80 backdrop-blur-xs"
+              className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white shadow-[0_2px_10px_rgba(0,0,0,0.12)] hover:shadow-lg flex items-center justify-center text-stone-800 hover:text-black hover:scale-105 active:scale-95 transition-all cursor-pointer border border-stone-100"
               aria-label="Previous slide"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-800" />
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-stone-800 stroke-[2.2]" />
             </button>
           )}
 
-          {/* Subtle Desktop Next Chevron (Appears on desktop hover only, 0 buttons on mobile) */}
+          {/* Right Circular Navigation Arrow matching reference mockup */}
           {activeSlides.length > 1 && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 nextSlide();
               }}
-              className="hidden md:flex absolute right-3 lg:right-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-white/80 hover:bg-white text-gray-800 shadow-md items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 border border-white/80 backdrop-blur-xs"
+              className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white shadow-[0_2px_10px_rgba(0,0,0,0.12)] hover:shadow-lg flex items-center justify-center text-stone-800 hover:text-black hover:scale-105 active:scale-95 transition-all cursor-pointer border border-stone-100"
               aria-label="Next slide"
             >
-              <ChevronRight className="w-5 h-5 text-gray-800" />
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-stone-800 stroke-[2.2]" />
             </button>
           )}
 
-          {/* Discreet Slide Indicator Dots */}
+          {/* Floating White Pill Indicator with Elongated Active Bar matching reference mockup */}
           {activeSlides.length > 1 && (
-            <div className="absolute bottom-2.5 sm:bottom-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-full bg-black/25 backdrop-blur-xs">
+            <div className="absolute bottom-3 sm:bottom-4 md:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-stone-100">
               {activeSlides.map((_, idx) => (
                 <button
                   key={idx}
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setCurrentSlide(idx);
                   }}
-                  className={`h-1.5 sm:h-2 transition-all duration-300 rounded-full ${
+                  className={`transition-all duration-300 rounded-full cursor-pointer ${
                     currentSlide === idx
-                      ? 'w-5 sm:w-6 bg-white shadow-xs'
-                      : 'w-1.5 sm:w-2 bg-white/50 hover:bg-white/80'
+                      ? 'w-6 h-2 bg-[#0B3B24]'
+                      : 'w-2 h-2 bg-stone-300 hover:bg-stone-400'
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
                 />

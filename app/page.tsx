@@ -1121,7 +1121,7 @@ export default function CustomerStore() {
         <FloralCornerDecorations />
 
         {/* Content Container (z-10 above decorations) */}
-        <div className="relative z-10 w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+        <div className="relative z-10 w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Horizontal Category Carousel */}
           <CategoryCarousel
             categories={categories}
@@ -1234,7 +1234,7 @@ export default function CustomerStore() {
 
       {/* 5. OCCASION FEATURE DUAL BANNERS (CREATIVE BORDERLESS EDITORIAL CARDS WITH SEAMLESS PHOTO BLENDING) */}
       <section className="py-10 sm:py-16 bg-white overflow-hidden">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-7">
             {/* Banner 1: Wedding & Temple Garlands */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FAF5ED] via-[#F5ECE1] to-[#EFE2D4] p-6 sm:p-8 lg:p-9 min-h-[280px] sm:min-h-[310px] flex flex-col justify-between group shadow-xs hover:shadow-[0_20px_48px_rgba(11,59,36,0.08)] transition-all duration-500">
@@ -1329,7 +1329,7 @@ export default function CustomerStore() {
 
       {/* 6. WHY CHOOSE INDIAN-FLOWERS.COM SECTION */}
       <section className="py-12 sm:py-16 bg-[#FAFAF8] border-y border-gray-100">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 space-y-8">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           {/* Header */}
           <div className="text-center space-y-1">
             <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#C85A78]">
@@ -1406,7 +1406,7 @@ export default function CustomerStore() {
 
       {/* 7. CUSTOMER REVIEWS (Retrieved 100% Dynamically from DB) */}
       <section className="py-12 sm:py-16 bg-white">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 space-y-8">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           {/* Section Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
@@ -1487,7 +1487,7 @@ export default function CustomerStore() {
 
       {/* 8. NEWSLETTER SIGNUP BANNER */}
       <section className="relative py-12 sm:py-16 md:py-20 bg-[#FAF6F0]/60 border-t border-b border-gray-100/80">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 relative z-10">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12 max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
             <div className="space-y-2 text-center lg:text-left max-w-lg">
               <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#C85A78]">
