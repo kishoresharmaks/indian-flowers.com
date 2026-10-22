@@ -163,7 +163,7 @@ export default function ProductCard({
           </span>
         ) : null}
 
-        {/* Top-Right: High-Contrast Frosted Wishlist Button (♡) — Sits cleanly inside image boundary */}
+        {/* Top-Right: Solid Pure White High-Contrast Wishlist / Like Button (♡) */}
         <button
           type="button"
           onClick={(e) => {
@@ -174,18 +174,18 @@ export default function ProductCard({
               setLocalFavorite(!localFavorite);
             }
           }}
-          className={`absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-10 flex h-7.5 w-7.5 sm:h-8.5 sm:w-8.5 items-center justify-center rounded-full transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
+          className={`absolute top-2.5 right-2.5 z-10 flex h-8.5 w-8.5 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.15)] border ${
             isFavorite
-              ? 'bg-white text-[#ed2353] shadow-[0_2px_8px_rgba(237,35,83,0.25)] border border-rose-200'
-              : 'bg-white/95 hover:bg-white text-stone-700 hover:text-[#ed2353] shadow-[0_2px_6px_rgba(0,0,0,0.12)] border border-stone-200/60 backdrop-blur-xs'
+              ? 'text-[#ed2353] border-rose-300 shadow-[0_2px_10px_rgba(237,35,83,0.3)]'
+              : 'text-stone-700 hover:text-[#ed2353] border-stone-200 hover:border-rose-200'
           }`}
           aria-label={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
           title={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
           aria-pressed={isFavorite}
         >
           <Heart
-            className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors ${
-              isFavorite ? 'fill-[#ed2353] text-[#ed2353]' : 'stroke-[2.2]'
+            className={`h-4.5 w-4.5 sm:h-5 sm:w-5 transition-colors ${
+              isFavorite ? 'fill-[#ed2353] text-[#ed2353]' : 'stroke-[2]'
             }`}
           />
         </button>
