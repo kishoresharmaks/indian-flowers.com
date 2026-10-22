@@ -79,6 +79,15 @@ export default function ProductCard({
   }
   const isPriceRange = maxPrice > minPrice;
 
+  // Compact price formatting for ranges to preserve neat mobile single-line alignment
+  const formatCompactPrice = (val: number): string => {
+    if (typeof val !== 'number' || isNaN(val)) return '$0';
+    if (val % 1 === 0) {
+      return `$${val.toLocaleString('en-US')}`;
+    }
+    return formatCurrency(val);
+  };
+
   const discount =
     originalPrice > currentPrice
       ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
@@ -122,13 +131,13 @@ export default function ProductCard({
   };
 
   return (
-    <article className="group h-full flex flex-col bg-white rounded-xl sm:rounded-2xl border border-stone-200/90 hover:border-emerald-300/70 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_rgba(11,59,36,0.08)] transition-all duration-300 hover:-translate-y-0.5 justify-between relative">
-      {/* 1. Top Image Container (Clean & Unobstructed with Crisp High-Contrast Badges) */}
-      <div className="relative aspect-square w-full overflow-hidden bg-[#FAF6F0] p-1.5 sm:p-2">
+    <article className="group h-full flex flex-col bg-white rounded-xl sm:rounded-2xl border border-stone-200/80 hover:border-emerald-300/80 overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgba(11,59,36,0.08)] transition-all duration-300 hover:-translate-y-0.5 justify-between relative">
+      {/* 1. Top Image Container: Full-bleed clean header with subtle rounded top */}
+      <div className="relative aspect-square w-full overflow-hidden bg-stone-100 rounded-t-xl sm:rounded-t-2xl">
         <Link
           href={`/product/${product._id}`}
           onClick={openProduct}
-          className="block w-full h-full rounded-lg sm:rounded-xl overflow-hidden relative"
+          className="block w-full h-full relative"
         >
           <img
             src={
@@ -145,16 +154,16 @@ export default function ProductCard({
 
         {/* Top-Left: Out of Stock or Discount Badge */}
         {outOfStock ? (
-          <span className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-10 rounded-full bg-stone-900/85 backdrop-blur-xs px-2.5 py-0.5 text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider text-white shadow-xs">
+          <span className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 rounded-full bg-stone-900/85 backdrop-blur-xs px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
             Sold out
           </span>
         ) : discount > 0 ? (
-          <span className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-10 rounded-full bg-[#ed2353] px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white shadow-xs">
+          <span className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 rounded-full bg-[#ed2353] px-2 sm:px-2.5 py-0.5 text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider text-white shadow-xs">
             {discount}% OFF
           </span>
         ) : null}
 
-        {/* Top-Right: High-Contrast Solid White Wishlist Button (♡) — Sharp visibility on white & dark photos */}
+        {/* Top-Right: High-Contrast Frosted Wishlist Button (♡) — Sits cleanly inside image boundary */}
         <button
           type="button"
           onClick={(e) => {
@@ -165,17 +174,17 @@ export default function ProductCard({
               setLocalFavorite(!localFavorite);
             }
           }}
-          className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 flex h-8.5 w-8.5 sm:h-9 sm:w-9 items-center justify-center rounded-full transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
+          className={`absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-10 flex h-7.5 w-7.5 sm:h-8.5 sm:w-8.5 items-center justify-center rounded-full transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
             isFavorite
-              ? 'bg-rose-50 text-[#ed2353] border border-rose-300 shadow-[0_2px_10px_rgba(237,35,83,0.25)]'
-              : 'bg-white hover:bg-rose-50/70 text-stone-700 hover:text-[#ed2353] border border-stone-200/90 hover:border-rose-200 shadow-[0_2px_8px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.06)]'
+              ? 'bg-white text-[#ed2353] shadow-[0_2px_8px_rgba(237,35,83,0.25)] border border-rose-200'
+              : 'bg-white/95 hover:bg-white text-stone-700 hover:text-[#ed2353] shadow-[0_2px_6px_rgba(0,0,0,0.12)] border border-stone-200/60 backdrop-blur-xs'
           }`}
           aria-label={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
           title={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
           aria-pressed={isFavorite}
         >
           <Heart
-            className={`h-4.5 w-4.5 sm:h-5 sm:w-5 transition-colors ${
+            className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors ${
               isFavorite ? 'fill-[#ed2353] text-[#ed2353]' : 'stroke-[2.2]'
             }`}
           />
@@ -183,72 +192,76 @@ export default function ProductCard({
       </div>
 
       {/* 2. Content Body Area */}
-      <div className="flex flex-1 flex-col px-3 py-3 sm:px-3.5 sm:py-3.5 justify-between">
+      <div className="flex flex-1 flex-col p-2.5 sm:p-3 justify-between">
         <div>
           {/* Product Category Eyebrow */}
-          <div className="text-[10.5px] sm:text-[11.5px] text-stone-400 sm:text-stone-500 font-medium tracking-wide uppercase truncate max-w-full text-left mb-1">
+          <div className="text-[10px] sm:text-[11px] text-stone-400 font-medium tracking-wide uppercase truncate max-w-full text-left mb-0.5">
             {product.category || 'Indian Wedding Garlands'}
           </div>
 
-          {/* Product Title (Plus Jakarta Sans Semibold, dark charcoal #111827 with brand forest hover) */}
+          {/* Product Title */}
           <Link href={`/product/${product._id}`} onClick={openProduct} className="block group/title">
-            <h3 className="text-[13px] sm:text-[14.5px] font-semibold text-stone-900 group-hover/title:text-[#0B3B24] transition-colors leading-[1.35] line-clamp-2 min-h-[35px] sm:min-h-[39px] text-left">
+            <h3 className="text-[12.5px] sm:text-[14px] font-semibold text-stone-900 group-hover/title:text-[#0B3B24] transition-colors leading-[1.3] line-clamp-2 min-h-[33px] sm:min-h-[37px] text-left">
               {product.name}
             </h3>
           </Link>
         </div>
 
-        {/* 3. Bottom Action Row: Price on Left, Cart Button on Right (Clean & Unobstructed!) */}
-        <div className="mt-2.5 pt-2.5 border-t border-stone-100 flex items-center justify-between gap-2">
+        {/* 3. Bottom Action Row: Price on Left, Cart Button on Right (Always Single-Line on Mobile!) */}
+        <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between gap-1.5">
           {/* Price Stack */}
-          <div className="flex flex-col text-left min-w-0">
-            <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span className="text-[14px] sm:text-[16px] font-bold text-[#0B3B24] tabular-nums tracking-tight">
-                {isPriceRange
-                  ? `${formatCurrency(minPrice)} – ${formatCurrency(maxPrice)}`
-                  : formatCurrency(currentPrice)}
+          <div className="flex flex-col text-left min-w-0 flex-1">
+            {isPriceRange ? (
+              <span className="text-[12.5px] xs:text-[13px] sm:text-[15px] font-bold text-[#0B3B24] tabular-nums tracking-tight whitespace-nowrap">
+                {formatCompactPrice(minPrice)} – {formatCompactPrice(maxPrice)}
               </span>
-              {originalPrice > currentPrice && (
-                <span className="text-[10.5px] sm:text-[11.5px] text-stone-400 line-through font-normal tabular-nums">
-                  {formatCurrency(originalPrice)}
+            ) : (
+              <div className="flex flex-col">
+                <span className="text-[13px] xs:text-[13.5px] sm:text-[15px] font-bold text-[#0B3B24] tabular-nums tracking-tight whitespace-nowrap">
+                  {formatCurrency(currentPrice)}
                 </span>
-              )}
-            </div>
+                {originalPrice > currentPrice && (
+                  <span className="text-[10px] sm:text-[11px] text-stone-400 line-through font-normal tabular-nums whitespace-nowrap -mt-0.5">
+                    {formatCurrency(originalPrice)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Cart Button: Moved down into the card footer so it never obstructs the floral photography */}
+          {/* Cart Button: Clean circular pill with ShoppingCart icon, anchored at right */}
           <button
             type="button"
             onClick={handleCartButtonClick}
             disabled={outOfStock || isAdding}
-            className={`flex h-8.5 w-8.5 sm:h-9 sm:w-9 items-center justify-center rounded-full transition-all duration-200 hover:scale-108 active:scale-95 cursor-pointer shrink-0 ${
+            className={`flex h-8 w-8 sm:h-8.5 sm:w-8.5 items-center justify-center rounded-full transition-all duration-200 hover:scale-108 active:scale-95 cursor-pointer shrink-0 shadow-xs ${
               outOfStock
                 ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
                 : justAdded
-                ? 'bg-emerald-600 text-white scale-105 shadow-[0_2px_10px_rgba(16,185,129,0.35)]'
-                : 'bg-[#0B3B24] hover:bg-[#1C563F] text-white shadow-[0_2px_8px_rgba(11,59,36,0.22)] hover:shadow-[0_4px_14px_rgba(11,59,36,0.32)]'
+                ? 'bg-emerald-600 text-white scale-105 shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
+                : 'bg-[#0B3B24] hover:bg-[#1C563F] text-white shadow-[0_2px_6px_rgba(11,59,36,0.2)] hover:shadow-[0_4px_12px_rgba(11,59,36,0.3)]'
             }`}
             aria-label={`Add ${product.name} to cart`}
             title={hasVariants ? 'Choose options' : 'Add to cart'}
           >
             {justAdded ? (
-              <Check className="h-4 w-4 sm:h-4.5 sm:w-4.5 stroke-[2.8]" />
+              <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.8]" />
             ) : (
-              <ShoppingCart className="h-4 w-4 sm:h-4.5 sm:w-4.5 stroke-[2.2]" />
+              <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.2]" />
             )}
           </button>
         </div>
 
         {/* Optional Inline Variant Selector (Triggered when user clicks cart icon on multi-variant product) */}
         {hasVariants && showVariants && (
-          <div className="mt-2.5 pt-2 border-t border-stone-100 space-y-1.5 text-left animate-in fade-in duration-150">
-            <div className="text-[10.5px] font-semibold text-stone-500 text-left">Select an option:</div>
+          <div className="mt-2 pt-2 border-t border-stone-100 space-y-1.5 text-left animate-in fade-in duration-150">
+            <div className="text-[10px] font-semibold text-stone-500 text-left">Select an option:</div>
             {product.variants!.map((v) => (
               <button
                 key={v.name}
                 type="button"
                 onClick={() => handleAddToCart(v)}
-                className="flex w-full items-center justify-between rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-left text-[11px] font-medium text-stone-800 transition-colors hover:border-[#0B3B24] hover:bg-emerald-50/50"
+                className="flex w-full items-center justify-between rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-left text-[11px] font-medium text-stone-800 transition-colors hover:border-[#0B3B24] hover:bg-emerald-50/50"
               >
                 <span className="truncate pr-1">{v.name}</span>
                 <span className="shrink-0 font-bold tabular-nums text-[#0B3B24]">

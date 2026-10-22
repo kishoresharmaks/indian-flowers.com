@@ -1195,7 +1195,7 @@ export default function CustomerStore() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-4 lg:gap-6">
                     {filteredSearchProducts.map((product) => (
                       <ProductCard
                         key={product._id}
