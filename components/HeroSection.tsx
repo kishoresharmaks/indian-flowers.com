@@ -117,8 +117,8 @@ export default function HeroSection({
   if (loading && (!slides || slides.length === 0)) {
     return (
       <section className="w-full bg-[#FAF6F0] py-2 sm:py-3 md:py-4">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="w-full aspect-[16/9] sm:aspect-[2.4/1] lg:aspect-[2.85/1] max-h-[440px] rounded-2xl sm:rounded-3xl bg-stone-200/60 animate-pulse border border-stone-200/80" />
+        <div className="w-full max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full aspect-[16/9] rounded-2xl sm:rounded-3xl bg-stone-200/60 animate-pulse border border-stone-200/80" />
         </div>
       </section>
     );
@@ -127,7 +127,7 @@ export default function HeroSection({
   return (
     <section className="w-full bg-[#FAF6F0] py-2 sm:py-3 md:py-4">
       {/* Contained within responsive site max-width (Proper size, not oversized) */}
-      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Frame with Proper Rounded Corners & Border */}
         <div
           className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-stone-200/80 bg-stone-100 select-none group"
@@ -149,7 +149,7 @@ export default function HeroSection({
               return (
                 <div
                   key={slide._id || slide.id || idx}
-                  className="w-full shrink-0 relative cursor-pointer aspect-[16/9] sm:aspect-[2.4/1] lg:aspect-[2.85/1] max-h-[440px]"
+                  className="w-full shrink-0 relative cursor-pointer aspect-[16/9]"
                   onClick={() => handleSlideClick(slide)}
                 >
                   <picture className="w-full h-full block">
@@ -159,7 +159,7 @@ export default function HeroSection({
                     <img
                       src={desktopImageUrl}
                       alt={slide.title || `Indian Flowers Banner ${idx + 1}`}
-                      className="w-full h-full object-cover object-center select-none pointer-events-none"
+                      className="w-full h-full object-cover object-top select-none pointer-events-none"
                       loading={idx === 0 ? 'eager' : 'lazy'}
                       decoding="async"
                     />
