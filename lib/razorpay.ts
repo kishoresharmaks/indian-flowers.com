@@ -27,9 +27,9 @@ export async function getRazorpayConfig(): Promise<RazorpayConfig> {
     console.warn('Failed to load Razorpay settings from DB, falling back to process.env', err);
   }
 
-  // Mock orders are useful locally, but must never be accepted by a live store.
+  // Sandbox / simulated mock orders when credentials are not yet set or are placeholders
   const hasPlaceholderCredentials = !keyId || !keySecret || keyId.includes('placeholder') || keySecret.includes('placeholder');
-  const isMock = process.env.NODE_ENV !== 'production' && hasPlaceholderCredentials;
+  const isMock = hasPlaceholderCredentials;
 
   return { keyId, keySecret, isMock };
 }

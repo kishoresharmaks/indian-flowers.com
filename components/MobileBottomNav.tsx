@@ -68,7 +68,8 @@ export function ScrollToTopButton() {
 
   useEffect(() => {
     const checkScroll = () => {
-      setVisible(window.scrollY > 300);
+      const nextVisible = window.scrollY > 300;
+      setVisible((prev) => (prev !== nextVisible ? nextVisible : prev));
     };
     window.addEventListener('scroll', checkScroll, { passive: true });
     return () => window.removeEventListener('scroll', checkScroll);
@@ -110,6 +111,7 @@ export default function MobileBottomNav({
     if (cartCount > prevCountRef.current) {
       setIsBouncing(true);
       const timer = setTimeout(() => setIsBouncing(false), 500);
+      prevCountRef.current = cartCount;
       return () => clearTimeout(timer);
     }
     prevCountRef.current = cartCount;

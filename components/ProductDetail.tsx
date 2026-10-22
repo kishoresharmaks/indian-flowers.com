@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShoppingBag, Heart, Share2, Truck, CheckCircle2, MessageCircle, Star, Leaf, ShieldCheck, Check } from 'lucide-react';
+import { ShoppingBag, Heart, Share2, Truck, CheckCircle2, MessageCircle, Star, Leaf, ShieldCheck, Check, Clock } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 
@@ -163,6 +163,17 @@ export default function ProductDetail({
               <div className="space-y-2">
                 <h3 className="text-xs font-medium text-text uppercase tracking-wider">About this product</h3>
                 <p className="text-sm sm:text-base text-text-muted leading-relaxed font-normal">{product.description}</p>
+              </div>
+
+              {/* 1-Week Delivery Notice Callout */}
+              <div className="p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
+                <Clock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold block uppercase tracking-wider text-[11px]">1-Week Advance Notice Required</span>
+                  <span className="text-[12px] leading-relaxed">
+                    Fresh flowers and handcrafted garlands require at least 1-week advance preparation and cold-chain air cargo dispatch via FedEx / Southwest.
+                  </span>
+                </div>
               </div>
 
               {/* Variants */}

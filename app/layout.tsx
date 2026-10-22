@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import StorefrontGlobalNav from "@/components/StorefrontGlobalNav";
 import GlobalPageLoader from "@/components/GlobalPageLoader";
@@ -235,7 +234,6 @@ export default function RootLayout({
         {children}
         <StorefrontGlobalNav />
         <CookieConsentBanner />
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>
   );

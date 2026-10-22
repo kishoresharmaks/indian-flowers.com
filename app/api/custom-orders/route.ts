@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import CustomOrder from '@/models/CustomOrder';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+import { sendFloralInquiryConfirmationEmail } from '@/lib/msg91';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,10 +72,27 @@ export async function POST(request: Request) {
       status: 'NEW',
     });
 
+    // Automated email confirmation via MSG91
+    try {
+      await sendFloralInquiryConfirmationEmail({
+        customerName: newCustomOrder.customerName,
+        customerEmail: newCustomOrder.customerEmail,
+        customerPhone: newCustomOrder.customerPhone,
+        cityState: newCustomOrder.cityState,
+        eventDate: newCustomOrder.eventDate,
+        occasion: newCustomOrder.occasion,
+        requirements: newCustomOrder.requirements,
+        budget: newCustomOrder.budget,
+        inquiryId: newCustomOrder.inquiryId,
+      });
+    } catch (emailError) {
+      console.warn('[CustomOrder] MSG91 email sending error:', emailError);
+    }
+
     return NextResponse.json(
       {
         success: true,
-        message: 'Your custom floral inquiry has been received! Our wedding & pooja specialist will contact you shortly.',
+        message: 'Your custom floral inquiry has been received! A confirmation has been sent to your email.',
         data: newCustomOrder,
       },
       { status: 201 }

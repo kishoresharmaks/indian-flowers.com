@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { dispatchItemAdded } from '@/components/ItemAddedNotification';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   X,
   Truck,
+  Clock,
   RefreshCw,
   PackageCheck,
   Phone,
@@ -140,6 +141,8 @@ export default function CustomerStore() {
     paymentMethod: 'Razorpay',
     transactionId: '',
     notes: '',
+    deliveryDate: '',
+    acknowledgedDeliveryTimeframe: false,
   });
   const [checkoutTaxResult, setCheckoutTaxResult] = useState<any>(null);
   const [checkoutTaxAmount, setCheckoutTaxAmount] = useState<number>(0);
@@ -162,6 +165,7 @@ export default function CustomerStore() {
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'success' | 'already' | 'error'>('idle');
 
   const isCartMountedRef = useRef(false);
+  const lastSavedCartRef = useRef<string>('');
 
   // Restore Cart on Mount (supports both 'cart' and 'if_cart')
   useEffect(() => {
@@ -170,6 +174,7 @@ export default function CustomerStore() {
       if (savedCart) {
         const parsed = JSON.parse(savedCart);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          lastSavedCartRef.current = savedCart;
           setCart(parsed);
         }
       }
@@ -178,46 +183,64 @@ export default function CustomerStore() {
     }
   }, []);
 
-  // Listen for Cart Updates from Global Nav, Cart Drawer, or other tabs
+  // Listen for Cart Updates from Global Nav, Cart Drawer, or other tabs (synced)
   useEffect(() => {
-    const handleCartSync = () => {
+    const handleCartSync = (e?: Event) => {
+      // Ignore broadcasts dispatched by CustomerStore itself to prevent infinite loops
+      if ((e as CustomEvent)?.detail?.source === 'CustomerStore') {
+        return;
+      }
       try {
-        const raw = localStorage.getItem('cart') || localStorage.getItem('if_cart');
+        const raw = localStorage.getItem('cart') || localStorage.getItem('if_cart') || '';
+        if (raw === lastSavedCartRef.current) {
+          return;
+        }
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
+            lastSavedCartRef.current = raw;
             setCart(parsed);
             return;
           }
         }
-        setCart([]);
-      } catch {}
+        if (lastSavedCartRef.current !== '') {
+          lastSavedCartRef.current = '';
+          setCart([]);
+        }
+      } catch { }
     };
 
-    window.addEventListener('cart-updated', handleCartSync);
+    window.addEventListener('cart-updated', handleCartSync as EventListener);
     window.addEventListener('storage', handleCartSync);
     return () => {
-      window.removeEventListener('cart-updated', handleCartSync);
+      window.removeEventListener('cart-updated', handleCartSync as EventListener);
       window.removeEventListener('storage', handleCartSync);
     };
   }, []);
 
-  // Save Cart on Change
+  // Save Cart on Change and broadcast with source marker
   useEffect(() => {
     if (!isCartMountedRef.current) {
       isCartMountedRef.current = true;
       return;
     }
     try {
-      if (cart.length > 0) {
-        const json = JSON.stringify(cart);
+      const json = cart.length > 0 ? JSON.stringify(cart) : '';
+      if (json === lastSavedCartRef.current) {
+        return;
+      }
+      lastSavedCartRef.current = json;
+
+      if (json) {
         localStorage.setItem('cart', json);
         localStorage.setItem('if_cart', json);
       } else {
         localStorage.removeItem('cart');
         localStorage.removeItem('if_cart');
       }
-      window.dispatchEvent(new Event('cart-updated'));
+      window.dispatchEvent(
+        new CustomEvent('cart-updated', { detail: { source: 'CustomerStore' } })
+      );
     } catch (err) {
       console.error('Failed to persist cart:', err);
     }
@@ -315,35 +338,34 @@ export default function CustomerStore() {
         } else {
           setCustomer(null);
           if (isCheckoutRedirect) {
-            router.push('/login?redirect=checkout');
+            setIsCheckoutOpen(true);
+            window.history.replaceState({}, '', window.location.pathname);
           }
         }
       })
       .catch(() => {
         setCustomer(null);
         if (isCheckoutRedirect) {
-          router.push('/login?redirect=checkout');
+          setIsCheckoutOpen(true);
+          window.history.replaceState({}, '', window.location.pathname);
         }
       });
   }, [router]);
 
   const handleInitiateCheckout = () => {
-    if (!customer) {
-      setIsCartOpen(false);
-      router.push('/login?redirect=checkout');
-      return;
+    if (customer) {
+      setCheckoutForm((prev) => ({
+        ...prev,
+        customerName: prev.customerName || customer.name || '',
+        customerPhone: prev.customerPhone || customer.phone || '',
+        customerEmail: prev.customerEmail || customer.email || '',
+        streetAddress: prev.streetAddress || customer.address || '',
+        aptSuite: prev.aptSuite || customer.aptSuite || '',
+        city: prev.city || customer.district || customer.city || '',
+        state: prev.state || customer.state || 'CA',
+        zipCode: prev.zipCode || customer.zipCode || '',
+      }));
     }
-    setCheckoutForm((prev) => ({
-      ...prev,
-      customerName: prev.customerName || customer.name || '',
-      customerPhone: prev.customerPhone || customer.phone || '',
-      customerEmail: prev.customerEmail || customer.email || '',
-      streetAddress: prev.streetAddress || customer.address || '',
-      aptSuite: prev.aptSuite || customer.aptSuite || '',
-      city: prev.city || customer.district || customer.city || '',
-      state: prev.state || customer.state || 'CA',
-      zipCode: prev.zipCode || customer.zipCode || '',
-    }));
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
   };
@@ -475,12 +497,24 @@ export default function CustomerStore() {
 
   const displayedCategories = categories;
 
-  const getProductsForCategory = (categoryName: string) => {
-    const catLower = categoryName.trim().toLowerCase();
-    return products.filter(
-      (p) => (p.category || '').trim().toLowerCase() === catLower
-    );
-  };
+  const productsByCategory = useMemo(() => {
+    const map = new Map<string, Product[]>();
+    for (const p of products) {
+      const key = (p.category || '').trim().toLowerCase();
+      const existing = map.get(key) || [];
+      existing.push(p);
+      map.set(key, existing);
+    }
+    return map;
+  }, [products]);
+
+  const getProductsForCategory = useCallback(
+    (categoryName: string) => {
+      const catLower = categoryName.trim().toLowerCase();
+      return productsByCategory.get(catLower) || [];
+    },
+    [productsByCategory]
+  );
 
   const getCategoryMeta = (catName: string) => {
     const lower = catName.trim().toLowerCase();
@@ -494,36 +528,30 @@ export default function CustomerStore() {
       return {
         eyebrow: 'Fresh Wedding Garland',
         title: 'Our Exclusive Collections',
-        description: 'Experience the ultimate collection of Indian florals in the USA. From the delicate scent of Jasmine strings to the majestic weight of a traditional wedding garland, we bring premium quality and prompt delivery to your doorstep. Hand-picked, hand-crafted, and heart-delivered. Elevate your rituals with the flowers you know and love.',
       };
     }
     if (lower.includes('loose') || lower.includes('daily pooja')) {
       return {
         eyebrow: 'FRESH LOOSE BLOOMS',
-        description: 'Handpicked fresh blossoms for daily rituals, temple offerings and sacred floral decor',
       };
     }
     if (lower.includes('leaf') || lower.includes('leaves') || lower.includes('greenery')) {
       return {
         eyebrow: 'SACRED PUJA LEAVES & GREENERY',
-        description: 'Fresh auspicious betel leaves, mango leaf thoranams, and banana leaves delivered fresh across USA',
       };
     }
     if (lower.includes('kit') || lower.includes('pooja item')) {
       return {
         eyebrow: 'WORSHIP & ARCHANA ESSENTIALS',
-        description: 'Complete daily puja samagri boxes, brass lamps, and ritual essentials for home altars',
       };
     }
     if (lower.includes('bouquet') || lower.includes('arrangement')) {
       return {
         eyebrow: 'CELEBRATION FLORAL ARRANGEMENTS',
-        description: 'Curated premium fresh flower bouquets and blessing gift sets for auspicious occasions',
       };
     }
     return {
       eyebrow: 'FRESH INDIAN FLOWERS',
-      description: 'Premium authentic floral blooms delivered fresh across the United States',
     };
   };
 
@@ -546,11 +574,11 @@ export default function CustomerStore() {
 
   const filteredSearchProducts = searchQuery.trim()
     ? products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
+      (p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
     : [];
 
   // Cart Management
@@ -574,12 +602,6 @@ export default function CustomerStore() {
       } else {
         updated = [...prevCart, { product, selectedVariant: effectiveVariant, quantity }];
       }
-      try {
-        const json = JSON.stringify(updated);
-        localStorage.setItem('cart', json);
-        localStorage.setItem('if_cart', json);
-        window.dispatchEvent(new Event('cart-updated'));
-      } catch {}
       return updated;
     });
 
@@ -608,12 +630,6 @@ export default function CustomerStore() {
         }
         return item;
       });
-      try {
-        const json = JSON.stringify(updated);
-        localStorage.setItem('cart', json);
-        localStorage.setItem('if_cart', json);
-        window.dispatchEvent(new Event('cart-updated'));
-      } catch {}
       return updated;
     });
   };
@@ -623,17 +639,6 @@ export default function CustomerStore() {
       const updated = prevCart.filter(
         (item) => !(item.product._id === productId && item.selectedVariant?.name === variantName)
       );
-      try {
-        if (updated.length > 0) {
-          const json = JSON.stringify(updated);
-          localStorage.setItem('cart', json);
-          localStorage.setItem('if_cart', json);
-        } else {
-          localStorage.removeItem('cart');
-          localStorage.removeItem('if_cart');
-        }
-        window.dispatchEvent(new Event('cart-updated'));
-      } catch {}
       return updated;
     });
   };
@@ -657,6 +662,14 @@ export default function CustomerStore() {
       setPointsDiscount(0);
       setEstimatedPointsEarned(0);
       return;
+    }
+
+    // Lazy-load payment gateway only when checkout drawer is open
+    if (typeof (window as any).Razorpay === 'undefined') {
+      const rzpScript = document.createElement('script');
+      rzpScript.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      rzpScript.async = true;
+      document.body.appendChild(rzpScript);
     }
 
     const controller = new AbortController();
@@ -761,12 +774,19 @@ export default function CustomerStore() {
     setFieldErrors({});
 
     // 1. Pre-flight Form Validation — Strictly verify all filled form details before initializing Razorpay
+    if (!checkoutForm.acknowledgedDeliveryTimeframe) {
+      setFormError('Please check the box confirming acknowledgment of the 1-week advance preparation & delivery timeframe.');
+      const el = document.getElementById('checkout-acknowledgedDeliveryTimeframe');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     const validation = validateCheckoutForm(checkoutForm, cart.length);
     if (!validation.isValid) {
       setFieldErrors(validation.errors);
       setFormError(
         validation.firstErrorMessage ||
-          'Please verify all highlighted form fields before proceeding.'
+        'Please verify all highlighted form fields before proceeding.'
       );
       if (validation.firstErrorField) {
         const el = document.getElementById(`checkout-${validation.firstErrorField}`);
@@ -790,14 +810,13 @@ export default function CustomerStore() {
       checkoutForm.paymentMethod === 'Razorpay' && isRazorpayActive
         ? 'Razorpay'
         : isCodActive
-        ? 'COD'
-        : 'Razorpay';
+          ? 'COD'
+          : 'Razorpay';
 
     try {
       setSubmittingOrder(true);
-      const fullShippingAddress = `${checkoutForm.streetAddress}${
-        checkoutForm.aptSuite ? ', ' + checkoutForm.aptSuite : ''
-      }, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zipCode}`;
+      const fullShippingAddress = `${checkoutForm.streetAddress}${checkoutForm.aptSuite ? ', ' + checkoutForm.aptSuite : ''
+        }, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zipCode}`;
 
       const payload = {
         customerId: customer?._id || customer?.id || undefined,
@@ -838,7 +857,7 @@ export default function CustomerStore() {
               setCustomer(data.customer);
             }
           })
-          .catch(() => {});
+          .catch(() => { });
         setIsApplyingPoints(false);
         setRedeemPoints(0);
       };
@@ -901,9 +920,19 @@ export default function CustomerStore() {
           return;
         }
 
-        // Standard Razorpay Modal Flow
+        // Standard Razorpay Modal Flow with automatic script loader
         if (typeof (window as any).Razorpay === 'undefined') {
-          setFormError('Razorpay checkout is still loading. Please try again in a few moments.');
+          await new Promise<void>((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve();
+            script.onerror = () => resolve();
+            document.body.appendChild(script);
+          });
+        }
+
+        if (typeof (window as any).Razorpay === 'undefined') {
+          setFormError('Unable to load payment gateway. Please choose Cash on Delivery or check your connection.');
           setSubmittingOrder(false);
           return;
         }
@@ -935,8 +964,8 @@ export default function CustomerStore() {
                 setIsCheckoutOpen(false);
                 setIsCartOpen(false);
                 localStorage.removeItem('cart');
-            localStorage.removeItem('if_cart');
-            window.dispatchEvent(new Event('cart-updated'));
+                localStorage.removeItem('if_cart');
+                window.dispatchEvent(new Event('cart-updated'));
                 refreshCustomerAccount();
               } else {
                 setFormError(verifyData.message || 'Payment verification failed.');
@@ -992,8 +1021,8 @@ export default function CustomerStore() {
         setIsCheckoutOpen(false);
         setIsCartOpen(false);
         localStorage.removeItem('cart');
-            localStorage.removeItem('if_cart');
-            window.dispatchEvent(new Event('cart-updated'));
+        localStorage.removeItem('if_cart');
+        window.dispatchEvent(new Event('cart-updated'));
         refreshCustomerAccount();
       } else {
         setFormError(data.message || 'Unable to place order. Please check details and try again.');
@@ -1054,7 +1083,7 @@ export default function CustomerStore() {
   const isCodActive = storeSettings ? storeSettings.enableCOD !== false : true;
   const isRazorpayActive = storeSettings ? storeSettings.enableRazorpay !== false : true;
 
-    const weddingCategory = categories.find((c) =>
+  const weddingCategory = categories.find((c) =>
     c.name.toLowerCase().includes('wedding')
   );
   const poojaCategory = categories.find(
@@ -1090,6 +1119,26 @@ export default function CustomerStore() {
         loading={loadingBanners}
         onShopClick={() => handleSelectCategory('All')}
       />
+
+      {/* TRUST BADGE STRIP: FedEx & Southwest Priority Air Cargo */}
+      <section className="bg-white border-y border-stone-200/80 py-3 sm:py-3.5 shadow-2xs">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
+          <div className="flex items-center gap-2.5 text-[#0B3B24] font-semibold">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-[#0B3B24] border border-emerald-200/60">
+              <Truck className="h-4 w-4" />
+            </span>
+            <span>Fast and secure delivery via FedEx and Southwest</span>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-stone-500 font-medium">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Priority Overnight Cold-Chain</span>
+            </span>
+            <span className="hidden sm:inline text-stone-300">&bull;</span>
+            <span className="hidden sm:inline">Delivering dewy fresh to all 50 US States</span>
+          </div>
+        </div>
+      </section>
 
       {/* 3. UNIFIED BOTANICAL CATALOG SECTION ENCLOSING ALL CATEGORIES */}
       <section
@@ -1337,9 +1386,11 @@ export default function CustomerStore() {
                 <Truck className="w-5 h-5" />
               </div>
               <h4 className="text-xs sm:text-sm font-semibold text-gray-900 leading-snug">
-                Fresh &amp; Fast Delivery
+                FedEx &amp; Southwest Delivery
               </h4>
-              <p className="text-[11px] text-gray-500 leading-tight font-normal">Across the United States</p>
+              <p className="text-[11px] text-gray-500 leading-tight font-normal">
+                Fast and secure delivery via FedEx and Southwest across the USA
+              </p>
             </div>
 
             {/* Feature 3 */}
@@ -1518,11 +1569,10 @@ export default function CustomerStore() {
 
               {newsletterMessage && (
                 <div
-                  className={`mt-2.5 flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-lg border transition-all ${
-                    newsletterStatus === 'error'
+                  className={`mt-2.5 flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-lg border transition-all ${newsletterStatus === 'error'
                       ? 'bg-rose-50 text-rose-800 border-rose-200'
                       : 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                  }`}
+                    }`}
                 >
                   {newsletterStatus === 'error' ? (
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />
@@ -1717,11 +1767,10 @@ export default function CustomerStore() {
                         setFieldErrors((prev) => ({ ...prev, customerName: '' }));
                       }
                     }}
-                    className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
-                      fieldErrors.customerName
+                    className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${fieldErrors.customerName
                         ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                         : 'border-gray-200 focus:border-[#0B3B24]'
-                    }`}
+                      }`}
                   />
                   {fieldErrors.customerName && (
                     <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
@@ -1748,11 +1797,10 @@ export default function CustomerStore() {
                           setFieldErrors((prev) => ({ ...prev, customerPhone: '' }));
                         }
                       }}
-                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
-                        fieldErrors.customerPhone
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${fieldErrors.customerPhone
                           ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                           : 'border-gray-200 focus:border-[#0B3B24]'
-                      }`}
+                        }`}
                     />
                     {fieldErrors.customerPhone && (
                       <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
@@ -1777,11 +1825,10 @@ export default function CustomerStore() {
                           setFieldErrors((prev) => ({ ...prev, customerEmail: '' }));
                         }
                       }}
-                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
-                        fieldErrors.customerEmail
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${fieldErrors.customerEmail
                           ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                           : 'border-gray-200 focus:border-[#0B3B24]'
-                      }`}
+                        }`}
                     />
                     {fieldErrors.customerEmail && (
                       <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
@@ -1808,11 +1855,10 @@ export default function CustomerStore() {
                         setFieldErrors((prev) => ({ ...prev, streetAddress: '' }));
                       }
                     }}
-                    className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
-                      fieldErrors.streetAddress
+                    className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${fieldErrors.streetAddress
                         ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                         : 'border-gray-200 focus:border-[#0B3B24]'
-                    }`}
+                      }`}
                   />
                   {fieldErrors.streetAddress && (
                     <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
@@ -1853,11 +1899,10 @@ export default function CustomerStore() {
                           setFieldErrors((prev) => ({ ...prev, city: '' }));
                         }
                       }}
-                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
-                        fieldErrors.city
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${fieldErrors.city
                           ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                           : 'border-gray-200 focus:border-[#0B3B24]'
-                      }`}
+                        }`}
                     />
                     {fieldErrors.city && (
                       <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
@@ -1880,11 +1925,10 @@ export default function CustomerStore() {
                           setFieldErrors((prev) => ({ ...prev, state: '' }));
                         }
                       }}
-                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal bg-white transition-colors ${
-                        fieldErrors.state
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal bg-white transition-colors ${fieldErrors.state
                           ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                           : 'border-gray-200 focus:border-[#0B3B24]'
-                      }`}
+                        }`}
                     >
                       {Object.entries(US_STATES).map(([code, name]) => (
                         <option key={code} value={code}>
@@ -1918,11 +1962,10 @@ export default function CustomerStore() {
                           setFieldErrors((prev) => ({ ...prev, zipCode: '' }));
                         }
                       }}
-                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${
-                        fieldErrors.zipCode
+                      className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${fieldErrors.zipCode
                           ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
                           : 'border-gray-200 focus:border-[#0B3B24]'
-                      }`}
+                        }`}
                     />
                     {fieldErrors.zipCode && (
                       <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
@@ -1942,6 +1985,54 @@ export default function CustomerStore() {
                       className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm bg-gray-50 text-gray-600 font-normal cursor-not-allowed"
                     />
                   </div>
+                </div>
+
+                {/* 1-WEEK DELIVERY NOTICE & EVENT DATE SELECTION */}
+                <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200/90 space-y-3">
+                  <div className="flex items-start gap-2.5">
+                    <Clock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                        1-Week Advance Delivery Notice
+                      </h4>
+                      <p className="text-[11.5px] text-amber-800 mt-0.5 leading-relaxed font-normal">
+                        All fresh Indian floral garlands and loose puja blossoms are handcrafted to order and transported via priority cold-chain air cargo (FedEx / Southwest). A minimum 1-week preparation and dispatch timeframe is required.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-stone-700 block mb-1">
+                      Requested Event / Delivery Date
+                    </label>
+                    <input
+                      id="checkout-deliveryDate"
+                      type="date"
+                      min={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                      value={checkoutForm.deliveryDate}
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, deliveryDate: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-lg border border-amber-200 text-xs sm:text-sm bg-white focus:outline-none focus:border-[#0B3B24]"
+                    />
+                  </div>
+
+                  <label className="flex items-start gap-2.5 pt-1 cursor-pointer select-none">
+                    <input
+                      id="checkout-acknowledgedDeliveryTimeframe"
+                      type="checkbox"
+                      required
+                      checked={checkoutForm.acknowledgedDeliveryTimeframe}
+                      onChange={(e) =>
+                        setCheckoutForm({
+                          ...checkoutForm,
+                          acknowledgedDeliveryTimeframe: e.target.checked,
+                        })
+                      }
+                      className="mt-0.5 h-4 w-4 rounded border-amber-300 text-[#0B3B24] focus:ring-[#0B3B24] accent-[#0B3B24]"
+                    />
+                    <span className="text-[11.5px] text-amber-950 font-medium leading-snug">
+                      I understand and confirm that my order requires at least 1-week advance preparation &amp; cold-chain delivery. *
+                    </span>
+                  </label>
                 </div>
 
                 {/* CUSTOMER LOYALTY REWARDS & POINTS REDEMPTION */}
@@ -2073,11 +2164,10 @@ export default function CustomerStore() {
                       {/* Razorpay Online Payment — US Credit/Debit Cards, NetBanking */}
                       {isRazorpayActive && (
                         <label
-                          className={`block p-3.5 rounded-xl border cursor-pointer transition-all ${
-                            checkoutForm.paymentMethod === 'Razorpay'
+                          className={`block p-3.5 rounded-xl border cursor-pointer transition-all ${checkoutForm.paymentMethod === 'Razorpay'
                               ? 'border-[#0B3B24] bg-emerald-50/40 ring-1 ring-[#0B3B24]'
                               : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -2109,11 +2199,10 @@ export default function CustomerStore() {
                       {/* Cash on Delivery (COD) — Real Backend Option */}
                       {isCodActive && (
                         <label
-                          className={`block p-3.5 rounded-xl border cursor-pointer transition-all ${
-                            checkoutForm.paymentMethod === 'COD'
+                          className={`block p-3.5 rounded-xl border cursor-pointer transition-all ${checkoutForm.paymentMethod === 'COD'
                               ? 'border-[#0B3B24] bg-emerald-50/40 ring-1 ring-[#0B3B24]'
                               : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -2182,8 +2271,8 @@ export default function CustomerStore() {
                   {submittingOrder
                     ? 'Processing...'
                     : checkoutForm.paymentMethod === 'Razorpay'
-                    ? `Pay with Razorpay — ${formatCurrency(cartGrandTotal)}`
-                    : `Place Order — ${formatCurrency(cartGrandTotal)}`}
+                      ? `Pay with Razorpay — ${formatCurrency(cartGrandTotal)}`
+                      : `Place Order — ${formatCurrency(cartGrandTotal)}`}
                 </button>
 
                 <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 pt-0.5">
@@ -2224,8 +2313,8 @@ export default function CustomerStore() {
                   {orderSuccess.paymentMethod === 'Razorpay'
                     ? 'Paid Online (Razorpay Verified)'
                     : orderSuccess.paymentMethod === 'CreditCard'
-                    ? 'Paid Online (Card Verified)'
-                    : 'Cash on Delivery (COD)'}
+                      ? 'Paid Online (Card Verified)'
+                      : 'Cash on Delivery (COD)'}
                 </span>
               </div>
               {orderSuccess.transactionId && (

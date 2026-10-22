@@ -127,14 +127,13 @@ export default function AdminLoginPage() {
             ← Return to Store
           </Link>
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-            <span>Powered by</span>
-            <span className="font-bold text-slate-800 tracking-wider">NEXUS CMS</span>
+            <span>The Indian Flowers Management Console</span>
           </div>
         </div>
       </div>
 
       <div className="mt-4 text-center text-xs text-slate-400 select-none">
-        NEXUS CMS Enterprise Commerce Platform • Secure Admin Gateway
+        The Indian Flowers Commerce Platform • Secure Admin Gateway
       </div>
     </div>
   );

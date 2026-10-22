@@ -254,22 +254,23 @@ export default function Footer({
                   <Link href="/about" className="block py-1 text-emerald-200 font-medium hover:text-white transition-colors">
                     &rsaquo; About The Indian Flowers
                   </Link>
-                  <Link href="/#products-section" className="block py-1 hover:text-white transition-colors">
+                  <Link href="/contact" className="block py-1 text-emerald-200 font-medium hover:text-white transition-colors">
+                    &rsaquo; Contact Us
+                  </Link>
+                  <Link href="/#products-section" onClick={() => handleCategoryClick('All')} className="block py-1 hover:text-white transition-colors">
                     &rsaquo; All Fresh Indian Flowers
                   </Link>
-                  <Link href="/#products-section" className="block py-1 hover:text-white transition-colors">
-                    &rsaquo; Fresh Flower Strings &amp; Jasmine
-                  </Link>
-                  <Link href="/#products-section" className="block py-1 hover:text-white transition-colors">
-                    &rsaquo; Wedding &amp; Temple Garlands
-                  </Link>
-                  <Link href="/#products-section" className="block py-1 hover:text-white transition-colors">
-                    &rsaquo; Loose Flowers for Daily Pooja
-                  </Link>
-                  <Link href="/#products-section" className="block py-1 hover:text-white transition-colors">
-                    &rsaquo; Sacred Pooja Leaves &amp; Greenery
-                  </Link>
-                  <Link href="/#custom-orders" className="block py-1 hover:text-white transition-colors">
+                  {displayCategories.map((cat) => (
+                    <Link
+                      key={cat._id || cat.name}
+                      href={`/?category=${encodeURIComponent(cat.name)}#products-section`}
+                      onClick={() => handleCategoryClick(cat.name)}
+                      className="block py-1 hover:text-white transition-colors"
+                    >
+                      &rsaquo; {cat.name}
+                    </Link>
+                  ))}
+                  <Link href="/#custom-orders-section" className="block py-1 hover:text-white transition-colors">
                     &rsaquo; Custom Wedding Muhurtham Orders
                   </Link>
                 </div>
@@ -503,11 +504,17 @@ export default function Footer({
                   </Link>
                 </li>
                 <li>
-                  <Link href="/#products-section" className="hover:text-white transition-colors">
+                  <Link href="/contact" className="hover:text-white transition-colors flex items-center gap-1.5 font-medium text-emerald-200">
+                    <ArrowRight className="w-3 h-3 text-[#8FE7B8]" />
+                    <span>Contact Us</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/#products-section" onClick={() => handleCategoryClick('All')} className="hover:text-white transition-colors">
                     All Fresh Flowers
                   </Link>
                 </li>
-                {displayCategories.slice(0, 5).map((cat) => (
+                {displayCategories.map((cat) => (
                   <li key={cat._id || cat.name}>
                     {onSelectCategory ? (
                       <button
@@ -524,7 +531,7 @@ export default function Footer({
                   </li>
                 ))}
                 <li>
-                  <Link href="/#custom-orders" className="hover:text-white transition-colors">
+                  <Link href="/#custom-orders-section" className="hover:text-white transition-colors">
                     Custom Wedding Orders
                   </Link>
                 </li>

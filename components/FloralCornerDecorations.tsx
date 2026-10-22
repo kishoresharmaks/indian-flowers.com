@@ -5,11 +5,13 @@ import React from 'react';
 interface FloralCornerDecorationsProps {
   className?: string;
   showCorners?: boolean;
+  showSideDecorations?: boolean;
 }
 
 export default function FloralCornerDecorations({
   className = '',
-  showCorners = false, // Hidden for now per user request
+  showCorners = false, // Hidden per user request
+  showSideDecorations = false, // Disabled to eliminate sticker/strand overlay collision with text
 }: FloralCornerDecorationsProps) {
   return (
     <div
@@ -51,8 +53,9 @@ export default function FloralCornerDecorations({
 
         {/* 3. MID-HEIGHT SIDE ACCENTS & CREATIVE IN-BETWEEN DESIGNS */}
 
-        {/* Mid-Left Handcrafted Varmala Strand (Around Category 2) */}
-        <div className="absolute left-0 top-[28%] w-14 sm:w-20 md:w-24 lg:w-28 xl:w-32 aspect-[304/1328] transform origin-left transition-all duration-500 opacity-60 sm:opacity-75 lg:opacity-85 pointer-events-none">
+        {/* Mid-Left Handcrafted Varmala Strand (Disabled to prevent text overlap) */}
+        {showSideDecorations && (
+          <div className="hidden 3xl:block absolute -left-8 top-[28%] w-20 aspect-[304/1328] transform origin-left transition-all duration-500 opacity-50 pointer-events-none">
           <img
             src="/images/floral-decorations/varmala-left-strand.webp"
             alt=""
@@ -64,9 +67,11 @@ export default function FloralCornerDecorations({
             loading="lazy"
           />
         </div>
+        )}
 
-        {/* Mid-Right Festive Marigold & Lotus Cascade (Around Category 3/4) */}
-        <div className="absolute right-0 top-[52%] w-16 sm:w-24 md:w-28 lg:w-32 xl:w-36 aspect-[554/1264] transform origin-right transition-all duration-500 opacity-60 sm:opacity-75 lg:opacity-85 pointer-events-none">
+        {/* Mid-Right Festive Marigold & Lotus Cascade (Disabled to prevent text overlap) */}
+        {showSideDecorations && (
+          <div className="hidden 3xl:block absolute -right-8 top-[52%] w-24 aspect-[554/1264] transform origin-right transition-all duration-500 opacity-50 pointer-events-none">
           <img
             src="/images/floral-decorations/marigold-right-cascade.webp"
             alt=""
@@ -78,6 +83,7 @@ export default function FloralCornerDecorations({
             loading="lazy"
           />
         </div>
+        )}
 
         {/* Scattered Floating Petals Down Left Margin */}
         <div className="absolute left-3 sm:left-6 md:left-10 top-[18%] w-4 h-4 sm:w-5 sm:h-5 opacity-50 sm:opacity-60 blur-[0.2px] pointer-events-none">

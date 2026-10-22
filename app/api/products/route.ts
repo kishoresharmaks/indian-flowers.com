@@ -14,12 +14,20 @@ export async function GET(request: Request) {
     const query = searchParams.get('search');
     const category = searchParams.get('category');
 
-    let filter: any = {};
+    let filter: any = {
+      name: { $not: /arugampul|bilva|vilva|durva grass/i },
+    };
     if (query) {
-      filter.$or = [
-        { name: { $regex: query, $options: 'i' } },
-        { description: { $regex: query, $options: 'i' } },
+      filter.$and = [
+        { name: { $not: /arugampul|bilva|vilva|durva grass/i } },
+        {
+          $or: [
+            { name: { $regex: query, $options: 'i' } },
+            { description: { $regex: query, $options: 'i' } },
+          ],
+        },
       ];
+      delete filter.name;
     }
     if (category && category !== 'All') {
       filter.category = category;

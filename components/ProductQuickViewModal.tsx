@@ -11,6 +11,7 @@ import {
   Leaf,
   ShieldCheck,
   Heart,
+  Clock,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
@@ -190,6 +191,12 @@ export default function ProductQuickViewModal({
               {product.description}
             </p>
           )}
+
+          {/* 1-Week Delivery Notice Callout */}
+          <div className="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-lg flex items-center gap-2 text-[11px] text-amber-900">
+            <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <span>Notice: 1-week advance preparation required for fresh cold-chain delivery.</span>
+          </div>
 
           {/* Size / Variant Options */}
           {hasVariants && (

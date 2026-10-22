@@ -21,7 +21,7 @@ export default function ProductCarousel({
   products = [],
   eyebrow = 'Fresh Wedding Garland',
   title = 'Our Exclusive Collections',
-  subtitle = 'Experience the ultimate collection of Indian florals in the USA. From the delicate scent of Jasmine strings to the majestic weight of a traditional wedding garland, we bring premium quality and prompt delivery to your doorstep. Hand-picked, hand-crafted, and heart-delivered. Elevate your rituals with the flowers you know and love.',
+  subtitle,
   wishlist = [],
   onToggleWishlist,
   onAddToCart,
@@ -37,15 +37,17 @@ export default function ProductCarousel({
     const el = trackRef.current;
     if (!el) return;
     const { scrollLeft, scrollWidth, clientWidth } = el;
-    setCanScrollLeft(scrollLeft > 10);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    const nextLeft = scrollLeft > 10;
+    const nextRight = scrollLeft < scrollWidth - clientWidth - 10;
+    setCanScrollLeft((prev) => (prev !== nextLeft ? nextLeft : prev));
+    setCanScrollRight((prev) => (prev !== nextRight ? nextRight : prev));
   };
 
   useEffect(() => {
     checkScroll();
     window.addEventListener('resize', checkScroll);
     return () => window.removeEventListener('resize', checkScroll);
-  }, [products]);
+  }, [products.length]);
 
   const handleScroll = (direction: 'left' | 'right') => {
     const el = trackRef.current;
@@ -94,7 +96,7 @@ export default function ProductCarousel({
             {title}
           </h2>
           {subtitle && (
-            <p className="text-[12.5px] sm:text-[14px] text-stone-500 font-normal leading-relaxed max-w-2xl">
+            <p className="text-xs sm:text-sm text-stone-500 font-normal">
               {subtitle}
             </p>
           )}

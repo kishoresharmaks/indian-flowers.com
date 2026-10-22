@@ -176,17 +176,17 @@ export default function ProductCard({
           />
         </button>
 
-        {/* Bottom-Left: Signature Vivid Pink Square Add to Cart Button (🛒) */}
+        {/* Bottom-Right: Signature Vivid Pink Circular Add to Cart Button (🛒) */}
         <button
           type="button"
           onClick={handleCartButtonClick}
           disabled={outOfStock || isAdding}
-          className={`absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 z-10 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg shadow-[0_2px_8px_rgba(237,35,83,0.35)] transition-all duration-200 active:scale-90 cursor-pointer ${
+          className={`absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 z-10 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full shadow-[0_3px_10px_rgba(237,35,83,0.32)] transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
             outOfStock
               ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
               : justAdded
-              ? 'bg-emerald-600 text-white scale-105'
-              : 'bg-[#ed2353] hover:bg-[#d81b60] text-white hover:scale-105'
+              ? 'bg-emerald-600 text-white scale-105 shadow-[0_3px_10px_rgba(16,185,129,0.4)]'
+              : 'bg-[#ed2353] hover:bg-[#0B3B24] text-white hover:shadow-[0_4px_14px_rgba(11,59,36,0.3)]'
           }`}
           aria-label={`Add ${product.name} to cart`}
           title={hasVariants ? 'Choose options' : 'Add to cart'}
@@ -204,7 +204,7 @@ export default function ProductCard({
         <div>
           {/* Product Title (Pink / Rose Semibold font, Centered) */}
           <Link href={`/product/${product._id}`} onClick={openProduct} className="block group/title">
-            <h3 className="text-[12.5px] sm:text-[14px] font-semibold text-[#ed2353] hover:text-[#b7153f] transition-colors leading-[1.3] line-clamp-2 min-h-[33px] sm:min-h-[37px] text-center">
+            <h3 className="text-[12.5px] sm:text-[14px] font-semibold text-[#ed2353] hover:text-[#0B3B24] transition-colors leading-[1.3] line-clamp-2 min-h-[33px] sm:min-h-[37px] text-center">
               {product.name}
             </h3>
           </Link>

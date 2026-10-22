@@ -79,42 +79,55 @@ export const SEED_CATEGORIES: SeedCategory[] = [
 
 export const SEED_BANNERS: SeedBanner[] = [
   {
-    eyebrow: 'AUTHENTIC INDIAN FLOWERS IN THE USA',
-    title: 'Tradition, Delivered in Every Bloom.',
+    eyebrow: 'FRESH INDIAN WEDDING GARLANDS SPECIALIST',
+    title: 'Authentic Indian Wedding Garlands in the USA',
     description:
-      'Fresh jasmine strings, handcrafted wedding garlands, loose flowers, sacred leaves and custom floral designs delivered fresh across the USA.',
-    ctaText: 'Shop Fresh Flowers',
-    image: '/images/banners/hero-tradition-1920x650.jpg',
-    mobileImage: '/images/banners/hero-tradition-750x850.jpg',
-    badgeText: 'Farm Fresh Direct from India',
+      'Handcrafted rose petal varmalas, fragrant Madurai jasmine, lotus malas, and ceremonial essentials delivered cold-chain fresh across the United States.',
+    ctaText: 'Shop Wedding Garlands',
+    image: '/images/banners/hero-wedding-tif-rose.jpg',
+    mobileImage: '/images/banners/hero-wedding-tif-rose.jpg',
+    badgeText: 'Fast & Secure via FedEx & Southwest',
     link: '#products-section',
     order: 1,
     active: true,
   },
   {
-    eyebrow: 'WEDDING & TEMPLE COLLECTION',
-    title: 'Pure Craftsmanship, Vibrant Blooms',
+    eyebrow: 'HANDCRAFTED VIBRANT BLOOMS',
+    title: 'Pure Craftsmanship, Devotional Perfection',
     description:
-      'Artisanal rose petal varmalas, jasmine venis, and ceremonial garlands crafted with devotional perfection.',
-    ctaText: 'Explore Wedding Garlands',
-    image: '/images/banners/hero-wedding-1920x650.jpg',
-    mobileImage: '/images/banners/hero-wedding-750x850.jpg',
+      'Artisanal red rose & white carnation wedding varmalas, jasmine venis, and temple garlands crafted with sacred dedication.',
+    ctaText: 'Explore Collection',
+    image: '/images/banners/hero-wedding-tif-red.jpg',
+    mobileImage: '/images/banners/hero-wedding-tif-red.jpg',
     badgeText: 'Handmade Daily by Floral Artisans',
     link: '#products-section',
     order: 2,
     active: true,
   },
   {
-    eyebrow: 'FESTIVAL & POOJA ESSENTIALS',
-    title: 'Sacred Flowers For Daily Pooja',
+    eyebrow: 'TEMPLE & FESTIVAL ESSENTIALS',
+    title: 'Sacred Blooms & Temple Garlands',
     description:
-      'Fresh marigold, lotus, jasmine, and mango leaves delivered directly to your doorstep in pristine condition with freshness guaranteed.',
+      'Auspicious temple malas, fresh marigold strings, sacred lotus, and pooja leaves delivered fresh for your auspicious muhurtham.',
     ctaText: 'Shop Pooja Items',
-    image: '/images/banners/hero-pooja-1920x650.jpg',
-    mobileImage: '/images/banners/hero-pooja-750x850.jpg',
-    badgeText: 'Freshness Guaranteed on Arrival',
+    image: '/images/banners/hero-wedding-tif-temple.jpg',
+    mobileImage: '/images/banners/hero-wedding-tif-temple.jpg',
+    badgeText: 'Fresh Cold-Chain Guaranteed',
     link: '#products-section',
     order: 3,
+    active: true,
+  },
+  {
+    eyebrow: 'BESPOKE WEDDING MUHURTHAM',
+    title: 'The Sacred Exchange of Varmalas',
+    description:
+      'Custom matching wedding garland pairs for bride and groom. Freshly harvested in India and delivered priority across the USA.',
+    ctaText: 'Custom Floral Orders',
+    image: '/images/banners/hero-wedding-tif-exch.jpg',
+    mobileImage: '/images/banners/hero-wedding-tif-exch.jpg',
+    badgeText: 'Overnight Cold-Chain Dispatch',
+    link: '#custom-orders-section',
+    order: 4,
     active: true,
   },
 ];
@@ -169,7 +182,7 @@ export const SEED_REVIEWS: SeedReview[] = [
 export const SEED_PRODUCTS: SeedProduct[] = [
   {
     "name": "Fresh Fragrant Madurai Jasmine & Red Rose Traditional Garland (Mallipoo Mala)",
-    "description": "Authentic South Indian Sambac Jasmine (Madurai Mallipoo / Mogra) tightly woven strand garland adorned with fresh fragrant red rosebuds and hanging twin rose pendant. Unmatched natural sweet floral fragrance, flown fresh directly to your doorstep across the USA.",
+    "description": "Authentic South Indian Sambac Jasmine (Madurai Mallipoo / Mogra) tightly woven strand garland adorned with fresh fragrant red rosebuds and hanging twin rose pendant. Unmatched natural sweet floral fragrance, flown fresh directly to your doorstep across the USA. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/new/5-2.png",
     "mrp": 95,
     "price": 75,
@@ -208,7 +221,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fresh Madurai Jasmine (Mallipoo) String",
-    "description": "Authentic Grade-A Madurai Mallipoo hand-strung tightly on auspicious red cotton thread. Packed in insulated temperature-controlled cold boxes for overnight USA nationwide delivery.",
+    "description": "Authentic Grade-A Madurai Mallipoo hand-strung tightly on auspicious red cotton thread. Packed in insulated temperature-controlled cold boxes for overnight USA nationwide delivery. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-madurai-mallipoo.jpg",
     "mrp": 30,
     "price": 24,
@@ -247,7 +260,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fresh Sampangi (Tuberose) Flower String",
-    "description": "Intensely fragrant double-bloom Indian Tuberose (Sampangi / Rajnigandha) hand-strung for home deity decoration, door toranams, and festive archana.",
+    "description": "Intensely fragrant double-bloom Indian Tuberose (Sampangi / Rajnigandha) hand-strung for home deity decoration, door toranams, and festive archana. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-sampangi-string.jpg",
     "mrp": 28,
     "price": 22,
@@ -286,7 +299,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fragrant White Button Flower (Kakada) String",
-    "description": "Delicate star-shaped Kakada jasmine buds strung continuously. Lightweight, highly fragrant, and long-lasting for deity decoration and personal adornment.",
+    "description": "Delicate star-shaped Kakada jasmine buds strung continuously. Lightweight, highly fragrant, and long-lasting for deity decoration and personal adornment. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-kakada-string.jpg",
     "mrp": 25,
     "price": 20,
@@ -318,7 +331,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Traditional Jasmine & Rose Bridal Hair Veni / Gajra",
-    "description": "Handcrafted South Indian semi-circular hair veni composed of fresh white jasmine and deep red rose petals. Perfect for Bharatanatyam, weddings, and baby showers.",
+    "description": "Handcrafted South Indian semi-circular hair veni composed of fresh white jasmine and deep red rose petals. Perfect for Bharatanatyam, weddings, and baby showers. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-jasmine-rose-veni.jpg",
     "mrp": 35,
     "price": 28,
@@ -350,7 +363,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Royal Pink & Ivory Carnation Wedding Garland (Jai Mala)",
-    "description": "Exquisite handcrafted wedding Jai Mala featuring densely packed blush pink and ivory carnation blooms, accented with shimmering golden brocade rose medallions and velvety crimson red rose accents. Designed for traditional Indian wedding ceremonies, Anand Karaj, and mandap rituals with lasting freshness delivered across the USA.",
+    "description": "Exquisite handcrafted wedding Jai Mala featuring densely packed blush pink and ivory carnation blooms, accented with shimmering golden brocade rose medallions and velvety crimson red rose accents. Designed for traditional Indian wedding ceremonies, Anand Karaj, and mandap rituals with lasting freshness delivered across the USA. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/new/01.webp",
     "mrp": 105,
     "price": 85,
@@ -389,7 +402,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "White Carnation & Red Rose Wedding Varmala with Golden Tassels",
-    "description": "Traditional handcrafted bridal Varmala featuring pristine white carnations interspersed with layered crimson red rose petal rings, fresh green filler foliage, delicate gold bead accents, and grand twin red rosebud pendant tassels. Ideal for North and South Indian weddings.",
+    "description": "Traditional handcrafted bridal Varmala featuring pristine white carnations interspersed with layered crimson red rose petal rings, fresh green filler foliage, delicate gold bead accents, and grand twin red rosebud pendant tassels. Ideal for North and South Indian weddings. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/new/02.webp",
     "mrp": 115,
     "price": 89,
@@ -428,7 +441,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Peach & Ivory Pastel Carnation Garland with Pearl Drop Tassels",
-    "description": "Contemporary pastel wedding garland crafted with soft peach and ivory carnation petals, adorned with golden tissue rose rings and an elegant clustered pendant featuring hanging pearl strings with rosebuds. Perfect for pastel wedding themes and reception ceremonies.",
+    "description": "Contemporary pastel wedding garland crafted with soft peach and ivory carnation petals, adorned with golden tissue rose rings and an elegant clustered pendant featuring hanging pearl strings with rosebuds. Perfect for pastel wedding themes and reception ceremonies. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/new/03.webp",
     "mrp": 120,
     "price": 92,
@@ -467,7 +480,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Crimson Rose Petal & Peach Carnation Grand Varmala",
-    "description": "Opulent full-length Indian wedding garland featuring alternating sections of deep crimson Dutch rose petals and soft peach carnations, bound by handcrafted golden flower rings and a rich ceremonial medallion base. Delivers a regal bridal aesthetic.",
+    "description": "Opulent full-length Indian wedding garland featuring alternating sections of deep crimson Dutch rose petals and soft peach carnations, bound by handcrafted golden flower rings and a rich ceremonial medallion base. Delivers a regal bridal aesthetic. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/new/04.webp",
     "mrp": 125,
     "price": 98,
@@ -506,7 +519,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fresh Pink Rosebud & White Carnation Wedding Garland",
-    "description": "Classic Hindu and South Indian wedding garland composed of fluffy white carnation bloom segments punctuated by whole fresh pink roses, baby's breath (gypsophila), and delicate rosebud tassels. Lightweight, fragrant, and gracefully balanced.",
+    "description": "Classic Hindu and South Indian wedding garland composed of fluffy white carnation bloom segments punctuated by whole fresh pink roses, baby's breath (gypsophila), and delicate rosebud tassels. Lightweight, fragrant, and gracefully balanced. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/new/5-1.png",
     "mrp": 100,
     "price": 82,
@@ -545,7 +558,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Sacred Pink Lotus Petal Temple & Wedding Garland (Kamal Mala)",
-    "description": "Extremely sacred, handcrafted Kamal Mala created with pristine folded Indian pink lotus blossoms. Highly auspicious for temple deities, Lakshmi Puja, Satyanarayan Katha, housewarming ceremonies, and royal Vedic wedding rituals.",
+    "description": "Extremely sacred, handcrafted Kamal Mala created with pristine folded Indian pink lotus blossoms. Highly auspicious for temple deities, Lakshmi Puja, Satyanarayan Katha, housewarming ceremonies, and royal Vedic wedding rituals. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/new/5-3.png",
     "mrp": 125,
     "price": 95,
@@ -584,7 +597,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Auspicious Red Rose Petal & Golden Marigold Temple Garland",
-    "description": "Traditional temple offering and pooja garland crafted with velvety red rose petals and vibrant golden-yellow marigold (Genda / Sevanthi) medallions, finished with golden thread bells and fresh rosebuds. Perfect for Diwali, Navratri, Ganesh Utsav, and temple archana.",
+    "description": "Traditional temple offering and pooja garland crafted with velvety red rose petals and vibrant golden-yellow marigold (Genda / Sevanthi) medallions, finished with golden thread bells and fresh rosebuds. Perfect for Diwali, Navratri, Ganesh Utsav, and temple archana. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/new/5-4.png",
     "mrp": 85,
     "price": 68,
@@ -623,7 +636,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fresh Orange & Yellow Marigold Loose (Genda)",
-    "description": "Vibrant, fresh-plucked orange and golden-yellow marigold flower heads (Genda Phool) ideal for daily puja, Rangoli floor art, temple garlands, and Diwali decorations.",
+    "description": "Vibrant, fresh-plucked orange and golden-yellow marigold flower heads (Genda Phool) ideal for daily puja, Rangoli floor art, temple garlands, and Diwali decorations. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-orange-marigold-loose.jpg",
     "mrp": 24,
     "price": 19,
@@ -662,7 +675,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fresh Pink Lotus Blooms (Kamal Pushpa)",
-    "description": "Pristine sacred Indian pink lotus blooms (Kamal Pushpa), handpicked with fresh long stems. Auspicious for Goddess Lakshmi worship, temple alankaram, and housewarmings.",
+    "description": "Pristine sacred Indian pink lotus blooms (Kamal Pushpa), handpicked with fresh long stems. Auspicious for Goddess Lakshmi worship, temple alankaram, and housewarmings. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-pink-lotus-blooms.jpg",
     "mrp": 38,
     "price": 29,
@@ -694,7 +707,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fresh Yellow Sevvanthi (Chrysanthemum) Loose",
-    "description": "Fresh, firm yellow Chrysanthemum (Sevvanthi / Chamomile) loose flower heads. Long shelf-life, vibrant golden hue, ideal for archana and festive decor.",
+    "description": "Fresh, firm yellow Chrysanthemum (Sevvanthi / Chamomile) loose flower heads. Long shelf-life, vibrant golden hue, ideal for archana and festive decor. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-yellow-sevanthi-loose.jpg",
     "mrp": 22,
     "price": 18,
@@ -726,7 +739,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fresh Indian Mango Leaves (Mavilai for Kalasam & Toran)",
-    "description": "Fresh green glossy mango tree leaves (Mavilai) harvested with intact stems. Essential for decorating Puja Kalasam, entrance door Toranam, and Vedic havans.",
+    "description": "Fresh green glossy mango tree leaves (Mavilai) harvested with intact stems. Essential for decorating Puja Kalasam, entrance door Toranam, and Vedic havans. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-mango-leaves-mavilai.jpg",
     "mrp": 18,
     "price": 14,
@@ -765,7 +778,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fresh Paan / Betel Leaves (Vethalai)",
-    "description": "Crisp, heart-shaped fresh Indian betel leaves (Paan / Vethalai) with vibrant green color and intact petioles. Vital for Tamboolam, Satyanarayan Puja, and wedding rituals.",
+    "description": "Crisp, heart-shaped fresh Indian betel leaves (Paan / Vethalai) with vibrant green color and intact petioles. Vital for Tamboolam, Satyanarayan Puja, and wedding rituals. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-betel-leaves-paan.jpg",
     "mrp": 20,
     "price": 16,
@@ -804,7 +817,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Fresh Banana Leaves (Vazhai Ilai Cuts for Bhojan)",
-    "description": "Traditional fresh broad Indian plantain / banana leaf cuts. Clean, food-grade, ideal for serving ceremonial festive meals (Sadhya), prasadam, and deity altar lining.",
+    "description": "Traditional fresh broad Indian plantain / banana leaf cuts. Clean, food-grade, ideal for serving ceremonial festive meals (Sadhya), prasadam, and deity altar lining. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-banana-leaves-cuts.jpg",
     "mrp": 24,
     "price": 18,
@@ -836,7 +849,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     "name": "Sacred Tulsi (Holy Basil) Leaves & Manjari Sprigs",
-    "description": "Auspicious Krishna Tulsi and Rama Tulsi sprigs with aromatic leaves and flower manjari. Essential for Lord Vishnu, Krishna, and Satyanarayan pujas.",
+    "description": "Auspicious Krishna Tulsi and Rama Tulsi sprigs with aromatic leaves and flower manjari. Essential for Lord Vishnu, Krishna, and Satyanarayan pujas. Notice: Requires 1-week advance order for fresh import & handcrafting.",
     "image": "/images/products/prod-sacred-tulsi-sprigs.jpg",
     "mrp": 19,
     "price": 15,
@@ -865,37 +878,5 @@ export const SEED_PRODUCTS: SeedProduct[] = [
       }
     ],
     "_id": "6ad5a976230c1ab9bd4baa80"
-  },
-  {
-    "name": "Sacred Durva Grass (Arugampul) & Bilva Leaves Combo",
-    "description": "Divine combination of fresh 3-blade green Durva grass (for Lord Ganesha) and sacred trifoliate Bilva (Bel Patra) leaves (for Lord Shiva Abhishekam). Packed fresh.",
-    "image": "/images/products/prod-durva-bilva-combo.jpg",
-    "mrp": 18,
-    "price": 14,
-    "discount": 22,
-    "quantity": 35,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_LEAVES",
-    "category": "Sacred Pooja Leaves & Greenery",
-    "rating": 4.9,
-    "reviewsCount": 67,
-    "variants": [
-      {
-        "name": "Standard Altar Combo",
-        "mrp": 18,
-        "price": 14,
-        "quantity": 20,
-        "discount": 22
-      },
-      {
-        "name": "Festival Special Pack",
-        "mrp": 32,
-        "price": 25,
-        "quantity": 15,
-        "discount": 22
-      }
-    ],
-    "_id": "6ad5a976230c1ab9bd4baa81"
   }
 ];

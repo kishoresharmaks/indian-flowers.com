@@ -163,11 +163,6 @@ export const THE_INDIAN_FLOWERS_MENU: NavigationMenuItem[] = [
         categoryFilter: 'Wedding & Temple Garlands',
       },
       {
-        title: 'Vilvam Garlands',
-        href: '/#products-section',
-        categoryFilter: 'Sacred Pooja Leaves & Greenery',
-      },
-      {
         title: 'Green Leaves Garlands',
         href: '/#products-section',
         categoryFilter: 'Wedding & Temple Garlands',
@@ -175,11 +170,7 @@ export const THE_INDIAN_FLOWERS_MENU: NavigationMenuItem[] = [
     ],
   },
   {
-    title: 'Blog',
-    href: '/about',
-  },
-  {
     title: 'Contact us',
-    href: '/#contact',
+    href: '/contact',
   },
 ];

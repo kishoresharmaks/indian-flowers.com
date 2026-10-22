@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import BrandLogo from './BrandLogo';
-import { THE_INDIAN_FLOWERS_MENU, NavigationMenuItem } from '@/lib/navigationMenu';
+// Dynamic categories loaded directly from database
 import {
   Search,
   ShoppingBag,
@@ -30,6 +30,13 @@ import {
 } from 'lucide-react';
 import { PinterestIcon } from './Footer';
 
+export interface HeaderCategoryItem {
+  _id?: string;
+  name: string;
+  slug?: string;
+  image?: string;
+}
+
 interface HeaderProps {
   cartItemCount?: number;
   onCartClick?: () => void;
@@ -38,7 +45,7 @@ interface HeaderProps {
   onWishlistClick?: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-  categories?: Array<{ _id?: string; name: string; image?: string; slug?: string }>;
+  categories?: HeaderCategoryItem[];
   selectedCategory?: string;
   onSelectCategory?: (category: string) => void;
   onMenuToggle?: (isOpen: boolean) => void;
@@ -50,6 +57,13 @@ interface HeaderProps {
   customer?: any | null;
   onCustomerChange?: (customer: any | null) => void;
 }
+
+const DEFAULT_HEADER_CATEGORIES: HeaderCategoryItem[] = [
+  { name: 'Fresh Flower Strings & Jasmine' },
+  { name: 'Wedding & Temple Garlands' },
+  { name: 'Loose Flowers for Daily Pooja' },
+  { name: 'Sacred Pooja Leaves & Greenery' },
+];
 
 export default function Header({
   cartItemCount,
@@ -79,6 +93,24 @@ export default function Header({
   const [internalCartCount, setInternalCartCount] = useState<number>(0);
   const [internalWishlistCount, setInternalWishlistCount] = useState<number>(0);
   const [internalSearch, setInternalSearch] = useState<string>('');
+  const [internalCategories, setInternalCategories] = useState<HeaderCategoryItem[]>([]);
+
+  useEffect(() => {
+    if (!categories || categories.length === 0) {
+      fetch('/api/categories')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setInternalCategories(data.data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [categories]);
+
+  const activeCategories: HeaderCategoryItem[] = (categories && categories.length > 0)
+    ? categories
+    : (internalCategories.length > 0 ? internalCategories : DEFAULT_HEADER_CATEGORIES);
 
   const activeCustomer = customer !== undefined ? customer : internalCustomer;
   const activeCartCount = cartItemCount !== undefined ? cartItemCount : internalCartCount;
@@ -185,8 +217,6 @@ export default function Header({
   };
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [expandedMobileMenus, setExpandedMobileMenus] = useState<Record<string, boolean>>({});
-  const [activeHoverMenu, setActiveHoverMenu] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -201,13 +231,6 @@ export default function Header({
     }
     setIsMobileMenuOpen(next);
     if (onMenuToggle) onMenuToggle(next);
-  };
-
-  const toggleSubmenuAccordion = (menuTitle: string) => {
-    setExpandedMobileMenus((prev) => ({
-      ...prev,
-      [menuTitle]: !prev[menuTitle],
-    }));
   };
 
   // Close mobile drawer on Escape key press
@@ -245,27 +268,7 @@ export default function Header({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleMenuItemClick = (item: NavigationMenuItem) => {
-    if (item.categoryFilter) {
-      if (onSelectCategory) {
-        onSelectCategory(item.categoryFilter);
-      } else {
-        router.push(`/?category=${encodeURIComponent(item.categoryFilter)}#products-section`);
-      }
-    } else if (item.href) {
-      router.push(item.href);
-    }
-    toggleMobileMenu(false);
-  };
 
-  const handleSubItemClick = (sub: { title: string; href: string; categoryFilter: string }) => {
-    if (onSelectCategory) {
-      onSelectCategory(sub.categoryFilter);
-    } else {
-      router.push(`/?category=${encodeURIComponent(sub.categoryFilter)}#products-section`);
-    }
-    toggleMobileMenu(false);
-  };
 
   const handleCartClick = () => {
     if (onCartClick) {
@@ -523,61 +526,89 @@ export default function Header({
             </div>
           </div>
 
-          {/* 3. DESKTOP MAIN NAVIGATION BAR (Recreated exactly from theindianflowers.com) */}
+          {/* 3. DESKTOP MAIN NAVIGATION BAR (Dynamic Categories from Database) */}
           <nav className="hidden md:block bg-white border-t border-stone-100">
             <div className="w-full max-w-7xl xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-              <ul className="flex items-center justify-start gap-6 lg:gap-8 py-2.5 text-[13px] font-semibold text-stone-800 tracking-tight">
-                {THE_INDIAN_FLOWERS_MENU.map((item) => {
-                  const hasSub = Boolean(item.subItems && item.subItems.length > 0);
-                  const isHovered = activeHoverMenu === item.title;
+              <ul className="flex items-center justify-start gap-5 lg:gap-7 py-2.5 text-[13px] font-semibold text-stone-800 tracking-tight overflow-x-auto no-scrollbar">
+                <li>
+                  <Link
+                    href="/"
+                    onClick={() => {
+                      if (onSelectCategory) {
+                        onSelectCategory('All');
+                      }
+                    }}
+                    className={`py-1 hover:text-[#0B3B24] transition-colors whitespace-nowrap ${
+                      selectedCategory === 'All' ? 'text-[#0B3B24] font-bold' : 'text-stone-700'
+                    }`}
+                  >
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/about"
+                    className="py-1 text-stone-700 hover:text-[#0B3B24] transition-colors whitespace-nowrap"
+                  >
+                    About us
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onSelectCategory) {
+                        onSelectCategory('All');
+                        const el = document.getElementById('products-section');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      } else {
+                        router.push('/#products-section');
+                      }
+                    }}
+                    className={`py-1 hover:text-[#0B3B24] transition-colors whitespace-nowrap cursor-pointer ${
+                      selectedCategory === 'All' ? 'text-[#0B3B24] font-bold' : 'text-stone-700'
+                    }`}
+                  >
+                    All Flowers
+                  </button>
+                </li>
 
+                {/* Dynamic Categories from MongoDB */}
+                {activeCategories.map((cat) => {
+                  const isSelected = selectedCategory === cat.name;
                   return (
-                    <li
-                      key={item.title}
-                      className="relative"
-                      onMouseEnter={() => hasSub && setActiveHoverMenu(item.title)}
-                      onMouseLeave={() => hasSub && setActiveHoverMenu(null)}
-                    >
+                    <li key={cat._id || cat.name}>
                       <button
                         type="button"
-                        onClick={() => handleMenuItemClick(item)}
-                        className={`flex items-center gap-1 py-1 hover:text-[#ed2353] transition-colors cursor-pointer ${
-                          selectedCategory === item.categoryFilter
-                            ? 'text-[#ed2353] font-bold'
-                            : 'text-stone-700'
+                        onClick={() => {
+                          if (onSelectCategory) {
+                            onSelectCategory(cat.name);
+                            const el = document.getElementById('products-section');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                          } else {
+                            router.push(`/?category=${encodeURIComponent(cat.name)}#products-section`);
+                          }
+                        }}
+                        className={`py-1 transition-colors whitespace-nowrap cursor-pointer ${
+                          isSelected
+                            ? 'text-[#0B3B24] font-bold border-b-2 border-[#0B3B24]'
+                            : 'text-stone-700 hover:text-[#0B3B24]'
                         }`}
                       >
-                        <span>{item.title}</span>
-                        {hasSub && (
-                          <ChevronDown
-                            className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                              isHovered ? 'rotate-180 text-[#ed2353]' : 'text-stone-400'
-                            }`}
-                          />
-                        )}
+                        {cat.name}
                       </button>
-
-                      {/* Dropdown Menu */}
-                      {hasSub && isHovered && (
-                        <div className="absolute left-0 top-full pt-1.5 z-50 min-w-[240px] animate-in fade-in duration-150">
-                          <div className="bg-white rounded-xl shadow-xl border border-stone-100/90 py-2.5 px-1.5">
-                            {item.subItems!.map((sub) => (
-                              <button
-                                key={sub.title}
-                                type="button"
-                                onClick={() => handleSubItemClick(sub)}
-                                className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-stone-700 hover:text-[#ed2353] hover:bg-rose-50/60 transition-colors flex items-center justify-between group cursor-pointer"
-                              >
-                                <span>{sub.title}</span>
-                                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#ed2353] transition-colors" />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </li>
                   );
                 })}
+
+                <li>
+                  <Link
+                    href="/contact"
+                    className="py-1 text-stone-700 hover:text-[#0B3B24] transition-colors whitespace-nowrap"
+                  >
+                    Contact us
+                  </Link>
+                </li>
               </ul>
             </div>
           </nav>
@@ -669,65 +700,92 @@ export default function Header({
             </Link>
           )}
 
-          {/* Hierarchical Accordion Menu (Exact recreated structure from theindianflowers.com) */}
-          <div className="border-t border-stone-100 pt-2 space-y-0.5">
-            {THE_INDIAN_FLOWERS_MENU.map((item) => {
-              const hasSub = Boolean(item.subItems && item.subItems.length > 0);
-              const isExpanded = expandedMobileMenus[item.title];
+          {/* Dynamic Navigation Menu from Database */}
+          <div className="border-t border-stone-100 pt-2 space-y-1">
+            <Link
+              href="/"
+              onClick={() => {
+                toggleMobileMenu(false);
+                if (onSelectCategory) onSelectCategory('All');
+              }}
+              className={`w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
+                selectedCategory === 'All'
+                  ? 'bg-emerald-50 text-[#0B3B24]'
+                  : 'text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24]'
+              }`}
+            >
+              <span>Home</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </Link>
 
+            <Link
+              href="/about"
+              onClick={() => toggleMobileMenu(false)}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] transition-colors"
+            >
+              <span>About us</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                toggleMobileMenu(false);
+                if (onSelectCategory) {
+                  onSelectCategory('All');
+                  const el = document.getElementById('products-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  router.push('/#products-section');
+                }
+              }}
+              className={`w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold transition-colors text-left cursor-pointer ${
+                selectedCategory === 'All'
+                  ? 'bg-emerald-50 text-[#0B3B24]'
+                  : 'text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24]'
+              }`}
+            >
+              <span>All Flowers</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            {/* Dynamic categories from MongoDB */}
+            {activeCategories.map((cat) => {
+              const isSelected = selectedCategory === cat.name;
               return (
-                <div key={item.title} className="border-b border-stone-100/70 last:border-b-0">
-                  <div className="flex items-center justify-between py-2">
-                    <button
-                      type="button"
-                      onClick={() => handleMenuItemClick(item)}
-                      className={`text-left text-[13.5px] font-semibold transition-colors flex-1 cursor-pointer ${
-                        selectedCategory === item.categoryFilter
-                          ? 'text-[#ed2353]'
-                          : 'text-stone-800 hover:text-[#ed2353]'
-                      }`}
-                    >
-                      {item.title}
-                    </button>
-
-                    {hasSub && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleSubmenuAccordion(item.title);
-                        }}
-                        className="w-8 h-8 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
-                        aria-label={`Toggle ${item.title} subcategories`}
-                      >
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform duration-200 ${
-                            isExpanded ? 'rotate-180 text-[#ed2353]' : ''
-                          }`}
-                        />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Submenu List */}
-                  {hasSub && isExpanded && (
-                    <div className="pl-3 pb-2 pt-0.5 space-y-1 animate-in fade-in duration-150">
-                      {item.subItems!.map((sub) => (
-                        <button
-                          key={sub.title}
-                          type="button"
-                          onClick={() => handleSubItemClick(sub)}
-                          className="w-full text-left py-1.5 px-2 rounded-md text-xs font-medium text-stone-600 hover:text-[#ed2353] hover:bg-rose-50/50 transition-colors flex items-center justify-between cursor-pointer"
-                        >
-                          <span>{sub.title}</span>
-                          <ChevronRight className="w-3.5 h-3.5 text-stone-300" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <button
+                  key={cat._id || cat.name}
+                  type="button"
+                  onClick={() => {
+                    toggleMobileMenu(false);
+                    if (onSelectCategory) {
+                      onSelectCategory(cat.name);
+                      const el = document.getElementById('products-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      router.push(`/?category=${encodeURIComponent(cat.name)}#products-section`);
+                    }
+                  }}
+                  className={`w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold transition-colors text-left cursor-pointer ${
+                    isSelected
+                      ? 'bg-emerald-50 text-[#0B3B24]'
+                      : 'text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24]'
+                  }`}
+                >
+                  <span>{cat.name}</span>
+                  <ChevronRight className="w-4 h-4 text-stone-300" />
+                </button>
               );
             })}
+
+            <Link
+              href="/contact"
+              onClick={() => toggleMobileMenu(false)}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] transition-colors"
+            >
+              <span>Contact us</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </Link>
           </div>
 
           {/* Quick Action Links: Track Order & Wishlist */}
