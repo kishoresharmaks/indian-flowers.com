@@ -132,7 +132,7 @@ export default function Footer({
   const mapSearchUrl = 'https://www.google.com/maps/search/?api=1&query=14922+Bobcat+lane,+Fontana,+CA+92336';
 
   return (
-    <footer className="bg-[#0B3B24] text-white pt-8 sm:pt-10 pb-24 md:pb-28 border-t border-emerald-900/60 overflow-hidden">
+    <footer className="bg-[#0B3B24] text-white pt-6 sm:pt-7 pb-6 sm:pb-7 border-t border-emerald-900/60 overflow-hidden">
       <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1680px] 3xl:max-w-[1820px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
 
         {/* ========================================================= */}
@@ -431,9 +431,9 @@ export default function Footer({
 
         {/* ========================================================= */}
         {/* 2. COMPACT, WELL-STRUCTURED DESKTOP LAYOUT (>= 1024px)     */}
-        {/* Clean 4-column balanced grid with no bloated cards         */}
+        {/* Clean 4-column balanced grid with horizontal pickup hubs   */}
         {/* ========================================================= */}
-        <div className="hidden lg:block space-y-6">
+        <div className="hidden lg:block space-y-4">
           {/* Top 4-Column Grid */}
           <div className="grid grid-cols-12 gap-6 xl:gap-8 items-start">
             {/* Column 1: Brand Info & Contact (4 cols) */}
@@ -602,7 +602,7 @@ export default function Footer({
               </h4>
 
               {/* Combined Sleek Hubs Card */}
-              <div className="bg-emerald-950/80 border border-emerald-800/70 rounded-xl p-3.5 space-y-2.5 text-xs">
+              <div className="bg-emerald-950/80 border border-emerald-800/70 rounded-xl p-3.5 space-y-2 text-xs">
                 <div>
                   <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
@@ -627,32 +627,34 @@ export default function Footer({
                   </p>
                 </div>
               </div>
-
-              {/* Pickup Locations Pill Badges */}
-              <div className="space-y-1">
-                <span className="text-[10.5px] font-semibold text-white/80 block">
-                  Local Pickup Locations:
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {PICKUP_LOCATIONS.map((loc) => (
-                    <span
-                      key={loc.label}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/15 border border-white/15 text-[10px] text-white/90 font-medium transition-colors"
-                    >
-                      <Navigation className="w-2 h-2 text-[#8FE7B8]" />
-                      <span>{loc.label}</span>
-                    </span>
-                  ))}
-                </div>
-                <p className="text-[9.5px] text-white/50 pt-0.5">
-                  Local pickup available for custom wedding garlands and bulk orders.
-                </p>
-              </div>
             </div>
           </div>
 
+          {/* Horizontal Local Pickup Locations Strip: Clean, Full-Width, Space-Efficient */}
+          <div className="py-2.5 px-3.5 sm:px-4 rounded-xl bg-white/[0.04] border border-white/10 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-white/90 text-xs flex items-center gap-1.5 shrink-0">
+                <Navigation className="w-3.5 h-3.5 text-[#8FE7B8]" />
+                <span>Local Pickup Locations:</span>
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {PICKUP_LOCATIONS.map((loc) => (
+                  <span
+                    key={loc.label}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/10 hover:bg-white/15 border border-white/15 text-[11px] text-white/95 font-medium transition-colors"
+                  >
+                    <span>{loc.label}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <p className="text-[11px] text-emerald-200/80 font-normal shrink-0">
+              Local pickup available for custom wedding garlands and bulk orders.
+            </p>
+          </div>
+
           {/* Copyright Bottom Bar (Desktop) */}
-          <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/70">
+          <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/70">
             <p className="text-[11.5px]">
               Copyright &copy; 2026{' '}
               <Link
