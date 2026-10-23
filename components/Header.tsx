@@ -207,7 +207,6 @@ export default function Header({
 
   // Active dropdown key on Desktop Nav Bar ('all-flowers' | 'wedding' | 'more' | categoryName | null)
   const [openDropdownKey, setOpenDropdownKey] = useState<string | null>(null);
-  const [flyoutCategoryName, setFlyoutCategoryName] = useState<string | null>('Indian Wedding Garlands');
   const navDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mobile drawer states
@@ -769,132 +768,7 @@ export default function Header({
                   </Link>
                 </li>
 
-                {/* 3. All Flowers ⌵ (Dropdown with Categories & Subcategories Flyout) */}
-                <li
-                  className="relative shrink-0"
-                  onMouseEnter={() => handleDropdownMouseEnter('all-flowers')}
-                  onMouseLeave={handleDropdownMouseLeave}
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setOpenDropdownKey(openDropdownKey === 'all-flowers' ? null : 'all-flowers')
-                    }
-                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      openDropdownKey === 'all-flowers' ? 'text-[#0B3B24] font-bold' : ''
-                    }`}
-                  >
-                    <span>All Flowers</span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        openDropdownKey === 'all-flowers'
-                          ? 'rotate-180 text-[#0B3B24]'
-                          : 'text-stone-400 group-hover:text-[#0B3B24]'
-                      }`}
-                    />
-                  </button>
-
-                  {/* All Flowers Dropdown Menu with Nested Right Flyout */}
-                  {openDropdownKey === 'all-flowers' && (
-                    <div
-                      className="absolute left-0 top-full mt-1.5 w-72 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2 z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2"
-                      style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
-                    >
-                      <div className="space-y-0.5">
-                        {activeCategories.map((cat) => {
-                          const hasSubcategories =
-                            Array.isArray(cat.subcategories) && cat.subcategories.length > 0;
-                          const isFlyoutHovered = flyoutCategoryName === cat.name;
-
-                          return (
-                            <div
-                              key={cat._id || cat.name}
-                              className="relative"
-                              onMouseEnter={() => {
-                                if (hasSubcategories) {
-                                  setFlyoutCategoryName(cat.name);
-                                }
-                              }}
-                            >
-                              <div
-                                onClick={() => {
-                                  if (!hasSubcategories) {
-                                    handleCategorySelect(cat.name);
-                                  }
-                                }}
-                                className={`w-full px-4 py-2 text-[13px] font-medium flex items-center justify-between transition-colors cursor-pointer ${
-                                  selectedCategory === cat.name
-                                    ? 'bg-emerald-50 text-[#0B3B24] font-bold'
-                                    : isFlyoutHovered && hasSubcategories
-                                    ? 'bg-stone-50 text-[#0B3B24]'
-                                    : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  {cat.image ? (
-                                    <img
-                                      src={cat.image}
-                                      alt={cat.name}
-                                      className="w-4.5 h-4.5 rounded-full object-cover shrink-0 border border-stone-200"
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                      }}
-                                    />
-                                  ) : null}
-                                  <span className="truncate">{cat.name}</span>
-                                </div>
-                                {hasSubcategories && (
-                                  <ChevronRight className="w-3.5 h-3.5 text-stone-400 shrink-0 ml-2" />
-                                )}
-                              </div>
-
-                              {/* Nested Subcategories Flyout Box (Matching User's Red Marker Circle) */}
-                              {hasSubcategories && isFlyoutHovered && (
-                                <div
-                                  className="absolute left-full top-0 ml-1 w-64 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2.5 z-50 animate-in fade-in duration-150"
-                                  style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
-                                  onMouseEnter={() => setFlyoutCategoryName(cat.name)}
-                                >
-                                  <div className="px-3 pb-1.5 mb-1 border-b border-stone-100 flex items-center justify-between">
-                                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-stone-400 truncate">
-                                      {cat.name}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleCategorySelect(cat.name)}
-                                      className="text-[11px] font-semibold text-[#0B3B24] hover:underline cursor-pointer shrink-0 ml-2"
-                                    >
-                                      All
-                                    </button>
-                                  </div>
-                                  <div className="space-y-0.5">
-                                    {cat.subcategories!.map((sub) => (
-                                      <button
-                                        key={sub._id || sub.name}
-                                        type="button"
-                                        onClick={() => handleCategorySelect(cat.name, sub.name)}
-                                        className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors flex items-center gap-2 cursor-pointer ${
-                                          selectedSubcategory === sub.name
-                                            ? 'bg-emerald-50 text-[#0B3B24] font-bold'
-                                            : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
-                                        }`}
-                                      >
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                        <span className="truncate">{sub.name}</span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </li>
-
-                {/* 4. Indian Wedding Garlands ⌵ (Direct Subcategories Dropdown: Rose Petal, Button Rose, Carnation) */}
+{/* 4. Indian Wedding Garlands ⌵ (Direct Subcategories Dropdown: Rose Petal, Button Rose, Carnation) */}
                 <li
                   className="relative shrink-0"
                   onMouseEnter={() => handleDropdownMouseEnter('wedding')}
@@ -1255,17 +1129,7 @@ export default function Header({
               <ChevronRight className="w-4 h-4 text-stone-300" />
             </Link>
 
-            {/* 3. All Flowers */}
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('All')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] transition-colors text-left"
-            >
-              <span>All Flowers</span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            {/* 4. Indian Wedding Garlands (With Accordion for Subcategories) */}
+{/* 4. Indian Wedding Garlands (With Accordion for Subcategories) */}
             <div className="rounded-lg overflow-hidden border border-emerald-100 bg-emerald-50/30">
               <button
                 type="button"
