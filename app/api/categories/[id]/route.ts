@@ -44,7 +44,7 @@ export async function PUT(
     await connectToDatabase();
     const { id } = params;
     const body = await request.json();
-    const { name, image, order } = body;
+    const { name, image, order, subcategories } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -56,6 +56,7 @@ export async function PUT(
     const updateData: any = { name: name.trim() };
     if (image !== undefined) updateData.image = image;
     if (order !== undefined) updateData.order = order;
+    if (subcategories !== undefined) updateData.subcategories = subcategories;
 
     const updated = await Category.findByIdAndUpdate(
       id,

@@ -28,6 +28,7 @@ export interface Product {
   taxCode?: string;
   gst?: number;
   category?: string;
+  subcategory?: string;
   rating?: number;
   reviewsCount?: number;
   variants?: ProductVariant[];

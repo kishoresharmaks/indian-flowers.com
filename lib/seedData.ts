@@ -1,7 +1,16 @@
+export interface SeedSubcategory {
+  name: string;
+  slug?: string;
+  image?: string;
+  order?: number;
+}
+
 export interface SeedCategory {
   name: string;
+  slug?: string;
   image: string;
   order: number;
+  subcategories?: SeedSubcategory[];
 }
 
 export interface SeedBanner {
@@ -56,25 +65,93 @@ export interface SeedProduct {
 
 export const SEED_CATEGORIES: SeedCategory[] = [
   {
-    name: 'Fresh Flower Strings & Jasmine',
-    image: '/images/categories/cat-jasmine-strings.jpg',
-    order: 1,
-  },
-  {
-    name: 'Wedding & Temple Garlands',
+    name: 'Indian Wedding Garlands',
+    slug: 'indian-wedding-garlands',
     image: '/images/categories/cat-wedding-garlands.jpg',
+    order: 1,
+    subcategories: [
+      { name: 'Rose Petal Garlands', slug: 'rose-petal-garlands', image: '/images/products/prod-rose-petal-varmala.jpg', order: 1 },
+      { name: 'Button Rose Garlands', slug: 'button-rose-garlands', image: '/images/categories/cat-wedding-garlands.jpg', order: 2 },
+      { name: 'Carnation Garlands', slug: 'carnation-garlands', image: '/images/products/prod-carnation-rose-garland.jpg', order: 3 },
+    ]
+  },
+  {
+    name: 'Nanthiyavattom Garlands',
+    slug: 'nanthiyavattom-garlands',
+    image: '/images/products/prod-madurai-mallipoo.jpg',
     order: 2,
+    subcategories: []
   },
   {
-    name: 'Loose Flowers for Daily Pooja',
-    image: '/images/categories/cat-loose-pooja.jpg',
+    name: 'Tube Rose Lily Garlands',
+    slug: 'tube-rose-lily-garlands',
+    image: '/images/products/prod-sampangi-string.jpg',
     order: 3,
+    subcategories: []
   },
   {
-    name: 'Sacred Pooja Leaves & Greenery',
-    image: '/images/categories/cat-pooja-leaves.jpg',
+    name: 'Pooja flowers',
+    slug: 'pooja-flowers',
+    image: '/images/categories/cat-loose-pooja.jpg',
     order: 4,
+    subcategories: []
   },
+  {
+    name: 'Pooja leaves',
+    slug: 'pooja-leaves',
+    image: '/images/categories/cat-pooja-leaves.jpg',
+    order: 5,
+    subcategories: []
+  },
+  {
+    name: 'strings',
+    slug: 'strings',
+    image: '/images/categories/cat-jasmine-strings.jpg',
+    order: 6,
+    subcategories: []
+  },
+  {
+    name: 'Decor Items',
+    slug: 'decor-items',
+    image: '/images/categories/cat-pooja-kits.jpg',
+    order: 7,
+    subcategories: []
+  },
+  {
+    name: 'Coconut',
+    slug: 'coconut',
+    image: '/images/products/prod-durva-bilva-combo.jpg',
+    order: 8,
+    subcategories: []
+  },
+  {
+    name: 'Event Decoration',
+    slug: 'event-decoration',
+    image: '/images/categories/cat-bouquets.jpg',
+    order: 9,
+    subcategories: []
+  },
+  {
+    name: 'Temple and Pooja Garlands',
+    slug: 'temple-and-pooja-garlands',
+    image: '/images/products/prod-marigold-temple-garland.jpg',
+    order: 10,
+    subcategories: []
+  },
+  {
+    name: 'House warming Garlands',
+    slug: 'house-warming-garlands',
+    image: '/images/banners/hero-wedding-tif-temple.jpg',
+    order: 11,
+    subcategories: []
+  },
+  {
+    name: 'Veni',
+    slug: 'veni',
+    image: '/images/products/prod-jasmine-rose-veni.jpg',
+    order: 12,
+    subcategories: []
+  }
 ];
 
 export const SEED_BANNERS: SeedBanner[] = [

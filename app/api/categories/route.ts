@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   try {
     if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
-    const { name, image, order } = await request.json();
+    const { name, image, order, subcategories } = await request.json();
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -33,11 +33,10 @@ export async function POST(request: NextRequest) {
 
     const existing = await Category.findOne({ name: name.trim() });
     if (existing) {
-      if (image || order !== undefined) {
-        if (image) existing.image = image;
-        if (order !== undefined) existing.order = order;
-        await existing.save();
-      }
+      if (image !== undefined) existing.image = image;
+      if (order !== undefined) existing.order = order;
+      if (subcategories !== undefined) existing.subcategories = subcategories;
+      await existing.save();
       return NextResponse.json(
         { success: true, message: 'Category updated', data: existing },
         { status: 200 }
@@ -48,6 +47,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       image: image || '',
       order: order || 0,
+      subcategories: Array.isArray(subcategories) ? subcategories : [],
     });
     return NextResponse.json(
       { success: true, message: 'Category created successfully', data: category },

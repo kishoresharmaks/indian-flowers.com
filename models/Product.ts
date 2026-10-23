@@ -21,6 +21,7 @@ export interface IProduct extends Document {
   taxCode?: string;
   gst?: number;
   category?: string;
+  subcategory?: string;
   rating?: number;
   reviewsCount?: number;
   variants?: IProductVariant[];
@@ -57,6 +58,7 @@ const ProductSchema: Schema = new Schema(
     taxCode: { type: String, default: '' },
     gst: { type: Number, min: 0, default: 0 },
     category: { type: String, default: 'General' },
+    subcategory: { type: String, default: '' },
     rating: { type: Number, default: 4.8 },
     reviewsCount: { type: Number, default: 50 },
     variants: [VariantSchema],
@@ -66,7 +68,7 @@ const ProductSchema: Schema = new Schema(
 
 // Indexes to optimize MongoDB Atlas queries & avoid 32MB memory sort limit
 ProductSchema.index({ createdAt: -1 });
-ProductSchema.index({ category: 1, createdAt: -1 });
+ProductSchema.index({ category: 1, subcategory: 1, createdAt: -1 });
 ProductSchema.index({ name: 'text', description: 'text' });
 
 // Pre-save hook to calculate discount percentage if not manually specified

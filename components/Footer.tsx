@@ -81,10 +81,18 @@ export const SOCIAL_LINKS = [
 ];
 
 export const DEFAULT_FOOTER_CATEGORIES: { _id?: string; name: string }[] = [
-  { _id: 'cat-strings', name: 'Fresh Flower Strings & Jasmine' },
-  { _id: 'cat-garlands', name: 'Wedding & Temple Garlands' },
-  { _id: 'cat-pooja', name: 'Loose Flowers for Daily Pooja' },
-  { _id: 'cat-leaves', name: 'Sacred Pooja Leaves & Greenery' },
+  { _id: 'cat-wedding', name: 'Indian Wedding Garlands' },
+  { _id: 'cat-nanthiyavattom', name: 'Nanthiyavattom Garlands' },
+  { _id: 'cat-tuberose', name: 'Tube Rose Lily Garlands' },
+  { _id: 'cat-pooja-flowers', name: 'Pooja flowers' },
+  { _id: 'cat-pooja-leaves', name: 'Pooja leaves' },
+  { _id: 'cat-strings', name: 'strings' },
+  { _id: 'cat-decor', name: 'Decor Items' },
+  { _id: 'cat-coconut', name: 'Coconut' },
+  { _id: 'cat-event', name: 'Event Decoration' },
+  { _id: 'cat-temple', name: 'Temple and Pooja Garlands' },
+  { _id: 'cat-housewarming', name: 'House warming Garlands' },
+  { _id: 'cat-veni', name: 'Veni' },
 ];
 
 export default function Footer({

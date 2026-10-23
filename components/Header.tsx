@@ -4,17 +4,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import BrandLogo from './BrandLogo';
-// Dynamic categories loaded directly from database
 import {
+  Home,
   Search,
   ShoppingBag,
   Menu,
   X,
   Truck,
-  Clock,
-  ShieldCheck,
   Phone,
   Mail,
+  MapPin,
   Heart,
   ChevronRight,
   ChevronDown,
@@ -22,19 +21,29 @@ import {
   LogOut,
   Package,
   Award,
-  Coins,
   Facebook,
   Instagram,
   Youtube,
-  Store,
+  Calendar,
+  Sparkles,
 } from 'lucide-react';
 import { PinterestIcon } from './Footer';
+
+export interface HeaderSubcategoryItem {
+  _id?: string;
+  name: string;
+  slug?: string;
+  image?: string;
+  order?: number;
+}
 
 export interface HeaderCategoryItem {
   _id?: string;
   name: string;
   slug?: string;
   image?: string;
+  order?: number;
+  subcategories?: HeaderSubcategoryItem[];
 }
 
 interface HeaderProps {
@@ -47,7 +56,8 @@ interface HeaderProps {
   onSearchChange?: (query: string) => void;
   categories?: HeaderCategoryItem[];
   selectedCategory?: string;
-  onSelectCategory?: (category: string) => void;
+  selectedSubcategory?: string;
+  onSelectCategory?: (category: string, subcategory?: string) => void;
   onMenuToggle?: (isOpen: boolean) => void;
   storeName?: string;
   storeTagline?: string;
@@ -58,11 +68,116 @@ interface HeaderProps {
   onCustomerChange?: (customer: any | null) => void;
 }
 
+/**
+ * Authentic Auspicious Indian Flower / Marigold Icon matching reference design
+ */
+function MarigoldIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" fill="#F59E0B" />
+      <circle cx="12" cy="12" r="7.5" fill="#D97706" />
+      <circle cx="12" cy="12" r="5" fill="#B45309" />
+      <circle cx="12" cy="12" r="2.5" fill="#FDE68A" />
+      <path
+        d="M12 2C12 5 12 5 12 12M12 22C12 19 12 19 12 12M2 12C5 12 5 12 12 12M22 12C19 12 19 12 12 12"
+        stroke="#FEF3C7"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      <path
+        d="M4.93 4.93L12 12M19.07 19.07L12 12M4.93 19.07L12 12M19.07 4.93L12 12"
+        stroke="#FEF3C7"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Auspicious Whole Pooja Coconut Icon matching reference design
+ */
+function CoconutIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+      {/* Husk/shell outer */}
+      <circle cx="12" cy="12" r="9.5" fill="#78350F" />
+      {/* Inner shell edge */}
+      <circle cx="12" cy="12" r="8" fill="#92400E" />
+      {/* Coconut white meat */}
+      <circle cx="12" cy="12" r="6.8" fill="#FEF3C7" />
+      {/* Water cavity inside */}
+      <circle cx="12" cy="12" r="4.5" fill="#ECFDF5" />
+      {/* 3 distinctive eyes at top */}
+      <circle cx="10" cy="9.5" r="1.1" fill="#451A03" />
+      <circle cx="14" cy="9.5" r="1.1" fill="#451A03" />
+      <circle cx="12" cy="14" r="1.1" fill="#451A03" />
+    </svg>
+  );
+}
+
+/**
+ * Event Decoration Calendar Icon matching reference design
+ */
+function EventCalendarIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="17" rx="3" fill="#FEE2E2" stroke="#DC2626" strokeWidth="1.5" />
+      <path d="M3 7C3 5.34315 4.34315 4 6 4H18C19.6569 4 21 5.34315 21 7V9H3V7Z" fill="#DC2626" />
+      <rect x="7" y="2" width="2" height="4" rx="1" fill="#991B1B" />
+      <rect x="15" y="2" width="2" height="4" rx="1" fill="#991B1B" />
+      <circle cx="8" cy="13" r="1" fill="#DC2626" />
+      <circle cx="12" cy="13" r="1" fill="#DC2626" />
+      <circle cx="16" cy="13" r="1" fill="#DC2626" />
+      <circle cx="8" cy="17" r="1" fill="#DC2626" />
+      <circle cx="12" cy="17" r="1" fill="#DC2626" />
+      <circle cx="16" cy="17" r="1" fill="#DC2626" />
+    </svg>
+  );
+}
+
+/**
+ * 9-Dot Grid Icon for "More" Categories Menu
+ */
+function GridNineIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="currentColor" aria-hidden="true">
+      <circle cx="3" cy="3" r="1.5" />
+      <circle cx="8" cy="3" r="1.5" />
+      <circle cx="13" cy="3" r="1.5" />
+      <circle cx="3" cy="8" r="1.5" />
+      <circle cx="8" cy="8" r="1.5" />
+      <circle cx="13" cy="8" r="1.5" />
+      <circle cx="3" cy="13" r="1.5" />
+      <circle cx="8" cy="13" r="1.5" />
+      <circle cx="13" cy="13" r="1.5" />
+    </svg>
+  );
+}
+
 const DEFAULT_HEADER_CATEGORIES: HeaderCategoryItem[] = [
-  { name: 'Fresh Flower Strings & Jasmine' },
-  { name: 'Wedding & Temple Garlands' },
-  { name: 'Loose Flowers for Daily Pooja' },
-  { name: 'Sacred Pooja Leaves & Greenery' },
+  {
+    name: 'Indian Wedding Garlands',
+    slug: 'indian-wedding-garlands',
+    image: '/images/categories/cat-wedding-garlands.jpg',
+    order: 1,
+    subcategories: [
+      { name: 'Rose Petal Garlands', slug: 'rose-petal-garlands', image: '/images/products/prod-rose-petal-varmala.jpg', order: 1 },
+      { name: 'Button Rose Garlands', slug: 'button-rose-garlands', image: '/images/categories/cat-wedding-garlands.jpg', order: 2 },
+      { name: 'Carnation Garlands', slug: 'carnation-garlands', image: '/images/products/prod-carnation-rose-garland.jpg', order: 3 },
+    ],
+  },
+  { name: 'Nanthiyavattom Garlands', slug: 'nanthiyavattom-garlands', image: '/images/products/prod-madurai-mallipoo.jpg', order: 2 },
+  { name: 'Tube Rose Lily Garlands', slug: 'tube-rose-lily-garlands', image: '/images/products/prod-sampangi-string.jpg', order: 3 },
+  { name: 'Pooja flowers', slug: 'pooja-flowers', image: '/images/categories/cat-loose-pooja.jpg', order: 4 },
+  { name: 'Pooja leaves', slug: 'pooja-leaves', image: '/images/categories/cat-pooja-leaves.jpg', order: 5 },
+  { name: 'strings', slug: 'strings', image: '/images/categories/cat-jasmine-strings.jpg', order: 6 },
+  { name: 'Decor Items', slug: 'decor-items', image: '/images/categories/cat-pooja-kits.jpg', order: 7 },
+  { name: 'Coconut', slug: 'coconut', image: '/images/products/prod-durva-bilva-combo.jpg', order: 8 },
+  { name: 'Event Decoration', slug: 'event-decoration', image: '/images/categories/cat-bouquets.jpg', order: 9 },
+  { name: 'Temple and Pooja Garlands', slug: 'temple-and-pooja-garlands', image: '/images/products/prod-marigold-temple-garland.jpg', order: 10 },
+  { name: 'House warming Garlands', slug: 'house-warming-garlands', image: '/images/banners/hero-wedding-tif-temple.jpg', order: 11 },
+  { name: 'Veni', slug: 'veni', image: '/images/products/prod-jasmine-rose-veni.jpg', order: 12 },
 ];
 
 export default function Header({
@@ -75,6 +190,7 @@ export default function Header({
   onSearchChange,
   categories,
   selectedCategory = 'All',
+  selectedSubcategory = '',
   onSelectCategory,
   onMenuToggle,
   storeName = 'The Indian Flowers',
@@ -89,11 +205,25 @@ export default function Header({
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Active dropdown key on Desktop Nav Bar ('all-flowers' | 'wedding' | 'more' | categoryName | null)
+  const [openDropdownKey, setOpenDropdownKey] = useState<string | null>(null);
+  const [flyoutCategoryName, setFlyoutCategoryName] = useState<string | null>('Indian Wedding Garlands');
+  const navDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Mobile drawer states
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileExpandedCatName, setMobileExpandedCatName] = useState<string | null>('Indian Wedding Garlands');
+
   // Universal fallbacks for standalone pages
   const [internalCartCount, setInternalCartCount] = useState<number>(0);
   const [internalWishlistCount, setInternalWishlistCount] = useState<number>(0);
   const [internalSearch, setInternalSearch] = useState<string>('');
   const [internalCategories, setInternalCategories] = useState<HeaderCategoryItem[]>([]);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const drawerRef = useRef<HTMLElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const navContainerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!categories || categories.length === 0) {
@@ -108,9 +238,12 @@ export default function Header({
     }
   }, [categories]);
 
-  const activeCategories: HeaderCategoryItem[] = (categories && categories.length > 0)
-    ? categories
-    : (internalCategories.length > 0 ? internalCategories : DEFAULT_HEADER_CATEGORIES);
+  const activeCategories: HeaderCategoryItem[] =
+    categories && categories.length > 0
+      ? categories
+      : internalCategories.length > 0
+      ? internalCategories
+      : DEFAULT_HEADER_CATEGORIES;
 
   const activeCustomer = customer !== undefined ? customer : internalCustomer;
   const activeCartCount = cartItemCount !== undefined ? cartItemCount : internalCartCount;
@@ -189,11 +322,15 @@ export default function Header({
     }
   }, [customer, onCustomerChange]);
 
-  // Close dropdown on outside click or touch
+  // Close dropdowns on outside click or touch
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      if (accountDropdownRef.current && !accountDropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (accountDropdownRef.current && !accountDropdownRef.current.contains(target)) {
         setIsAccountDropdownOpen(false);
+      }
+      if (navContainerRef.current && !navContainerRef.current.contains(target)) {
+        setOpenDropdownKey(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -216,11 +353,6 @@ export default function Header({
     }
   };
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const drawerRef = useRef<HTMLElement>(null);
-  const menuTriggerRef = useRef<HTMLButtonElement>(null);
-
   const toggleMobileMenu = (open?: boolean) => {
     const next = typeof open === 'boolean' ? open : !isMobileMenuOpen;
     if (!next) {
@@ -236,8 +368,9 @@ export default function Header({
   // Close mobile drawer on Escape key press
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMobileMenuOpen) {
-        toggleMobileMenu(false);
+      if (e.key === 'Escape') {
+        if (isMobileMenuOpen) toggleMobileMenu(false);
+        setOpenDropdownKey(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -267,8 +400,6 @@ export default function Header({
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-
 
   const handleCartClick = () => {
     if (onCartClick) {
@@ -310,27 +441,86 @@ export default function Header({
     }
   };
 
+  // Universal selection handler
+  const handleCategorySelect = (categoryName: string, subcategoryName?: string) => {
+    setOpenDropdownKey(null);
+    toggleMobileMenu(false);
+
+    if (onSelectCategory) {
+      onSelectCategory(categoryName, subcategoryName);
+      if (categoryName === 'All') {
+        const el = document.getElementById('products-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        const slug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const el = document.getElementById(`category-${slug}`) || document.getElementById('products-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      const query = subcategoryName
+        ? `/?category=${encodeURIComponent(categoryName)}&subcategory=${encodeURIComponent(subcategoryName)}#products-section`
+        : categoryName === 'All'
+        ? '/#products-section'
+        : `/?category=${encodeURIComponent(categoryName)}#products-section`;
+      router.push(query);
+    }
+  };
+
+  // Debounced mouse enter/leave for navigation dropdowns
+  const handleDropdownMouseEnter = (key: string) => {
+    if (navDropdownTimeoutRef.current) clearTimeout(navDropdownTimeoutRef.current);
+    setOpenDropdownKey(key);
+  };
+
+  const handleDropdownMouseLeave = () => {
+    navDropdownTimeoutRef.current = setTimeout(() => {
+      setOpenDropdownKey(null);
+    }, 180);
+  };
+
+  // Find Indian Wedding Garlands category and its subcategories
+  const weddingGarlandCat = activeCategories.find((c) =>
+    c.name.toLowerCase().includes('wedding')
+  );
+  const weddingSubcategories = weddingGarlandCat?.subcategories || [
+    { name: 'Rose Petal Garlands' },
+    { name: 'Button Rose Garlands' },
+    { name: 'Carnation Garlands' },
+  ];
+
+  // Specific items in "More" menu
+  const moreCategories = activeCategories.filter((c) => {
+    const nameLower = c.name.toLowerCase();
+    return (
+      nameLower.includes('temple') ||
+      nameLower.includes('house warming') ||
+      nameLower.includes('veni') ||
+      nameLower === 'strings' ||
+      nameLower.includes('nanthiyavattom') ||
+      nameLower.includes('tube rose') ||
+      nameLower.includes('coconut') ||
+      nameLower.includes('event')
+    );
+  });
+
   return (
     <>
       {/* UNIFIED STICKY HEADER */}
       <header className="w-full sticky top-0 z-40 bg-white">
         {/* 1. TOP UTILITY ANNOUNCEMENT BAR (Deep Forest Green #0B3B24) */}
-        <div className="w-full bg-[#0B3B24] text-white py-1.5 sm:py-2 px-3 sm:px-6 lg:px-8 border-b border-emerald-950/60 shadow-2xs min-h-[32px] sm:min-h-[34px] flex items-center">
+        <div className="w-full bg-[#0B3B24] text-white py-1.5 sm:py-2 px-3 sm:px-6 lg:px-8 border-b border-emerald-950/60 shadow-2xs min-h-[32px] sm:min-h-[34px] flex items-center font-sans">
           <div className="w-full max-w-7xl xl:max-w-[1440px] mx-auto flex items-center justify-between gap-3">
-            {/* Left: Fresh Assurance (Desktop) */}
-            <div className="hidden lg:flex items-center gap-2 text-white/85 text-[11px] shrink-0">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8FE7B8] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8FE7B8]" />
-              </span>
-              <span className="font-medium tracking-tight">Dewy Fresh Across All 50 US States</span>
+            {/* Left: Fresh Assurance */}
+            <div className="hidden lg:flex items-center gap-2 text-white/90 text-[11.5px] shrink-0 font-medium">
+              <span className="text-sm">🌿</span>
+              <span>Dewy Fresh Across All 50 US States</span>
             </div>
 
             {/* Center: Featured FedEx & Southwest Delivery Notice */}
             <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2.5 text-center min-w-0">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-[#8FE7B8] text-[9.5px] sm:text-[10.5px] font-bold tracking-wider uppercase shadow-2xs shrink-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-[#8FE7B8] text-[9.5px] sm:text-[10px] font-extrabold tracking-wider uppercase shadow-2xs shrink-0">
                 <Truck className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#8FE7B8]" />
-                <span>Express Air</span>
+                <span>EXPRESS AIR</span>
               </span>
               <span className="text-[11px] sm:text-[12px] font-medium text-white tracking-tight truncate sm:overflow-visible">
                 Fast &amp; Secure Delivery via{' '}
@@ -344,45 +534,39 @@ export default function Header({
             </div>
 
             {/* Right: Customer Care & Quick Track */}
-            <div className="hidden sm:flex items-center gap-3 sm:gap-4 text-white/90 shrink-0 text-[11px]">
+            <div className="hidden sm:flex items-center gap-3 sm:gap-4 text-white/90 shrink-0 text-[11.5px]">
               <button
                 type="button"
                 onClick={handleTrackClick}
-                className="hidden xl:inline-flex items-center gap-1.5 text-white/85 hover:text-white transition-colors cursor-pointer"
+                className="hidden xl:inline-flex items-center gap-1.5 text-white/90 hover:text-white transition-colors cursor-pointer"
                 title="Track your shipment"
               >
-                <Package className="w-3 h-3 text-emerald-300 shrink-0" />
+                <MapPin className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
                 <span className="font-medium">Track Order</span>
               </button>
+              <span className="hidden xl:inline text-white/30">|</span>
               <a
                 href={`tel:${storePhone.replace(/[^0-9+]/g, '')}`}
-                className="flex items-center gap-1.5 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 hover:text-white transition-colors font-medium"
                 title="Call Customer Support"
               >
-                <Phone className="w-3 h-3 text-emerald-300 shrink-0" />
-                <span className="font-medium">{storePhone}</span>
-              </a>
-              <a
-                href={`mailto:${storeEmail}`}
-                className="hidden 2xl:flex items-center gap-1.5 hover:text-white transition-colors"
-                title="Email Customer Support"
-              >
-                <Mail className="w-3 h-3 text-emerald-300 shrink-0" />
-                <span className="font-medium">{storeEmail}</span>
+                <Phone className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                <span>{storePhone}</span>
+                <ChevronDown className="w-3 h-3 text-emerald-300/80" />
               </a>
             </div>
           </div>
         </div>
 
-        {/* 2. MAIN HEADER ROW (Mobile matches theindianflowers.com: ☰ MENU | Logo | Cart 0) */}
+        {/* 2. MAIN HEADER ROW (Brand Logo | Center Search with Solid Dark Green Button | Account, Wishlist, Cart) */}
         <div
           className={`w-full transition-all duration-200 border-b border-stone-200/80 ${
             isScrolled ? 'bg-white/98 backdrop-blur-md shadow-xs' : 'bg-white'
           }`}
         >
           <div className="w-full max-w-7xl xl:max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5">
-            <div className="flex items-center justify-between gap-2 sm:gap-6">
-              {/* MOBILE: Left Hamburger + "MENU" text (as in theindianflowers.com) */}
+            <div className="flex items-center justify-between gap-3 sm:gap-6">
+              {/* MOBILE: Left Hamburger + "MENU" text */}
               <div className="flex items-center md:hidden">
                 <button
                   ref={menuTriggerRef}
@@ -412,56 +596,65 @@ export default function Header({
                 />
               </div>
 
-              {/* DESKTOP: Center Search Bar */}
+              {/* DESKTOP: Center Search Bar with Solid Dark Green Right Button */}
               <div className="hidden md:flex flex-1 max-w-md lg:max-w-lg xl:max-w-xl mx-4">
                 <form onSubmit={handleSearchSubmit} className="relative w-full flex items-center">
-                  <Search className="w-4 h-4 text-stone-400 absolute left-3.5 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="Search flowers, garlands, leaves..."
-                    value={activeSearchQuery}
-                    onChange={(e) => handleSearchChangeInternal(e.target.value)}
-                    className="w-full pl-10 pr-9 py-2 bg-stone-50 hover:bg-white border border-stone-200 rounded-full text-xs sm:text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#ed2353] focus:bg-white focus:ring-2 focus:ring-[#ed2353]/10 transition-all font-normal shadow-2xs"
-                  />
-                  {activeSearchQuery && (
+                  <div className="relative flex-1 flex items-center border border-stone-300 rounded-full bg-stone-50/70 hover:bg-white focus-within:bg-white focus-within:border-[#0B3B24] focus-within:ring-2 focus-within:ring-[#0B3B24]/10 transition-all shadow-2xs overflow-hidden">
+                    <Search className="w-4 h-4 text-stone-400 ml-4 shrink-0 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Search flowers, garlands, leaves..."
+                      value={activeSearchQuery}
+                      onChange={(e) => handleSearchChangeInternal(e.target.value)}
+                      className="w-full px-3 py-2 bg-transparent text-xs sm:text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none font-normal"
+                    />
+                    {activeSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => handleSearchChangeInternal('')}
+                        className="p-1 text-stone-400 hover:text-stone-700 transition-colors mr-2 cursor-pointer"
+                        aria-label="Clear search"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
-                      type="button"
-                      onClick={() => handleSearchChangeInternal('')}
-                      className="absolute right-3 p-1 text-stone-400 hover:text-stone-700 rounded-full transition-colors"
-                      aria-label="Clear search"
+                      type="submit"
+                      className="bg-[#0B3B24] hover:bg-[#134633] text-white px-5 py-2.5 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                      aria-label="Submit search"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <Search className="w-4 h-4 text-white" />
                     </button>
-                  )}
+                  </div>
                 </form>
               </div>
 
-              {/* RIGHT ACTION BUTTONS */}
-              <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
-                {/* Desktop: Customer Account */}
+              {/* RIGHT ACTION BUTTONS (Sign In, Wishlist with pink count, Cart with pink count) */}
+              <div className="flex items-center gap-2 sm:gap-6 shrink-0">
+                {/* Desktop: Customer Account / Sign In */}
                 <div className="hidden sm:block relative" ref={accountDropdownRef}>
                   {activeCustomer ? (
                     <button
                       type="button"
                       onClick={() => setIsAccountDropdownOpen((prev) => !prev)}
-                      className="flex flex-col items-center justify-center text-stone-700 hover:text-[#0B3B24] transition-colors p-1.5 rounded-lg hover:bg-stone-50 cursor-pointer"
+                      className="flex flex-col items-center justify-center text-stone-700 hover:text-[#0B3B24] transition-colors p-1 rounded-lg hover:bg-stone-50 cursor-pointer"
                       aria-label="Customer account menu"
                     >
                       <div className="w-5 h-5 rounded-full bg-emerald-100 text-[#0B3B24] border border-emerald-300 flex items-center justify-center text-[10px] font-bold">
                         {activeCustomer.name ? activeCustomer.name.charAt(0).toUpperCase() : 'U'}
                       </div>
-                      <span className="text-[10px] font-medium text-stone-700 mt-0.5 max-w-[80px] truncate">
+                      <span className="text-[11px] font-medium text-stone-700 mt-1 max-w-[80px] truncate">
                         {activeCustomer.name ? activeCustomer.name.split(' ')[0] : 'Account'}
                       </span>
                     </button>
                   ) : (
                     <Link
                       href="/login"
-                      className="flex flex-col items-center justify-center text-stone-700 hover:text-[#0B3B24] transition-colors p-1.5 rounded-lg hover:bg-stone-50"
+                      className="flex flex-col items-center justify-center text-stone-700 hover:text-[#0B3B24] transition-colors p-1 rounded-lg hover:bg-stone-50"
                       title="Sign In"
                     >
-                      <User className="w-4.5 h-4.5 text-stone-700" />
-                      <span className="text-[10px] font-medium text-stone-700 mt-0.5 whitespace-nowrap">
+                      <User className="w-5 h-5 text-stone-700 stroke-[1.8]" />
+                      <span className="text-[11px] font-medium text-stone-700 mt-1 whitespace-nowrap">
                         Sign In
                       </span>
                     </Link>
@@ -505,39 +698,39 @@ export default function Header({
                   )}
                 </div>
 
-                {/* Desktop: Wishlist */}
+                {/* Desktop: Wishlist with Pink Badge 3 */}
                 <button
                   type="button"
                   onClick={handleWishlistClick}
-                  className="hidden sm:flex flex-col items-center justify-center text-stone-700 hover:text-[#ed2353] transition-colors relative p-1.5 rounded-lg hover:bg-stone-50 cursor-pointer"
+                  className="hidden sm:flex flex-col items-center justify-center text-stone-700 hover:text-[#ed2353] transition-colors relative p-1 rounded-lg hover:bg-stone-50 cursor-pointer"
                   aria-label="Wishlist"
                 >
                   <div className="relative">
-                    <Heart className="w-4.5 h-4.5 text-stone-700" />
+                    <Heart className="w-5 h-5 text-stone-700 stroke-[1.8]" />
                     {activeWishlistCount > 0 && (
-                      <span className="absolute -top-1.5 -right-2 bg-[#ed2353] text-white text-[9px] font-bold min-w-[15px] h-[15px] px-0.5 rounded-full flex items-center justify-center shadow-xs">
+                      <span className="absolute -top-1.5 -right-2.5 bg-[#ed2353] text-white text-[10px] font-bold min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center shadow-xs">
                         {activeWishlistCount}
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] font-medium text-stone-700 mt-0.5">Wishlist</span>
+                  <span className="text-[11px] font-medium text-stone-700 mt-1">Wishlist</span>
                 </button>
 
-                {/* Cart Icon with Signature Pink Badge (Visible on Mobile & Desktop) */}
+                {/* Cart Icon with Signature Pink Badge 1 */}
                 <button
                   type="button"
                   onClick={handleCartClick}
-                  className="flex flex-col items-center justify-center text-stone-800 hover:text-[#ed2353] transition-colors relative p-1.5 rounded-lg hover:bg-stone-50 cursor-pointer"
+                  className="flex flex-col items-center justify-center text-stone-800 hover:text-[#0B3B24] transition-colors relative p-1 rounded-lg hover:bg-stone-50 cursor-pointer"
                   aria-label="Open Shopping Cart"
                   title="Shopping cart"
                 >
                   <div className="relative">
-                    <ShoppingBag className="w-5 h-5 sm:w-5 sm:h-5 stroke-[2]" />
-                    <span className="absolute -top-1.5 -right-2.5 bg-[#ed2353] text-white text-[10px] font-bold min-w-[17px] h-[17px] px-1 rounded-full flex items-center justify-center shadow-xs">
+                    <ShoppingBag className="w-5 h-5 stroke-[1.8]" />
+                    <span className="absolute -top-1.5 -right-2.5 bg-[#ed2353] text-white text-[10px] font-bold min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center shadow-xs">
                       {activeCartCount}
                     </span>
                   </div>
-                  <span className="text-[10px] font-medium text-stone-700 mt-0.5 hidden sm:inline">
+                  <span className="text-[11px] font-medium text-stone-700 mt-1 hidden sm:inline">
                     Cart
                   </span>
                 </button>
@@ -545,88 +738,403 @@ export default function Header({
             </div>
           </div>
 
-          {/* 3. DESKTOP MAIN NAVIGATION BAR (Dynamic Categories from Database) */}
-          <nav className="hidden md:block bg-white border-t border-stone-100">
-            <div className="w-full max-w-7xl xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-              <ul className="flex items-center justify-start gap-5 lg:gap-7 py-2.5 text-[13px] font-semibold text-stone-800 tracking-tight overflow-x-auto no-scrollbar">
-                <li>
+          {/* 3. DESKTOP BOTTOM HORIZONTAL NAVBAR (Exact layout from user screenshot) */}
+          <nav
+            ref={navContainerRef}
+            className="hidden md:block bg-white border-t border-stone-200/60 relative z-30 overflow-visible"
+          >
+            <div className="w-full max-w-7xl xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative overflow-visible">
+              <ul className="flex items-center justify-start gap-1 lg:gap-2 xl:gap-3 2xl:gap-3.5 py-2 text-[12.5px] lg:text-[13px] font-medium text-stone-800 tracking-tight overflow-visible">
+                {/* 1. Home (Mint Green Pill with House Icon) */}
+                <li className="shrink-0">
                   <Link
                     href="/"
                     onClick={() => {
-                      if (onSelectCategory) {
-                        onSelectCategory('All');
-                      }
+                      if (onSelectCategory) onSelectCategory('All');
                     }}
-                    className={`py-1 hover:text-[#0B3B24] transition-colors whitespace-nowrap ${
-                      selectedCategory === 'All' ? 'text-[#0B3B24] font-bold' : 'text-stone-700'
-                    }`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EAF5EF] border border-[#CDE5D6] text-[#0B3B24] font-bold text-[13px] hover:bg-[#ddede3] transition-colors"
                   >
-                    Home
+                    <Home className="w-3.5 h-3.5 text-[#0B3B24]" />
+                    <span>Home</span>
                   </Link>
                 </li>
-                <li>
+
+                {/* 2. About us */}
+                <li className="shrink-0">
                   <Link
                     href="/about"
-                    className="py-1 text-stone-700 hover:text-[#0B3B24] transition-colors whitespace-nowrap"
+                    className="px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap"
                   >
                     About us
                   </Link>
                 </li>
-                <li>
+
+                {/* 3. All Flowers ⌵ (Dropdown with Categories & Subcategories Flyout) */}
+                <li
+                  className="relative shrink-0"
+                  onMouseEnter={() => handleDropdownMouseEnter('all-flowers')}
+                  onMouseLeave={handleDropdownMouseLeave}
+                >
                   <button
                     type="button"
-                    onClick={() => {
-                      if (onSelectCategory) {
-                        onSelectCategory('All');
-                        const el = document.getElementById('products-section');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      } else {
-                        router.push('/#products-section');
-                      }
-                    }}
-                    className={`py-1 hover:text-[#0B3B24] transition-colors whitespace-nowrap cursor-pointer ${
-                      selectedCategory === 'All' ? 'text-[#0B3B24] font-bold' : 'text-stone-700'
+                    onClick={() =>
+                      setOpenDropdownKey(openDropdownKey === 'all-flowers' ? null : 'all-flowers')
+                    }
+                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      openDropdownKey === 'all-flowers' ? 'text-[#0B3B24] font-bold' : ''
                     }`}
                   >
-                    All Flowers
+                    <span>All Flowers</span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        openDropdownKey === 'all-flowers'
+                          ? 'rotate-180 text-[#0B3B24]'
+                          : 'text-stone-400 group-hover:text-[#0B3B24]'
+                      }`}
+                    />
+                  </button>
+
+                  {/* All Flowers Dropdown Menu with Nested Right Flyout */}
+                  {openDropdownKey === 'all-flowers' && (
+                    <div
+                      className="absolute left-0 top-full mt-1.5 w-72 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2 z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2"
+                      style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
+                    >
+                      <div className="space-y-0.5">
+                        {activeCategories.map((cat) => {
+                          const hasSubcategories =
+                            Array.isArray(cat.subcategories) && cat.subcategories.length > 0;
+                          const isFlyoutHovered = flyoutCategoryName === cat.name;
+
+                          return (
+                            <div
+                              key={cat._id || cat.name}
+                              className="relative"
+                              onMouseEnter={() => {
+                                if (hasSubcategories) {
+                                  setFlyoutCategoryName(cat.name);
+                                }
+                              }}
+                            >
+                              <div
+                                onClick={() => {
+                                  if (!hasSubcategories) {
+                                    handleCategorySelect(cat.name);
+                                  }
+                                }}
+                                className={`w-full px-4 py-2 text-[13px] font-medium flex items-center justify-between transition-colors cursor-pointer ${
+                                  selectedCategory === cat.name
+                                    ? 'bg-emerald-50 text-[#0B3B24] font-bold'
+                                    : isFlyoutHovered && hasSubcategories
+                                    ? 'bg-stone-50 text-[#0B3B24]'
+                                    : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  {cat.image ? (
+                                    <img
+                                      src={cat.image}
+                                      alt={cat.name}
+                                      className="w-4.5 h-4.5 rounded-full object-cover shrink-0 border border-stone-200"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  ) : null}
+                                  <span className="truncate">{cat.name}</span>
+                                </div>
+                                {hasSubcategories && (
+                                  <ChevronRight className="w-3.5 h-3.5 text-stone-400 shrink-0 ml-2" />
+                                )}
+                              </div>
+
+                              {/* Nested Subcategories Flyout Box (Matching User's Red Marker Circle) */}
+                              {hasSubcategories && isFlyoutHovered && (
+                                <div
+                                  className="absolute left-full top-0 ml-1 w-64 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2.5 z-50 animate-in fade-in duration-150"
+                                  style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
+                                  onMouseEnter={() => setFlyoutCategoryName(cat.name)}
+                                >
+                                  <div className="px-3 pb-1.5 mb-1 border-b border-stone-100 flex items-center justify-between">
+                                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-stone-400 truncate">
+                                      {cat.name}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCategorySelect(cat.name)}
+                                      className="text-[11px] font-semibold text-[#0B3B24] hover:underline cursor-pointer shrink-0 ml-2"
+                                    >
+                                      All
+                                    </button>
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    {cat.subcategories!.map((sub) => (
+                                      <button
+                                        key={sub._id || sub.name}
+                                        type="button"
+                                        onClick={() => handleCategorySelect(cat.name, sub.name)}
+                                        className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors flex items-center gap-2 cursor-pointer ${
+                                          selectedSubcategory === sub.name
+                                            ? 'bg-emerald-50 text-[#0B3B24] font-bold'
+                                            : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
+                                        }`}
+                                      >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                        <span className="truncate">{sub.name}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </li>
+
+                {/* 4. Indian Wedding Garlands ⌵ (Direct Subcategories Dropdown: Rose Petal, Button Rose, Carnation) */}
+                <li
+                  className="relative shrink-0"
+                  onMouseEnter={() => handleDropdownMouseEnter('wedding')}
+                  onMouseLeave={handleDropdownMouseLeave}
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenDropdownKey(openDropdownKey === 'wedding' ? null : 'wedding')
+                    }
+                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      openDropdownKey === 'wedding' || selectedCategory === 'Indian Wedding Garlands'
+                        ? 'text-[#0B3B24] font-bold'
+                        : ''
+                    }`}
+                  >
+                    <span>Indian Wedding Garlands</span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        openDropdownKey === 'wedding'
+                          ? 'rotate-180 text-[#0B3B24]'
+                          : 'text-stone-400 group-hover:text-[#0B3B24]'
+                      }`}
+                    />
+                  </button>
+
+                  {/* Direct Dropdown showing the subcategories marked in red */}
+                  {openDropdownKey === 'wedding' && (
+                    <div
+                      className="absolute left-0 top-full mt-1.5 w-64 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2"
+                      style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
+                    >
+                      <div className="px-3 pb-1.5 mb-1 border-b border-stone-100 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                          Wedding Garlands
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCategorySelect('Indian Wedding Garlands')}
+                          className="text-[11px] font-semibold text-[#0B3B24] hover:underline cursor-pointer"
+                        >
+                          View All
+                        </button>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        {weddingSubcategories.map((sub) => {
+                          const isSubSelected = selectedSubcategory === sub.name;
+                          return (
+                            <button
+                              key={sub.name}
+                              type="button"
+                              onClick={() =>
+                                handleCategorySelect('Indian Wedding Garlands', sub.name)
+                              }
+                              className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors flex items-center gap-2 cursor-pointer ${
+                                isSubSelected
+                                  ? 'bg-emerald-50 text-[#0B3B24] font-bold'
+                                  : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
+                              }`}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                              <span className="truncate">{sub.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </li>
+
+                {/* 5. Nanthiyavattom Garlands ⌵ */}
+                <li className="shrink-0 hidden xl:block">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect('Nanthiyavattom Garlands')}
+                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      selectedCategory === 'Nanthiyavattom Garlands' ? 'text-[#0B3B24] font-bold' : ''
+                    }`}
+                  >
+                    <span>Nanthiyavattom Garlands</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
                   </button>
                 </li>
 
-                {/* Dynamic Categories from MongoDB */}
-                {activeCategories.map((cat) => {
-                  const isSelected = selectedCategory === cat.name;
-                  return (
-                    <li key={cat._id || cat.name}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (onSelectCategory) {
-                            onSelectCategory(cat.name);
-                            const el = document.getElementById('products-section');
-                            if (el) el.scrollIntoView({ behavior: 'smooth' });
-                          } else {
-                            router.push(`/?category=${encodeURIComponent(cat.name)}#products-section`);
-                          }
-                        }}
-                        className={`py-1 transition-colors whitespace-nowrap cursor-pointer ${
-                          isSelected
-                            ? 'text-[#0B3B24] font-bold border-b-2 border-[#0B3B24]'
-                            : 'text-stone-700 hover:text-[#0B3B24]'
-                        }`}
-                      >
-                        {cat.name}
-                      </button>
-                    </li>
-                  );
-                })}
-
-                <li>
-                  <Link
-                    href="/contact"
-                    className="py-1 text-stone-700 hover:text-[#0B3B24] transition-colors whitespace-nowrap"
+                {/* 6. Tube Rose Lily Garlands ⌵ */}
+                <li className="shrink-0 hidden xl:block">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect('Tube Rose Lily Garlands')}
+                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      selectedCategory === 'Tube Rose Lily Garlands' ? 'text-[#0B3B24] font-bold' : ''
+                    }`}
                   >
-                    Contact us
-                  </Link>
+                    <span>Tube Rose Lily Garlands</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
+                  </button>
+                </li>
+
+                {/* 7. Pooja flowers ⌵ */}
+                <li className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect('Pooja flowers')}
+                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      selectedCategory === 'Pooja flowers' ? 'text-[#0B3B24] font-bold' : ''
+                    }`}
+                  >
+                    <span>Pooja flowers</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
+                  </button>
+                </li>
+
+                {/* 8. Pooja leaves ⌵ */}
+                <li className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect('Pooja leaves')}
+                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      selectedCategory === 'Pooja leaves' ? 'text-[#0B3B24] font-bold' : ''
+                    }`}
+                  >
+                    <span>Pooja leaves</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
+                  </button>
+                </li>
+
+                {/* 9. 🏵️ Decor Items ⌵ (With Marigold/Decor Icon) */}
+                <li className="shrink-0 hidden lg:block">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect('Decor Items')}
+                    className={`inline-flex items-center gap-1.5 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      selectedCategory === 'Decor Items' ? 'text-[#0B3B24] font-bold' : ''
+                    }`}
+                  >
+                    <MarigoldIcon className="w-4 h-4 shrink-0" />
+                    <span>Decor Items</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
+                  </button>
+                </li>
+
+                {/* 10. 🥥 Coconut ⌵ (With Coconut Icon) */}
+                <li className="shrink-0 hidden 2xl:block">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect('Coconut')}
+                    className={`inline-flex items-center gap-1.5 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      selectedCategory === 'Coconut' ? 'text-[#0B3B24] font-bold' : ''
+                    }`}
+                  >
+                    <CoconutIcon className="w-4 h-4 shrink-0" />
+                    <span>Coconut</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
+                  </button>
+                </li>
+
+                {/* 11. 📅 Event Decoration ⌵ (With Red Calendar Icon) */}
+                <li className="shrink-0 hidden 2xl:block">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect('Event Decoration')}
+                    className={`inline-flex items-center gap-1.5 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      selectedCategory === 'Event Decoration' ? 'text-[#0B3B24] font-bold' : ''
+                    }`}
+                  >
+                    <EventCalendarIcon className="w-4 h-4 shrink-0" />
+                    <span>Event Decoration</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
+                  </button>
+                </li>
+
+                {/* 12. ::: More ⌵ (Grid icon with remaining categories: Temple and Pooja Garlands, House warming, Veni, strings) */}
+                <li
+                  className="relative shrink-0"
+                  onMouseEnter={() => handleDropdownMouseEnter('more')}
+                  onMouseLeave={handleDropdownMouseLeave}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenDropdownKey(openDropdownKey === 'more' ? null : 'more')}
+                    className={`inline-flex items-center gap-1.5 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
+                      openDropdownKey === 'more' ? 'text-[#0B3B24] font-bold' : ''
+                    }`}
+                  >
+                    <GridNineIcon className="w-3.5 h-3.5 text-stone-600 group-hover:text-[#0B3B24]" />
+                    <span>More</span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        openDropdownKey === 'more'
+                          ? 'rotate-180 text-[#0B3B24]'
+                          : 'text-stone-400 group-hover:text-[#0B3B24]'
+                      }`}
+                    />
+                  </button>
+
+                  {/* More Dropdown Menu */}
+                  {openDropdownKey === 'more' && (
+                    <div
+                      className="absolute right-0 top-full mt-1.5 w-64 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2"
+                      style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
+                    >
+                      <div className="px-4 pb-1.5 mb-1 border-b border-stone-100 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                          More Categories
+                        </span>
+                      </div>
+                      <div className="space-y-0.5">
+                        {moreCategories.map((cat) => (
+                          <button
+                            key={cat._id || cat.name}
+                            type="button"
+                            onClick={() => handleCategorySelect(cat.name)}
+                            className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors flex items-center gap-2 cursor-pointer ${
+                              selectedCategory === cat.name
+                                ? 'bg-emerald-50 text-[#0B3B24] font-bold'
+                                : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <span className="truncate">{cat.name}</span>
+                          </button>
+                        ))}
+                        <div className="pt-1 mt-1 border-t border-stone-100">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenDropdownKey(null);
+                              const el = document.getElementById('custom-orders-section');
+                              if (el) el.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="w-full text-left px-4 py-2 text-[12.5px] font-semibold text-emerald-800 hover:bg-emerald-50 flex items-center gap-2"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Bespoke Custom Orders</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </li>
               </ul>
             </div>
@@ -634,7 +1142,7 @@ export default function Header({
         </div>
       </header>
 
-      {/* 4. MOBILE SLIDE-OUT DRAWER MENU (Woodmart exact layout with Search + Accordion Menu) */}
+      {/* 4. MOBILE SLIDE-OUT DRAWER MENU (Responsive) */}
       <div
         className={`md:hidden fixed inset-0 z-[9998] bg-black/60 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
           isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -648,7 +1156,7 @@ export default function Header({
         role="dialog"
         aria-modal={isMobileMenuOpen ? 'true' : undefined}
         aria-label="Navigation menu"
-        className={`md:hidden fixed inset-y-0 left-0 top-0 bottom-0 h-full w-[310px] max-w-[85vw] bg-white shadow-2xl flex flex-col z-[9999] overflow-hidden will-change-transform transition-transform duration-300 ease-in-out ${
+        className={`md:hidden fixed inset-y-0 left-0 top-0 bottom-0 h-full w-[320px] max-w-[85vw] bg-white shadow-2xl flex flex-col z-[9999] overflow-hidden will-change-transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen
             ? 'translate-x-0 pointer-events-auto'
             : '-translate-x-full pointer-events-none'
@@ -671,14 +1179,14 @@ export default function Header({
 
         {/* Drawer Scrollable Content */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
-          {/* Top Search Form inside Mobile Menu (matching theindianflowers.com) */}
+          {/* Top Search Form inside Mobile Menu */}
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <input
               type="text"
-              placeholder="Search for products"
+              placeholder="Search flowers, garlands..."
               value={activeSearchQuery}
               onChange={(e) => handleSearchChangeInternal(e.target.value)}
-              className="w-full pl-3.5 pr-20 py-2.5 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#ed2353] focus:bg-white transition-all font-normal"
+              className="w-full pl-3.5 pr-20 py-2.5 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#0B3B24] focus:bg-white transition-all font-normal"
             />
             <button
               type="submit"
@@ -719,24 +1227,25 @@ export default function Header({
             </Link>
           )}
 
-          {/* Dynamic Navigation Menu from Database */}
+          {/* Mobile Navigation Links */}
           <div className="border-t border-stone-100 pt-2 space-y-1">
+            {/* 1. Home */}
             <Link
               href="/"
               onClick={() => {
                 toggleMobileMenu(false);
                 if (onSelectCategory) onSelectCategory('All');
               }}
-              className={`w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
-                selectedCategory === 'All'
-                  ? 'bg-emerald-50 text-[#0B3B24]'
-                  : 'text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24]'
-              }`}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold transition-colors bg-[#EAF5EF] text-[#0B3B24]"
             >
-              <span>Home</span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
+              <span className="flex items-center gap-2">
+                <Home className="w-4 h-4 text-[#0B3B24]" />
+                <span>Home</span>
+              </span>
+              <ChevronRight className="w-4 h-4 text-[#0B3B24]/40" />
             </Link>
 
+            {/* 2. About us */}
             <Link
               href="/about"
               onClick={() => toggleMobileMenu(false)}
@@ -746,63 +1255,174 @@ export default function Header({
               <ChevronRight className="w-4 h-4 text-stone-300" />
             </Link>
 
+            {/* 3. All Flowers */}
             <button
               type="button"
-              onClick={() => {
-                toggleMobileMenu(false);
-                if (onSelectCategory) {
-                  onSelectCategory('All');
-                  const el = document.getElementById('products-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                } else {
-                  router.push('/#products-section');
-                }
-              }}
-              className={`w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold transition-colors text-left cursor-pointer ${
-                selectedCategory === 'All'
-                  ? 'bg-emerald-50 text-[#0B3B24]'
-                  : 'text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24]'
-              }`}
+              onClick={() => handleCategorySelect('All')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] transition-colors text-left"
             >
               <span>All Flowers</span>
               <ChevronRight className="w-4 h-4 text-stone-300" />
             </button>
 
-            {/* Dynamic categories from MongoDB */}
-            {activeCategories.map((cat) => {
-              const isSelected = selectedCategory === cat.name;
-              return (
-                <button
-                  key={cat._id || cat.name}
-                  type="button"
-                  onClick={() => {
-                    toggleMobileMenu(false);
-                    if (onSelectCategory) {
-                      onSelectCategory(cat.name);
-                      const el = document.getElementById('products-section');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                      router.push(`/?category=${encodeURIComponent(cat.name)}#products-section`);
-                    }
-                  }}
-                  className={`w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold transition-colors text-left cursor-pointer ${
-                    isSelected
-                      ? 'bg-emerald-50 text-[#0B3B24]'
-                      : 'text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24]'
+            {/* 4. Indian Wedding Garlands (With Accordion for Subcategories) */}
+            <div className="rounded-lg overflow-hidden border border-emerald-100 bg-emerald-50/30">
+              <button
+                type="button"
+                onClick={() =>
+                  setMobileExpandedCatName(
+                    mobileExpandedCatName === 'Indian Wedding Garlands' ? null : 'Indian Wedding Garlands'
+                  )
+                }
+                className="w-full flex items-center justify-between py-2.5 px-3 text-sm font-bold text-[#0B3B24] bg-emerald-100/50 hover:bg-emerald-100 transition-colors"
+              >
+                <span>Indian Wedding Garlands</span>
+                <ChevronDown
+                  className={`w-4 h-4 text-[#0B3B24] transition-transform duration-200 ${
+                    mobileExpandedCatName === 'Indian Wedding Garlands' ? 'rotate-180' : ''
                   }`}
-                >
-                  <span>{cat.name}</span>
-                  <ChevronRight className="w-4 h-4 text-stone-300" />
-                </button>
-              );
-            })}
+                />
+              </button>
 
+              {mobileExpandedCatName === 'Indian Wedding Garlands' && (
+                <div className="p-2 space-y-1 bg-white">
+                  <button
+                    type="button"
+                    onClick={() => handleCategorySelect('Indian Wedding Garlands')}
+                    className="w-full text-left py-1.5 px-2.5 text-xs font-semibold text-[#0B3B24] hover:underline"
+                  >
+                    &bull; View All Wedding Garlands
+                  </button>
+                  {weddingSubcategories.map((sub) => (
+                    <button
+                      key={sub.name}
+                      type="button"
+                      onClick={() => handleCategorySelect('Indian Wedding Garlands', sub.name)}
+                      className="w-full text-left py-1.5 px-2.5 text-xs font-medium text-stone-700 hover:text-[#0B3B24] hover:bg-stone-50 rounded"
+                    >
+                      &bull; {sub.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Categories List in Mobile */}
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('Nanthiyavattom Garlands')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span>Nanthiyavattom Garlands</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('Tube Rose Lily Garlands')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span>Tube Rose Lily Garlands</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('Pooja flowers')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span>Pooja flowers</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('Pooja leaves')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span>Pooja leaves</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('Decor Items')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span className="flex items-center gap-2">
+                <MarigoldIcon className="w-4 h-4" />
+                <span>Decor Items</span>
+              </span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('Coconut')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span className="flex items-center gap-2">
+                <CoconutIcon className="w-4 h-4" />
+                <span>Coconut</span>
+              </span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('Event Decoration')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span className="flex items-center gap-2">
+                <EventCalendarIcon className="w-4 h-4" />
+                <span>Event Decoration</span>
+              </span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('Temple and Pooja Garlands')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span>Temple and Pooja Garlands</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('House warming Garlands')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span>House warming Garlands</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('Veni')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span>Veni</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('strings')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span>strings</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
+
+            {/* Contact */}
             <Link
               href="/contact"
               onClick={() => toggleMobileMenu(false)}
               className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] transition-colors"
             >
-              <span>Contact us</span>
+              <span>Contact</span>
               <ChevronRight className="w-4 h-4 text-stone-300" />
             </Link>
           </div>
@@ -862,7 +1482,7 @@ export default function Header({
             </a>
           </div>
 
-          {/* Social Links (matching theindianflowers.com) */}
+          {/* Social Links */}
           <div className="pt-3 border-t border-stone-100">
             <p className="text-[10px] font-bold tracking-wider uppercase text-stone-400 mb-2">
               Follow Us

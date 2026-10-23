@@ -50,7 +50,11 @@ import {
   Award,
   Plane,
   Truck,
+  CheckCircle2,
+  AlertCircle,
+  FolderPlus,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { IDeliveryMode, DEFAULT_DELIVERY_MODES } from '@/lib/delivery';
 import POSCounter from './components/pos/POSCounter';
 import POSReceipt from './components/pos/POSReceipt';
@@ -97,15 +101,26 @@ interface Product {
   quantity: number;
   gst: number;
   category: string;
+  subcategory?: string;
   variants?: ProductVariant[];
   createdAt: string;
+}
+
+interface SubcategoryItem {
+  _id?: string;
+  name: string;
+  slug?: string;
+  image?: string;
+  order?: number;
 }
 
 interface CategoryItem {
   _id: string;
   name: string;
+  slug?: string;
   image?: string;
   order?: number;
+  subcategories?: SubcategoryItem[];
   createdAt: string;
 }
 
@@ -301,6 +316,7 @@ export default function AdminDashboard() {
     quantity: '10',
     gst: '0',
     category: '',
+    subcategory: '',
     variants: [] as ProductVariant[],
   });
   const [imagePreview, setImagePreview] = useState('');
@@ -313,11 +329,40 @@ export default function AdminDashboard() {
   const [newCatImagePreview, setNewCatImagePreview] = useState('');
   const [isSubmittingCat, setIsSubmittingCat] = useState(false);
   const [catError, setCatError] = useState('');
+  const [newCatSubcategories, setNewCatSubcategories] = useState<string[]>([]);
+  const [newSubcatInput, setNewSubcatInput] = useState('');
+  const [editCatSubcategories, setEditCatSubcategories] = useState<string[]>([]);
+  const [editSubcatInput, setEditSubcatInput] = useState('');
   const [editingCategory, setEditingCategory] = useState<CategoryItem | null>(null);
   const [editCatName, setEditCatName] = useState('');
   const [editCatImage, setEditCatImage] = useState('');
   const [editCatImagePreview, setEditCatImagePreview] = useState('');
   const [isEditCatModalOpen, setIsEditCatModalOpen] = useState(false);
+
+  // Subcategory management state
+  const [selectedCatForSubcat, setSelectedCatForSubcat] = useState('');
+  const [newSubcatName, setNewSubcatName] = useState('');
+  const [isSubmittingSubcat, setIsSubmittingSubcat] = useState(false);
+  const [subcatSuccessMsg, setSubcatSuccessMsg] = useState('');
+  const [subcatError, setSubcatError] = useState('');
+  const [inlineSubcatCatId, setInlineSubcatCatId] = useState<string | null>(null);
+  const [inlineSubcatName, setInlineSubcatName] = useState('');
+  const [isSubmittingInlineSubcat, setIsSubmittingInlineSubcat] = useState(false);
+
+  // Bulk Import state
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPreviewRows, setImportPreviewRows] = useState<any[]>([]);
+  const [isUploadingImport, setIsUploadingImport] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    success: boolean;
+    message: string;
+    count?: number;
+    created?: number;
+    updated?: number;
+    errors?: string[];
+  } | null>(null);
+
 
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -652,6 +697,9 @@ export default function AdminDashboard() {
         setCategories(data.data);
         if (data.data.length > 0 && !productForm.category) {
           setProductForm((prev) => ({ ...prev, category: data.data[0].name }));
+        }
+        if (data.data.length > 0 && !selectedCatForSubcat) {
+          setSelectedCatForSubcat(data.data[0]._id);
         }
       }
     } catch (err) {
@@ -1243,6 +1291,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       quantity: String(product.quantity),
       gst: String(product.gst !== undefined ? product.gst : 0),
       category: product.category || (categories[0]?.name ?? ''),
+      subcategory: product.subcategory || '',
       variants: product.variants ? product.variants.map((v) => ({ ...v })) : [],
     });
     setImagePreview(product.image);
@@ -1262,6 +1311,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       quantity: '10',
       gst: '0',
       category: categories.length > 0 ? categories[0].name : '',
+      subcategory: '',
       variants: [],
     });
     setImagePreview('');
@@ -1304,6 +1354,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           quantity: Number(productForm.quantity),
           gst: Number(productForm.gst),
           category: productForm.category,
+          subcategory: productForm.subcategory || '',
           variants: productForm.variants.map((v) => ({
             name: v.name.trim(),
             mrp: Number(v.mrp),
@@ -1453,6 +1504,133 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     }
   };
 
+    // Subcategory Actions
+  const handleAddSubcategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubcatError('');
+    setSubcatSuccessMsg('');
+    const targetCatId = selectedCatForSubcat || (categories.length > 0 ? categories[0]._id : '');
+    if (!targetCatId || !newSubcatName.trim()) {
+      setSubcatError('Please select a category and enter a subcategory name.');
+      return;
+    }
+
+    try {
+      setIsSubmittingSubcat(true);
+      const res = await fetch(`/api/categories/${targetCatId}/subcategories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newSubcatName.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewSubcatName('');
+        setSubcatSuccessMsg('Subcategory added successfully!');
+        setTimeout(() => setSubcatSuccessMsg(''), 4000);
+        await fetchCategories();
+      } else {
+        setSubcatError(data.message || 'Failed to add subcategory');
+      }
+    } catch (err: any) {
+      setSubcatError(err.message || 'Error adding subcategory');
+    } finally {
+      setIsSubmittingSubcat(false);
+    }
+  };
+
+  const handleAddInlineSubcategory = async (catId: string) => {
+    if (!inlineSubcatName.trim()) return;
+    try {
+      setIsSubmittingInlineSubcat(true);
+      const res = await fetch(`/api/categories/${catId}/subcategories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: inlineSubcatName.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setInlineSubcatName('');
+        setInlineSubcatCatId(null);
+        await fetchCategories();
+      } else {
+        alert(data.message || 'Failed to add subcategory');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Error adding subcategory');
+    } finally {
+      setIsSubmittingInlineSubcat(false);
+    }
+  };
+
+  const handleDeleteSubcategory = async (catId: string, subId?: string, subName?: string) => {
+    if (!window.confirm(`Delete subcategory "${subName}" from this category?`)) return;
+    try {
+      const query = subId ? `subId=${encodeURIComponent(subId)}` : `name=${encodeURIComponent(subName || '')}`;
+      const res = await fetch(`/api/categories/${catId}/subcategories?${query}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchCategories();
+      } else {
+        alert(data.message || 'Failed to delete subcategory');
+      }
+    } catch (err) {
+      console.error('Delete subcategory error', err);
+      alert('Error deleting subcategory');
+    }
+  };
+
+  // Bulk Import Handlers
+  const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportFile(file);
+    setImportResult(null);
+
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: 'array' });
+      const sheetName = wb.SheetNames.includes('Products') ? 'Products' : wb.SheetNames[0];
+      if (sheetName && wb.Sheets[sheetName]) {
+        const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName], { defval: '' });
+        setImportPreviewRows(rows.slice(0, 8));
+      }
+    } catch (err) {
+      console.error('Failed to parse Excel preview:', err);
+    }
+  };
+
+  const handleExecuteBulkImport = async () => {
+    if (!importFile) return;
+    try {
+      setIsUploadingImport(true);
+      setImportResult(null);
+
+      const formData = new FormData();
+      formData.append('file', importFile);
+
+      const res = await fetch('/api/products/bulk-import', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      setImportResult(data);
+      if (data.success) {
+        await fetchProducts();
+        await fetchCategories();
+      }
+    } catch (err: any) {
+      setImportResult({
+        success: false,
+        message: err.message || 'Bulk import failed due to network error.',
+      });
+    } finally {
+      setIsUploadingImport(false);
+    }
+  };
+
   // Delete Category
   const handleDeleteCategory = async (id: string) => {
     if (!confirm('Are you sure you want to delete this category?')) return;
@@ -1556,6 +1734,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       p.name?.toLowerCase().includes(q) ||
       p.description?.toLowerCase().includes(q) ||
       p.category?.toLowerCase().includes(q) ||
+      p.subcategory?.toLowerCase().includes(q) ||
       p.price?.toString().includes(q) ||
       p.variants?.some((v) => v.name?.toLowerCase().includes(q))
     );
@@ -2462,12 +2641,37 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 <h3 className="text-base sm:text-lg font-black text-[#163B5C]">Product Inventory</h3>
                 <p className="text-xs text-[#64748B]">Manage, edit, and organize all {products.length} store products</p>
               </div>
-              <button
-                onClick={openAddProductModal}
-                className="px-4 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0 self-start sm:self-auto"
-              >
-                <Plus className="w-4 h-4" /> Add Product
-              </button>
+              <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
+                <a
+                  href="/api/products/template"
+                  download="IndianFlowers_Products_Bulk_Import_Template.xlsx"
+                  className="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 shrink-0"
+                  title="Download sample Excel (.xlsx) file with categories, subcategories, instructions, and sample products"
+                >
+                  <Download className="w-4 h-4 text-emerald-700" />
+                  <span>Excel Template</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportFile(null);
+                    setImportPreviewRows([]);
+                    setImportResult(null);
+                    setIsBulkImportModalOpen(true);
+                  }}
+                  className="px-3.5 py-2.5 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0"
+                  title="Bulk Import products via latest Excel (.xlsx) format"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+                  <span>Bulk Import (.xlsx)</span>
+                </button>
+                <button
+                  onClick={openAddProductModal}
+                  className="px-4 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0"
+                >
+                  <Plus className="w-4 h-4" /> Add Product
+                </button>
+              </div>
             </div>
 
             {/* Product Search & Filter Bar */}
@@ -2624,8 +2828,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-6 text-xs font-semibold text-[#64748B]">
-                            {p.category}
+                          <td className="py-4 px-6 text-xs font-semibold text-[#163B5C]">
+                            <div>{p.category}</div>
+                            {p.subcategory && (
+                              <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200">
+                                {p.subcategory}
+                              </span>
+                            )}
                           </td>
                           <td className="py-4 px-6 font-semibold line-through text-[#64748B]">
                             {formatCurrency(p.mrp)}
@@ -2711,98 +2920,171 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         {/* Categories Management View */}
         {activeTab === 'categories' && (
           <div className="space-y-6 animate-fadeIn">
-            {/* Create Category Card */}
-            <div className="bg-white rounded-2xl border border-[#E8EDF2] p-6 space-y-4 shadow-sm max-w-2xl">
-              <div>
-                <h3 className="text-lg font-bold text-[#163B5C] flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-[#ED3500]" />
-                  <span>Create New Category</span>
-                </h3>
-                <p className="text-xs text-[#64748B] mt-0.5">
-                  Category names and images are displayed in the circular category section on the front page.
-                </p>
+            {/* Top Grid: Create Category & Add Subcategory */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Card 1: Create Category Card */}
+              <div className="bg-white rounded-2xl border border-[#E8EDF2] p-6 space-y-4 shadow-sm">
+                <div>
+                  <h3 className="text-lg font-bold text-[#163B5C] flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-[#ED3500]" />
+                    <span>Create New Category</span>
+                  </h3>
+                  <p className="text-xs text-[#64748B] mt-0.5">
+                    Category names and images are displayed in the circular category section on the front page.
+                  </p>
+                </div>
+
+                {catError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                    {catError}
+                  </div>
+                )}
+
+                <form onSubmit={handleAddCategory} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Category Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Loose Flowers, Garland Strings, Sacred Leaves..."
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                    />
+                  </div>
+
+                  {/* Category Image Upload */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Category Image (Front Page Circle Tile)
+                    </label>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      <label className="flex-1 w-full border-2 border-dashed border-[#E8EDF2] hover:border-[#ED3500] rounded-2xl p-4 text-center cursor-pointer bg-[#FFFCFB] transition-colors">
+                        <Upload className="w-5 h-5 text-[#ED3500] mx-auto mb-1" />
+                        <span className="text-xs font-bold text-[#163B5C] block">
+                          {newCatImagePreview ? 'Change Category Image' : 'Upload Category Image'}
+                        </span>
+                        <span className="text-[10px] text-[#64748B]">Auto-optimized for circular display (PNG, JPG, WEBP)</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleNewCatImageChange}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {newCatImagePreview && (
+                        <div className="relative group shrink-0">
+                          <div className="w-20 h-20 rounded-full border-2 border-[#ED3500] overflow-hidden bg-[#FFF8F5] shadow-xs">
+                            <img
+                              src={newCatImagePreview}
+                              alt="Category Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewCatImage('');
+                              setNewCatImagePreview('');
+                            }}
+                            className="absolute -top-1 -right-1 p-1 rounded-full bg-rose-600 text-white shadow-xs hover:bg-rose-700 transition-colors"
+                            title="Remove image"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-1 flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={isSubmittingCat || !newCatName.trim()}
+                      className="px-6 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#ED3500]/20 flex items-center gap-2 disabled:opacity-50 transition-all"
+                    >
+                      {isSubmittingCat ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      Add Category
+                    </button>
+                  </div>
+                </form>
               </div>
 
-              {catError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
-                  {catError}
-                </div>
-              )}
-
-              <form onSubmit={handleAddCategory} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
-                    Category Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Loose Flowers, Garland Strings, Sacred Leaves..."
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
-                  />
+              {/* Card 2: Add Subcategory Card */}
+              <div className="bg-white rounded-2xl border border-[#E8EDF2] p-6 space-y-4 shadow-sm">
+                <div>
+                  <h3 className="text-lg font-bold text-[#163B5C] flex items-center gap-2">
+                    <FolderPlus className="w-5 h-5 text-emerald-700" />
+                    <span>Add Subcategory</span>
+                  </h3>
+                  <p className="text-xs text-[#64748B] mt-0.5">
+                    Attach subcategories to any parent category (e.g. Rose Petal Garlands under Indian Wedding Garlands).
+                  </p>
                 </div>
 
-                {/* Category Image Upload */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
-                    Category Image (Front Page Circle Tile)
-                  </label>
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <label className="flex-1 w-full border-2 border-dashed border-[#E8EDF2] hover:border-[#ED3500] rounded-2xl p-4 text-center cursor-pointer bg-[#FFFCFB] transition-colors">
-                      <Upload className="w-5 h-5 text-[#ED3500] mx-auto mb-1" />
-                      <span className="text-xs font-bold text-[#163B5C] block">
-                        {newCatImagePreview ? 'Change Category Image' : 'Upload Category Image'}
-                      </span>
-                      <span className="text-[10px] text-[#64748B]">Auto-optimized for circular display (PNG, JPG, WEBP)</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleNewCatImageChange}
-                        className="hidden"
-                      />
-                    </label>
-
-                    {newCatImagePreview && (
-                      <div className="relative group shrink-0">
-                        <div className="w-20 h-20 rounded-full border-2 border-[#ED3500] overflow-hidden bg-[#FFF8F5] shadow-xs">
-                          <img
-                            src={newCatImagePreview}
-                            alt="Category Preview"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewCatImage('');
-                            setNewCatImagePreview('');
-                          }}
-                          className="absolute -top-1 -right-1 p-1 rounded-full bg-rose-600 text-white shadow-xs hover:bg-rose-700 transition-colors"
-                          title="Remove image"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
+                {subcatSuccessMsg && (
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{subcatSuccessMsg}</span>
                   </div>
-                </div>
+                )}
 
-                <div className="pt-1 flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isSubmittingCat || !newCatName.trim()}
-                    className="px-6 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#ED3500]/20 flex items-center gap-2 disabled:opacity-50 transition-all"
-                  >
-                    {isSubmittingCat ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                    Add Category
-                  </button>
-                </div>
-              </form>
+                {subcatError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                    {subcatError}
+                  </div>
+                )}
+
+                <form onSubmit={handleAddSubcategory} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Target Parent Category *
+                    </label>
+                    <select
+                      value={selectedCatForSubcat || (categories[0]?._id ?? '')}
+                      onChange={(e) => setSelectedCatForSubcat(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-emerald-600 bg-white"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                          {cat.name} ({cat.subcategories?.length || 0} subcategories)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Subcategory Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rose Petal Garlands, Button Rose Garlands..."
+                      value={newSubcatName}
+                      onChange={(e) => setNewSubcatName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  <div className="pt-1 flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={isSubmittingSubcat || !newSubcatName.trim()}
+                      className="px-6 py-2.5 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-bold text-xs uppercase tracking-wider shadow-md transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isSubmittingSubcat ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      Add Subcategory
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
 
-            {/* Category List with Image Preview & Edit Modal */}
+            {/* Category List with Subcategories Badges */}
             {loadingCategories ? (
               <div className="py-10 text-center">
                 <RefreshCw className="w-6 h-6 text-[#ED3500] animate-spin mx-auto" />
@@ -2814,16 +3096,16 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 <p className="text-xs text-[#64748B]">Add categories above to organize your products.</p>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-[#E8EDF2] overflow-hidden shadow-sm max-w-3xl">
-                <div className="p-4 bg-[#FFFCFB] border-b border-[#E8EDF2] font-bold text-xs text-[#64748B] uppercase tracking-wider grid grid-cols-12 gap-2">
+              <div className="bg-white rounded-2xl border border-[#E8EDF2] overflow-hidden shadow-sm">
+                <div className="p-4 bg-[#FFFCFB] border-b border-[#E8EDF2] font-bold text-xs text-[#64748B] uppercase tracking-wider grid grid-cols-12 gap-3 items-center">
                   <span className="col-span-2 sm:col-span-1">Icon</span>
-                  <span className="col-span-6 sm:col-span-7">Category Name</span>
-                  <span className="col-span-2 hidden sm:block">Display</span>
-                  <span className="col-span-4 sm:col-span-2 text-right">Actions</span>
+                  <span className="col-span-4 sm:col-span-3">Category Name</span>
+                  <span className="col-span-4 sm:col-span-6">Subcategories</span>
+                  <span className="col-span-2 text-right">Actions</span>
                 </div>
                 <div className="divide-y divide-[#E8EDF2]">
                   {categories.map((cat) => (
-                    <div key={cat._id} className="p-3.5 sm:p-4 grid grid-cols-12 gap-2 items-center text-sm font-semibold text-[#163B5C] hover:bg-slate-50/50 transition-colors">
+                    <div key={cat._id} className="p-4 grid grid-cols-12 gap-3 items-center text-sm font-semibold text-[#163B5C] hover:bg-slate-50/50 transition-colors">
                       {/* Image Thumbnail */}
                       <div className="col-span-2 sm:col-span-1">
                         <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden bg-emerald-50 flex items-center justify-center shrink-0 shadow-2xs">
@@ -2843,28 +3125,94 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       </div>
 
                       {/* Category Name */}
-                      <div className="col-span-6 sm:col-span-7 flex flex-col justify-center">
+                      <div className="col-span-4 sm:col-span-3 flex flex-col justify-center">
                         <span className="font-bold text-gray-900 text-xs sm:text-sm">{cat.name}</span>
                         <span className="text-[10px] text-gray-400 font-normal">
                           Added {new Date(cat.createdAt).toLocaleDateString()}
                         </span>
                       </div>
 
-                      {/* Display Status */}
-                      <div className="col-span-2 hidden sm:block">
-                        {cat.image ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                            Custom Image
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
-                            Default Icon
-                          </span>
-                        )}
+                      {/* Subcategories Badges */}
+                      <div className="col-span-4 sm:col-span-6">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {cat.subcategories && cat.subcategories.length > 0 ? (
+                            cat.subcategories.map((sub) => (
+                              <span
+                                key={sub._id || sub.name}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200 shadow-2xs"
+                              >
+                                <span>{sub.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteSubcategory(cat._id, sub._id, sub.name)}
+                                  className="w-3.5 h-3.5 rounded-full hover:bg-emerald-200 flex items-center justify-center text-emerald-800 hover:text-rose-700 transition-colors"
+                                  title="Remove subcategory"
+                                >
+                                  <X className="w-2.5 h-2.5" />
+                                </button>
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-[#94A3B8] italic">No subcategories</span>
+                          )}
+
+                          {/* Inline Subcategory Quick Add */}
+                          {inlineSubcatCatId === cat._id ? (
+                            <div className="inline-flex items-center gap-1 bg-white border border-emerald-400 rounded-full pl-2 pr-1 py-0.5 shadow-xs">
+                              <input
+                                type="text"
+                                autoFocus
+                                placeholder="Subcategory..."
+                                value={inlineSubcatName}
+                                onChange={(e) => setInlineSubcatName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddInlineSubcategory(cat._id);
+                                  } else if (e.key === 'Escape') {
+                                    setInlineSubcatCatId(null);
+                                    setInlineSubcatName('');
+                                  }
+                                }}
+                                className="w-28 text-xs font-medium text-emerald-950 focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                disabled={isSubmittingInlineSubcat || !inlineSubcatName.trim()}
+                                onClick={() => handleAddInlineSubcategory(cat._id)}
+                                className="p-1 rounded-full bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-40"
+                              >
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInlineSubcatCatId(null);
+                                  setInlineSubcatName('');
+                                }}
+                                className="p-1 rounded-full text-slate-400 hover:text-slate-600"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setInlineSubcatCatId(cat._id);
+                                setInlineSubcatName('');
+                              }}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50/60 hover:bg-emerald-100 border border-dashed border-emerald-300 px-2.5 py-0.5 rounded-full transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Subcategory</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Actions */}
-                      <div className="col-span-4 sm:col-span-2 flex items-center justify-end gap-1.5">
+                      <div className="col-span-2 flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => handleOpenEditCategory(cat)}
                           className="p-2 rounded-xl text-purple-600 hover:bg-purple-50 transition-colors"
@@ -5074,7 +5422,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     ) : (
                       <select
                         value={productForm.category}
-                        onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                        onChange={(e) => {
+                          const newCat = e.target.value;
+                          setProductForm({ ...productForm, category: newCat, subcategory: '' });
+                        }}
                         className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
                       >
                         {categories.map((c) => (
@@ -5084,6 +5435,36 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         ))}
                       </select>
                     )}
+                  </div>
+
+                  {/* Subcategory Select */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
+                      Subcategory (Optional)
+                    </label>
+                    {(() => {
+                      const selectedCatObj = categories.find(
+                        (c) => c.name.toLowerCase() === (productForm.category || '').toLowerCase()
+                      );
+                      const subcats = selectedCatObj?.subcategories || [];
+                      return (
+                        <select
+                          value={productForm.subcategory || ''}
+                          onChange={(e) => setProductForm({ ...productForm, subcategory: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
+                        >
+                          <option value="">None / General (No Subcategory)</option>
+                          {subcats.map((sub) => (
+                            <option key={sub._id || sub.name} value={sub.name}>
+                              {sub.name}
+                            </option>
+                          ))}
+                          {productForm.subcategory && !subcats.some((s) => s.name === productForm.subcategory) && (
+                            <option value={productForm.subcategory}>{productForm.subcategory} (Custom)</option>
+                          )}
+                        </select>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -6219,6 +6600,197 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 )}
                 <span>{isProcessingRefund ? 'Processing Refund...' : 'Confirm Return & Refund'}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      
+      {/* Bulk Product Import Modal (.xlsx) */}
+      {isBulkImportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-hidden">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative">
+            <button
+              onClick={() => {
+                setIsBulkImportModalOpen(false);
+                setImportFile(null);
+                setImportPreviewRows([]);
+                setImportResult(null);
+              }}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E8EDF2] text-[#64748B] transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-black text-[#163B5C] flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-800">
+                    <FileSpreadsheet className="w-5 h-5 text-emerald-700" />
+                  </div>
+                  <span>Bulk Product Import (.xlsx)</span>
+                </h3>
+                <p className="text-xs text-[#64748B] mt-1">
+                  Upload an Excel workbook formatted in the latest <strong className="text-emerald-800 font-bold">.xlsx</strong> format to bulk import or update products, categories, and subcategories.
+                </p>
+              </div>
+
+              {/* Template Helper Callout */}
+              <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Download the Official Store Excel Template
+                  </span>
+                  <p className="text-[11px] text-emerald-800/90">
+                    Includes pre-configured headers, sample products, instructions, and full category reference.
+                  </p>
+                </div>
+                <a
+                  href="/api/products/template"
+                  download="IndianFlowers_Products_Bulk_Import_Template.xlsx"
+                  className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0 self-start sm:self-auto"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download .xlsx</span>
+                </a>
+              </div>
+
+              {/* Upload Zone */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                  Select Excel File (.xlsx, .xls)
+                </label>
+                <label className="border-2 border-dashed border-[#E8EDF2] hover:border-emerald-600 rounded-2xl p-6 text-center cursor-pointer bg-[#FFFCFB] transition-colors block">
+                  <Upload className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+                  <span className="text-sm font-bold text-[#163B5C] block">
+                    {importFile ? importFile.name : 'Click to select or drag & drop .xlsx file'}
+                  </span>
+                  <span className="text-xs text-[#64748B] mt-1 block">
+                    {importFile
+                      ? `${(importFile.size / 1024).toFixed(1)} KB — Ready to parse`
+                      : 'Supports Microsoft Excel Workbooks (.xlsx) and Excel 97-2004 (.xls)'}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                    onChange={handleImportFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Preview of Parsed Rows */}
+              {importPreviewRows.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
+                      Preview of Rows Detected ({importPreviewRows.length}+ items)
+                    </span>
+                    <span className="text-[11px] text-emerald-700 font-bold">
+                      ✓ Validated format
+                    </span>
+                  </div>
+                  <div className="border border-[#E8EDF2] rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                    <table className="w-full text-left text-[11px] border-collapse">
+                      <thead className="bg-[#F8FAFC] border-b border-[#E8EDF2] sticky top-0">
+                        <tr className="font-bold text-[#64748B]">
+                          <th className="py-2 px-3">Name</th>
+                          <th className="py-2 px-3">Category</th>
+                          <th className="py-2 px-3">Subcategory</th>
+                          <th className="py-2 px-3">Price</th>
+                          <th className="py-2 px-3">MRP</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E8EDF2]">
+                        {importPreviewRows.map((r, i) => (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="py-1.5 px-3 font-semibold text-[#163B5C] truncate max-w-[150px]">
+                              {r.Name || r['Product Name'] || r.name || '—'}
+                            </td>
+                            <td className="py-1.5 px-3 text-[#64748B] truncate max-w-[100px]">
+                              {r.Category || r.category || '—'}
+                            </td>
+                            <td className="py-1.5 px-3 text-emerald-700 font-medium truncate max-w-[100px]">
+                              {r.Subcategory || r['Sub Category'] || r.subcategory || '—'}
+                            </td>
+                            <td className="py-1.5 px-3 font-bold text-[#ED3500]">
+                              ${r.Price || r.price || 0}
+                            </td>
+                            <td className="py-1.5 px-3 line-through text-[#64748B]">
+                              ${r.MRP || r.mrp || 0}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Results Banner */}
+              {importResult && (
+                <div
+                  className={`p-4 rounded-2xl border text-xs ${
+                    importResult.success
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                      : 'bg-rose-50 border-rose-200 text-rose-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-bold mb-1">
+                    {importResult.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-600" />
+                    )}
+                    <span>{importResult.message}</span>
+                  </div>
+                  {importResult.errors && importResult.errors.length > 0 && (
+                    <div className="mt-2 pl-4 border-l-2 border-rose-300 space-y-1 text-[11px]">
+                      <span className="font-bold block">Warnings / Skipped:</span>
+                      {importResult.errors.map((err, ei) => (
+                        <p key={ei}>{err}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBulkImportModalOpen(false);
+                    setImportFile(null);
+                    setImportPreviewRows([]);
+                    setImportResult(null);
+                  }}
+                  className="px-5 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-bold text-[#64748B] hover:bg-gray-50 transition-colors"
+                >
+                  {importResult?.success ? 'Done & Close' : 'Cancel'}
+                </button>
+                {!importResult?.success && (
+                  <button
+                    type="button"
+                    disabled={isUploadingImport || !importFile}
+                    onClick={handleExecuteBulkImport}
+                    className="px-6 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 flex items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                  >
+                    {isUploadingImport ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Importing Products...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        <span>Import Products Now</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

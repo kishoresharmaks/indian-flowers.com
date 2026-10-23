@@ -109,7 +109,8 @@ export default function CustomerStore() {
 
   // Filter & Search State
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Fresh Flower Strings & Jasmine');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
 
   // Modals & Drawers State
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -304,11 +305,13 @@ export default function CustomerStore() {
       const params = new URLSearchParams(window.location.search);
       const actionParam = params.get('action');
       const categoryParam = params.get('category');
+      const subcategoryParam = params.get('subcategory');
       const searchParam = params.get('search');
       if (actionParam === 'cart') setIsCartOpen(true);
       if (actionParam === 'track') setIsTrackModalOpen(true);
       if (actionParam === 'wishlist') setIsWishlistOpen(true);
       if (categoryParam) setSelectedCategory(categoryParam);
+      if (subcategoryParam) setSelectedSubcategory(subcategoryParam);
       if (searchParam) setSearchQuery(searchParam);
     }
 
@@ -519,9 +522,22 @@ export default function CustomerStore() {
   const getProductsForCategory = useCallback(
     (categoryName: string) => {
       const catLower = categoryName.trim().toLowerCase();
-      return productsByCategory.get(catLower) || [];
+      const prods = productsByCategory.get(catLower) || [];
+      if (
+        selectedSubcategory &&
+        selectedCategory.trim().toLowerCase() === catLower
+      ) {
+        const subLower = selectedSubcategory.trim().toLowerCase();
+        const filtered = prods.filter(
+          (p: any) =>
+            (p.subcategory && p.subcategory.trim().toLowerCase() === subLower) ||
+            p.name.toLowerCase().includes(subLower.replace(/garlands?/i, '').trim())
+        );
+        return filtered.length > 0 ? filtered : prods;
+      }
+      return prods;
     },
-    [productsByCategory]
+    [productsByCategory, selectedCategory, selectedSubcategory]
   );
 
   const getCategoryMeta = (catName: string) => {
@@ -563,8 +579,9 @@ export default function CustomerStore() {
     };
   };
 
-  const handleSelectCategory = (catName: string) => {
+  const handleSelectCategory = (catName: string, subName?: string) => {
     setSelectedCategory(catName);
+    setSelectedSubcategory(subName || '');
     if (catName === 'All') {
       const el = document.getElementById('products-section');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1117,6 +1134,7 @@ export default function CustomerStore() {
         onSearchChange={setSearchQuery}
         categories={categories}
         selectedCategory={selectedCategory}
+        selectedSubcategory={selectedSubcategory}
         onSelectCategory={handleSelectCategory}
         onMenuToggle={setIsMobileNavOpen}
         storeName={storeSettings?.siteName || 'The Indian Flowers'}
@@ -1149,6 +1167,7 @@ export default function CustomerStore() {
             categories={categories}
             loading={loadingCategories}
             selectedCategory={selectedCategory}
+            selectedSubcategory={selectedSubcategory}
             onSelectCategory={handleSelectCategory}
           />
 

@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('search');
     const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
 
     let filter: any = {
       name: { $not: /arugampul|bilva|vilva|durva grass/i },
@@ -31,6 +32,9 @@ export async function GET(request: Request) {
     }
     if (category && category !== 'All') {
       filter.category = category;
+    }
+    if (subcategory && subcategory !== 'All') {
+      filter.subcategory = subcategory;
     }
 
     // Ensure database indexes exist
@@ -65,7 +69,7 @@ export async function POST(request: NextRequest) {
     await connectToDatabase();
     const body = await request.json();
 
-    const { name, description, image, mrp, price, quantity, gst, category, variants } = body;
+    const { name, description, image, mrp, price, quantity, gst, category, subcategory, variants } = body;
 
     // Validation
     if (!name || !description || !image || mrp === undefined || price === undefined || quantity === undefined || gst === undefined) {
@@ -100,6 +104,7 @@ export async function POST(request: NextRequest) {
       quantity: numQuantity,
       gst: numGst,
       category: category || 'General',
+      subcategory: subcategory || '',
       variants: formattedVariants,
     });
 
