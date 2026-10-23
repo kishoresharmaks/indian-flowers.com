@@ -10,6 +10,7 @@ import PrintPolicyButton from '@/components/policies/PrintPolicyButton';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import BrandLogo from '@/components/BrandLogo';
+import { getSiteUrl } from '@/lib/siteUrl';
 import {
   ShieldCheck,
   Lock,
@@ -51,6 +52,7 @@ async function getPolicy(slug: string): Promise<IPolicy | typeof DEFAULT_POLICIE
 }
 
 export async function generateMetadata({ params }: PolicyPageProps): Promise<Metadata> {
+  const siteUrl = getSiteUrl();
   const policy = await getPolicy(params.slug);
   if (!policy) {
     return {
@@ -69,12 +71,12 @@ export async function generateMetadata({ params }: PolicyPageProps): Promise<Met
     title,
     description,
     alternates: {
-      canonical: `https://indian-flowers.com/policy/${params.slug}`,
+      canonical: `${siteUrl}/policy/${params.slug}`,
     },
     openGraph: {
       title,
       description,
-      url: `https://indian-flowers.com/policy/${params.slug}`,
+      url: `${siteUrl}/policy/${params.slug}`,
       siteName: 'Indian-Flowers.com',
       locale: 'en_US',
       type: 'article',
@@ -101,6 +103,7 @@ const POLICY_NAV = [
 ];
 
 export default async function PolicyPage({ params }: PolicyPageProps) {
+  const siteUrl = getSiteUrl();
   const policy = await getPolicy(params.slug);
 
   if (!policy) {
@@ -112,8 +115,8 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
     '@graph': [
       {
         '@type': 'WebPage',
-        '@id': `https://indian-flowers.com/policy/${params.slug}#webpage`,
-        url: `https://indian-flowers.com/policy/${params.slug}`,
+        '@id': `${siteUrl}/policy/${params.slug}#webpage`,
+        url: `${siteUrl}/policy/${params.slug}`,
         name: `${policy.title} | Indian-Flowers.com USA`,
         description:
           policy.metaDescription ||
@@ -121,14 +124,14 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
           `Official ${policy.title} for Indian-Flowers.com storefront.`,
         isPartOf: {
           '@type': 'WebSite',
-          '@id': 'https://indian-flowers.com/#website',
-          url: 'https://indian-flowers.com',
+          '@id': `${siteUrl}/#website`,
+          url: siteUrl,
           name: 'Indian-Flowers.com',
         },
         publisher: {
           '@type': 'Organization',
           name: 'Indian-Flowers.com',
-          url: 'https://indian-flowers.com',
+          url: siteUrl,
         },
       },
       {
@@ -138,19 +141,19 @@ export default async function PolicyPage({ params }: PolicyPageProps) {
             '@type': 'ListItem',
             position: 1,
             name: 'Home',
-            item: 'https://indian-flowers.com',
+            item: siteUrl,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Store Policies',
-            item: 'https://indian-flowers.com/policy/privacy-policy',
+            item: `${siteUrl}/policy/privacy-policy`,
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: policy.title,
-            item: `https://indian-flowers.com/policy/${params.slug}`,
+            item: `${siteUrl}/policy/${params.slug}`,
           },
         ],
       },

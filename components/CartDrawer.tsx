@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { X, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { X, Minus, Plus, Trash2, ShoppingBag, Plane, Truck, MapPin, Store, Check, Info } from 'lucide-react';
+import { IDeliveryMode } from '@/lib/delivery';
 import { formatCurrency } from '@/lib/currency';
 
 interface CartItem {
@@ -29,6 +30,10 @@ interface CartDrawerProps {
   subtotal: number;
   gstTotal: number;
   grandTotal: number;
+  deliveryModes?: IDeliveryMode[];
+  selectedDeliveryMode?: IDeliveryMode | null;
+  onSelectDeliveryMode?: (mode: IDeliveryMode) => void;
+  shippingFee?: number;
 }
 
 export default function CartDrawer({
@@ -41,6 +46,10 @@ export default function CartDrawer({
   subtotal,
   gstTotal,
   grandTotal,
+  deliveryModes = [],
+  selectedDeliveryMode = null,
+  onSelectDeliveryMode,
+  shippingFee = 0,
 }: CartDrawerProps) {
   if (!isOpen) return null;
 
@@ -160,22 +169,109 @@ export default function CartDrawer({
           )}
         </div>
 
-        {/* Footer */}
+                {/* Footer */}
         {items.length > 0 && (
-          <div className="border-t border-border p-4 space-y-3">
-            {/* Totals */}
-            <div className="space-y-2 text-sm font-normal">
+          <div className="border-t border-border p-4 space-y-3.5 bg-white">
+            {/* Delivery Modes Selector */}
+            {deliveryModes && deliveryModes.length > 0 && (
+              <div className="space-y-2 pb-2 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-text flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5 text-brand-700" />
+                    <span>Delivery Mode</span>
+                  </span>
+                  {selectedDeliveryMode && (
+                    <span className="text-[11px] font-semibold text-brand-900 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200">
+                      {selectedDeliveryMode.price > 0 ? formatCurrency(selectedDeliveryMode.price) : 'Local Pickup'}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {deliveryModes
+                    .filter((m) => m.active !== false)
+                    .map((mode) => {
+                      const isSelected = selectedDeliveryMode?.id === mode.id;
+                      const isPickup = mode.type === 'pickup';
+
+                      return (
+                        <label
+                          key={mode.id}
+                          onClick={() => onSelectDeliveryMode?.(mode)}
+                          className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                            isSelected
+                              ? 'border-brand-700 bg-brand-50/60 ring-1 ring-brand-700'
+                              : 'border-border hover:border-stone-300 bg-white'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="cartDeliveryMode"
+                            checked={isSelected}
+                            onChange={() => onSelectDeliveryMode?.(mode)}
+                            className="mt-0.5 w-3.5 h-3.5 text-brand-700 focus:ring-brand-700 accent-brand-700 shrink-0 cursor-pointer"
+                          />
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-semibold text-text truncate flex items-center gap-1.5">
+                                {isPickup ? (
+                                  <MapPin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                ) : mode.name.toLowerCase().includes('air') || mode.name.toLowerCase().includes('flight') || mode.name.toLowerCase().includes('south') ? (
+                                  <Plane className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                                ) : (
+                                  <Truck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                )}
+                                <span className="truncate">{mode.name}</span>
+                              </span>
+                              <span className="text-xs font-bold text-brand-900 shrink-0 tabular-nums">
+                                {mode.price > 0 ? formatCurrency(mode.price) : '$0.00'}
+                              </span>
+                            </div>
+
+                            {mode.description && (
+                              <p className={`text-[10px] mt-0.5 line-clamp-2 leading-relaxed ${
+                                isPickup ? 'text-amber-700 font-medium' : 'text-text-muted'
+                              }`}>
+                                {mode.description}
+                              </p>
+                            )}
+                            {isPickup && mode.pickupLocation && (
+                              <p className="text-[10px] text-stone-500 font-normal mt-0.5">
+                                Hub: {mode.pickupLocation}
+                              </p>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* Totals Breakdown */}
+            <div className="space-y-1.5 text-xs font-normal">
               <div className="flex justify-between text-text-muted">
                 <span>Subtotal</span>
-                <span className="tabular-nums">{formatCurrency(subtotal)}</span>
+                <span className="tabular-nums font-medium text-text">{formatCurrency(subtotal)}</span>
               </div>
+              {selectedDeliveryMode && (
+                <div className="flex justify-between text-text-muted">
+                  <span className="truncate pr-2">
+                    Shipment ({selectedDeliveryMode.name}):
+                  </span>
+                  <span className="tabular-nums font-semibold text-brand-900 shrink-0">
+                    {selectedDeliveryMode.price > 0 ? formatCurrency(selectedDeliveryMode.price) : '$0.00 (Pay at Pickup)'}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-text-muted">
                 <span>Estimated Tax</span>
-                <span className="tabular-nums">{formatCurrency(gstTotal)}</span>
+                <span className="tabular-nums font-medium text-text">{formatCurrency(gstTotal)}</span>
               </div>
-              <div className="flex justify-between font-semibold text-text border-t border-border pt-2">
+              <div className="flex justify-between font-bold text-sm text-text border-t border-border pt-2">
                 <span>Total</span>
-                <span className="tabular-nums">{formatCurrency(grandTotal)}</span>
+                <span className="tabular-nums text-brand-900">{formatCurrency(grandTotal)}</span>
               </div>
             </div>
 

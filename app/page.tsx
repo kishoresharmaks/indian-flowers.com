@@ -16,6 +16,7 @@ import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
 import ProductQuickViewModal from '@/components/ProductQuickViewModal';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
+import { IDeliveryMode, DEFAULT_DELIVERY_MODES } from '@/lib/delivery';
 import WishlistDrawer from '@/components/WishlistDrawer';
 import CustomOrderSection from '@/components/CustomOrderSection';
 import FloatingCartBar from '@/components/FloatingCartBar';
@@ -28,6 +29,9 @@ import {
   Clock,
   RefreshCw,
   PackageCheck,
+  Plane,
+  Store,
+  Info,
   Phone,
   Mail,
   MapPin,
@@ -142,6 +146,8 @@ export default function CustomerStore() {
     notes: '',
     deliveryDate: '',
   });
+  // Delivery Mode State (Configured dynamically via Admin Settings)
+  const [selectedDeliveryMode, setSelectedDeliveryMode] = useState<IDeliveryMode | null>(null);
   const [checkoutTaxResult, setCheckoutTaxResult] = useState<any>(null);
   const [checkoutTaxAmount, setCheckoutTaxAmount] = useState<number>(0);
   const [calculatingTax, setCalculatingTax] = useState<boolean>(false);
@@ -387,7 +393,11 @@ export default function CustomerStore() {
         const res = await fetch('/api/settings');
         const data = await res.json();
         if (data.success && data.data) {
-          setStoreSettings(data.data);
+                    const modes: IDeliveryMode[] = Array.isArray(data.data.deliveryModes) && data.data.deliveryModes.length > 0
+            ? data.data.deliveryModes
+            : DEFAULT_DELIVERY_MODES;
+          setStoreSettings({ ...data.data, deliveryModes: modes });
+          setSelectedDeliveryMode((current) => current || modes.find((m: any) => m.active !== false) || modes[0]);
           if (data.data.enableRazorpay !== false) {
             setCheckoutForm((prev) => ({ ...prev, paymentMethod: 'Razorpay' }));
           } else if (data.data.enableCOD !== false) {
@@ -647,8 +657,9 @@ export default function CustomerStore() {
     0
   );
   const effectivePointsDiscount = isApplyingPoints ? pointsDiscount : 0;
+  const deliveryFee = Number(selectedDeliveryMode?.price || 0);
   const cartGrandTotal = Number(
-    Math.max(0, cartSubtotal - effectivePointsDiscount + (checkoutTaxAmount || 0)).toFixed(2)
+    Math.max(0, cartSubtotal - effectivePointsDiscount + (checkoutTaxAmount || 0) + deliveryFee).toFixed(2)
   );
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -773,7 +784,7 @@ export default function CustomerStore() {
 
     // 1. Pre-flight Form Validation — Strictly verify all filled form details before initializing Razorpay
 
-    const validation = validateCheckoutForm(checkoutForm, cart.length);
+    const validation = validateCheckoutForm(checkoutForm, cart.length, selectedDeliveryMode?.type || 'shipping');
     if (!validation.isValid) {
       setFieldErrors(validation.errors);
       setFormError(
@@ -827,6 +838,16 @@ export default function CustomerStore() {
         paymentMethod: currentMethod,
         transactionId: '',
         redeemPoints: isApplyingPoints ? redeemPoints : 0,
+        shippingFee: deliveryFee,
+        deliveryMode: selectedDeliveryMode ? {
+          id: selectedDeliveryMode.id,
+          name: selectedDeliveryMode.name,
+          type: selectedDeliveryMode.type,
+          price: selectedDeliveryMode.price,
+          description: selectedDeliveryMode.description || '',
+          pickupLocation: selectedDeliveryMode.pickupLocation || '',
+          estimatedDays: selectedDeliveryMode.estimatedDays || '',
+        } : null,
         items: cart.map((item) => ({
           productId: item.product._id,
           name: item.selectedVariant
@@ -870,6 +891,7 @@ export default function CustomerStore() {
             customerPhone: payload.customerPhone,
             customerId: customer?._id || customer?.id || undefined,
             redeemPoints: isApplyingPoints ? redeemPoints : 0,
+            shippingFee: deliveryFee,
           }),
         });
 
@@ -1579,6 +1601,9 @@ export default function CustomerStore() {
         onUpdateQuantity={updateCartQty}
         onRemove={removeFromCart}
         onCheckout={handleInitiateCheckout}
+        deliveryModes={storeSettings?.deliveryModes && storeSettings.deliveryModes.length > 0 ? storeSettings.deliveryModes : DEFAULT_DELIVERY_MODES}
+        selectedDeliveryMode={selectedDeliveryMode}
+        onSelectDeliveryMode={setSelectedDeliveryMode}
       />
 
       {/* WISHLIST DRAWER */}
@@ -2065,6 +2090,97 @@ export default function CustomerStore() {
                   </div>
                 )}
 
+                                {/* DYNAMIC DELIVERY MODES SELECTION (CONFIGURED IN ADMIN SETTINGS) */}
+                <div className="pt-2 border-t border-gray-100 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-gray-800 tracking-wide uppercase flex items-center gap-1.5">
+                      <Truck className="w-3.5 h-3.5 text-[#0B3B24]" />
+                      <span>Delivery Mode / Shipment *</span>
+                    </label>
+                    {selectedDeliveryMode && (
+                      <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                        {selectedDeliveryMode.price > 0 ? formatCurrency(selectedDeliveryMode.price) : 'Local Pickup'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {((storeSettings?.deliveryModes && storeSettings.deliveryModes.length > 0)
+                      ? storeSettings.deliveryModes
+                      : DEFAULT_DELIVERY_MODES
+                    )
+                      .filter((m: any) => m.active !== false)
+                      .map((mode: any) => {
+                        const isSelected = selectedDeliveryMode?.id === mode.id;
+                        const isPickup = mode.type === 'pickup';
+
+                        return (
+                          <label
+                            key={mode.id}
+                            onClick={() => setSelectedDeliveryMode(mode)}
+                            className={`block p-3 rounded-xl border cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-[#0B3B24] bg-emerald-50/40 ring-1 ring-[#0B3B24]'
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2.5">
+                              <input
+                                type="radio"
+                                name="checkoutDeliveryMode"
+                                checked={isSelected}
+                                onChange={() => setSelectedDeliveryMode(mode)}
+                                className="mt-0.5 w-4 h-4 text-[#0B3B24] focus:ring-[#0B3B24] accent-[#0B3B24] cursor-pointer"
+                              />
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs font-bold text-gray-900 truncate flex items-center gap-1.5">
+                                    {isPickup ? (
+                                      <MapPin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                    ) : mode.name.toLowerCase().includes('air') || mode.name.toLowerCase().includes('south') ? (
+                                      <Plane className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                                    ) : (
+                                      <Truck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    )}
+                                    <span className="truncate">{mode.name}</span>
+                                  </span>
+                                  <span className="text-xs font-bold text-[#0B3B24] shrink-0 tabular-nums">
+                                    {mode.price > 0 ? formatCurrency(mode.price) : '$0.00'}
+                                  </span>
+                                </div>
+
+                                {mode.description && (
+                                  <p className={`text-[11px] mt-0.5 line-clamp-2 leading-relaxed ${
+                                    isPickup ? 'text-amber-700 font-medium' : 'text-gray-500'
+                                  }`}>
+                                    {mode.description}
+                                  </p>
+                                )}
+
+                                {isPickup && mode.pickupLocation && (
+                                  <p className="text-[10px] text-stone-500 font-normal mt-0.5">
+                                    Pickup Hub: {mode.pickupLocation}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                  </div>
+
+                  {selectedDeliveryMode?.type === 'pickup' && (
+                    <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="font-semibold block">In-Person Regional Collection Selected</strong>
+                        <span>Your fresh blooms will be prepared for collection at {selectedDeliveryMode.pickupLocation || selectedDeliveryMode.name}. A few dollars are applicable during local pickup.</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* REAL BACKEND PAYMENT OPTIONS (SOURCED DIRECTLY FROM DATABASE SETTINGS) */}
                 <div className="pt-2 border-t border-gray-100 space-y-2.5">
                   <div className="flex items-center justify-between">
@@ -2160,6 +2276,16 @@ export default function CustomerStore() {
                     <span>Subtotal:</span>
                     <span className="tabular-nums font-medium text-gray-900">{formatCurrency(cartSubtotal)}</span>
                   </div>
+                  {selectedDeliveryMode && (
+                    <div className="flex justify-between items-center text-gray-600 font-normal">
+                      <span className="truncate pr-2">
+                        Shipment ({selectedDeliveryMode.name}):
+                      </span>
+                      <span className="tabular-nums font-semibold text-emerald-800 shrink-0">
+                        {deliveryFee > 0 ? formatCurrency(deliveryFee) : '$0.00 (Pay at Pickup)'}
+                      </span>
+                    </div>
+                  )}
                   {effectivePointsDiscount > 0 && (
                     <div className="flex justify-between items-center text-purple-700 font-semibold bg-purple-50 px-2.5 py-1.5 rounded-xl border border-purple-100">
                       <span className="flex items-center gap-1.5">
@@ -2227,6 +2353,15 @@ export default function CustomerStore() {
                 <span className="text-gray-500">Order Total:</span>
                 <strong className="font-semibold text-gray-900">{formatCurrency(orderSuccess.totalAmount)}</strong>
               </div>
+              {orderSuccess.deliveryMode && (
+                <div className="flex justify-between items-center text-[11px] bg-stone-100 p-2 rounded-lg border border-stone-200">
+                  <span className="text-gray-600 font-medium flex items-center gap-1">
+                    <Truck className="w-3.5 h-3.5 text-[#0B3B24]" />
+                    <span>Delivery Mode:</span>
+                  </span>
+                  <strong className="font-semibold text-gray-900">{orderSuccess.deliveryMode.name}</strong>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-gray-500">Payment:</span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">

@@ -20,19 +20,24 @@ import {
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import BrandLogo from '@/components/BrandLogo';
+import { getSiteUrl } from '@/lib/siteUrl';
 
-export const metadata: Metadata = {
+export const dynamic = 'force-dynamic';
+
+export function generateMetadata(): Metadata {
+  const siteUrl = getSiteUrl();
+  return {
   title: 'About Us | The Indian Flowers — Fresh Indian Garlands & Blooms USA',
   description:
     'Learn about The Indian Flowers. We pride ourselves on delivering fresh, quality handcrafted garlands, jasmine strings, and sacred pooja flowers across the United States.',
   alternates: {
-    canonical: 'https://indian-flowers.com/about',
+    canonical: `${siteUrl}/about`,
   },
   openGraph: {
     title: 'About Us | The Indian Flowers — Handcrafted Garlands & Blooms USA',
     description:
       'Learn about The Indian Flowers. We pride ourselves on delivering fresh, quality handcrafted garlands, jasmine strings, and sacred pooja flowers across the United States.',
-    url: 'https://indian-flowers.com/about',
+    url: `${siteUrl}/about`,
     siteName: 'Indian-Flowers.com',
     images: [
       {
@@ -52,22 +57,24 @@ export const metadata: Metadata = {
       'Authentic fresh Indian flowers and handcrafted garlands delivered across the United States.',
     images: ['/images/banners/hero-wedding-1920x650.jpg'],
   },
-};
+  };
+}
 
-const ABOUT_JSON_LD = {
+function getAboutJsonLd(siteUrl: string) {
+  return {
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'AboutPage',
-      '@id': 'https://indian-flowers.com/about#webpage',
-      url: 'https://indian-flowers.com/about',
+      '@id': `${siteUrl}/about#webpage`,
+      url: `${siteUrl}/about`,
       name: 'About Indian-Flowers.com — Fresh Indian Flowers, Garlands & Pooja Essentials in USA',
       description:
         'Learn about The Indian Flowers. We pride ourselves on delivering fresh, quality handcrafted garlands, jasmine strings, and sacred pooja flowers across the United States.',
       publisher: {
         '@type': 'Florist',
         name: 'Indian-Flowers.com',
-        url: 'https://indian-flowers.com',
+        url: siteUrl,
         telephone: '+1-909-379-3678',
         email: 'indianflowersorder@gmail.com',
         address: {
@@ -87,18 +94,19 @@ const ABOUT_JSON_LD = {
           '@type': 'ListItem',
           position: 1,
           name: 'Home',
-          item: 'https://indian-flowers.com',
+          item: siteUrl,
         },
         {
           '@type': 'ListItem',
           position: 2,
           name: 'About Us',
-          item: 'https://indian-flowers.com/about',
+          item: `${siteUrl}/about`,
         },
       ],
     },
   ],
-};
+  };
+}
 
 const PICKUP_HUBS = [
   {
@@ -173,12 +181,13 @@ const VALUES = [
 ];
 
 export default function AboutPage() {
+  const siteUrl = getSiteUrl();
   return (
     <div className="min-h-screen bg-[#FAF6F0]/50 text-stone-900 font-sans flex flex-col justify-between pb-16 md:pb-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(ABOUT_JSON_LD),
+          __html: JSON.stringify(getAboutJsonLd(siteUrl)),
         }}
       />
       {/* Storefront Header */}

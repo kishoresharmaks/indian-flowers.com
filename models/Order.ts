@@ -34,6 +34,15 @@ export interface IOrder extends Document {
   items: IOrderItem[];
   subtotal: number;
   shippingFee?: number;
+  deliveryMode?: {
+    id?: string;
+    name?: string;
+    type?: string;
+    price?: number;
+    description?: string;
+    pickupLocation?: string;
+    estimatedDays?: string;
+  };
   totalTax: number;       // US Sales Tax
   totalGst?: number;      // Historical Indian GST
   taxSnapshot?: TaxSnapshot; // Durable tax calculation snapshot for invoices & audits
@@ -127,6 +136,10 @@ const OrderSchema: Schema = new Schema(
     items: [OrderItemSchema],
     subtotal: { type: Number, required: true },
     shippingFee: { type: Number, default: 0 },
+    deliveryMode: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
     totalTax: { type: Number, default: 0 },
     totalGst: { type: Number, default: 0 }, // relaxed from required for historical compatibility
     taxSnapshot: { type: Schema.Types.Mixed },

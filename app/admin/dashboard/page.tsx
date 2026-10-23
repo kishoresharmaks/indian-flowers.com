@@ -48,7 +48,10 @@ import {
   Printer,
   RotateCcw,
   Award,
+  Plane,
+  Truck,
 } from 'lucide-react';
+import { IDeliveryMode, DEFAULT_DELIVERY_MODES } from '@/lib/delivery';
 import POSCounter from './components/pos/POSCounter';
 import POSReceipt from './components/pos/POSReceipt';
 import SubscriptionTab from '@/components/licensing/SubscriptionTab';
@@ -476,6 +479,22 @@ export default function AdminDashboard() {
     loyaltyPointsPerDollar: 10,
     loyaltyMinPointsToRedeem: 10,
     loyaltyMaxRedemptionPercent: 100,
+    deliveryModes: DEFAULT_DELIVERY_MODES,
+  });
+
+  // Delivery Modes Modal State
+  const [isDeliveryModeModalOpen, setIsDeliveryModeModalOpen] = useState(false);
+  const [editingDeliveryMode, setEditingDeliveryMode] = useState<IDeliveryMode | null>(null);
+  const [deliveryModeForm, setDeliveryModeForm] = useState<IDeliveryMode>({
+    id: '',
+    name: '',
+    type: 'shipping',
+    price: 0,
+    description: '',
+    pickupLocation: '',
+    estimatedDays: '',
+    active: true,
+    order: 0,
   });
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
@@ -711,6 +730,9 @@ export default function AdminDashboard() {
           loyaltyPointsPerDollar: data.data.loyaltyPointsPerDollar ?? 10,
           loyaltyMinPointsToRedeem: data.data.loyaltyMinPointsToRedeem ?? 10,
           loyaltyMaxRedemptionPercent: data.data.loyaltyMaxRedemptionPercent ?? 100,
+          deliveryModes: Array.isArray(data.data.deliveryModes) && data.data.deliveryModes.length > 0
+            ? data.data.deliveryModes
+            : DEFAULT_DELIVERY_MODES,
         });
       }
     } catch (err) {
@@ -718,6 +740,64 @@ export default function AdminDashboard() {
     } finally {
       setLoadingSettings(false);
     }
+  };
+
+  // Delivery Mode Handlers
+  const handleOpenAddDeliveryMode = () => {
+    setEditingDeliveryMode(null);
+    setDeliveryModeForm({
+      id: `dm-${Date.now()}`,
+      name: '',
+      type: 'shipping',
+      price: 0,
+      description: '',
+      pickupLocation: '',
+      estimatedDays: '',
+      active: true,
+      order: (paymentSettings.deliveryModes?.length || 0) + 1,
+    });
+    setIsDeliveryModeModalOpen(true);
+  };
+
+  const handleOpenEditDeliveryMode = (mode: IDeliveryMode) => {
+    setEditingDeliveryMode(mode);
+    setDeliveryModeForm({ ...mode });
+    setIsDeliveryModeModalOpen(true);
+  };
+
+  const handleSaveDeliveryModeModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deliveryModeForm.name.trim()) return;
+
+    const currentModes = [...(paymentSettings.deliveryModes || DEFAULT_DELIVERY_MODES)];
+    const existingIndex = currentModes.findIndex((m) => m.id === deliveryModeForm.id);
+
+    if (existingIndex >= 0) {
+      currentModes[existingIndex] = { ...deliveryModeForm };
+    } else {
+      currentModes.push({ ...deliveryModeForm });
+    }
+
+    setPaymentSettings({ ...paymentSettings, deliveryModes: currentModes });
+    setIsDeliveryModeModalOpen(false);
+  };
+
+  const handleDeleteDeliveryMode = (id: string) => {
+    if (!confirm('Are you sure you want to delete this delivery mode?')) return;
+    const filtered = (paymentSettings.deliveryModes || DEFAULT_DELIVERY_MODES).filter((m) => m.id !== id);
+    setPaymentSettings({ ...paymentSettings, deliveryModes: filtered });
+  };
+
+  const handleToggleDeliveryModeActive = (id: string) => {
+    const updated = (paymentSettings.deliveryModes || DEFAULT_DELIVERY_MODES).map((m) =>
+      m.id === id ? { ...m, active: !m.active } : m
+    );
+    setPaymentSettings({ ...paymentSettings, deliveryModes: updated });
+  };
+
+  const handleResetDeliveryModes = () => {
+    if (!confirm('Reset all delivery modes back to standard defaults (Southwest Air Cargo, FedEx, and 7 regional local pickups)?')) return;
+    setPaymentSettings({ ...paymentSettings, deliveryModes: DEFAULT_DELIVERY_MODES });
   };
 
   // Save Payment Settings
@@ -4006,6 +4086,162 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   )}
                 </div>
 
+                {/* Delivery Modes & Shipping Methods Configuration Card */}
+                <div className="p-5 sm:p-6 rounded-2xl border border-[#E8EDF2] bg-[#FFFCFB] space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF2]">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-700 flex items-center justify-center font-black">
+                        <Truck className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-[#163B5C]">Delivery Modes &amp; Shipping Rates</h3>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            {(paymentSettings.deliveryModes || DEFAULT_DELIVERY_MODES).filter((m) => m.active !== false).length} Active
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#64748B] mt-0.5">
+                          Manage air cargo, priority overnight rates, and regional in-person pickup hubs configured for cart and checkout.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={handleResetDeliveryModes}
+                        className="px-3 py-2 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        title="Reset to defaults"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Reset Defaults</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleOpenAddDeliveryMode}
+                        className="px-4 py-2 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Delivery Mode</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Delivery Modes List */}
+                  <div className="space-y-3">
+                    {(paymentSettings.deliveryModes || DEFAULT_DELIVERY_MODES).map((mode) => {
+                      const isPickup = mode.type === 'pickup';
+                      const isAir = mode.name.toLowerCase().includes('air') || mode.name.toLowerCase().includes('south');
+
+                      return (
+                        <div
+                          key={mode.id}
+                          className={`p-4 rounded-xl border transition-all ${
+                            mode.active
+                              ? 'border-gray-200 bg-white hover:border-[#0B3B24]/40 shadow-xs'
+                              : 'border-gray-200 bg-gray-50/70 opacity-60'
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                                isPickup
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : isAir
+                                    ? 'bg-sky-100 text-sky-800'
+                                    : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                                {isPickup ? (
+                                  <MapPin className="w-4 h-4" />
+                                ) : isAir ? (
+                                  <Plane className="w-4 h-4" />
+                                ) : (
+                                  <Truck className="w-4 h-4" />
+                                )}
+                              </div>
+
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-bold text-sm text-[#163B5C]">{mode.name}</span>
+                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                    isPickup
+                                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                      : 'bg-sky-50 text-sky-800 border border-sky-200'
+                                  }`}>
+                                    {isPickup ? 'Local Pickup' : 'Express Shipping'}
+                                  </span>
+                                  {mode.estimatedDays && (
+                                    <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                                      {mode.estimatedDays}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {mode.description && (
+                                  <p className={`text-xs mt-1 ${isPickup ? 'text-amber-800 font-medium' : 'text-gray-500'}`}>
+                                    {mode.description}
+                                  </p>
+                                )}
+
+                                {isPickup && mode.pickupLocation && (
+                                  <p className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1 font-medium">
+                                    <MapPin className="w-3 h-3 text-amber-600" />
+                                    <span>Pickup Location: {mode.pickupLocation}</span>
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                              <div className="text-right">
+                                <span className="text-sm font-extrabold text-[#0B3B24] tabular-nums">
+                                  {mode.price > 0 ? formatCurrency(mode.price) : '$0.00 (Free)'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                {/* Toggle Active */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleDeliveryModeActive(mode.id)}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                                    mode.active
+                                      ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                  }`}
+                                >
+                                  {mode.active ? 'Active' : 'Disabled'}
+                                </button>
+
+                                {/* Edit Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditDeliveryMode(mode)}
+                                  className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-600 transition-colors cursor-pointer"
+                                  title="Edit Mode"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+
+                                {/* Delete Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteDeliveryMode(mode.id)}
+                                  className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                                  title="Delete Mode"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   disabled={isSubmittingSettings}
@@ -4524,6 +4760,149 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         {/* Tab Content: Reports & Financial Exports */}
         {activeTab === 'reports' && <ReportsTab />}
         {activeTab === 'mail' && <MailManagerTab />}
+      {/* Modal: Add / Edit Delivery Mode */}
+      {isDeliveryModeModalOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-gray-100 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#0B3B24]/10 text-[#0B3B24] flex items-center justify-center font-bold">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-[#163B5C]">
+                  {editingDeliveryMode ? 'Edit Delivery Mode' : 'Add New Delivery Mode'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeliveryModeModalOpen(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveDeliveryModeModal} className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-[#163B5C] block mb-1">
+                  Delivery Method Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. South West Airlines Priority Air Cargo"
+                  value={deliveryModeForm.name}
+                  onChange={(e) => setDeliveryModeForm({ ...deliveryModeForm, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#0B3B24]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-[#163B5C] block mb-1">
+                    Type *
+                  </label>
+                  <select
+                    value={deliveryModeForm.type}
+                    onChange={(e) => setDeliveryModeForm({ ...deliveryModeForm, type: e.target.value as any })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#0B3B24]"
+                  >
+                    <option value="shipping">Express Shipping (Cargo/Courier)</option>
+                    <option value="pickup">Local Pickup (In-Person Hub)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-[#163B5C] block mb-1">
+                    Price / Fee (USD $) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    placeholder="0.00"
+                    value={deliveryModeForm.price}
+                    onChange={(e) => setDeliveryModeForm({ ...deliveryModeForm, price: Math.max(0, parseFloat(e.target.value) || 0) })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#0B3B24]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#163B5C] block mb-1">
+                  Estimated Delivery / Readiness
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Same-Day / Next-Morning, or Ready for Pickup"
+                  value={deliveryModeForm.estimatedDays || ''}
+                  onChange={(e) => setDeliveryModeForm({ ...deliveryModeForm, estimatedDays: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#0B3B24]"
+                />
+              </div>
+
+              {deliveryModeForm.type === 'pickup' && (
+                <div>
+                  <label className="font-bold text-[#163B5C] block mb-1">
+                    Pickup Location / Hub Details
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Houston, TX or Inver Grove Heights, MN-55077"
+                    value={deliveryModeForm.pickupLocation || ''}
+                    onChange={(e) => setDeliveryModeForm({ ...deliveryModeForm, pickupLocation: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#0B3B24]"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="font-bold text-[#163B5C] block mb-1">
+                  Customer Description / Helper Note
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. A few dollars are applicable during local pickup."
+                  value={deliveryModeForm.description || ''}
+                  onChange={(e) => setDeliveryModeForm({ ...deliveryModeForm, description: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#0B3B24]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="deliveryModeActive"
+                  checked={deliveryModeForm.active}
+                  onChange={(e) => setDeliveryModeForm({ ...deliveryModeForm, active: e.target.checked })}
+                  className="w-4 h-4 rounded text-[#0B3B24] focus:ring-[#0B3B24] accent-[#0B3B24] cursor-pointer"
+                />
+                <label htmlFor="deliveryModeActive" className="font-semibold text-gray-800 cursor-pointer">
+                  Active (Display this option to customers in cart and checkout)
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsDeliveryModeModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-bold transition-all shadow-xs cursor-pointer"
+                >
+                  {editingDeliveryMode ? 'Update Delivery Mode' : 'Add Delivery Mode'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       </main>
 
       {/* Add / Edit Product Modal */}

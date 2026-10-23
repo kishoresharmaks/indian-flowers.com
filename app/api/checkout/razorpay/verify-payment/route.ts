@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       country = 'US',
       items,
       shippingFee = 0,
+      deliveryMode,
       redeemPoints = 0,
     } = orderDetails;
 
@@ -248,6 +249,15 @@ export async function POST(request: Request) {
       pointsDiscount: fromCents(pointsDiscountCents),
       pointsEarned,
       pointsAwarded: false, // Loyalty points are awarded ONLY AFTER order is Delivered
+      deliveryMode: deliveryMode ? {
+        id: String(deliveryMode.id || ''),
+        name: String(deliveryMode.name || ''),
+        type: String(deliveryMode.type || 'shipping'),
+        price: Number(deliveryMode.price) || 0,
+        description: String(deliveryMode.description || ''),
+        pickupLocation: String(deliveryMode.pickupLocation || ''),
+        estimatedDays: String(deliveryMode.estimatedDays || ''),
+      } : null,
       shippingFee: safeShippingFee,
       totalTax: calculatedTax,
       totalGst: 0,

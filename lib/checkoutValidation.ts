@@ -165,7 +165,8 @@ export function validateZipCode(zip?: string | null): string | null {
  */
 export function validateCheckoutForm(
   form: Partial<CheckoutFormData>,
-  cartItemCount: number = 1
+  cartItemCount: number = 1,
+  deliveryType?: 'shipping' | 'pickup' | string
 ): CheckoutValidationResult {
   const errors: Record<string, string> = {};
 
@@ -182,17 +183,29 @@ export function validateCheckoutForm(
   const emailError = validateCustomerEmail(form.customerEmail);
   if (emailError) errors.customerEmail = emailError;
 
-  const streetError = validateStreetAddress(form.streetAddress);
-  if (streetError) errors.streetAddress = streetError;
+  const isPickup = deliveryType === 'pickup';
 
-  const cityError = validateCity(form.city);
-  if (cityError) errors.city = cityError;
+  // For physical delivery, street, city, state and zip are strictly required.
+  // For in-person local pickup, address is optional billing contact info.
+  if (!isPickup || form.streetAddress) {
+    const streetError = validateStreetAddress(form.streetAddress);
+    if (streetError) errors.streetAddress = streetError;
+  }
 
-  const stateError = validateState(form.state);
-  if (stateError) errors.state = stateError;
+  if (!isPickup || form.city) {
+    const cityError = validateCity(form.city);
+    if (cityError) errors.city = cityError;
+  }
 
-  const zipError = validateZipCode(form.zipCode);
-  if (zipError) errors.zipCode = zipError;
+  if (!isPickup || form.state) {
+    const stateError = validateState(form.state);
+    if (stateError) errors.state = stateError;
+  }
+
+  if (!isPickup || form.zipCode) {
+    const zipError = validateZipCode(form.zipCode);
+    if (zipError) errors.zipCode = zipError;
+  }
 
 
   const fieldKeys = Object.keys(errors);

@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
+import { getSiteUrl } from "@/lib/siteUrl";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import StorefrontGlobalNav from "@/components/StorefrontGlobalNav";
 import GlobalPageLoader from "@/components/GlobalPageLoader";
 import "./globals.css";
 
-export const metadata: Metadata = {
+export const dynamic = 'force-dynamic';
+
+export function generateMetadata(): Metadata {
+  const siteUrl = getSiteUrl();
+  return {
   title: {
     default: "Indian-Flowers.com — Fresh Indian Flowers, Garlands & Pooja Essentials in USA",
     template: "%s | Indian-Flowers.com",
@@ -39,7 +44,7 @@ export const metadata: Metadata = {
     address: true,
     email: true,
   },
-  metadataBase: new URL("https://indian-flowers.com"),
+  metadataBase: new URL(siteUrl),
   alternates: {
     canonical: "/",
   },
@@ -47,7 +52,7 @@ export const metadata: Metadata = {
     title: "Indian-Flowers.com — Fresh Indian Flowers, Garlands & Pooja Essentials in USA",
     description:
       "Fresh flowers, handcrafted garlands, loose flowers, leaves, and custom wedding designs delivered fresh across the United States.",
-    url: "https://indian-flowers.com",
+    url: siteUrl,
     siteName: "Indian-Flowers.com",
     images: [
       {
@@ -86,7 +91,8 @@ export const metadata: Metadata = {
     shortcut: "/the-indian-flowers-emblem.webp",
     apple: "/the-indian-flowers-emblem.webp",
   },
-};
+  };
+}
 
 const ROOT_SCHEMA_GRAPH = {
   "@context": "https://schema.org",
@@ -212,6 +218,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const siteUrl = getSiteUrl();
   return (
     <html lang="en" className="font-sans">
       <head>
@@ -225,7 +232,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(ROOT_SCHEMA_GRAPH),
+            __html: JSON.stringify(ROOT_SCHEMA_GRAPH).replaceAll('https://indian-flowers.com', siteUrl),
           }}
         />
       </head>

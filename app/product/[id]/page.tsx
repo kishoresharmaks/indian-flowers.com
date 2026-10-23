@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import ProductClientRedirect from './ProductClientRedirect';
 import { formatCurrency } from '@/lib/currency';
+import { getSiteUrl } from '@/lib/siteUrl';
 
 interface Props {
   params: { id: string };
@@ -10,10 +11,9 @@ interface Props {
 
 export const dynamic = 'force-dynamic';
 
-const SITE_URL = 'https://indian-flowers.com';
-const FALLBACK_IMAGE = `${SITE_URL}/images/banners/hero-wedding-1920x650.jpg`;
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const siteUrl = getSiteUrl();
+  const fallbackImage = `${siteUrl}/images/banners/hero-wedding-1920x650.jpg`;
   try {
     await connectToDatabase();
     const product: any = await Product.findById(params.id).lean();
@@ -36,8 +36,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const productImageUrl = product.image
       ? product.image.startsWith('http')
         ? product.image
-        : `${SITE_URL}${product.image.startsWith('/') ? '' : '/'}${product.image}`
-      : FALLBACK_IMAGE;
+        : `${siteUrl}${product.image.startsWith('/') ? '' : '/'}${product.image}`
+      : fallbackImage;
 
     return {
       title,
@@ -52,12 +52,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'Pooja Essentials',
       ],
       alternates: {
-        canonical: `${SITE_URL}/product/${params.id}`,
+        canonical: `${siteUrl}/product/${params.id}`,
       },
       openGraph: {
         title: `${product.name} | Indian-Flowers.com`,
         description,
-        url: `${SITE_URL}/product/${params.id}`,
+        url: `${siteUrl}/product/${params.id}`,
         siteName: 'Indian-Flowers.com',
         images: [
           {
@@ -89,6 +89,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProductPage({ params }: Props) {
+  const siteUrl = getSiteUrl();
+  const fallbackImage = `${siteUrl}/images/banners/hero-wedding-1920x650.jpg`;
   let productJsonLd: any = null;
   let breadcrumbJsonLd: any = null;
 
@@ -100,8 +102,8 @@ export default async function ProductPage({ params }: Props) {
       const productImageUrl = product.image
         ? product.image.startsWith('http')
           ? product.image
-          : `${SITE_URL}${product.image.startsWith('/') ? '' : '/'}${product.image}`
-        : FALLBACK_IMAGE;
+          : `${siteUrl}${product.image.startsWith('/') ? '' : '/'}${product.image}`
+        : fallbackImage;
 
       const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
 
@@ -122,7 +124,7 @@ export default async function ProductPage({ params }: Props) {
         category: product.category || 'Fresh Indian Flowers',
         offers: {
           '@type': 'Offer',
-          url: `${SITE_URL}/product/${product._id}`,
+          url: `${siteUrl}/product/${product._id}`,
           priceCurrency: 'USD',
           price: Number(product.price || 0).toFixed(2),
           priceValidUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
@@ -181,19 +183,19 @@ export default async function ProductPage({ params }: Props) {
             '@type': 'ListItem',
             position: 1,
             name: 'Home',
-            item: SITE_URL,
+            item: siteUrl,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: product.category || 'Catalog',
-            item: `${SITE_URL}/#products-section`,
+            item: `${siteUrl}/#products-section`,
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: product.name,
-            item: `${SITE_URL}/product/${product._id}`,
+            item: `${siteUrl}/product/${product._id}`,
           },
         ],
       };

@@ -1,25 +1,15 @@
 import { MetadataRoute } from 'next';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
-import Settings from '@/models/Settings';
 import Policy from '@/models/Policy';
 import { DEFAULT_POLICIES } from '@/lib/defaultPolicies';
+import { getSiteUrl } from '@/lib/siteUrl';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600; // Revalidate every hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  let baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://indian-flowers.com').replace(/\/$/, '');
-
-  try {
-    await connectToDatabase();
-    const settings = await Settings.findOne({ key: 'global' }, 'domain').lean();
-    if (settings?.domain && /^https?:\/\//.test(settings.domain)) {
-      baseUrl = settings.domain.replace(/\/$/, '');
-    }
-  } catch (err) {
-    console.warn('Sitemap settings lookup fallback to default:', err);
-  }
+  const baseUrl = getSiteUrl();
 
   // 1. Static Core Storefront Routes
   const routes: MetadataRoute.Sitemap = [

@@ -1,7 +1,10 @@
 import { MetadataRoute } from 'next';
+import { getSiteUrl } from '@/lib/siteUrl';
+
+export const dynamic = 'force-dynamic';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://indian-flowers.com').replace(/\/$/, '');
+  const baseUrl = getSiteUrl();
 
   return {
     rules: [

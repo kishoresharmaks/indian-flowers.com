@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
-import Settings from '@/models/Settings';
+import Settings, { DEFAULT_DELIVERY_MODES } from '@/models/Settings';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 import { STORE_CURRENCY, STORE_LOCALE } from '@/lib/currency';
 
@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
         { $set: { currency: STORE_CURRENCY, locale: STORE_LOCALE } }
       );
       settings = await Settings.findOne({ key: 'global' }).lean();
+    }
+    if (!settings.deliveryModes || settings.deliveryModes.length === 0) {
+      await Settings.updateOne({ key: 'global' }, { $set: { deliveryModes: DEFAULT_DELIVERY_MODES } });
+      settings.deliveryModes = DEFAULT_DELIVERY_MODES;
     }
     return NextResponse.json(
       {
@@ -57,6 +61,20 @@ export async function POST(request: NextRequest) {
     if (typeof enableCOD === 'boolean') updateFields.enableCOD = enableCOD;
     if (typeof razorpayKeyId === 'string') updateFields.razorpayKeyId = razorpayKeyId.trim();
     if (typeof razorpayKeySecret === 'string') updateFields.razorpayKeySecret = razorpayKeySecret.trim();
+    // Delivery Modes Configuration
+    if (Array.isArray(body.deliveryModes)) {
+      updateFields.deliveryModes = body.deliveryModes.map((dm: any, idx: number) => ({
+        id: String(dm.id || `dm-${Date.now()}-${idx}`),
+        name: String(dm.name || 'Delivery Method').trim().slice(0, 100),
+        type: dm.type === 'pickup' ? 'pickup' : 'shipping',
+        price: Math.max(0, Number(dm.price) || 0),
+        description: String(dm.description || '').trim().slice(0, 300),
+        pickupLocation: String(dm.pickupLocation || '').trim().slice(0, 200),
+        estimatedDays: String(dm.estimatedDays || '').trim().slice(0, 100),
+        active: dm.active !== false,
+        order: Number(dm.order ?? idx),
+      }));
+    }
     // Loyalty System Configurations
     if (typeof body.loyaltyEnabled === 'boolean') updateFields.loyaltyEnabled = body.loyaltyEnabled;
     if (typeof body.loyaltyRedemptionEnabled === 'boolean') updateFields.loyaltyRedemptionEnabled = body.loyaltyRedemptionEnabled;
