@@ -9,7 +9,8 @@ import { US_STATES } from '@/lib/tax';
 import { validateCheckoutForm } from '@/lib/checkoutValidation';
 import Header from '@/components/Header';
 import HeroSection, { HeroSlide } from '@/components/HeroSection';
-import CategoryCarousel, { CategoryItem } from '@/components/CategoryCarousel';
+import ShopByCategory from '@/components/home/ShopByCategory';
+import type { CategoryItem } from '@/components/home/CategoryCarousel';
 import ProductCarousel from '@/components/ProductCarousel';
 import FloralCornerDecorations from '@/components/FloralCornerDecorations';
 import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
@@ -1163,7 +1164,7 @@ export default function CustomerStore() {
         {/* Content Container (z-10 above decorations) */}
         <div className="relative z-10 w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Horizontal Category Carousel */}
-          <CategoryCarousel
+          <ShopByCategory
             categories={categories}
             loading={loadingCategories}
             selectedCategory={selectedCategory}

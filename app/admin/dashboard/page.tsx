@@ -55,6 +55,7 @@ import {
   FolderPlus,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { parseExcelRowsToImportItems, ParsedImportRow } from '@/lib/bulkImportHelpers';
 import { IDeliveryMode, DEFAULT_DELIVERY_MODES } from '@/lib/delivery';
 import POSCounter from './components/pos/POSCounter';
 import POSReceipt from './components/pos/POSReceipt';
@@ -349,10 +350,14 @@ export default function AdminDashboard() {
   const [inlineSubcatName, setInlineSubcatName] = useState('');
   const [isSubmittingInlineSubcat, setIsSubmittingInlineSubcat] = useState(false);
 
-  // Bulk Import state
+  // Bulk Import state (Solution 1: Excel + Multi-Image Dropzone + Separate Variants)
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [importPreviewRows, setImportPreviewRows] = useState<any[]>([]);
+  const [importRawRows, setImportRawRows] = useState<any[]>([]);
+  const [importEnrichedRows, setImportEnrichedRows] = useState<ParsedImportRow[]>([]);
+  const [importImageFiles, setImportImageFiles] = useState<File[]>([]);
+  const [importProgressStatus, setImportProgressStatus] = useState<string>('');
+  const [importFilterTab, setImportFilterTab] = useState<'all' | 'new' | 'update' | 'matched' | 'unmatched'>('all');
   const [isUploadingImport, setIsUploadingImport] = useState(false);
   const [importResult, setImportResult] = useState<{
     success: boolean;
@@ -1581,7 +1586,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     }
   };
 
-  // Bulk Import Handlers
+  // Bulk Import Handlers (Solution 1: Excel + Multi-Image Dropzone + Separate Variants)
   const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1594,25 +1599,92 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       const sheetName = wb.SheetNames.includes('Products') ? 'Products' : wb.SheetNames[0];
       if (sheetName && wb.Sheets[sheetName]) {
         const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName], { defval: '' });
-        setImportPreviewRows(rows.slice(0, 8));
+        setImportRawRows(rows);
+        const parsed = parseExcelRowsToImportItems(rows, products, importImageFiles);
+        setImportEnrichedRows(parsed);
       }
     } catch (err) {
       console.error('Failed to parse Excel preview:', err);
     }
   };
 
+  const handleImportImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Combine with existing image files without duplicate filenames
+    const existingNames = new Set(importImageFiles.map((f) => f.name.toLowerCase()));
+    const newFiles = [...importImageFiles];
+    files.forEach((f) => {
+      if (!existingNames.has(f.name.toLowerCase())) {
+        newFiles.push(f);
+      }
+    });
+
+    setImportImageFiles(newFiles);
+    if (importRawRows.length > 0) {
+      const parsed = parseExcelRowsToImportItems(importRawRows, products, newFiles);
+      setImportEnrichedRows(parsed);
+    }
+  };
+
+  const handleClearImportImages = () => {
+    setImportImageFiles([]);
+    if (importRawRows.length > 0) {
+      const parsed = parseExcelRowsToImportItems(importRawRows, products, []);
+      setImportEnrichedRows(parsed);
+    }
+  };
+
   const handleExecuteBulkImport = async () => {
-    if (!importFile) return;
+    if (importEnrichedRows.length === 0 && !importFile) return;
     try {
       setIsUploadingImport(true);
       setImportResult(null);
+      setImportProgressStatus('Preparing product data...');
 
-      const formData = new FormData();
-      formData.append('file', importFile);
+      const rowsToProcess = importEnrichedRows;
+      const imagesToCompress = rowsToProcess.filter((r) => r.matchedImageFile);
+      let compressedCount = 0;
+
+      const payloadRows = [];
+
+      for (let i = 0; i < rowsToProcess.length; i++) {
+        const item = rowsToProcess[i];
+        let finalImageBase64 = '';
+
+        if (item.matchedImageFile) {
+          compressedCount++;
+          setImportProgressStatus(
+            `Compressing images on device (${compressedCount}/${imagesToCompress.length}) — ${item.matchedImageFile.name}...`
+          );
+          try {
+            finalImageBase64 = await compressImage(item.matchedImageFile, 800, 0.8);
+          } catch (compErr) {
+            console.error('Image compression failed for', item.matchedImageFile.name, compErr);
+          }
+        }
+
+        payloadRows.push({
+          name: item.name,
+          description: item.description,
+          category: item.category,
+          subcategory: item.subcategory,
+          price: item.price,
+          mrp: item.mrp,
+          quantity: item.quantity,
+          gst: item.gst,
+          image: finalImageBase64 || item.imageFilename,
+          variants: item.variants,
+        });
+      }
+
+      setImportProgressStatus(`Saving ${payloadRows.length} products to database...`);
 
       const res = await fetch('/api/products/bulk-import', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: payloadRows }),
       });
 
       const data = await res.json();
@@ -1628,6 +1700,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       });
     } finally {
       setIsUploadingImport(false);
+      setImportProgressStatus('');
     }
   };
 
@@ -2655,7 +2728,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   type="button"
                   onClick={() => {
                     setImportFile(null);
-                    setImportPreviewRows([]);
+                    setImportRawRows([]);
+                    setImportEnrichedRows([]);
+                    setImportImageFiles([]);
+                    setImportProgressStatus('');
+                    setImportFilterTab('all');
                     setImportResult(null);
                     setIsBulkImportModalOpen(true);
                   }}
@@ -6607,194 +6684,467 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
       
       {/* Bulk Product Import Modal (.xlsx) */}
-      {isBulkImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-hidden">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative">
-            <button
-              onClick={() => {
-                setIsBulkImportModalOpen(false);
-                setImportFile(null);
-                setImportPreviewRows([]);
-                setImportResult(null);
-              }}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E8EDF2] text-[#64748B] transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      {isBulkImportModalOpen && (() => {
+        const resetAndCloseModal = () => {
+          setIsBulkImportModalOpen(false);
+          setImportFile(null);
+          setImportRawRows([]);
+          setImportEnrichedRows([]);
+          setImportImageFiles([]);
+          setImportProgressStatus('');
+          setImportFilterTab('all');
+          setImportResult(null);
+        };
 
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-xl font-black text-[#163B5C] flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-800">
-                    <FileSpreadsheet className="w-5 h-5 text-emerald-700" />
-                  </div>
-                  <span>Bulk Product Import (.xlsx)</span>
-                </h3>
-                <p className="text-xs text-[#64748B] mt-1">
-                  Upload an Excel workbook formatted in the latest <strong className="text-emerald-800 font-bold">.xlsx</strong> format to bulk import or update products, categories, and subcategories.
-                </p>
-              </div>
+        const totalCount = importEnrichedRows.length;
+        const newCount = importEnrichedRows.filter((r) => !r.isUpdate).length;
+        const updateCount = importEnrichedRows.filter((r) => r.isUpdate).length;
+        const matchedCount = importEnrichedRows.filter((r) => Boolean(r.matchedImageFile)).length;
+        const unmatchedCount = totalCount - matchedCount;
 
-              {/* Template Helper Callout */}
-              <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    Download the Official Store Excel Template
-                  </span>
-                  <p className="text-[11px] text-emerald-800/90">
-                    Includes pre-configured headers, sample products, instructions, and full category reference.
+        const filteredImportRows = importEnrichedRows.filter((r) => {
+          if (importFilterTab === 'new') return !r.isUpdate;
+          if (importFilterTab === 'update') return r.isUpdate;
+          if (importFilterTab === 'matched') return Boolean(r.matchedImageFile);
+          if (importFilterTab === 'unmatched') return !r.matchedImageFile;
+          return true;
+        });
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-hidden">
+            <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative">
+              <button
+                onClick={resetAndCloseModal}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E8EDF2] text-[#64748B] transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-black text-[#163B5C] flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-800">
+                      <FileSpreadsheet className="w-5 h-5 text-emerald-700" />
+                    </div>
+                    <span>Bulk Product Import (.xlsx)</span>
+                  </h3>
+                  <p className="text-xs text-[#64748B] mt-1">
+                    Upload an Excel workbook with dedicated variant columns + drop product photos. Matches images automatically by filename, compresses to Base64 on device, and shows an instant preview of new products vs existing updates.
                   </p>
                 </div>
-                <a
-                  href="/api/products/template"
-                  download="IndianFlowers_Products_Bulk_Import_Template.xlsx"
-                  className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0 self-start sm:self-auto"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download .xlsx</span>
-                </a>
-              </div>
 
-              {/* Upload Zone */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
-                  Select Excel File (.xlsx, .xls)
-                </label>
-                <label className="border-2 border-dashed border-[#E8EDF2] hover:border-emerald-600 rounded-2xl p-6 text-center cursor-pointer bg-[#FFFCFB] transition-colors block">
-                  <Upload className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-                  <span className="text-sm font-bold text-[#163B5C] block">
-                    {importFile ? importFile.name : 'Click to select or drag & drop .xlsx file'}
-                  </span>
-                  <span className="text-xs text-[#64748B] mt-1 block">
-                    {importFile
-                      ? `${(importFile.size / 1024).toFixed(1)} KB — Ready to parse`
-                      : 'Supports Microsoft Excel Workbooks (.xlsx) and Excel 97-2004 (.xls)'}
-                  </span>
-                  <input
-                    type="file"
-                    accept=".xlsx, .xls, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-                    onChange={handleImportFileChange}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              {/* Preview of Parsed Rows */}
-              {importPreviewRows.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
-                      Preview of Rows Detected ({importPreviewRows.length}+ items)
+                {/* Template Helper Callout */}
+                <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Download the Official Store Excel Template
                     </span>
-                    <span className="text-[11px] text-emerald-700 font-bold">
-                      ✓ Validated format
-                    </span>
+                    <p className="text-[11px] text-emerald-800/90">
+                      Pre-formatted with color-coded headers, separate non-technical Variant columns (Variant 1, 2, 3, 4), and categories reference.
+                    </p>
                   </div>
-                  <div className="border border-[#E8EDF2] rounded-xl overflow-hidden max-h-48 overflow-y-auto">
-                    <table className="w-full text-left text-[11px] border-collapse">
-                      <thead className="bg-[#F8FAFC] border-b border-[#E8EDF2] sticky top-0">
-                        <tr className="font-bold text-[#64748B]">
-                          <th className="py-2 px-3">Name</th>
-                          <th className="py-2 px-3">Category</th>
-                          <th className="py-2 px-3">Subcategory</th>
-                          <th className="py-2 px-3">Price</th>
-                          <th className="py-2 px-3">MRP</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E8EDF2]">
-                        {importPreviewRows.map((r, i) => (
-                          <tr key={i} className="hover:bg-slate-50">
-                            <td className="py-1.5 px-3 font-semibold text-[#163B5C] truncate max-w-[150px]">
-                              {r.Name || r['Product Name'] || r.name || '—'}
-                            </td>
-                            <td className="py-1.5 px-3 text-[#64748B] truncate max-w-[100px]">
-                              {r.Category || r.category || '—'}
-                            </td>
-                            <td className="py-1.5 px-3 text-emerald-700 font-medium truncate max-w-[100px]">
-                              {r.Subcategory || r['Sub Category'] || r.subcategory || '—'}
-                            </td>
-                            <td className="py-1.5 px-3 font-bold text-[#ED3500]">
-                              ${r.Price || r.price || 0}
-                            </td>
-                            <td className="py-1.5 px-3 line-through text-[#64748B]">
-                              ${r.MRP || r.mrp || 0}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <a
+                    href="/api/products/template"
+                    download="IndianFlowers_Products_Bulk_Import_Template.xlsx"
+                    className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0 self-start sm:self-auto"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download .xlsx</span>
+                  </a>
                 </div>
-              )}
 
-              {/* Results Banner */}
-              {importResult && (
-                <div
-                  className={`p-4 rounded-2xl border text-xs ${
-                    importResult.success
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                      : 'bg-rose-50 border-rose-200 text-rose-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 font-bold mb-1">
-                    {importResult.success ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-rose-600" />
-                    )}
-                    <span>{importResult.message}</span>
+                {/* Upload Zones: 2 Columns (Excel File + Product Images Dropzone) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Zone 1: Excel File */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider flex items-center justify-between">
+                      <span>1. Select Excel File (.xlsx, .xls)</span>
+                      {importFile && (
+                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
+                          ✓ File Loaded
+                        </span>
+                      )}
+                    </label>
+                    <label className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-colors block ${importFile ? 'border-emerald-600 bg-emerald-50/20' : 'border-[#E8EDF2] hover:border-emerald-600 bg-[#FFFCFB]'}`}>
+                      <Upload className={`w-7 h-7 mx-auto mb-2 ${importFile ? 'text-emerald-700' : 'text-emerald-600'}`} />
+                      <span className="text-xs font-bold text-[#163B5C] block truncate max-w-xs mx-auto">
+                        {importFile ? importFile.name : 'Click to select or drag .xlsx workbook'}
+                      </span>
+                      <span className="text-[11px] text-[#64748B] mt-1 block">
+                        {importFile
+                          ? `${(importFile.size / 1024).toFixed(1)} KB — ${totalCount} rows detected`
+                          : 'Supports Microsoft Excel (.xlsx, .xls)'}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".xlsx, .xls, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                        onChange={handleImportFileChange}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
-                  {importResult.errors && importResult.errors.length > 0 && (
-                    <div className="mt-2 pl-4 border-l-2 border-rose-300 space-y-1 text-[11px]">
-                      <span className="font-bold block">Warnings / Skipped:</span>
-                      {importResult.errors.map((err, ei) => (
-                        <p key={ei}>{err}</p>
-                      ))}
+
+                  {/* Zone 2: Product Images Multi-Drop (Solution 1) */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider flex items-center gap-1.5">
+                        <span>2. Drop Product Photos</span>
+                        <span className="text-[10px] lowercase text-[#64748B] font-normal">(optional)</span>
+                      </label>
+                      {importImageFiles.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleClearImportImages}
+                          className="text-[10px] text-rose-600 hover:text-rose-800 font-bold flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" /> Clear ({importImageFiles.length})
+                        </button>
+                      )}
                     </div>
-                  )}
+                    <label className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-colors block ${importImageFiles.length > 0 ? 'border-emerald-600 bg-emerald-50/20' : 'border-[#E8EDF2] hover:border-emerald-600 bg-[#FFFCFB]'}`}>
+                      <ImageIcon className={`w-7 h-7 mx-auto mb-2 ${importImageFiles.length > 0 ? 'text-emerald-700' : 'text-emerald-600'}`} />
+                      <span className="text-xs font-bold text-[#163B5C] block">
+                        {importImageFiles.length > 0
+                          ? `${importImageFiles.length} Photos Selected`
+                          : 'Click or drop 1 to 50+ photos'}
+                      </span>
+                      <span className="text-[11px] text-[#64748B] mt-1 block">
+                        {importImageFiles.length > 0
+                          ? `${matchedCount} matched with Excel rows`
+                          : 'Matches Excel "Image Filename" or Product Name'}
+                      </span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImportImagesChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
                 </div>
-              )}
 
-              {/* Action Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsBulkImportModalOpen(false);
-                    setImportFile(null);
-                    setImportPreviewRows([]);
-                    setImportResult(null);
-                  }}
-                  className="px-5 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-bold text-[#64748B] hover:bg-gray-50 transition-colors"
-                >
-                  {importResult?.success ? 'Done & Close' : 'Cancel'}
-                </button>
-                {!importResult?.success && (
+                {/* Selected Images Thumbnail Scroller if photos chosen */}
+                {importImageFiles.length > 0 && (
+                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#163B5C]">
+                      <span>Selected Photos ({importImageFiles.length})</span>
+                      <span className="text-[11px] text-emerald-700 font-semibold">
+                        {matchedCount} / {importImageFiles.length} matched with sheet rows
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
+                      {importImageFiles.slice(0, 16).map((file, fIdx) => {
+                        const isMatched = importEnrichedRows.some((r) => r.matchedImageFile?.name === file.name);
+                        return (
+                          <div
+                            key={fIdx}
+                            className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-semibold border ${
+                              isMatched
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                : 'bg-white text-slate-600 border-slate-200'
+                            }`}
+                            title={file.name}
+                          >
+                            <span className="w-2 h-2 rounded-full shrink-0 bg-current" />
+                            <span className="truncate max-w-[120px]">{file.name}</span>
+                          </div>
+                        );
+                      })}
+                      {importImageFiles.length > 16 && (
+                        <span className="text-[10px] text-slate-500 font-bold shrink-0 px-2">
+                          +{importImageFiles.length - 16} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Pre-Import Verification & Duplicate Check Section */}
+                {totalCount > 0 && (
+                  <div className="space-y-3 pt-1">
+                    {/* Stat Badges */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-center">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                          Total Products
+                        </span>
+                        <span className="text-lg font-black text-[#163B5C]">{totalCount}</span>
+                      </div>
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center">
+                        <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider block">
+                          + New Products
+                        </span>
+                        <span className="text-lg font-black text-emerald-800">{newCount}</span>
+                      </div>
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-2.5 text-center">
+                        <span className="text-[10px] text-blue-700 font-bold uppercase tracking-wider block">
+                          ↻ Existing Updates
+                        </span>
+                        <span className="text-lg font-black text-blue-800">{updateCount}</span>
+                      </div>
+                      <div className="bg-teal-50 border border-teal-200 rounded-xl p-2.5 text-center">
+                        <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider block">
+                          📷 Photos Matched
+                        </span>
+                        <span className="text-lg font-black text-teal-800">
+                          {matchedCount} / {totalCount}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Filter Tabs */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-bold border-b border-[#E8EDF2]">
+                      <button
+                        type="button"
+                        onClick={() => setImportFilterTab('all')}
+                        className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                          importFilterTab === 'all'
+                            ? 'bg-[#0B3B24] text-white'
+                            : 'text-[#64748B] hover:bg-slate-100'
+                        }`}
+                      >
+                        All ({totalCount})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImportFilterTab('new')}
+                        className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                          importFilterTab === 'new'
+                            ? 'bg-emerald-700 text-white'
+                            : 'text-emerald-800 hover:bg-emerald-50'
+                        }`}
+                      >
+                        + New ({newCount})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImportFilterTab('update')}
+                        className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                          importFilterTab === 'update'
+                            ? 'bg-blue-700 text-white'
+                            : 'text-blue-800 hover:bg-blue-50'
+                        }`}
+                      >
+                        ↻ Updates ({updateCount})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImportFilterTab('matched')}
+                        className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                          importFilterTab === 'matched'
+                            ? 'bg-teal-700 text-white'
+                            : 'text-teal-800 hover:bg-teal-50'
+                        }`}
+                      >
+                        📷 Matched ({matchedCount})
+                      </button>
+                      {unmatchedCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setImportFilterTab('unmatched')}
+                          className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                            importFilterTab === 'unmatched'
+                              ? 'bg-amber-600 text-white'
+                              : 'text-amber-800 hover:bg-amber-50'
+                          }`}
+                        >
+                          ⚠ Missing Photos ({unmatchedCount})
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Verification Table */}
+                    <div className="border border-[#E8EDF2] rounded-2xl overflow-hidden max-h-64 overflow-y-auto">
+                      <table className="w-full text-left text-[11px] border-collapse">
+                        <thead className="bg-[#F8FAFC] border-b border-[#E8EDF2] sticky top-0 z-10">
+                          <tr className="font-bold text-[#64748B]">
+                            <th className="py-2 px-3">Status</th>
+                            <th className="py-2 px-3">Product Name & Category</th>
+                            <th className="py-2 px-3">Base Price / MRP</th>
+                            <th className="py-2 px-3">Variants</th>
+                            <th className="py-2 px-3">Photo Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E8EDF2]">
+                          {filteredImportRows.map((r, i) => (
+                            <tr key={i} className="hover:bg-slate-50/80 transition-colors">
+                              {/* Status Badge */}
+                              <td className="py-2 px-3 align-top">
+                                {r.isUpdate ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
+                                    ↻ UPDATE
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    + NEW
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Product Name & Category */}
+                              <td className="py-2 px-3 align-top max-w-[220px]">
+                                <div className="font-bold text-[#163B5C] truncate">{r.name}</div>
+                                <div className="text-[10px] text-emerald-700 font-medium truncate">
+                                  {r.category}
+                                  {r.subcategory ? ` • ${r.subcategory}` : ''}
+                                </div>
+                              </td>
+
+                              {/* Pricing & MRP */}
+                              <td className="py-2 px-3 align-top whitespace-nowrap">
+                                <div className="font-bold text-[#ED3500]">{formatCurrency(r.price)}</div>
+                                <div className="text-[10px] line-through text-[#64748B]">
+                                  {formatCurrency(r.mrp)}
+                                </div>
+                                {r.isUpdate && r.existingProduct && (
+                                  <div className="text-[9px] text-blue-700 font-semibold mt-0.5">
+                                    Current: {formatCurrency(r.existingProduct.price)}
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* Variants (Separate Columns) */}
+                              <td className="py-2 px-3 align-top max-w-[180px]">
+                                {r.variants && r.variants.length > 0 ? (
+                                  <div className="space-y-1">
+                                    <span className="inline-block px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-bold">
+                                      {r.variants.length} Variant{r.variants.length > 1 ? 's' : ''}
+                                    </span>
+                                    <div className="text-[9.5px] text-slate-600 truncate">
+                                      {r.variants.map((v) => `${v.name}: ${formatCurrency(v.price)}`).join(' • ')}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 text-[10px]">No variants</span>
+                                )}
+                              </td>
+
+                              {/* Photo / Image Status */}
+                              <td className="py-2 px-3 align-top">
+                                {r.matchedPreviewUrl ? (
+                                  <div className="flex items-center gap-2">
+                                    <img
+                                      src={r.matchedPreviewUrl}
+                                      alt={r.name}
+                                      className="w-8 h-8 rounded-lg object-cover border border-emerald-300 shrink-0"
+                                    />
+                                    <div className="text-[10px] leading-tight">
+                                      <span className="text-emerald-700 font-bold block">✓ Photo Matched</span>
+                                      <span className="text-slate-500 truncate block max-w-[110px]">
+                                        {r.matchedImageFile?.name}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ) : r.isUpdate ? (
+                                  <div className="flex items-center gap-2">
+                                    {r.existingProduct?.image && (
+                                      <img
+                                        src={r.existingProduct.image}
+                                        alt={r.name}
+                                        className="w-8 h-8 rounded-lg object-cover border border-blue-200 shrink-0"
+                                      />
+                                    )}
+                                    <div className="text-[10px] leading-tight">
+                                      <span className="text-blue-700 font-bold block">✓ Existing Photo</span>
+                                      <span className="text-slate-500 block">Safely preserved</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] text-amber-700 font-medium leading-tight">
+                                    <span>⚠ Default placeholder</span>
+                                    <span className="text-slate-400 block text-[9px]">
+                                      {r.imageFilename ? `(File: ${r.imageFilename})` : ''}
+                                    </span>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Progress Notification During Execution */}
+                {isUploadingImport && (
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-3">
+                    <RefreshCw className="w-5 h-5 text-emerald-700 animate-spin shrink-0" />
+                    <div>
+                      <span className="font-bold block">Bulk Import In Progress</span>
+                      <p className="text-[11px] text-emerald-800">
+                        {importProgressStatus || 'Processing products and compressing images on device...'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Results Banner */}
+                {importResult && (
+                  <div
+                    className={`p-4 rounded-2xl border text-xs ${
+                      importResult.success
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                        : 'bg-rose-50 border-rose-200 text-rose-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold mb-1">
+                      {importResult.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-rose-600" />
+                      )}
+                      <span>{importResult.message}</span>
+                    </div>
+                    {importResult.errors && importResult.errors.length > 0 && (
+                      <div className="mt-2 pl-4 border-l-2 border-rose-300 space-y-1 text-[11px]">
+                        <span className="font-bold block">Warnings / Skipped:</span>
+                        {importResult.errors.map((err, ei) => (
+                          <p key={ei}>{err}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="pt-2 flex items-center justify-end gap-3">
                   <button
                     type="button"
-                    disabled={isUploadingImport || !importFile}
-                    onClick={handleExecuteBulkImport}
-                    className="px-6 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 flex items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                    onClick={resetAndCloseModal}
+                    className="px-5 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-bold text-[#64748B] hover:bg-gray-50 transition-colors"
                   >
-                    {isUploadingImport ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Importing Products...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4" />
-                        <span>Import Products Now</span>
-                      </>
-                    )}
+                    {importResult?.success ? 'Done & Close' : 'Cancel'}
                   </button>
-                )}
+                  {!importResult?.success && (
+                    <button
+                      type="button"
+                      disabled={isUploadingImport || totalCount === 0}
+                      onClick={handleExecuteBulkImport}
+                      className="px-6 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 flex items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
+                    >
+                      {isUploadingImport ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Importing Products...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          <span>Import {totalCount > 0 ? `${totalCount} Products` : 'Now'}</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Instant POS / Tax Receipt Slip Modal */}
       {receiptOrder && (
