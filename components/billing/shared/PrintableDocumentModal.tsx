@@ -67,42 +67,80 @@ export default function PrintableDocumentModal({
     const docNumber = (doc?.docNumber || doc?.invoiceNumber || doc?.orderId || '').toUpperCase();
     const type = (doc?.docType || doc?.paymentType || doc?.orderType || '').toUpperCase();
 
-    // 1. Sales Order
-    if (docNumber.startsWith('BH-SO') || type === 'SALE_ORDER' || type === 'SALES_ORDER' || type === 'SALE ORDER') {
-      return 'Sales Order';
-    }
-    // 2. Purchase Order
-    if (docNumber.startsWith('BH-PO') || type === 'PURCHASE_ORDER' || type === 'PURCHASE ORDER') {
-      return 'Purchase Order';
-    }
-    // 3. Quotation / Estimate
-    if (docNumber.startsWith('BH-EST') || type.includes('QUOTATION') || type.includes('ESTIMATE')) {
-      return 'Quotation';
-    }
-    // 4. Proforma Invoice
-    if (docNumber.startsWith('BH-PRO') || type === 'PROFORMA' || type === 'PROFORMA_INVOICE') {
-      return 'Proforma Invoice';
-    }
-    // 5. Credit Note / Sales Return
-    if (docNumber.startsWith('BH-CRN') || type === 'SALE_RETURN' || type.includes('CREDIT_NOTE')) {
-      return 'Credit Note';
-    }
-    // 6. Debit Note / Purchase Return
-    if (docNumber.startsWith('BH-DRN') || type === 'PURCHASE_RETURN' || type.includes('DEBIT_NOTE')) {
-      return 'Debit Note';
-    }
-    // 7. Purchase Invoice / Bill
-    if (docNumber.startsWith('BH-PB') || type === 'PURCHASE_BILL' || type.includes('PURCHASE')) {
-      return 'Purchase Invoice';
-    }
-    // 8. Payment In
+    // 1. Payment Receipts & Vouchers
     if (type.includes('PAYMENT_IN') || type.includes('PAYMENT_RECEIVED')) {
       return 'Payment Receipt';
     }
-    // 9. Payment Out
     if (type.includes('PAYMENT_OUT') || type.includes('PAYMENT_PAID')) {
       return 'Payment Voucher';
     }
+
+    // 2. POS Orders / Counter Sales & Invoices (Explicit priority so POS is NEVER treated as Purchase Order)
+    if (
+      docNumber.startsWith('BH-POS') ||
+      doc?.orderSource === 'POS' ||
+      doc?.orderType === 'POS' ||
+      type === 'POS' ||
+      type === 'POS_SALE'
+    ) {
+      return 'Tax Invoice';
+    }
+
+    // 3. Sales Invoices & Storefront Orders
+    if (
+      docNumber.startsWith('BH-INV') ||
+      docNumber.startsWith('ORD-') ||
+      type === 'SALE_INVOICE' ||
+      type === 'SALES_INVOICE'
+    ) {
+      return 'Tax Invoice';
+    }
+
+    // 4. Sales Order
+    if (docNumber.startsWith('BH-SO-') || docNumber === 'BH-SO' || type === 'SALE_ORDER' || type === 'SALES_ORDER' || type === 'SALE ORDER') {
+      return 'Sales Order';
+    }
+
+    // 5. Purchase Order (Must require BH-PO- with hyphen to avoid colliding with BH-POS)
+    if (
+      (docNumber.startsWith('BH-PO-') || docNumber === 'BH-PO' || type === 'PURCHASE_ORDER' || type === 'PURCHASE ORDER') &&
+      !docNumber.startsWith('BH-POS') &&
+      doc?.orderSource !== 'POS' &&
+      doc?.orderType !== 'POS'
+    ) {
+      return 'Purchase Order';
+    }
+
+    // 6. Quotation / Estimate
+    if (docNumber.startsWith('BH-EST-') || docNumber === 'BH-EST' || type.includes('QUOTATION') || type.includes('ESTIMATE')) {
+      return 'Quotation';
+    }
+
+    // 7. Proforma Invoice
+    if (docNumber.startsWith('BH-PRO-') || docNumber === 'BH-PRO' || type === 'PROFORMA' || type === 'PROFORMA_INVOICE') {
+      return 'Proforma Invoice';
+    }
+
+    // 8. Credit Note / Sales Return
+    if (docNumber.startsWith('BH-CRN-') || docNumber === 'BH-CRN' || type === 'SALE_RETURN' || type.includes('CREDIT_NOTE')) {
+      return 'Credit Note';
+    }
+
+    // 9. Debit Note / Purchase Return
+    if (docNumber.startsWith('BH-DRN-') || docNumber === 'BH-DRN' || type === 'PURCHASE_RETURN' || type.includes('DEBIT_NOTE')) {
+      return 'Debit Note';
+    }
+
+    // 10. Purchase Invoice / Bill
+    if (
+      docNumber.startsWith('BH-PB-') ||
+      docNumber === 'BH-PB' ||
+      type === 'PURCHASE_BILL' ||
+      (type.includes('PURCHASE') && !type.includes('ORDER') && !type.includes('RETURN') && doc?.orderSource !== 'POS')
+    ) {
+      return 'Purchase Invoice';
+    }
+
     // Default: Tax Invoice (for Sales Invoices, POS Orders, Online Storefront Orders)
     return 'Tax Invoice';
   };
@@ -122,7 +160,7 @@ export default function PrintableDocumentModal({
     });
     msg += `--------------------------------\n`;
     msg += `Subtotal: ${formatCurrency(doc?.subtotal || 0)}\n`;
-    msg += `Sales Tax: ${formatCurrency(doc?.totalGst || 0)}\n`;
+    msg += `Sales Tax: ${formatCurrency(doc?.totalTax !== undefined ? doc.totalTax : doc?.totalGst || 0)}\n`;
     msg += `*Grand Total: ${formatCurrency(grandTotalNum)}*\n`;
     msg += `Balance Due: ${formatCurrency(doc?.balanceAmount || 0)}\n`;
     msg += `Payment Status: ${doc?.paymentStatus || 'COMPLETED'}\n`;

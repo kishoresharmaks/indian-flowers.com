@@ -89,10 +89,10 @@ export default function CustomOrderSection() {
         {/* Section Header */}
         <div className="text-center max-w-2xl xl:max-w-3xl mx-auto mb-10 sm:mb-14 space-y-2">
           <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.12em] text-[#C85A78]">
-            Bespoke Ceremonies & Celebrations
+            Bespoke Ceremonies &amp; Celebrations
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl text-[#0B3B24] font-bold tracking-[-0.03em]">
-            Custom Floral & Wedding Orders
+            Custom Floral &amp; Wedding Orders
           </h2>
           <p className="text-xs sm:text-sm text-gray-600 font-normal leading-relaxed">
             Planning a traditional Indian wedding, temple festival, housewarming pooja, or baby shower in the USA? Our master florists handcraft custom Jai Mala garlands and fresh floral arrangements delivered directly to your venue.
@@ -125,7 +125,7 @@ export default function CustomOrderSection() {
                     2
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">Custom Quote & Floral Sample Preview</h4>
+                    <h4 className="font-semibold text-gray-900">Custom Quote &amp; Floral Sample Preview</h4>
                     <p className="text-gray-500 font-normal mt-0.5 text-xs">
                       Our floral coordinator sends design options, exact pricing in USD, and photo references.
                     </p>
@@ -279,7 +279,7 @@ export default function CustomOrderSection() {
 
                     <div>
                       <label className="text-xs font-medium text-gray-700 block mb-1">
-                        Delivery City & State (US) *
+                        Delivery City &amp; State (US) *
                       </label>
                       <input
                         type="text"
@@ -346,7 +346,7 @@ export default function CustomOrderSection() {
 
                   <div>
                     <label className="text-xs font-medium text-gray-700 block mb-1">
-                      Floral Requirements & Specifications *
+                      Floral Requirements &amp; Specifications *
                     </label>
                     <textarea
                       required

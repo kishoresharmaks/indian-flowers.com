@@ -17,6 +17,8 @@ UI*.md
 DEPLOYMENT*.md
 COMPLETE_INSTALLATION.md
 posthog-self-driving-report.md
+graphify-out/
+.graphify*
 
 # 2. Documentation, Specifications & Internal Notes
 *.md
