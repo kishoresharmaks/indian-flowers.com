@@ -34,6 +34,19 @@ export interface Msg91EmailResult {
 }
 
 /**
+ * Escapes HTML characters to prevent HTML/XSS injection into transactional email templates
+ */
+export function escapeHtml(str: string | undefined | null): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Fetch effective email settings from MongoDB or environment variables
  */
 export async function getEffectiveEmailConfig(): Promise<{
@@ -380,7 +393,16 @@ export async function sendFloralInquiryConfirmationEmail({
   budget?: string;
   inquiryId: string;
 }) {
-  const subject = `Your Custom Floral Request Received [${inquiryId}] - Indian-Flowers.com`;
+  const safeCustomerName = escapeHtml(customerName);
+  const safeOccasion = escapeHtml(occasion);
+  const safeEventDate = escapeHtml(eventDate);
+  const safeCityState = escapeHtml(cityState);
+  const safeBudget = escapeHtml(budget);
+  const safePhone = escapeHtml(customerPhone);
+  const safeRequirements = escapeHtml(requirements);
+  const safeInquiryId = escapeHtml(inquiryId);
+
+  const subject = `Your Custom Floral Request Received [${safeInquiryId}] - Indian-Flowers.com`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -412,24 +434,24 @@ export async function sendFloralInquiryConfirmationEmail({
       <p>Fresh Indian Flowers & Handcrafted Garlands Delivered Across USA</p>
     </div>
     <div class="body">
-      <div class="badge">Inquiry Reference: ${inquiryId}</div>
-      <p style="font-size: 15px; margin-top: 0;">Dear <strong>${customerName}</strong>,</p>
+      <div class="badge">Inquiry Reference: ${safeInquiryId}</div>
+      <p style="font-size: 15px; margin-top: 0;">Dear <strong>${safeCustomerName}</strong>,</p>
       <p style="font-size: 13.5px; line-height: 1.6; color: #374151;">
         Thank you for submitting your custom floral inquiry for your upcoming celebration. Our master garland artisan and floral coordinator have received your request and will review your requirements.
       </p>
 
       <div class="details">
-        <div class="details-row"><span class="label">Inquiry ID:</span><span class="value">${inquiryId}</span></div>
-        <div class="details-row"><span class="label">Occasion:</span><span class="value">${occasion}</span></div>
-        <div class="details-row"><span class="label">Event / Delivery Date:</span><span class="value">${eventDate}</span></div>
-        <div class="details-row"><span class="label">Delivery Location:</span><span class="value">${cityState}</span></div>
-        ${budget ? `<div class="details-row"><span class="label">Estimated Budget:</span><span class="value">${budget}</span></div>` : ''}
-        <div class="details-row"><span class="label">Phone / WhatsApp:</span><span class="value">${customerPhone}</span></div>
+        <div class="details-row"><span class="label">Inquiry ID:</span><span class="value">${safeInquiryId}</span></div>
+        <div class="details-row"><span class="label">Occasion:</span><span class="value">${safeOccasion}</span></div>
+        <div class="details-row"><span class="label">Event / Delivery Date:</span><span class="value">${safeEventDate}</span></div>
+        <div class="details-row"><span class="label">Delivery Location:</span><span class="value">${safeCityState}</span></div>
+        ${safeBudget ? `<div class="details-row"><span class="label">Estimated Budget:</span><span class="value">${safeBudget}</span></div>` : ''}
+        <div class="details-row"><span class="label">Phone / WhatsApp:</span><span class="value">${safePhone}</span></div>
       </div>
 
       <p style="font-size: 13px; font-weight: 600; color: #111827; margin-bottom: 4px;">Floral Specifications:</p>
       <p style="font-size: 13px; background: #F9FAFB; padding: 12px; border-radius: 8px; border: 1px solid #E5E7EB; line-height: 1.6; color: #4B5563; margin-top: 0;">
-        ${requirements}
+        ${safeRequirements}
       </p>
 
       <div class="notice">
@@ -437,7 +459,7 @@ export async function sendFloralInquiryConfirmationEmail({
       </div>
 
       <p style="font-size: 13px; line-height: 1.6; color: #374151; margin-top: 24px;">
-        Need immediate assistance? Feel free to call or WhatsApp us at <strong>+1 (909) 379-3678</strong> or email <strong>indianflowersorder@gmail.com</strong> quoting reference <strong>${inquiryId}</strong>.
+        Need immediate assistance? Feel free to call or WhatsApp us at <strong>+1 (909) 379-3678</strong> or email <strong>indianflowersorder@gmail.com</strong> quoting reference <strong>${safeInquiryId}</strong>.
       </p>
     </div>
     <div class="footer">
@@ -470,20 +492,20 @@ export async function sendFloralInquiryConfirmationEmail({
   const config = await getEffectiveEmailConfig();
   await sendEmailViaMsg91({
     to: [{ name: 'Indian Flowers Admin', email: config.adminEmail }],
-    subject: `[NEW INQUIRY ${inquiryId}] ${occasion} - ${customerName}`,
+    subject: `[NEW INQUIRY ${safeInquiryId}] ${safeOccasion} - ${safeCustomerName}`,
     type: 'CUSTOM_ORDER_ADMIN_ALERT',
     metadata: { inquiryId, occasion, eventDate },
     htmlContent: `
       <h2>New Custom Floral Inquiry</h2>
-      <p><strong>Inquiry ID:</strong> ${inquiryId}</p>
-      <p><strong>Name:</strong> ${customerName}</p>
-      <p><strong>Email:</strong> ${customerEmail}</p>
-      <p><strong>Phone:</strong> ${customerPhone}</p>
-      <p><strong>City/State:</strong> ${cityState}</p>
-      <p><strong>Event Date:</strong> ${eventDate}</p>
-      <p><strong>Occasion:</strong> ${occasion}</p>
-      <p><strong>Budget:</strong> ${budget || 'N/A'}</p>
-      <p><strong>Requirements:</strong><br>${requirements}</p>
+      <p><strong>Inquiry ID:</strong> ${safeInquiryId}</p>
+      <p><strong>Name:</strong> ${safeCustomerName}</p>
+      <p><strong>Email:</strong> ${escapeHtml(customerEmail)}</p>
+      <p><strong>Phone:</strong> ${safePhone}</p>
+      <p><strong>City/State:</strong> ${safeCityState}</p>
+      <p><strong>Event Date:</strong> ${safeEventDate}</p>
+      <p><strong>Occasion:</strong> ${safeOccasion}</p>
+      <p><strong>Budget:</strong> ${safeBudget || 'N/A'}</p>
+      <p><strong>Requirements:</strong><br>${safeRequirements.replace(/\n/g, '<br>')}</p>
     `,
   });
 
@@ -510,7 +532,15 @@ export async function sendContactFormConfirmationEmail({
   eventDate?: string;
   referenceId: string;
 }) {
-  const emailSubject = `We Received Your Message [${referenceId}] - Indian-Flowers.com`;
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safePhone = escapeHtml(phone);
+  const safeSubject = escapeHtml(subject);
+  const safeMessage = escapeHtml(message);
+  const safeEventDate = escapeHtml(eventDate);
+  const safeRefId = escapeHtml(referenceId);
+
+  const emailSubject = `We Received Your Message [${safeRefId}] - Indian-Flowers.com`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -534,12 +564,12 @@ export async function sendContactFormConfirmationEmail({
       <h1>The Indian Flowers</h1>
     </div>
     <div class="body">
-      <p>Hi <strong>${name}</strong>,</p>
-      <p>Thank you for contacting Indian-Flowers.com. We have received your inquiry (Reference: <strong>${referenceId}</strong>) regarding <em>${subject}</em>.</p>
+      <p>Hi <strong>${safeName}</strong>,</p>
+      <p>Thank you for contacting Indian-Flowers.com. We have received your inquiry (Reference: <strong>${safeRefId}</strong>) regarding <em>${safeSubject}</em>.</p>
       <div class="details">
         <p><strong>Your Message:</strong></p>
-        <p style="white-space: pre-line; color: #4B5563;">${message}</p>
-        ${eventDate ? `<p><strong>Target Event Date:</strong> ${eventDate}</p>` : ''}
+        <p style="white-space: pre-line; color: #4B5563;">${safeMessage}</p>
+        ${safeEventDate ? `<p><strong>Target Event Date:</strong> ${safeEventDate}</p>` : ''}
       </div>
       <p>A member of our team will get back to you within 24 hours.</p>
       <p>Urgent inquiries: Please call or text us at <strong>+1 (909) 379-3678</strong>.</p>
@@ -565,18 +595,18 @@ export async function sendContactFormConfirmationEmail({
   const config = await getEffectiveEmailConfig();
   await sendEmailViaMsg91({
     to: [{ name: 'Indian Flowers Admin', email: config.adminEmail }],
-    subject: `[CONTACT INQUIRY ${referenceId}] ${subject} - ${name}`,
+    subject: `[CONTACT INQUIRY ${safeRefId}] ${safeSubject} - ${safeName}`,
     type: 'CONTACT_ADMIN_ALERT',
     metadata: { referenceId, userSubject: subject, eventDate },
     htmlContent: `
       <h2>New Contact Form Inquiry</h2>
-      <p><strong>Reference:</strong> ${referenceId}</p>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Phone:</strong> ${phone}</p>
-      <p><strong>Subject:</strong> ${subject}</p>
-      ${eventDate ? `<p><strong>Target Event Date:</strong> ${eventDate}</p>` : ''}
-      <p><strong>Message:</strong><br>${message.replace(/\n/g, '<br>')}</p>
+      <p><strong>Reference:</strong> ${safeRefId}</p>
+      <p><strong>Name:</strong> ${safeName}</p>
+      <p><strong>Email:</strong> ${safeEmail}</p>
+      <p><strong>Phone:</strong> ${safePhone}</p>
+      <p><strong>Subject:</strong> ${safeSubject}</p>
+      ${safeEventDate ? `<p><strong>Target Event Date:</strong> ${safeEventDate}</p>` : ''}
+      <p><strong>Message:</strong><br>${safeMessage.replace(/\n/g, '<br>')}</p>
     `,
   });
 
@@ -600,9 +630,11 @@ export async function sendManualReplyEmail({
   inquiryReference?: string;
 }): Promise<Msg91EmailResult> {
   const config = await getEffectiveEmailConfig();
+  const safeRecipientName = escapeHtml(recipientName);
+  const safeMessageBody = escapeHtml(messageBody);
 
   const formattedSubject = inquiryReference && !subject.includes(inquiryReference)
-    ? `Re: [${inquiryReference}] ${subject}`
+    ? `Re: [${escapeHtml(inquiryReference)}] ${subject}`
     : subject;
 
   const htmlContent = `
@@ -628,8 +660,8 @@ export async function sendManualReplyEmail({
       <h1>The Indian Flowers</h1>
     </div>
     <div class="body">
-      <p style="margin-top: 0;">Dear <strong>${recipientName || 'Valued Customer'}</strong>,</p>
-      <div class="message-content">${messageBody}</div>
+      <p style="margin-top: 0;">Dear <strong>${safeRecipientName || 'Valued Customer'}</strong>,</p>
+      <div class="message-content">${safeMessageBody}</div>
       <div class="signature">${config.replySignature}</div>
     </div>
     <div class="footer">

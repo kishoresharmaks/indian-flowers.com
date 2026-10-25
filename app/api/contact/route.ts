@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import ContactMessage from '@/models/ContactMessage';
-import { sendContactFormConfirmationEmail, sendEmailViaMsg91 } from '@/lib/msg91';
+import { sendContactFormConfirmationEmail, sendEmailViaMsg91, escapeHtml } from '@/lib/msg91';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
 export const dynamic = 'force-dynamic';
@@ -74,18 +74,26 @@ export async function POST(request: Request) {
 
       // Also alert store admin
       const adminEmail = process.env.STORE_CONTACT_EMAIL || 'indianflowersorder@gmail.com';
+      const safeName = escapeHtml(name);
+      const safeSubject = escapeHtml(subject);
+      const safeRefId = escapeHtml(referenceId);
+      const safeEmail = escapeHtml(email);
+      const safePhone = escapeHtml(phone);
+      const safeDate = escapeHtml(eventDate);
+      const safeMsg = escapeHtml(message);
+
       await sendEmailViaMsg91({
         to: [{ name: 'Indian Flowers Admin', email: adminEmail }],
-        subject: `[CONTACT ENQUIRY ${referenceId}] ${subject} from ${name}`,
+        subject: `[CONTACT ENQUIRY ${safeRefId}] ${safeSubject} from ${safeName}`,
         htmlContent: `
           <h3>New Storefront Contact Enquiry</h3>
-          <p><strong>Reference:</strong> ${referenceId}</p>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Phone:</strong> ${phone}</p>
-          <p><strong>Subject:</strong> ${subject}</p>
-          ${eventDate ? `<p><strong>Target Event Date:</strong> ${eventDate}</p>` : ''}
-          <p><strong>Message:</strong><br>${message.replace(/\n/g, '<br>')}</p>
+          <p><strong>Reference:</strong> ${safeRefId}</p>
+          <p><strong>Name:</strong> ${safeName}</p>
+          <p><strong>Email:</strong> ${safeEmail}</p>
+          <p><strong>Phone:</strong> ${safePhone}</p>
+          <p><strong>Subject:</strong> ${safeSubject}</p>
+          ${safeDate ? `<p><strong>Target Event Date:</strong> ${safeDate}</p>` : ''}
+          <p><strong>Message:</strong><br>${safeMsg.replace(/\n/g, '<br>')}</p>
         `,
       });
     } catch (emailErr) {

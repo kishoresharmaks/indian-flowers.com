@@ -29,11 +29,12 @@ export async function GET(req: NextRequest) {
     }
 
     if (search) {
+      const sanitizedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
-        { to: { $regex: search, $options: 'i' } },
-        { recipientName: { $regex: search, $options: 'i' } },
-        { subject: { $regex: search, $options: 'i' } },
-        { referenceId: { $regex: search, $options: 'i' } },
+        { to: { $regex: sanitizedSearch, $options: 'i' } },
+        { recipientName: { $regex: sanitizedSearch, $options: 'i' } },
+        { subject: { $regex: sanitizedSearch, $options: 'i' } },
+        { referenceId: { $regex: sanitizedSearch, $options: 'i' } },
       ];
     }
 

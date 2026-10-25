@@ -33,7 +33,16 @@ export async function GET(request: NextRequest) {
         success: true,
         data: isAuthenticatedAdmin(request)
           ? settings
-          : { ...settings, razorpayKeySecret: undefined },
+          : {
+              ...settings,
+              razorpayKeySecret: undefined,
+              bankAccountNo: undefined,
+              bankRoutingNo: undefined,
+              bankHolder: undefined,
+              bankName: undefined,
+              companyTaxId: undefined,
+              stateTaxPermitId: undefined,
+            },
       },
       {
         headers: {

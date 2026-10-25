@@ -56,7 +56,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Validate Order Details Payload
+    // 2. Replay & Idempotency Protection: Ensure this payment ID was not already processed
+    const existingOrder = await Order.findOne({ transactionId: razorpay_payment_id });
+    if (existingOrder) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Payment already verified and order previously recorded.',
+          data: existingOrder,
+        },
+        { status: 200 }
+      );
+    }
+
+    // 3. Validate Order Details Payload
     if (!orderDetails) {
       return NextResponse.json(
         { success: false, message: 'Order details payload missing from verification request.' },

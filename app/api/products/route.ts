@@ -18,13 +18,14 @@ export async function GET(request: Request) {
     let filter: any = {
       name: { $not: /arugampul|bilva|vilva|durva grass/i },
     };
-    if (query) {
+    if (query && query.trim()) {
+      const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$and = [
         { name: { $not: /arugampul|bilva|vilva|durva grass/i } },
         {
           $or: [
-            { name: { $regex: query, $options: 'i' } },
-            { description: { $regex: query, $options: 'i' } },
+            { name: { $regex: sanitizedQuery, $options: 'i' } },
+            { description: { $regex: sanitizedQuery, $options: 'i' } },
           ],
         },
       ];
