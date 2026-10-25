@@ -58,6 +58,7 @@ export interface SeedProduct {
   isTaxable: boolean;
   taxCode?: string;
   category: string;
+  subcategory?: string;
   rating: number;
   reviewsCount: number;
   variants: SeedVariant[];
@@ -65,93 +66,61 @@ export interface SeedProduct {
 
 export const SEED_CATEGORIES: SeedCategory[] = [
   {
-    name: 'Indian Wedding Garlands',
-    slug: 'indian-wedding-garlands',
-    image: '/images/categories/cat-wedding-garlands.jpg',
+    name: 'STRINGS & LEAVES',
+    slug: 'strings-and-leaves',
+    image: '/images/categories/cat-jasmine-strings.jpg',
     order: 1,
     subcategories: [
-      { name: 'Rose Petal Garlands', slug: 'rose-petal-garlands', image: '/images/products/prod-rose-petal-varmala.jpg', order: 1 },
-      { name: 'Button Rose Garlands', slug: 'button-rose-garlands', image: '/images/categories/cat-wedding-garlands.jpg', order: 2 },
-      { name: 'Carnation Garlands', slug: 'carnation-garlands', image: '/images/products/prod-carnation-rose-garland.jpg', order: 3 },
-    ]
+      { name: 'Strings / Jasmine Strings', slug: 'strings-jasmine-strings', image: '/images/products/prod-madurai-mallipoo.jpg', order: 1 },
+      { name: 'Pooja Leaves', slug: 'pooja-leaves', image: '/images/products/prod-mango-leaves-mavilai.jpg', order: 2 },
+      { name: 'Pooja Flowers', slug: 'pooja-flowers', image: '/images/products/prod-orange-marigold-loose.jpg', order: 3 },
+      { name: 'Banana Leaves', slug: 'banana-leaves', image: '/images/products/prod-banana-leaves-cuts.jpg', order: 4 },
+      { name: 'Coconut', slug: 'coconut', image: '/images/products/prod-durva-bilva-combo.jpg', order: 5 },
+      { name: 'Decor Items', slug: 'decor-items', image: '/images/categories/cat-pooja-kits.jpg', order: 6 },
+    ],
   },
   {
-    name: 'Nanthiyavattom Garlands',
-    slug: 'nanthiyavattom-garlands',
-    image: '/images/products/prod-madurai-mallipoo.jpg',
+    name: 'WEDDING GARLANDS',
+    slug: 'wedding-garlands',
+    image: '/images/categories/cat-wedding-garlands.jpg',
     order: 2,
-    subcategories: []
+    subcategories: [
+      { name: 'Wedding Garlands', slug: 'wedding-garlands-sub', image: '/images/categories/cat-wedding-garlands.jpg', order: 1 },
+      { name: 'Rose Petal Garlands', slug: 'rose-petal-garlands', image: '/images/products/prod-rose-petal-varmala.jpg', order: 2 },
+      { name: 'Button Rose Garlands', slug: 'button-rose-garlands', image: '/images/products/new/5-2.png', order: 3 },
+      { name: 'Lilly Garlands', slug: 'lilly-garlands', image: '/images/products/prod-sampangi-string.jpg', order: 4 },
+      { name: 'Carnation Garlands', slug: 'carnation-garlands', image: '/images/products/prod-carnation-rose-garland.jpg', order: 5 },
+      { name: 'Exchange Garlands', slug: 'exchange-garlands', image: '/images/banners/hero-wedding-tif-exch.jpg', order: 6 },
+      { name: 'North Indian Garlands', slug: 'north-indian-garlands', image: '/images/banners/hero-wedding-tif-rose.jpg', order: 7 },
+      { name: 'Veni, Jadai', slug: 'veni-jadai', image: '/images/products/prod-jasmine-rose-veni.jpg', order: 8 },
+    ],
   },
   {
-    name: 'Tube Rose Lily Garlands',
-    slug: 'tube-rose-lily-garlands',
-    image: '/images/products/prod-sampangi-string.jpg',
-    order: 3,
-    subcategories: []
-  },
-  {
-    name: 'Pooja flowers',
-    slug: 'pooja-flowers',
-    image: '/images/categories/cat-loose-pooja.jpg',
-    order: 4,
-    subcategories: []
-  },
-  {
-    name: 'Pooja leaves',
-    slug: 'pooja-leaves',
-    image: '/images/categories/cat-pooja-leaves.jpg',
-    order: 5,
-    subcategories: []
-  },
-  {
-    name: 'strings',
-    slug: 'strings',
-    image: '/images/categories/cat-jasmine-strings.jpg',
-    order: 6,
-    subcategories: []
-  },
-  {
-    name: 'Decor Items',
-    slug: 'decor-items',
-    image: '/images/categories/cat-pooja-kits.jpg',
-    order: 7,
-    subcategories: []
-  },
-  {
-    name: 'Coconut',
-    slug: 'coconut',
-    image: '/images/products/prod-durva-bilva-combo.jpg',
-    order: 8,
-    subcategories: []
-  },
-  {
-    name: 'Event Decoration',
-    slug: 'event-decoration',
-    image: '/images/categories/cat-bouquets.jpg',
-    order: 9,
-    subcategories: []
-  },
-  {
-    name: 'Temple and Pooja Garlands',
-    slug: 'temple-and-pooja-garlands',
-    image: '/images/products/prod-marigold-temple-garland.jpg',
-    order: 10,
-    subcategories: []
-  },
-  {
-    name: 'House warming Garlands',
+    name: 'HOUSE WARMING GARLANDS',
     slug: 'house-warming-garlands',
     image: '/images/banners/hero-wedding-tif-temple.jpg',
-    order: 11,
-    subcategories: []
+    order: 3,
+    subcategories: [
+      { name: 'Button Rose Door Garlands', slug: 'button-rose-door-garlands', image: '/images/products/new/5-2.png', order: 1 },
+      { name: 'Coconut Thoranam', slug: 'coconut-thoranam', image: '/images/products/prod-durva-bilva-combo.jpg', order: 2 },
+      { name: 'Mango Leaves Thoranam', slug: 'mango-leaves-thoranam', image: '/images/products/prod-mango-leaves-mavilai.jpg', order: 3 },
+      { name: 'Button Rose String', slug: 'button-rose-string', image: '/images/products/new/5-3.png', order: 4 },
+    ],
   },
   {
-    name: 'Veni',
-    slug: 'veni',
-    image: '/images/products/prod-jasmine-rose-veni.jpg',
-    order: 12,
-    subcategories: []
-  }
+    name: 'TEMPLE GARLANDS',
+    slug: 'temple-garlands',
+    image: '/images/products/prod-marigold-temple-garland.jpg',
+    order: 4,
+    subcategories: [
+      { name: 'Temple and Pooja Garlands', slug: 'temple-and-pooja-garlands', image: '/images/products/prod-marigold-temple-garland.jpg', order: 1 },
+      { name: 'Button Rose Pooja Garlands', slug: 'button-rose-pooja-garlands', image: '/images/products/new/5-4.png', order: 2 },
+      { name: 'Lilly Garlands', slug: 'lilly-temple-garlands', image: '/images/products/prod-lotus-jasmine-garland.jpg', order: 3 },
+      { name: 'Vadamalli Garlands', slug: 'vadamalli-garlands', image: '/images/products/prod-navagraha-pooja-mix.jpg', order: 4 },
+      { name: 'Vilvam Garlands', slug: 'vilvam-garlands', image: '/images/products/prod-durva-bilva-combo.jpg', order: 5 },
+      { name: 'Green Leaves Garlands', slug: 'green-leaves-garlands', image: '/images/products/prod-tulsi-mani-garland.jpg', order: 6 },
+    ],
+  },
 ];
 
 export const SEED_BANNERS: SeedBanner[] = [
@@ -257,703 +226,610 @@ export const SEED_REVIEWS: SeedReview[] = [
 ];
 
 export const SEED_PRODUCTS: SeedProduct[] = [
+  // ==========================================
+  // 1. STRINGS & LEAVES
+  // ==========================================
   {
-    "name": "Fresh Fragrant Madurai Jasmine & Red Rose Traditional Garland (Mallipoo Mala)",
-    "description": "Authentic South Indian Sambac Jasmine (Madurai Mallipoo / Mogra) tightly woven strand garland adorned with fresh fragrant red rosebuds and hanging twin rose pendant. Unmatched natural sweet floral fragrance, flown fresh directly to your doorstep across the USA. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/new/5-2.png",
-    "mrp": 95,
-    "price": 75,
-    "discount": 21,
-    "quantity": 30,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_JASMINE",
-    "category": "Fresh Flower Strings & Jasmine",
-    "rating": 5,
-    "reviewsCount": 112,
-    "variants": [
-      {
-        "name": "Standard (4 ft)",
-        "mrp": 95,
-        "price": 75,
-        "quantity": 20,
-        "discount": 21
-      },
-      {
-        "name": "Grand Temple Length (5 ft)",
-        "mrp": 120,
-        "price": 95,
-        "quantity": 15,
-        "discount": 21
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 220,
-        "price": 170,
-        "quantity": 10,
-        "discount": 23
-      }
+    name: 'Fresh Madurai Mallipoo (Jasmine) Strings',
+    description: 'Authentic GI-tagged Madurai Sambac Jasmine tightly strung into fragrant floral strands. Intensely aromatic, harvested fresh in Tamil Nadu and delivered via cold-chain air express across the United States. Perfect for hair ornamentation, deity worship, and auspicious ceremonies.',
+    image: '/images/products/prod-madurai-mallipoo.jpg',
+    mrp: 35.0,
+    price: 29.0,
+    discount: 17,
+    quantity: 40,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_FRESH',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Strings / Jasmine Strings',
+    rating: 4.9,
+    reviewsCount: 88,
+    variants: [
+      { name: '10 Feet Strand', mrp: 35.0, price: 29.0, quantity: 20 },
+      { name: '20 Feet Strand', mrp: 65.0, price: 54.0, quantity: 15 },
+      { name: '50 Feet Party Bundle', mrp: 145.0, price: 119.0, quantity: 5 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa6e"
   },
   {
-    "name": "Fresh Madurai Jasmine (Mallipoo) String",
-    "description": "Authentic Grade-A Madurai Mallipoo hand-strung tightly on auspicious red cotton thread. Packed in insulated temperature-controlled cold boxes for overnight USA nationwide delivery. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-madurai-mallipoo.jpg",
-    "mrp": 30,
-    "price": 24,
-    "discount": 20,
-    "quantity": 50,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_JASMINE",
-    "category": "Fresh Flower Strings & Jasmine",
-    "rating": 5,
-    "reviewsCount": 128,
-    "variants": [
-      {
-        "name": "1 Yard",
-        "mrp": 30,
-        "price": 24,
-        "quantity": 25,
-        "discount": 20
-      },
-      {
-        "name": "2 Yards",
-        "mrp": 55,
-        "price": 44,
-        "quantity": 20,
-        "discount": 20
-      },
-      {
-        "name": "5 Yards (Festive Length)",
-        "mrp": 125,
-        "price": 99,
-        "quantity": 15,
-        "discount": 21
-      }
+    name: 'Fragrant Tuberose / Sampangi Flower Strings',
+    description: 'Fresh aromatic Indian Tuberose (Sampangi / Rajnigandha) strung floral ropes. Long-lasting heavenly sweet fragrance, ideal for temple sanctums, home entrance framing, and auspicious celebrations.',
+    image: '/images/products/prod-sampangi-string.jpg',
+    mrp: 30.0,
+    price: 24.0,
+    discount: 20,
+    quantity: 35,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_FRESH',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Strings / Jasmine Strings',
+    rating: 4.8,
+    reviewsCount: 64,
+    variants: [
+      { name: '5 Feet Strand', mrp: 30.0, price: 24.0, quantity: 20 },
+      { name: '10 Feet Strand', mrp: 55.0, price: 45.0, quantity: 10 },
+      { name: '20 Feet Strand', mrp: 99.0, price: 79.0, quantity: 5 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa6f"
   },
   {
-    "name": "Fresh Sampangi (Tuberose) Flower String",
-    "description": "Intensely fragrant double-bloom Indian Tuberose (Sampangi / Rajnigandha) hand-strung for home deity decoration, door toranams, and festive archana. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-sampangi-string.jpg",
-    "mrp": 28,
-    "price": 22,
-    "discount": 21,
-    "quantity": 40,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_STRINGS",
-    "category": "Fresh Flower Strings & Jasmine",
-    "rating": 4.8,
-    "reviewsCount": 94,
-    "variants": [
-      {
-        "name": "1 Yard",
-        "mrp": 28,
-        "price": 22,
-        "quantity": 20,
-        "discount": 21
-      },
-      {
-        "name": "2 Yards",
-        "mrp": 50,
-        "price": 40,
-        "quantity": 15,
-        "discount": 20
-      },
-      {
-        "name": "4 Yards",
-        "mrp": 95,
-        "price": 75,
-        "quantity": 10,
-        "discount": 21
-      }
+    name: 'Fresh Sacred Mango Leaves (Mavilai) for Kalash & Pooja',
+    description: 'Pristine, thick green sacred mango leaves (Mavilai) selected for Kalash Sthapana, Grihapravesam doorway torans, and traditional Vedic rituals. Symbolizes prosperity, divine fertility, and positive energy.',
+    image: '/images/products/prod-mango-leaves-mavilai.jpg',
+    mrp: 18.0,
+    price: 14.0,
+    discount: 22,
+    quantity: 50,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_LEAVES',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Pooja Leaves',
+    rating: 4.9,
+    reviewsCount: 72,
+    variants: [
+      { name: 'Pack of 11 Stems', mrp: 18.0, price: 14.0, quantity: 25 },
+      { name: 'Pack of 21 Stems', mrp: 28.0, price: 22.0, quantity: 15 },
+      { name: 'Pack of 51 Leaves', mrp: 55.0, price: 42.0, quantity: 10 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa70"
   },
   {
-    "name": "Fragrant White Button Flower (Kakada) String",
-    "description": "Delicate star-shaped Kakada jasmine buds strung continuously. Lightweight, highly fragrant, and long-lasting for deity decoration and personal adornment. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-kakada-string.jpg",
-    "mrp": 25,
-    "price": 20,
-    "discount": 20,
-    "quantity": 35,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_STRINGS",
-    "category": "Fresh Flower Strings & Jasmine",
-    "rating": 4.7,
-    "reviewsCount": 61,
-    "variants": [
-      {
-        "name": "1 Yard",
-        "mrp": 25,
-        "price": 20,
-        "quantity": 20,
-        "discount": 20
-      },
-      {
-        "name": "2 Yards",
-        "mrp": 48,
-        "price": 38,
-        "quantity": 15,
-        "discount": 21
-      }
+    name: 'Fresh Sacred Betel Leaves (Vethalai / Paan Leaves)',
+    description: 'Auspicious fresh heart-shaped betel leaves (Tamboolam) hand-picked for Sathyanarayana Pooja, wedding blessings, and deity offerings. Fresh, unbroken, dewy leaves packed in moisture-regulated packaging.',
+    image: '/images/products/prod-betel-leaves-paan.jpg',
+    mrp: 16.0,
+    price: 12.0,
+    discount: 25,
+    quantity: 45,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_LEAVES',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Pooja Leaves',
+    rating: 4.9,
+    reviewsCount: 95,
+    variants: [
+      { name: 'Pack of 20 Leaves', mrp: 16.0, price: 12.0, quantity: 20 },
+      { name: 'Pack of 50 Leaves', mrp: 32.0, price: 24.0, quantity: 15 },
+      { name: 'Pack of 100 Leaves (Ritual Bundle)', mrp: 58.0, price: 44.0, quantity: 10 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa71"
   },
   {
-    "name": "Traditional Jasmine & Rose Bridal Hair Veni / Gajra",
-    "description": "Handcrafted South Indian semi-circular hair veni composed of fresh white jasmine and deep red rose petals. Perfect for Bharatanatyam, weddings, and baby showers. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-jasmine-rose-veni.jpg",
-    "mrp": 35,
-    "price": 28,
-    "discount": 20,
-    "quantity": 30,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_VENI",
-    "category": "Fresh Flower Strings & Jasmine",
-    "rating": 4.9,
-    "reviewsCount": 83,
-    "variants": [
-      {
-        "name": "Single Veni",
-        "mrp": 35,
-        "price": 28,
-        "quantity": 20,
-        "discount": 20
-      },
-      {
-        "name": "Set of 2 Venis",
-        "mrp": 65,
-        "price": 50,
-        "quantity": 15,
-        "discount": 23
-      }
+    name: 'Fresh Sacred Tulsi Sprigs (Holy Basil)',
+    description: 'Aromatic Krishna & Rama Tulsi sprigs harvested fresh. Essential for Vishnu Sahasranama archana, Krishna Pooja, and sacred daily water purification.',
+    image: '/images/products/prod-sacred-tulsi-sprigs.jpg',
+    mrp: 20.0,
+    price: 15.0,
+    discount: 25,
+    quantity: 35,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_LEAVES',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Pooja Leaves',
+    rating: 4.8,
+    reviewsCount: 48,
+    variants: [
+      { name: '100g Fresh Pack', mrp: 20.0, price: 15.0, quantity: 15 },
+      { name: '250g Auspicious Pack', mrp: 38.0, price: 29.0, quantity: 12 },
+      { name: '500g Temple Pack', mrp: 68.0, price: 52.0, quantity: 8 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa72"
   },
   {
-    "name": "Royal Pink & Ivory Carnation Wedding Garland (Jai Mala)",
-    "description": "Exquisite handcrafted wedding Jai Mala featuring densely packed blush pink and ivory carnation blooms, accented with shimmering golden brocade rose medallions and velvety crimson red rose accents. Designed for traditional Indian wedding ceremonies, Anand Karaj, and mandap rituals with lasting freshness delivered across the USA. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/new/01.webp",
-    "mrp": 105,
-    "price": 85,
-    "discount": 19,
-    "quantity": 25,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.9,
-    "reviewsCount": 42,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 105,
-        "price": 85,
-        "quantity": 20,
-        "discount": 19
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 130,
-        "price": 105,
-        "quantity": 15,
-        "discount": 19
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 240,
-        "price": 195,
-        "quantity": 10,
-        "discount": 19
-      }
+    name: 'Fresh Orange & Yellow Loose Marigold Flowers (Genda Phool)',
+    description: 'Vibrant golden-orange and lemon-yellow fresh marigold flower heads (Genda). Hand-harvested for daily mandir worship, Diwali rangoli decoration, and havan offerings across the US.',
+    image: '/images/products/prod-orange-marigold-loose.jpg',
+    mrp: 24.0,
+    price: 19.0,
+    discount: 21,
+    quantity: 50,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_FRESH',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Pooja Flowers',
+    rating: 4.8,
+    reviewsCount: 68,
+    variants: [
+      { name: '250g Pack (approx 45 blooms)', mrp: 24.0, price: 19.0, quantity: 20 },
+      { name: '500g Pack (approx 90 blooms)', mrp: 42.0, price: 34.0, quantity: 20 },
+      { name: '1 kg Ritual Box', mrp: 75.0, price: 59.0, quantity: 10 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa73"
   },
   {
-    "name": "White Carnation & Red Rose Wedding Varmala with Golden Tassels",
-    "description": "Traditional handcrafted bridal Varmala featuring pristine white carnations interspersed with layered crimson red rose petal rings, fresh green filler foliage, delicate gold bead accents, and grand twin red rosebud pendant tassels. Ideal for North and South Indian weddings. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/new/02.webp",
-    "mrp": 115,
-    "price": 89,
-    "discount": 23,
-    "quantity": 20,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "category": "Wedding & Temple Garlands",
-    "rating": 5,
-    "reviewsCount": 58,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 115,
-        "price": 89,
-        "quantity": 18,
-        "discount": 23
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 140,
-        "price": 110,
-        "quantity": 12,
-        "discount": 21
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 260,
-        "price": 205,
-        "quantity": 8,
-        "discount": 21
-      }
+    name: 'Sacred Pink Lotus Blooms (Kamal Pushpa)',
+    description: 'Exquisite sacred Indian Nelumbo pink lotus blossoms. Symbol of Goddess Lakshmi, divine purity, and prosperity. Flown directly to the US in custom cold-cushion boxes.',
+    image: '/images/products/prod-pink-lotus-blooms.jpg',
+    mrp: 32.0,
+    price: 24.0,
+    discount: 25,
+    quantity: 30,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_FRESH',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Pooja Flowers',
+    rating: 5.0,
+    reviewsCount: 82,
+    variants: [
+      { name: 'Pair of 2 Blooms', mrp: 32.0, price: 24.0, quantity: 15 },
+      { name: 'Set of 5 Sacred Blooms', mrp: 68.0, price: 52.0, quantity: 10 },
+      { name: 'Set of 11 Lakshmi Pooja Blooms', mrp: 135.0, price: 105.0, quantity: 5 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa74"
   },
   {
-    "name": "Peach & Ivory Pastel Carnation Garland with Pearl Drop Tassels",
-    "description": "Contemporary pastel wedding garland crafted with soft peach and ivory carnation petals, adorned with golden tissue rose rings and an elegant clustered pendant featuring hanging pearl strings with rosebuds. Perfect for pastel wedding themes and reception ceremonies. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/new/03.webp",
-    "mrp": 120,
-    "price": 92,
-    "discount": 23,
-    "quantity": 22,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.9,
-    "reviewsCount": 36,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 120,
-        "price": 92,
-        "quantity": 15,
-        "discount": 23
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 145,
-        "price": 115,
-        "quantity": 10,
-        "discount": 21
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 270,
-        "price": 215,
-        "quantity": 8,
-        "discount": 20
-      }
+    name: 'Fresh Yellow Sevanthi (Chrysanthemum) Loose Blooms',
+    description: 'Radiant yellow Sevanthi blossoms with sweet herbal scent. Highly auspicious for Navaratri, Ganesha Pooja, and floral carpet decor.',
+    image: '/images/products/prod-yellow-sevanthi-loose.jpg',
+    mrp: 22.0,
+    price: 18.0,
+    discount: 18,
+    quantity: 40,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_FRESH',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Pooja Flowers',
+    rating: 4.7,
+    reviewsCount: 52,
+    variants: [
+      { name: '250g Fresh Box', mrp: 22.0, price: 18.0, quantity: 20 },
+      { name: '500g Festive Pack', mrp: 39.0, price: 32.0, quantity: 15 },
+      { name: '1 kg Mega Pack', mrp: 69.0, price: 56.0, quantity: 5 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa75"
   },
   {
-    "name": "Crimson Rose Petal & Peach Carnation Grand Varmala",
-    "description": "Opulent full-length Indian wedding garland featuring alternating sections of deep crimson Dutch rose petals and soft peach carnations, bound by handcrafted golden flower rings and a rich ceremonial medallion base. Delivers a regal bridal aesthetic. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/new/04.webp",
-    "mrp": 125,
-    "price": 98,
-    "discount": 22,
-    "quantity": 18,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.8,
-    "reviewsCount": 49,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 125,
-        "price": 98,
-        "quantity": 15,
-        "discount": 22
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 150,
-        "price": 120,
-        "quantity": 10,
-        "discount": 20
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 280,
-        "price": 225,
-        "quantity": 6,
-        "discount": 20
-      }
+    name: 'Fresh Ceremonial Banana Leaves (Vaazhai Ilai)',
+    description: 'Crisp green, uncut traditional banana leaves harvested fresh. Essential for traditional South Indian wedding feasts, Onam Sadhya, Satyanarayana prasadam, and deity altar laying.',
+    image: '/images/products/prod-banana-leaves-cuts.jpg',
+    mrp: 28.0,
+    price: 22.0,
+    discount: 21,
+    quantity: 40,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_LEAVES',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Banana Leaves',
+    rating: 4.9,
+    reviewsCount: 61,
+    variants: [
+      { name: '5 Full Leaves', mrp: 28.0, price: 22.0, quantity: 20 },
+      { name: '10 Feast Cut Leaves', mrp: 48.0, price: 38.0, quantity: 15 },
+      { name: '25 Leaves Grand Feast Pack', mrp: 98.0, price: 79.0, quantity: 5 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa76"
   },
   {
-    "name": "Fresh Pink Rosebud & White Carnation Wedding Garland",
-    "description": "Classic Hindu and South Indian wedding garland composed of fluffy white carnation bloom segments punctuated by whole fresh pink roses, baby's breath (gypsophila), and delicate rosebud tassels. Lightweight, fragrant, and gracefully balanced. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/new/5-1.png",
-    "mrp": 100,
-    "price": 82,
-    "discount": 18,
-    "quantity": 28,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_GARLAND",
-    "category": "Wedding & Temple Garlands",
-    "rating": 4.9,
-    "reviewsCount": 63,
-    "variants": [
-      {
-        "name": "Standard (4.5 ft)",
-        "mrp": 100,
-        "price": 82,
-        "quantity": 20,
-        "discount": 18
-      },
-      {
-        "name": "Grand Bridal (5 ft)",
-        "mrp": 125,
-        "price": 99,
-        "quantity": 15,
-        "discount": 21
-      },
-      {
-        "name": "Matching Pair (Set of 2)",
-        "mrp": 230,
-        "price": 185,
-        "quantity": 10,
-        "discount": 20
-      }
+    name: 'Sacred Pooja Coconut with Husk (Nariyal)',
+    description: 'Fresh ceremonial coconut with clean top husk intact. Essential for Kalash setup, temple archana, Grihapravesam rituals, and breaking auspicious coconuts.',
+    image: '/images/products/prod-durva-bilva-combo.jpg',
+    mrp: 12.0,
+    price: 8.0,
+    discount: 33,
+    quantity: 60,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'CEREMONIAL',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Coconut',
+    rating: 4.8,
+    reviewsCount: 44,
+    variants: [
+      { name: '1 Sacred Piece', mrp: 12.0, price: 8.0, quantity: 30 },
+      { name: 'Set of 3 Coconuts', mrp: 30.0, price: 21.0, quantity: 20 },
+      { name: 'Set of 5 Kalash Coconuts', mrp: 45.0, price: 32.0, quantity: 10 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa77"
   },
   {
-    "name": "Sacred Pink Lotus Petal Temple & Wedding Garland (Kamal Mala)",
-    "description": "Extremely sacred, handcrafted Kamal Mala created with pristine folded Indian pink lotus blossoms. Highly auspicious for temple deities, Lakshmi Puja, Satyanarayan Katha, housewarming ceremonies, and royal Vedic wedding rituals. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/new/5-3.png",
-    "mrp": 125,
-    "price": 95,
-    "discount": 24,
-    "quantity": 16,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_LOTUS",
-    "category": "Loose Flowers for Daily Pooja",
-    "rating": 5,
-    "reviewsCount": 54,
-    "variants": [
-      {
-        "name": "Single Devotional Mala (3.5 ft)",
-        "mrp": 125,
-        "price": 95,
-        "quantity": 12,
-        "discount": 24
-      },
-      {
-        "name": "Grand Temple Mala (4.5 ft)",
-        "mrp": 155,
-        "price": 120,
-        "quantity": 8,
-        "discount": 23
-      },
-      {
-        "name": "Matching Pair for Deities/Bride-Groom",
-        "mrp": 290,
-        "price": 225,
-        "quantity": 5,
-        "discount": 22
-      }
+    name: 'Handcrafted Rangoli & Mandir Decor Floral Kit',
+    description: 'A comprehensive decorative festival kit containing fresh multicolored flower petals, brass accent diyas, and toran hangings for creating stunning pooja mandir floral entrances.',
+    image: '/images/categories/cat-pooja-kits.jpg',
+    mrp: 45.0,
+    price: 35.0,
+    discount: 22,
+    quantity: 30,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'CEREMONIAL_KIT',
+    category: 'STRINGS & LEAVES',
+    subcategory: 'Decor Items',
+    rating: 4.9,
+    reviewsCount: 39,
+    variants: [
+      { name: 'Standard Decor Kit', mrp: 45.0, price: 35.0, quantity: 20 },
+      { name: 'Deluxe Temple Decor Kit', mrp: 75.0, price: 59.0, quantity: 10 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa78"
+  },
+
+  // ==========================================
+  // 2. WEDDING GARLANDS
+  // ==========================================
+  {
+    name: 'Royal Indian Wedding Varmala / Jaimala Pair',
+    description: 'Exquisite matching pair of handcrafted Indian wedding garlands for bride and groom. Densely woven with fresh fragrant Indian roses, Madurai jasmine accents, and delicate golden zari trim.',
+    image: '/images/categories/cat-wedding-garlands.jpg',
+    mrp: 180.0,
+    price: 149.0,
+    discount: 17,
+    quantity: 25,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_GARLAND',
+    category: 'WEDDING GARLANDS',
+    subcategory: 'Wedding Garlands',
+    rating: 5.0,
+    reviewsCount: 110,
+    variants: [
+      { name: 'Standard 3.5 ft Matching Pair', mrp: 180.0, price: 149.0, quantity: 15 },
+      { name: 'Royal Grand 4.5 ft Matching Pair', mrp: 220.0, price: 185.0, quantity: 10 },
+    ],
   },
   {
-    "name": "Auspicious Red Rose Petal & Golden Marigold Temple Garland",
-    "description": "Traditional temple offering and pooja garland crafted with velvety red rose petals and vibrant golden-yellow marigold (Genda / Sevanthi) medallions, finished with golden thread bells and fresh rosebuds. Perfect for Diwali, Navratri, Ganesh Utsav, and temple archana. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/new/5-4.png",
-    "mrp": 85,
-    "price": 68,
-    "discount": 20,
-    "quantity": 32,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_MARIGOLD",
-    "category": "Loose Flowers for Daily Pooja",
-    "rating": 4.8,
-    "reviewsCount": 76,
-    "variants": [
-      {
-        "name": "Standard (3.5 ft)",
-        "mrp": 85,
-        "price": 68,
-        "quantity": 25,
-        "discount": 20
-      },
-      {
-        "name": "Grand Temple (4.5 ft)",
-        "mrp": 110,
-        "price": 85,
-        "quantity": 15,
-        "discount": 23
-      },
-      {
-        "name": "Set of 2 Puja Malas",
-        "mrp": 190,
-        "price": 150,
-        "quantity": 10,
-        "discount": 21
-      }
+    name: 'Handcrafted Red & White Rose Petal Varmala Pair',
+    description: 'Premium feather-soft rose petal wedding garlands woven in concentric layers of deep crimson red and virgin white petals. Lightweight, velvety, and regal for wedding ceremonies.',
+    image: '/images/products/prod-rose-petal-varmala.jpg',
+    mrp: 160.0,
+    price: 129.0,
+    discount: 19,
+    quantity: 20,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_GARLAND',
+    category: 'WEDDING GARLANDS',
+    subcategory: 'Rose Petal Garlands',
+    rating: 5.0,
+    reviewsCount: 94,
+    variants: [
+      { name: '3.5 ft Pair (Bride & Groom)', mrp: 160.0, price: 129.0, quantity: 12 },
+      { name: '4.5 ft Long Royal Pair', mrp: 195.0, price: 159.0, quantity: 8 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa79"
   },
   {
-    "name": "Fresh Orange & Yellow Marigold Loose (Genda)",
-    "description": "Vibrant, fresh-plucked orange and golden-yellow marigold flower heads (Genda Phool) ideal for daily puja, Rangoli floor art, temple garlands, and Diwali decorations. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-orange-marigold-loose.jpg",
-    "mrp": 24,
-    "price": 19,
-    "discount": 21,
-    "quantity": 60,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_MARIGOLD",
-    "category": "Loose Flowers for Daily Pooja",
-    "rating": 4.9,
-    "reviewsCount": 115,
-    "variants": [
-      {
-        "name": "250g Box (Half Pound)",
-        "mrp": 24,
-        "price": 19,
-        "quantity": 30,
-        "discount": 21
-      },
-      {
-        "name": "500g Box (One Pound)",
-        "mrp": 42,
-        "price": 34,
-        "quantity": 20,
-        "discount": 19
-      },
-      {
-        "name": "1kg Bulk Box (2.2 lbs)",
-        "mrp": 75,
-        "price": 59,
-        "quantity": 10,
-        "discount": 21
-      }
+    name: 'Dense Red Button Rose Wedding Garland Set',
+    description: 'Traditional South Indian wedding garland crafted with hundreds of miniature red button roses accented with fragrant jasmine or tuberose beads. Rich, heavy, and vibrant in every wedding photo.',
+    image: '/images/products/new/5-2.png',
+    mrp: 145.0,
+    price: 119.0,
+    discount: 18,
+    quantity: 25,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_GARLAND',
+    category: 'WEDDING GARLANDS',
+    subcategory: 'Button Rose Garlands',
+    rating: 4.9,
+    reviewsCount: 76,
+    variants: [
+      { name: '3.5 ft Matching Pair', mrp: 145.0, price: 119.0, quantity: 15 },
+      { name: '4 ft Deluxe Pair', mrp: 175.0, price: 142.0, quantity: 10 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa7a"
   },
   {
-    "name": "Fresh Pink Lotus Blooms (Kamal Pushpa)",
-    "description": "Pristine sacred Indian pink lotus blooms (Kamal Pushpa), handpicked with fresh long stems. Auspicious for Goddess Lakshmi worship, temple alankaram, and housewarmings. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-pink-lotus-blooms.jpg",
-    "mrp": 38,
-    "price": 29,
-    "discount": 24,
-    "quantity": 25,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_LOTUS",
-    "category": "Loose Flowers for Daily Pooja",
-    "rating": 5,
-    "reviewsCount": 88,
-    "variants": [
-      {
-        "name": "Box of 2 Blooms",
-        "mrp": 38,
-        "price": 29,
-        "quantity": 15,
-        "discount": 24
-      },
-      {
-        "name": "Box of 4 Blooms",
-        "mrp": 68,
-        "price": 52,
-        "quantity": 10,
-        "discount": 24
-      }
+    name: 'Fragrant Tuberose (Lilly) Wedding Garland Pair',
+    description: 'Pure white sweet-scented tuberose (Lily) garlands interwoven with scarlet rose buds. Traditional Hindu wedding garlands that retain an unforgettable divine fragrance throughout the ceremony.',
+    image: '/images/products/prod-sampangi-string.jpg',
+    mrp: 140.0,
+    price: 115.0,
+    discount: 18,
+    quantity: 20,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_GARLAND',
+    category: 'WEDDING GARLANDS',
+    subcategory: 'Lilly Garlands',
+    rating: 4.8,
+    reviewsCount: 58,
+    variants: [
+      { name: '3.5 ft Pair', mrp: 140.0, price: 115.0, quantity: 12 },
+      { name: '4.5 ft Pair', mrp: 170.0, price: 139.0, quantity: 8 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa7b"
   },
   {
-    "name": "Fresh Yellow Sevvanthi (Chrysanthemum) Loose",
-    "description": "Fresh, firm yellow Chrysanthemum (Sevvanthi / Chamomile) loose flower heads. Long shelf-life, vibrant golden hue, ideal for archana and festive decor. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-yellow-sevanthi-loose.jpg",
-    "mrp": 22,
-    "price": 18,
-    "discount": 18,
-    "quantity": 45,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_LOOSE",
-    "category": "Loose Flowers for Daily Pooja",
-    "rating": 4.8,
-    "reviewsCount": 72,
-    "variants": [
-      {
-        "name": "250g Box",
-        "mrp": 22,
-        "price": 18,
-        "quantity": 25,
-        "discount": 18
-      },
-      {
-        "name": "500g Box",
-        "mrp": 40,
-        "price": 32,
-        "quantity": 20,
-        "discount": 20
-      }
+    name: 'Dual-Tone Red & White Carnation Wedding Garland',
+    description: 'Modern, resilient carnation garlands made with velvety ruffles of fresh red and white carnation blooms. Extremely durable against heat and handling during wedding photography.',
+    image: '/images/products/prod-carnation-rose-garland.jpg',
+    mrp: 135.0,
+    price: 110.0,
+    discount: 19,
+    quantity: 25,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_GARLAND',
+    category: 'WEDDING GARLANDS',
+    subcategory: 'Carnation Garlands',
+    rating: 4.9,
+    reviewsCount: 65,
+    variants: [
+      { name: '3.5 ft Pair', mrp: 135.0, price: 110.0, quantity: 15 },
+      { name: '4.5 ft Pair', mrp: 165.0, price: 135.0, quantity: 10 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa7c"
   },
   {
-    "name": "Fresh Indian Mango Leaves (Mavilai for Kalasam & Toran)",
-    "description": "Fresh green glossy mango tree leaves (Mavilai) harvested with intact stems. Essential for decorating Puja Kalasam, entrance door Toranam, and Vedic havans. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-mango-leaves-mavilai.jpg",
-    "mrp": 18,
-    "price": 14,
-    "discount": 22,
-    "quantity": 50,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_LEAVES",
-    "category": "Sacred Pooja Leaves & Greenery",
-    "rating": 4.9,
-    "reviewsCount": 97,
-    "variants": [
-      {
-        "name": "Bunch of 11 Leaves",
-        "mrp": 18,
-        "price": 14,
-        "quantity": 25,
-        "discount": 22
-      },
-      {
-        "name": "Bunch of 21 Leaves",
-        "mrp": 28,
-        "price": 22,
-        "quantity": 15,
-        "discount": 21
-      },
-      {
-        "name": "Festivity Pack of 51 Leaves",
-        "mrp": 58,
-        "price": 45,
-        "quantity": 10,
-        "discount": 22
-      }
+    name: 'Traditional Jaimala Exchange Garland Set',
+    description: 'Sacred Varmala exchange garlands designed for the Jaimala wedding ritual. Handcrafted with fresh Dutch roses, jasmine strands, and pearls for an unforgettable wedding moment.',
+    image: '/images/banners/hero-wedding-tif-exch.jpg',
+    mrp: 165.0,
+    price: 135.0,
+    discount: 18,
+    quantity: 20,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_GARLAND',
+    category: 'WEDDING GARLANDS',
+    subcategory: 'Exchange Garlands',
+    rating: 5.0,
+    reviewsCount: 84,
+    variants: [
+      { name: 'Standard Exchange Pair', mrp: 165.0, price: 135.0, quantity: 12 },
+      { name: 'Royal Long Exchange Pair', mrp: 198.0, price: 162.0, quantity: 8 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa7d"
   },
   {
-    "name": "Fresh Paan / Betel Leaves (Vethalai)",
-    "description": "Crisp, heart-shaped fresh Indian betel leaves (Paan / Vethalai) with vibrant green color and intact petioles. Vital for Tamboolam, Satyanarayan Puja, and wedding rituals. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-betel-leaves-paan.jpg",
-    "mrp": 20,
-    "price": 16,
-    "discount": 20,
-    "quantity": 45,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_LEAVES",
-    "category": "Sacred Pooja Leaves & Greenery",
-    "rating": 4.9,
-    "reviewsCount": 104,
-    "variants": [
-      {
-        "name": "Pack of 15 Leaves",
-        "mrp": 20,
-        "price": 16,
-        "quantity": 20,
-        "discount": 20
-      },
-      {
-        "name": "Pack of 30 Leaves",
-        "mrp": 35,
-        "price": 28,
-        "quantity": 15,
-        "discount": 20
-      },
-      {
-        "name": "Bulk Pack of 100 Leaves",
-        "mrp": 95,
-        "price": 75,
-        "quantity": 10,
-        "discount": 21
-      }
+    name: 'North Indian Shahi Gulab Varmala with Pearls',
+    description: 'Majestic North Indian Shahi Varmala crafted with premium velvet red roses, white baby breath gypsophila, and lustrous golden beads. Preferred for Punjabi, Gujarati, and Marwari weddings.',
+    image: '/images/banners/hero-wedding-tif-rose.jpg',
+    mrp: 185.0,
+    price: 155.0,
+    discount: 16,
+    quantity: 20,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_GARLAND',
+    category: 'WEDDING GARLANDS',
+    subcategory: 'North Indian Garlands',
+    rating: 5.0,
+    reviewsCount: 71,
+    variants: [
+      { name: 'Shahi Pair (3.5 ft)', mrp: 185.0, price: 155.0, quantity: 12 },
+      { name: 'Maharaja Royal Pair (4.5 ft)', mrp: 225.0, price: 189.0, quantity: 8 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa7e"
   },
   {
-    "name": "Fresh Banana Leaves (Vazhai Ilai Cuts for Bhojan)",
-    "description": "Traditional fresh broad Indian plantain / banana leaf cuts. Clean, food-grade, ideal for serving ceremonial festive meals (Sadhya), prasadam, and deity altar lining. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-banana-leaves-cuts.jpg",
-    "mrp": 24,
-    "price": 18,
-    "discount": 25,
-    "quantity": 40,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_LEAVES",
-    "category": "Sacred Pooja Leaves & Greenery",
-    "rating": 4.8,
-    "reviewsCount": 68,
-    "variants": [
-      {
-        "name": "Pack of 5 Cuts",
-        "mrp": 24,
-        "price": 18,
-        "quantity": 25,
-        "discount": 25
-      },
-      {
-        "name": "Pack of 10 Cuts",
-        "mrp": 42,
-        "price": 32,
-        "quantity": 15,
-        "discount": 24
-      }
+    name: 'Fresh Jasmine & Rose Bridal Veni & Poo Jadai Set',
+    description: 'Traditional fragrant hair garland (Veni) and braid adornment (Jadai) crafted with fresh Madurai jasmine and miniature pink rose petals for Indian brides, classical dancers, and festive wear.',
+    image: '/images/products/prod-jasmine-rose-veni.jpg',
+    mrp: 48.0,
+    price: 39.0,
+    discount: 19,
+    quantity: 35,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_HAIR',
+    category: 'WEDDING GARLANDS',
+    subcategory: 'Veni, Jadai',
+    rating: 4.9,
+    reviewsCount: 83,
+    variants: [
+      { name: 'Single Bridal Veni', mrp: 48.0, price: 39.0, quantity: 20 },
+      { name: 'Pair of 2 Matching Venis', mrp: 85.0, price: 69.0, quantity: 10 },
+      { name: 'Complete Veni + Poo Jadai Braid Set', mrp: 145.0, price: 119.0, quantity: 5 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa7f"
+  },
+
+  // ==========================================
+  // 3. HOUSE WARMING GARLANDS
+  // ==========================================
+  {
+    name: 'Button Rose Grihapravesam Door Entrance Garland',
+    description: 'Vibrant, thick door frame garland woven with dense red and yellow button roses with golden gota tassels. Invokes divine positivity and warmth for new home Grihapravesam ceremonies.',
+    image: '/images/products/new/5-2.png',
+    mrp: 78.0,
+    price: 65.0,
+    discount: 17,
+    quantity: 25,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TORAN',
+    category: 'HOUSE WARMING GARLANDS',
+    subcategory: 'Button Rose Door Garlands',
+    rating: 4.9,
+    reviewsCount: 54,
+    variants: [
+      { name: '6 Feet Door Garland', mrp: 78.0, price: 65.0, quantity: 15 },
+      { name: '8 Feet Grand Doorway Garland', mrp: 98.0, price: 82.0, quantity: 10 },
+    ],
   },
   {
-    "name": "Sacred Tulsi (Holy Basil) Leaves & Manjari Sprigs",
-    "description": "Auspicious Krishna Tulsi and Rama Tulsi sprigs with aromatic leaves and flower manjari. Essential for Lord Vishnu, Krishna, and Satyanarayan pujas. Notice: Requires 1-week advance order for fresh import & handcrafting.",
-    "image": "/images/products/prod-sacred-tulsi-sprigs.jpg",
-    "mrp": 19,
-    "price": 15,
-    "discount": 21,
-    "quantity": 40,
-    "gst": 0,
-    "isTaxable": true,
-    "taxCode": "TAX_FLORAL_LEAVES",
-    "category": "Sacred Pooja Leaves & Greenery",
-    "rating": 5,
-    "reviewsCount": 119,
-    "variants": [
-      {
-        "name": "Fresh Pack 100g",
-        "mrp": 19,
-        "price": 15,
-        "quantity": 25,
-        "discount": 21
-      },
-      {
-        "name": "Double Pack 250g",
-        "mrp": 38,
-        "price": 30,
-        "quantity": 15,
-        "discount": 21
-      }
+    name: 'Traditional Hand-Woven Coconut Palm Leaf Thoranam',
+    description: 'Auspicious tender coconut palm frond toran (Thennam Kuruthu Thoranam). Hand-pleated in traditional South Indian geometric patterns for main entrance gates and pooja halls.',
+    image: '/images/products/prod-durva-bilva-combo.jpg',
+    mrp: 55.0,
+    price: 45.0,
+    discount: 18,
+    quantity: 30,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TORAN',
+    category: 'HOUSE WARMING GARLANDS',
+    subcategory: 'Coconut Thoranam',
+    rating: 4.8,
+    reviewsCount: 42,
+    variants: [
+      { name: '6 Feet Entrance Thoranam', mrp: 55.0, price: 45.0, quantity: 18 },
+      { name: '8 Feet Grand Thoranam', mrp: 72.0, price: 59.0, quantity: 12 },
     ],
-    "_id": "6ad5a976230c1ab9bd4baa80"
-  }
+  },
+  {
+    name: 'Sacred Fresh Mango Leaf & Marigold Doorway Thoranam',
+    description: 'Traditional entrance festoon combining thick green sacred mango leaves and bright yellow-orange marigold flowers. Wards off negative energies and ushers Lakshmi into the new residence.',
+    image: '/images/products/prod-mango-leaves-mavilai.jpg',
+    mrp: 48.0,
+    price: 39.0,
+    discount: 19,
+    quantity: 35,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TORAN',
+    category: 'HOUSE WARMING GARLANDS',
+    subcategory: 'Mango Leaves Thoranam',
+    rating: 4.9,
+    reviewsCount: 67,
+    variants: [
+      { name: '6 Feet Doorway Strand', mrp: 48.0, price: 39.0, quantity: 20 },
+      { name: '8 Feet Wide Double Thoranam', mrp: 68.0, price: 54.0, quantity: 15 },
+    ],
+  },
+  {
+    name: 'Hanging Red Button Rose Strands with Bell Tassels',
+    description: 'Pair of vertical hanging button rose floral strings with golden jingle bells at base. Ideal for framing pillars, doorways, and Grihapravesam backdrop stages.',
+    image: '/images/products/new/5-3.png',
+    mrp: 58.0,
+    price: 48.0,
+    discount: 17,
+    quantity: 30,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TORAN',
+    category: 'HOUSE WARMING GARLANDS',
+    subcategory: 'Button Rose String',
+    rating: 4.8,
+    reviewsCount: 38,
+    variants: [
+      { name: 'Set of 2 Strands (4 ft each)', mrp: 58.0, price: 48.0, quantity: 18 },
+      { name: 'Set of 4 Strands (4 ft each)', mrp: 105.0, price: 86.0, quantity: 12 },
+    ],
+  },
+
+  // ==========================================
+  // 4. TEMPLE GARLANDS
+  // ==========================================
+  {
+    name: 'Traditional Daily Temple & Deity Pooja Malai',
+    description: 'Thick, sacred temple deity garland woven with fresh golden marigolds, red roses, and holy basil leaves. Specially handcrafted for murti alankaram, temple festivals, and daily home puja.',
+    image: '/images/products/prod-marigold-temple-garland.jpg',
+    mrp: 68.0,
+    price: 55.0,
+    discount: 19,
+    quantity: 30,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TEMPLE',
+    category: 'TEMPLE GARLANDS',
+    subcategory: 'Temple and Pooja Garlands',
+    rating: 4.9,
+    reviewsCount: 78,
+    variants: [
+      { name: '3 Feet Deity Garland', mrp: 68.0, price: 55.0, quantity: 15 },
+      { name: '4.5 Feet Maha Malai', mrp: 95.0, price: 79.0, quantity: 15 },
+    ],
+  },
+  {
+    name: 'Auspicious Button Rose Deity Pooja Garland',
+    description: 'Dense, sacred garland crafted with fragrant miniature button roses and green maruvam herb. Imparts an intensely divine aura to deities during special abhishekam ceremonies.',
+    image: '/images/products/new/5-4.png',
+    mrp: 65.0,
+    price: 52.0,
+    discount: 20,
+    quantity: 30,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TEMPLE',
+    category: 'TEMPLE GARLANDS',
+    subcategory: 'Button Rose Pooja Garlands',
+    rating: 4.9,
+    reviewsCount: 63,
+    variants: [
+      { name: '2.5 Feet Mala', mrp: 65.0, price: 52.0, quantity: 15 },
+      { name: '4 Feet Grand Deity Mala', mrp: 92.0, price: 75.0, quantity: 15 },
+    ],
+  },
+  {
+    name: 'Sacred Tuberose (Lilly) & Lotus Temple Garland',
+    description: 'Intensely fragrant white tuberose (Lily) garland featuring a central sacred pink lotus bloom. Ideal for Shiva Lingam, Lakshmi Narayana, and temple sanctum alankaram.',
+    image: '/images/products/prod-lotus-jasmine-garland.jpg',
+    mrp: 62.0,
+    price: 49.0,
+    discount: 21,
+    quantity: 25,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TEMPLE',
+    category: 'TEMPLE GARLANDS',
+    subcategory: 'Lilly Garlands',
+    rating: 4.8,
+    reviewsCount: 51,
+    variants: [
+      { name: '3 Feet Garland', mrp: 62.0, price: 49.0, quantity: 15 },
+      { name: '4.5 Feet Grand Garland', mrp: 88.0, price: 72.0, quantity: 10 },
+    ],
+  },
+  {
+    name: 'Sacred Purple Vadamalli (Globe Amaranth) Deity Garland',
+    description: 'Traditional long-lasting deity garland made of deep purple Vadamalli (Globe Amaranth / Gomphrena). Extremely durable, remaining vibrant without wilting for multiple days of worship.',
+    image: '/images/products/prod-navagraha-pooja-mix.jpg',
+    mrp: 58.0,
+    price: 46.0,
+    discount: 21,
+    quantity: 30,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TEMPLE',
+    category: 'TEMPLE GARLANDS',
+    subcategory: 'Vadamalli Garlands',
+    rating: 4.8,
+    reviewsCount: 45,
+    variants: [
+      { name: '3 Feet Mala', mrp: 58.0, price: 46.0, quantity: 18 },
+      { name: '4.5 Feet Maha Mala', mrp: 82.0, price: 68.0, quantity: 12 },
+    ],
+  },
+  {
+    name: 'Sacred Shiva Bilva Leaf (Vilvam) 108 Leaf Mala',
+    description: 'Sacred trifoliate Vilvam (Bilva / Bael) leaf garland specifically strung with 108 intact leaf sprigs for Lord Shiva Rudrabhishekam and Pradosham pooja. Highly potent spiritual offering.',
+    image: '/images/products/prod-durva-bilva-combo.jpg',
+    mrp: 49.0,
+    price: 39.0,
+    discount: 20,
+    quantity: 35,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TEMPLE',
+    category: 'TEMPLE GARLANDS',
+    subcategory: 'Vilvam Garlands',
+    rating: 5.0,
+    reviewsCount: 92,
+    variants: [
+      { name: '108 Leaf Sacred Mala', mrp: 49.0, price: 39.0, quantity: 20 },
+      { name: '216 Leaf Double Maha Mala', mrp: 85.0, price: 69.0, quantity: 15 },
+    ],
+  },
+  {
+    name: 'Sacred Tulsi Mani & Davanam Green Deity Mala',
+    description: 'Refreshing sacred green garland woven with fresh holy Tulsi leaves, aromatic Davanam, and Pachilai herb. Cool and deeply restorative fragrance for deity worship.',
+    image: '/images/products/prod-tulsi-mani-garland.jpg',
+    mrp: 54.0,
+    price: 44.0,
+    discount: 19,
+    quantity: 30,
+    gst: 0,
+    isTaxable: true,
+    taxCode: 'FLORAL_TEMPLE',
+    category: 'TEMPLE GARLANDS',
+    subcategory: 'Green Leaves Garlands',
+    rating: 4.9,
+    reviewsCount: 57,
+    variants: [
+      { name: '3 Feet Garland', mrp: 54.0, price: 44.0, quantity: 18 },
+      { name: '4.5 Feet Grand Garland', mrp: 78.0, price: 64.0, quantity: 12 },
+    ],
+  },
 ];

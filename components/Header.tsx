@@ -157,27 +157,61 @@ function GridNineIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
 
 const DEFAULT_HEADER_CATEGORIES: HeaderCategoryItem[] = [
   {
-    name: 'Indian Wedding Garlands',
-    slug: 'indian-wedding-garlands',
-    image: '/images/categories/cat-wedding-garlands.jpg',
+    name: 'STRINGS & LEAVES',
+    slug: 'strings-and-leaves',
+    image: '/images/categories/cat-jasmine-strings.jpg',
     order: 1,
     subcategories: [
-      { name: 'Rose Petal Garlands', slug: 'rose-petal-garlands', image: '/images/products/prod-rose-petal-varmala.jpg', order: 1 },
-      { name: 'Button Rose Garlands', slug: 'button-rose-garlands', image: '/images/categories/cat-wedding-garlands.jpg', order: 2 },
-      { name: 'Carnation Garlands', slug: 'carnation-garlands', image: '/images/products/prod-carnation-rose-garland.jpg', order: 3 },
+      { name: 'Strings / Jasmine Strings', slug: 'strings-jasmine-strings', image: '/images/products/prod-madurai-mallipoo.jpg', order: 1 },
+      { name: 'Pooja Leaves', slug: 'pooja-leaves', image: '/images/products/prod-mango-leaves-mavilai.jpg', order: 2 },
+      { name: 'Pooja Flowers', slug: 'pooja-flowers', image: '/images/products/prod-orange-marigold-loose.jpg', order: 3 },
+      { name: 'Banana Leaves', slug: 'banana-leaves', image: '/images/products/prod-banana-leaves-cuts.jpg', order: 4 },
+      { name: 'Coconut', slug: 'coconut', image: '/images/products/prod-durva-bilva-combo.jpg', order: 5 },
+      { name: 'Decor Items', slug: 'decor-items', image: '/images/categories/cat-pooja-kits.jpg', order: 6 },
     ],
   },
-  { name: 'Nanthiyavattom Garlands', slug: 'nanthiyavattom-garlands', image: '/images/products/prod-madurai-mallipoo.jpg', order: 2 },
-  { name: 'Tube Rose Lily Garlands', slug: 'tube-rose-lily-garlands', image: '/images/products/prod-sampangi-string.jpg', order: 3 },
-  { name: 'Pooja flowers', slug: 'pooja-flowers', image: '/images/categories/cat-loose-pooja.jpg', order: 4 },
-  { name: 'Pooja leaves', slug: 'pooja-leaves', image: '/images/categories/cat-pooja-leaves.jpg', order: 5 },
-  { name: 'strings', slug: 'strings', image: '/images/categories/cat-jasmine-strings.jpg', order: 6 },
-  { name: 'Decor Items', slug: 'decor-items', image: '/images/categories/cat-pooja-kits.jpg', order: 7 },
-  { name: 'Coconut', slug: 'coconut', image: '/images/products/prod-durva-bilva-combo.jpg', order: 8 },
-  { name: 'Event Decoration', slug: 'event-decoration', image: '/images/categories/cat-bouquets.jpg', order: 9 },
-  { name: 'Temple and Pooja Garlands', slug: 'temple-and-pooja-garlands', image: '/images/products/prod-marigold-temple-garland.jpg', order: 10 },
-  { name: 'House warming Garlands', slug: 'house-warming-garlands', image: '/images/banners/hero-wedding-tif-temple.jpg', order: 11 },
-  { name: 'Veni', slug: 'veni', image: '/images/products/prod-jasmine-rose-veni.jpg', order: 12 },
+  {
+    name: 'WEDDING GARLANDS',
+    slug: 'wedding-garlands',
+    image: '/images/categories/cat-wedding-garlands.jpg',
+    order: 2,
+    subcategories: [
+      { name: 'Wedding Garlands', slug: 'wedding-garlands-sub', image: '/images/categories/cat-wedding-garlands.jpg', order: 1 },
+      { name: 'Rose Petal Garlands', slug: 'rose-petal-garlands', image: '/images/products/prod-rose-petal-varmala.jpg', order: 2 },
+      { name: 'Button Rose Garlands', slug: 'button-rose-garlands', image: '/images/products/new/5-2.png', order: 3 },
+      { name: 'Lilly Garlands', slug: 'lilly-garlands', image: '/images/products/prod-sampangi-string.jpg', order: 4 },
+      { name: 'Carnation Garlands', slug: 'carnation-garlands', image: '/images/products/prod-carnation-rose-garland.jpg', order: 5 },
+      { name: 'Exchange Garlands', slug: 'exchange-garlands', image: '/images/banners/hero-wedding-tif-exch.jpg', order: 6 },
+      { name: 'North Indian Garlands', slug: 'north-indian-garlands', image: '/images/banners/hero-wedding-tif-rose.jpg', order: 7 },
+      { name: 'Veni, Jadai', slug: 'veni-jadai', image: '/images/products/prod-jasmine-rose-veni.jpg', order: 8 },
+    ],
+  },
+  {
+    name: 'HOUSE WARMING GARLANDS',
+    slug: 'house-warming-garlands',
+    image: '/images/banners/hero-wedding-tif-temple.jpg',
+    order: 3,
+    subcategories: [
+      { name: 'Button Rose Door Garlands', slug: 'button-rose-door-garlands', image: '/images/products/new/5-2.png', order: 1 },
+      { name: 'Coconut Thoranam', slug: 'coconut-thoranam', image: '/images/products/prod-durva-bilva-combo.jpg', order: 2 },
+      { name: 'Mango Leaves Thoranam', slug: 'mango-leaves-thoranam', image: '/images/products/prod-mango-leaves-mavilai.jpg', order: 3 },
+      { name: 'Button Rose String', slug: 'button-rose-string', image: '/images/products/new/5-3.png', order: 4 },
+    ],
+  },
+  {
+    name: 'TEMPLE GARLANDS',
+    slug: 'temple-garlands',
+    image: '/images/products/prod-marigold-temple-garland.jpg',
+    order: 4,
+    subcategories: [
+      { name: 'Temple and Pooja Garlands', slug: 'temple-and-pooja-garlands', image: '/images/products/prod-marigold-temple-garland.jpg', order: 1 },
+      { name: 'Button Rose Pooja Garlands', slug: 'button-rose-pooja-garlands', image: '/images/products/new/5-4.png', order: 2 },
+      { name: 'Lilly Garlands', slug: 'lilly-temple-garlands', image: '/images/products/prod-lotus-jasmine-garland.jpg', order: 3 },
+      { name: 'Vadamalli Garlands', slug: 'vadamalli-garlands', image: '/images/products/prod-navagraha-pooja-mix.jpg', order: 4 },
+      { name: 'Vilvam Garlands', slug: 'vilvam-garlands', image: '/images/products/prod-durva-bilva-combo.jpg', order: 5 },
+      { name: 'Green Leaves Garlands', slug: 'green-leaves-garlands', image: '/images/products/prod-tulsi-mani-garland.jpg', order: 6 },
+    ],
+  },
 ];
 
 export default function Header({
@@ -211,7 +245,7 @@ export default function Header({
 
   // Mobile drawer states
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [mobileExpandedCatName, setMobileExpandedCatName] = useState<string | null>('Indian Wedding Garlands');
+  const [mobileExpandedCatName, setMobileExpandedCatName] = useState<string | null>('STRINGS & LEAVES');
 
   // Universal fallbacks for standalone pages
   const [internalCartCount, setInternalCartCount] = useState<number>(0);
@@ -477,31 +511,6 @@ export default function Header({
     }, 180);
   };
 
-  // Find Indian Wedding Garlands category and its subcategories
-  const weddingGarlandCat = activeCategories.find((c) =>
-    c.name.toLowerCase().includes('wedding')
-  );
-  const weddingSubcategories = weddingGarlandCat?.subcategories || [
-    { name: 'Rose Petal Garlands' },
-    { name: 'Button Rose Garlands' },
-    { name: 'Carnation Garlands' },
-  ];
-
-  // Specific items in "More" menu
-  const moreCategories = activeCategories.filter((c) => {
-    const nameLower = c.name.toLowerCase();
-    return (
-      nameLower.includes('temple') ||
-      nameLower.includes('house warming') ||
-      nameLower.includes('veni') ||
-      nameLower === 'strings' ||
-      nameLower.includes('nanthiyavattom') ||
-      nameLower.includes('tube rose') ||
-      nameLower.includes('coconut') ||
-      nameLower.includes('event')
-    );
-  });
-
   return (
     <>
       {/* UNIFIED STICKY HEADER */}
@@ -761,248 +770,136 @@ export default function Header({
                 <li className="shrink-0">
                   <Link
                     href="/about"
-                    className="px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap"
+                    className="px-2 py-1.5 text-stone-700 hover:text-[#0B3B24] font-semibold transition-colors whitespace-nowrap uppercase tracking-wide text-[12px] lg:text-[12.5px] xl:text-[13px]"
                   >
                     About us
                   </Link>
                 </li>
 
-{/* 4. Indian Wedding Garlands ⌵ (Direct Subcategories Dropdown: Rose Petal, Button Rose, Carnation) */}
-                <li
-                  className="relative shrink-0"
-                  onMouseEnter={() => handleDropdownMouseEnter('wedding')}
-                  onMouseLeave={handleDropdownMouseLeave}
-                >
+                {/* 3. Shop */}
+                <li className="shrink-0">
                   <button
                     type="button"
-                    onClick={() =>
-                      setOpenDropdownKey(openDropdownKey === 'wedding' ? null : 'wedding')
-                    }
-                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      openDropdownKey === 'wedding' || selectedCategory === 'Indian Wedding Garlands'
+                    onClick={() => handleCategorySelect('All')}
+                    className={`px-2 py-1.5 transition-colors whitespace-nowrap uppercase tracking-wide cursor-pointer font-semibold text-[12px] lg:text-[12.5px] xl:text-[13px] ${
+                      selectedCategory === 'All'
                         ? 'text-[#0B3B24] font-bold'
-                        : ''
+                        : 'text-stone-700 hover:text-[#0B3B24]'
                     }`}
                   >
-                    <span>Indian Wedding Garlands</span>
-                    {weddingSubcategories.length > 0 && (
-                      <ChevronDown
-                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                          openDropdownKey === 'wedding'
-                            ? 'rotate-180 text-[#0B3B24]'
-                            : 'text-stone-400 group-hover:text-[#0B3B24]'
+                    Shop
+                  </button>
+                </li>
+
+                {/* 4. Parent Categories with Subcategories */}
+                {activeCategories.map((cat) => {
+                  const hasSub = Array.isArray(cat.subcategories) && cat.subcategories.length > 0;
+                  const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
+                  const isOpen = openDropdownKey === cat.name;
+
+                  return (
+                    <li
+                      key={cat.slug || cat.name}
+                      className="relative shrink-0"
+                      onMouseEnter={() => hasSub && handleDropdownMouseEnter(cat.name)}
+                      onMouseLeave={hasSub ? handleDropdownMouseLeave : undefined}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (hasSub) {
+                            setOpenDropdownKey(isOpen ? null : cat.name);
+                          } else {
+                            handleCategorySelect(cat.name);
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1 px-2 py-1.5 uppercase tracking-wide transition-colors whitespace-nowrap cursor-pointer group rounded-lg text-[12px] lg:text-[12.5px] xl:text-[13px] ${
+                          isSelected || isOpen
+                            ? 'text-[#0B3B24] font-bold'
+                            : 'text-stone-700 hover:text-[#0B3B24] font-semibold'
                         }`}
-                      />
-                    )}
-                  </button>
-
-                  {/* Direct Dropdown showing the subcategories marked in red */}
-                  {weddingSubcategories.length > 0 && openDropdownKey === 'wedding' && (
-                    <div
-                      className="absolute left-0 top-full mt-1.5 w-64 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2"
-                      style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
-                    >
-                      <div className="px-3 pb-1.5 mb-1 border-b border-stone-100 flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                          Wedding Garlands
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCategorySelect('Indian Wedding Garlands')}
-                          className="text-[11px] font-semibold text-[#0B3B24] hover:underline cursor-pointer"
-                        >
-                          View All
-                        </button>
-                      </div>
-
-                      <div className="space-y-0.5">
-                        {weddingSubcategories.map((sub) => {
-                          const isSubSelected = selectedSubcategory === sub.name;
-                          return (
-                            <button
-                              key={sub.name}
-                              type="button"
-                              onClick={() =>
-                                handleCategorySelect('Indian Wedding Garlands', sub.name)
-                              }
-                              className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors flex items-center gap-2 cursor-pointer ${
-                                isSubSelected
-                                  ? 'bg-emerald-50 text-[#0B3B24] font-bold'
-                                  : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
-                              }`}
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                              <span className="truncate">{sub.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </li>
-
-                {/* 5. Nanthiyavattom Garlands */}
-                <li className="shrink-0 hidden xl:block">
-                  <button
-                    type="button"
-                    onClick={() => handleCategorySelect('Nanthiyavattom Garlands')}
-                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      selectedCategory === 'Nanthiyavattom Garlands' ? 'text-[#0B3B24] font-bold' : ''
-                    }`}
-                  >
-                    <span>Nanthiyavattom Garlands</span>
-                  </button>
-                </li>
-
-                {/* 6. Tube Rose Lily Garlands */}
-                <li className="shrink-0 hidden xl:block">
-                  <button
-                    type="button"
-                    onClick={() => handleCategorySelect('Tube Rose Lily Garlands')}
-                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      selectedCategory === 'Tube Rose Lily Garlands' ? 'text-[#0B3B24] font-bold' : ''
-                    }`}
-                  >
-                    <span>Tube Rose Lily Garlands</span>
-                  </button>
-                </li>
-
-                {/* 7. Pooja flowers */}
-                <li className="shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleCategorySelect('Pooja flowers')}
-                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      selectedCategory === 'Pooja flowers' ? 'text-[#0B3B24] font-bold' : ''
-                    }`}
-                  >
-                    <span>Pooja flowers</span>
-                  </button>
-                </li>
-
-                {/* 8. Pooja leaves */}
-                <li className="shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleCategorySelect('Pooja leaves')}
-                    className={`inline-flex items-center gap-1 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      selectedCategory === 'Pooja leaves' ? 'text-[#0B3B24] font-bold' : ''
-                    }`}
-                  >
-                    <span>Pooja leaves</span>
-                  </button>
-                </li>
-
-                {/* 9. 🏵️ Decor Items (With Marigold/Decor Icon) */}
-                <li className="shrink-0 hidden lg:block">
-                  <button
-                    type="button"
-                    onClick={() => handleCategorySelect('Decor Items')}
-                    className={`inline-flex items-center gap-1.5 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      selectedCategory === 'Decor Items' ? 'text-[#0B3B24] font-bold' : ''
-                    }`}
-                  >
-                    <MarigoldIcon className="w-4 h-4 shrink-0" />
-                    <span>Decor Items</span>
-                  </button>
-                </li>
-
-                {/* 10. 🥥 Coconut (With Coconut Icon) */}
-                <li className="shrink-0 hidden 2xl:block">
-                  <button
-                    type="button"
-                    onClick={() => handleCategorySelect('Coconut')}
-                    className={`inline-flex items-center gap-1.5 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      selectedCategory === 'Coconut' ? 'text-[#0B3B24] font-bold' : ''
-                    }`}
-                  >
-                    <CoconutIcon className="w-4 h-4 shrink-0" />
-                    <span>Coconut</span>
-                  </button>
-                </li>
-
-                {/* 11. 📅 Event Decoration (With Red Calendar Icon) */}
-                <li className="shrink-0 hidden 2xl:block">
-                  <button
-                    type="button"
-                    onClick={() => handleCategorySelect('Event Decoration')}
-                    className={`inline-flex items-center gap-1.5 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      selectedCategory === 'Event Decoration' ? 'text-[#0B3B24] font-bold' : ''
-                    }`}
-                  >
-                    <EventCalendarIcon className="w-4 h-4 shrink-0" />
-                    <span>Event Decoration</span>
-                  </button>
-                </li>
-
-                {/* 12. ::: More ⌵ (Grid icon with remaining categories: Temple and Pooja Garlands, House warming, Veni, strings) */}
-                <li
-                  className="relative shrink-0"
-                  onMouseEnter={() => handleDropdownMouseEnter('more')}
-                  onMouseLeave={handleDropdownMouseLeave}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdownKey(openDropdownKey === 'more' ? null : 'more')}
-                    className={`inline-flex items-center gap-1.5 px-1.5 py-1 text-stone-700 hover:text-[#0B3B24] font-medium transition-colors whitespace-nowrap cursor-pointer group ${
-                      openDropdownKey === 'more' ? 'text-[#0B3B24] font-bold' : ''
-                    }`}
-                  >
-                    <GridNineIcon className="w-3.5 h-3.5 text-stone-600 group-hover:text-[#0B3B24]" />
-                    <span>More</span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        openDropdownKey === 'more'
-                          ? 'rotate-180 text-[#0B3B24]'
-                          : 'text-stone-400 group-hover:text-[#0B3B24]'
-                      }`}
-                    />
-                  </button>
-
-                  {/* More Dropdown Menu */}
-                  {openDropdownKey === 'more' && (
-                    <div
-                      className="absolute right-0 top-full mt-1.5 w-64 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2"
-                      style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
-                    >
-                      <div className="px-4 pb-1.5 mb-1 border-b border-stone-100 flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                          More Categories
-                        </span>
-                      </div>
-                      <div className="space-y-0.5">
-                        {moreCategories.map((cat) => (
-                          <button
-                            key={cat._id || cat.name}
-                            type="button"
-                            onClick={() => handleCategorySelect(cat.name)}
-                            className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors flex items-center gap-2 cursor-pointer ${
-                              selectedCategory === cat.name
-                                ? 'bg-emerald-50 text-[#0B3B24] font-bold'
-                                : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
+                      >
+                        <span>{cat.name}</span>
+                        {hasSub && (
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                              isOpen
+                                ? 'rotate-180 text-[#0B3B24]'
+                                : 'text-stone-400 group-hover:text-[#0B3B24]'
                             }`}
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                            <span className="truncate">{cat.name}</span>
-                          </button>
-                        ))}
-                        <div className="pt-1 mt-1 border-t border-stone-100">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setOpenDropdownKey(null);
-                              const el = document.getElementById('custom-orders-section');
-                              if (el) el.scrollIntoView({ behavior: 'smooth' });
-                            }}
-                            className="w-full text-left px-4 py-2 text-[12.5px] font-semibold text-emerald-800 hover:bg-emerald-50 flex items-center gap-2"
-                          >
-                            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                            <span>Bespoke Custom Orders</span>
-                          </button>
+                          />
+                        )}
+                      </button>
+
+                      {/* Direct Dropdown showing the subcategories */}
+                      {hasSub && isOpen && (
+                        <div
+                          className="absolute left-0 top-full mt-1.5 min-w-[240px] max-w-[320px] bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2"
+                          style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
+                        >
+                          <div className="px-4 pb-1.5 mb-1 border-b border-stone-100 flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                              {cat.name}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCategorySelect(cat.name)}
+                              className="text-[11px] font-semibold text-[#0B3B24] hover:underline cursor-pointer"
+                            >
+                              View All
+                            </button>
+                          </div>
+
+                          <div className="space-y-0.5">
+                            {cat.subcategories.map((sub: any) => {
+                              const isSubSelected =
+                                selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() &&
+                                selectedSubcategory.trim().toLowerCase() === sub.name.trim().toLowerCase();
+                              return (
+                                <button
+                                  key={sub.slug || sub.name}
+                                  type="button"
+                                  onClick={() => handleCategorySelect(cat.name, sub.name)}
+                                  className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors flex items-center gap-2.5 cursor-pointer ${
+                                    isSubSelected
+                                      ? 'bg-emerald-50 text-[#0B3B24] font-bold'
+                                      : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
+                                  }`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                      isSubSelected ? 'bg-emerald-600' : 'bg-stone-300'
+                                    }`}
+                                  />
+                                  <span className="truncate">{sub.name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  )}
+                      )}
+                    </li>
+                  );
+                })}
+
+                {/* 5. Blog */}
+                <li className="shrink-0">
+                  <Link
+                    href="/blog"
+                    className="px-2 py-1.5 text-stone-700 hover:text-[#0B3B24] font-semibold transition-colors whitespace-nowrap uppercase tracking-wide text-[12px] lg:text-[12.5px] xl:text-[13px]"
+                  >
+                    Blog
+                  </Link>
+                </li>
+
+                {/* 6. Contact us */}
+                <li className="shrink-0">
+                  <Link
+                    href="/contact"
+                    className="px-2 py-1.5 text-stone-700 hover:text-[#0B3B24] font-semibold transition-colors whitespace-nowrap uppercase tracking-wide text-[12px] lg:text-[12.5px] xl:text-[13px]"
+                  >
+                    Contact us
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -1123,164 +1020,96 @@ export default function Header({
               <ChevronRight className="w-4 h-4 text-stone-300" />
             </Link>
 
-{/* 4. Indian Wedding Garlands (With Accordion for Subcategories) */}
-            <div className="rounded-lg overflow-hidden border border-emerald-100 bg-emerald-50/30">
-              <button
-                type="button"
-                onClick={() =>
-                  setMobileExpandedCatName(
-                    mobileExpandedCatName === 'Indian Wedding Garlands' ? null : 'Indian Wedding Garlands'
-                  )
-                }
-                className="w-full flex items-center justify-between py-2.5 px-3 text-sm font-bold text-[#0B3B24] bg-emerald-100/50 hover:bg-emerald-100 transition-colors"
-              >
-                <span>Indian Wedding Garlands</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-[#0B3B24] transition-transform duration-200 ${
-                    mobileExpandedCatName === 'Indian Wedding Garlands' ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
+            {/* 3. Shop */}
+            <button
+              type="button"
+              onClick={() => handleCategorySelect('All')}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+            >
+              <span>Shop All Flowers</span>
+              <ChevronRight className="w-4 h-4 text-stone-300" />
+            </button>
 
-              {mobileExpandedCatName === 'Indian Wedding Garlands' && (
-                <div className="p-2 space-y-1 bg-white">
-                  <button
-                    type="button"
-                    onClick={() => handleCategorySelect('Indian Wedding Garlands')}
-                    className="w-full text-left py-1.5 px-2.5 text-xs font-semibold text-[#0B3B24] hover:underline"
+            {/* 4. Dynamic Categories */}
+            {activeCategories.map((cat) => {
+              const hasSub = Array.isArray(cat.subcategories) && cat.subcategories.length > 0;
+              const isExpanded = mobileExpandedCatName === cat.name;
+
+              if (hasSub) {
+                return (
+                  <div
+                    key={cat.slug || cat.name}
+                    className="rounded-lg overflow-hidden border border-emerald-100/70 bg-emerald-50/20"
                   >
-                    &bull; View All Wedding Garlands
-                  </button>
-                  {weddingSubcategories.map((sub) => (
                     <button
-                      key={sub.name}
                       type="button"
-                      onClick={() => handleCategorySelect('Indian Wedding Garlands', sub.name)}
-                      className="w-full text-left py-1.5 px-2.5 text-xs font-medium text-stone-700 hover:text-[#0B3B24] hover:bg-stone-50 rounded"
+                      onClick={() =>
+                        setMobileExpandedCatName(isExpanded ? null : cat.name)
+                      }
+                      className="w-full flex items-center justify-between py-2.5 px-3 text-sm font-bold text-[#0B3B24] bg-emerald-100/40 hover:bg-emerald-100/70 transition-colors"
                     >
-                      &bull; {sub.name}
+                      <span>{cat.name}</span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#0B3B24] transition-transform duration-200 ${
+                          isExpanded ? 'rotate-180' : ''
+                        }`}
+                      />
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* Categories List in Mobile */}
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('Nanthiyavattom Garlands')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+                    {isExpanded && (
+                      <div className="p-2 space-y-1 bg-white">
+                        <button
+                          type="button"
+                          onClick={() => handleCategorySelect(cat.name)}
+                          className="w-full text-left py-1.5 px-2.5 text-xs font-semibold text-[#0B3B24] hover:underline"
+                        >
+                          &bull; View All {cat.name}
+                        </button>
+                        {cat.subcategories.map((sub: any) => (
+                          <button
+                            key={sub.slug || sub.name}
+                            type="button"
+                            onClick={() => handleCategorySelect(cat.name, sub.name)}
+                            className="w-full text-left py-1.5 px-2.5 text-xs font-medium text-stone-700 hover:text-[#0B3B24] hover:bg-stone-50 rounded"
+                          >
+                            &bull; {sub.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <button
+                  key={cat.slug || cat.name}
+                  type="button"
+                  onClick={() => handleCategorySelect(cat.name)}
+                  className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
+                >
+                  <span>{cat.name}</span>
+                </button>
+              );
+            })}
+
+            {/* 5. Blog */}
+            <Link
+              href="/blog"
+              onClick={() => toggleMobileMenu(false)}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] transition-colors"
             >
-              <span>Nanthiyavattom Garlands</span>
+              <span>Blog</span>
               <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('Tube Rose Lily Garlands')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span>Tube Rose Lily Garlands</span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('Pooja flowers')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span>Pooja flowers</span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('Pooja leaves')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span>Pooja leaves</span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('Decor Items')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span className="flex items-center gap-2">
-                <MarigoldIcon className="w-4 h-4" />
-                <span>Decor Items</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('Coconut')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span className="flex items-center gap-2">
-                <CoconutIcon className="w-4 h-4" />
-                <span>Coconut</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('Event Decoration')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span className="flex items-center gap-2">
-                <EventCalendarIcon className="w-4 h-4" />
-                <span>Event Decoration</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('Temple and Pooja Garlands')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span>Temple and Pooja Garlands</span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('House warming Garlands')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span>House warming Garlands</span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('Veni')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span>Veni</span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('strings')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
-            >
-              <span>strings</span>
-              <ChevronRight className="w-4 h-4 text-stone-300" />
-            </button>
-
-            {/* Contact */}
+            {/* 6. Contact us */}
             <Link
               href="/contact"
               onClick={() => toggleMobileMenu(false)}
               className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] transition-colors"
             >
-              <span>Contact</span>
+              <span>Contact us</span>
               <ChevronRight className="w-4 h-4 text-stone-300" />
             </Link>
           </div>

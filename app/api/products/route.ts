@@ -15,27 +15,23 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
     const subcategory = searchParams.get('subcategory');
 
-    let filter: any = {
-      name: { $not: /arugampul|bilva|vilva|durva grass/i },
-    };
+    let filter: any = {};
     if (query && query.trim()) {
       const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      filter.$and = [
-        { name: { $not: /arugampul|bilva|vilva|durva grass/i } },
-        {
-          $or: [
-            { name: { $regex: sanitizedQuery, $options: 'i' } },
-            { description: { $regex: sanitizedQuery, $options: 'i' } },
-          ],
-        },
+      filter.$or = [
+        { name: { $regex: sanitizedQuery, $options: 'i' } },
+        { description: { $regex: sanitizedQuery, $options: 'i' } },
+        { category: { $regex: sanitizedQuery, $options: 'i' } },
+        { subcategory: { $regex: sanitizedQuery, $options: 'i' } },
       ];
-      delete filter.name;
     }
     if (category && category !== 'All') {
-      filter.category = category;
+      const sanitizedCat = category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.category = { $regex: new RegExp(`^${sanitizedCat}$`, 'i') };
     }
     if (subcategory && subcategory !== 'All') {
-      filter.subcategory = subcategory;
+      const sanitizedSub = subcategory.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.subcategory = { $regex: new RegExp(`^${sanitizedSub}$`, 'i') };
     }
 
     // Ensure database indexes exist

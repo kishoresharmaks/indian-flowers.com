@@ -179,76 +179,102 @@ export default function ShopByCategory({
   const activeCategories =
     categories && categories.length > 0 ? categories : (SEED_CATEGORIES as CategoryItem[]);
 
-  // Compact Popular Shortcuts configuration matching Section 6 of requirements
+  // Compact Popular Shortcuts configuration aligned with 4 parent categories
   const shortcuts = [
     {
-      name: 'Decor Items',
-      categoryName: 'Decor Items',
-      icon: DiyaLampIcon,
-      bg: 'bg-[#FFF8F2]',
-      border: 'border-[#FFE3D1]',
+      name: 'Strings & Jasmine',
+      categoryName: 'STRINGS & LEAVES',
+      subcategoryName: 'Strings / Jasmine Strings',
+      icon: JasmineStringsIcon,
+      bg: 'bg-[#FAF7F2]',
+      border: 'border-[#EDE5D8]',
     },
     {
-      name: 'Coconut',
-      categoryName: 'Coconut',
-      icon: CoconutShortcutIcon,
-      bg: 'bg-[#FAF6F2]',
-      border: 'border-[#EFE5D9]',
-    },
-    {
-      name: 'Event Decoration',
-      categoryName: 'Event Decoration',
-      icon: ToranArchIcon,
-      bg: 'bg-[#FFF5F2]',
-      border: 'border-[#FEE3D8]',
-    },
-    {
-      name: 'Temple & Pooja',
-      categoryName: 'Temple and Pooja Garlands',
-      icon: TempleKalasamIcon,
-      bg: 'bg-[#FFFBF0]',
-      border: 'border-[#FEEFC4]',
+      name: 'Wedding Garlands',
+      categoryName: 'WEDDING GARLANDS',
+      icon: VeniGarlandIcon,
+      bg: 'bg-[#FFF0F3]',
+      border: 'border-[#FFE2E8]',
     },
     {
       name: 'House Warming',
-      categoryName: 'House warming Garlands',
+      categoryName: 'HOUSE WARMING GARLANDS',
       icon: HouseWarmingIcon,
       bg: 'bg-[#FFF6F0]',
       border: 'border-[#FEE7D8]',
     },
     {
-      name: 'Veni',
-      categoryName: 'Veni',
-      icon: VeniGarlandIcon,
-      bg: 'bg-[#FAF7F2]',
-      border: 'border-[#EDE5D8]',
+      name: 'Temple Garlands',
+      categoryName: 'TEMPLE GARLANDS',
+      icon: TempleKalasamIcon,
+      bg: 'bg-[#FFFBF0]',
+      border: 'border-[#FEEFC4]',
+    },
+    {
+      name: 'Pooja Leaves',
+      categoryName: 'STRINGS & LEAVES',
+      subcategoryName: 'Pooja Leaves',
+      icon: BetelLeavesIcon,
+      bg: 'bg-[#F2FBF5]',
+      border: 'border-[#D1F4DE]',
+    },
+    {
+      name: 'Decor Items',
+      categoryName: 'STRINGS & LEAVES',
+      subcategoryName: 'Decor Items',
+      icon: DiyaLampIcon,
+      bg: 'bg-[#FFF8F2]',
+      border: 'border-[#FFE3D1]',
     },
   ];
 
   // Additional shortcuts on mobile for 3x2 grid view matching screenshot
   const mobileShortcuts = [
     {
+      name: 'Jasmine Strings',
+      categoryName: 'STRINGS & LEAVES',
+      subcategoryName: 'Strings / Jasmine Strings',
+      icon: JasmineStringsIcon,
+      bg: 'bg-[#FAF7F2]',
+      border: 'border-[#EDE5D8]',
+    },
+    {
+      name: 'Wedding Garlands',
+      categoryName: 'WEDDING GARLANDS',
+      icon: VeniGarlandIcon,
+      bg: 'bg-[#FFF0F3]',
+      border: 'border-[#FFE2E8]',
+    },
+    {
+      name: 'House Warming',
+      categoryName: 'HOUSE WARMING GARLANDS',
+      icon: HouseWarmingIcon,
+      bg: 'bg-[#FFF6F0]',
+      border: 'border-[#FEE7D8]',
+    },
+    {
+      name: 'Temple Garlands',
+      categoryName: 'TEMPLE GARLANDS',
+      icon: TempleKalasamIcon,
+      bg: 'bg-[#FFFBF0]',
+      border: 'border-[#FEEFC4]',
+    },
+    {
       name: 'Pooja Flowers',
-      categoryName: 'Pooja flowers',
+      categoryName: 'STRINGS & LEAVES',
+      subcategoryName: 'Pooja Flowers',
       icon: MarigoldFlowerIcon,
       bg: 'bg-[#FFFDF0]',
       border: 'border-[#FEF0C7]',
     },
     {
       name: 'Pooja Leaves',
-      categoryName: 'Pooja leaves',
+      categoryName: 'STRINGS & LEAVES',
+      subcategoryName: 'Pooja Leaves',
       icon: BetelLeavesIcon,
       bg: 'bg-[#F2FBF5]',
       border: 'border-[#D1F4DE]',
     },
-    {
-      name: 'Strings',
-      categoryName: 'strings',
-      icon: JasmineStringsIcon,
-      bg: 'bg-[#FAF7F2]',
-      border: 'border-[#EDE5D8]',
-    },
-    ...shortcuts.slice(0, 3), // Decor Items, Coconut, Event Decoration
   ];
 
   return (
@@ -317,13 +343,17 @@ export default function ShopByCategory({
             {shortcuts.map((sc) => {
               const IconComp = sc.icon;
               const isSelected =
-                selectedCategory.trim().toLowerCase() === sc.categoryName.trim().toLowerCase();
+                selectedCategory.trim().toLowerCase() === sc.categoryName.trim().toLowerCase() &&
+                (!sc.subcategoryName ||
+                  selectedSubcategory.trim().toLowerCase() === sc.subcategoryName.trim().toLowerCase());
 
               return (
                 <button
                   key={sc.name}
                   type="button"
-                  onClick={() => onSelectCategory && onSelectCategory(sc.categoryName)}
+                  onClick={() =>
+                    onSelectCategory && onSelectCategory(sc.categoryName, sc.subcategoryName)
+                  }
                   className="group flex flex-col items-center gap-2 text-center transition-transform hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#064E3B]/20 rounded-2xl p-1.5"
                 >
                   <div
@@ -356,13 +386,17 @@ export default function ShopByCategory({
             {mobileShortcuts.map((sc) => {
               const IconComp = sc.icon;
               const isSelected =
-                selectedCategory.trim().toLowerCase() === sc.categoryName.trim().toLowerCase();
+                selectedCategory.trim().toLowerCase() === sc.categoryName.trim().toLowerCase() &&
+                (!sc.subcategoryName ||
+                  selectedSubcategory.trim().toLowerCase() === sc.subcategoryName.trim().toLowerCase());
 
               return (
                 <button
                   key={sc.name}
                   type="button"
-                  onClick={() => onSelectCategory && onSelectCategory(sc.categoryName)}
+                  onClick={() =>
+                    onSelectCategory && onSelectCategory(sc.categoryName, sc.subcategoryName)
+                  }
                   className="group flex flex-col items-center gap-1.5 text-center transition-transform active:scale-95 cursor-pointer p-1"
                 >
                   <div

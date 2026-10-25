@@ -526,40 +526,42 @@ export default function CustomerStore() {
 
   const getCategoryMeta = (catName: string) => {
     const lower = catName.trim().toLowerCase();
-    if (lower.includes('string') || lower.includes('jasmine')) {
+    if (lower.includes('string') || lower.includes('leaves')) {
       return {
-        eyebrow: 'FRESH INDIAN FLOWERS',
-        description: 'Premium authentic floral blooms delivered fresh across the United States',
+        eyebrow: 'FRESH JASMINE STRINGS & SACRED LEAVES',
+        title: 'Strings & Auspicious Leaves',
+        description:
+          'Authentic Madurai Mallipoo, Tuberose strands, and sacred puja leaves delivered fresh across all 50 US States',
       };
     }
-    if (lower.includes('garland') || lower.includes('wedding') || lower.includes('temple')) {
+    if (lower.includes('wedding')) {
       return {
-        eyebrow: 'Fresh Wedding Garland',
-        title: 'Our Exclusive Collections',
+        eyebrow: 'FRESH INDIAN WEDDING GARLANDS',
+        title: 'Handcrafted Varmala & Vivaha Garlands',
+        description:
+          'Exquisite Rose Petal, Button Rose, Carnation, and Exchange garlands crafted with pride for your sacred moments',
       };
     }
-    if (lower.includes('loose') || lower.includes('daily pooja')) {
+    if (lower.includes('house warming')) {
       return {
-        eyebrow: 'FRESH LOOSE BLOOMS',
+        eyebrow: 'AUSPICIOUS GRIHAPRAVESAM GARLANDS',
+        title: 'House Warming Garlands & Festive Torans',
+        description:
+          'Traditional doorway entrance garlands, mango leaf thoranams, and blessing strands for a prosperous new home',
       };
     }
-    if (lower.includes('leaf') || lower.includes('leaves') || lower.includes('greenery')) {
+    if (lower.includes('temple')) {
       return {
-        eyebrow: 'SACRED PUJA LEAVES & GREENERY',
-      };
-    }
-    if (lower.includes('kit') || lower.includes('pooja item')) {
-      return {
-        eyebrow: 'WORSHIP & ARCHANA ESSENTIALS',
-      };
-    }
-    if (lower.includes('bouquet') || lower.includes('arrangement')) {
-      return {
-        eyebrow: 'CELEBRATION FLORAL ARRANGEMENTS',
+        eyebrow: 'SACRED TEMPLE & DEITY OFFERINGS',
+        title: 'Temple & Pooja Deity Garlands',
+        description:
+          'Reverent Bilva/Vilvam, Vadamalli, Marigold, and sacred foliage garlands for home shrines and temple rituals',
       };
     }
     return {
       eyebrow: 'FRESH INDIAN FLOWERS',
+      title: catName,
+      description: 'Handcrafted with reverence and flown fresh across the USA',
     };
   };
 
