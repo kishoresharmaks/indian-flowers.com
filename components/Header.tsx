@@ -551,7 +551,6 @@ export default function Header({
               >
                 <Phone className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
                 <span>{storePhone}</span>
-                <ChevronDown className="w-3 h-3 text-emerald-300/80" />
               </a>
             </div>
           </div>
@@ -786,17 +785,19 @@ export default function Header({
                     }`}
                   >
                     <span>Indian Wedding Garlands</span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        openDropdownKey === 'wedding'
-                          ? 'rotate-180 text-[#0B3B24]'
-                          : 'text-stone-400 group-hover:text-[#0B3B24]'
-                      }`}
-                    />
+                    {weddingSubcategories.length > 0 && (
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                          openDropdownKey === 'wedding'
+                            ? 'rotate-180 text-[#0B3B24]'
+                            : 'text-stone-400 group-hover:text-[#0B3B24]'
+                        }`}
+                      />
+                    )}
                   </button>
 
                   {/* Direct Dropdown showing the subcategories marked in red */}
-                  {openDropdownKey === 'wedding' && (
+                  {weddingSubcategories.length > 0 && openDropdownKey === 'wedding' && (
                     <div
                       className="absolute left-0 top-full mt-1.5 w-64 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2"
                       style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
@@ -840,7 +841,7 @@ export default function Header({
                   )}
                 </li>
 
-                {/* 5. Nanthiyavattom Garlands ⌵ */}
+                {/* 5. Nanthiyavattom Garlands */}
                 <li className="shrink-0 hidden xl:block">
                   <button
                     type="button"
@@ -850,11 +851,10 @@ export default function Header({
                     }`}
                   >
                     <span>Nanthiyavattom Garlands</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
                   </button>
                 </li>
 
-                {/* 6. Tube Rose Lily Garlands ⌵ */}
+                {/* 6. Tube Rose Lily Garlands */}
                 <li className="shrink-0 hidden xl:block">
                   <button
                     type="button"
@@ -864,11 +864,10 @@ export default function Header({
                     }`}
                   >
                     <span>Tube Rose Lily Garlands</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
                   </button>
                 </li>
 
-                {/* 7. Pooja flowers ⌵ */}
+                {/* 7. Pooja flowers */}
                 <li className="shrink-0">
                   <button
                     type="button"
@@ -878,11 +877,10 @@ export default function Header({
                     }`}
                   >
                     <span>Pooja flowers</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
                   </button>
                 </li>
 
-                {/* 8. Pooja leaves ⌵ */}
+                {/* 8. Pooja leaves */}
                 <li className="shrink-0">
                   <button
                     type="button"
@@ -892,11 +890,10 @@ export default function Header({
                     }`}
                   >
                     <span>Pooja leaves</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
                   </button>
                 </li>
 
-                {/* 9. 🏵️ Decor Items ⌵ (With Marigold/Decor Icon) */}
+                {/* 9. 🏵️ Decor Items (With Marigold/Decor Icon) */}
                 <li className="shrink-0 hidden lg:block">
                   <button
                     type="button"
@@ -907,11 +904,10 @@ export default function Header({
                   >
                     <MarigoldIcon className="w-4 h-4 shrink-0" />
                     <span>Decor Items</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
                   </button>
                 </li>
 
-                {/* 10. 🥥 Coconut ⌵ (With Coconut Icon) */}
+                {/* 10. 🥥 Coconut (With Coconut Icon) */}
                 <li className="shrink-0 hidden 2xl:block">
                   <button
                     type="button"
@@ -922,11 +918,10 @@ export default function Header({
                   >
                     <CoconutIcon className="w-4 h-4 shrink-0" />
                     <span>Coconut</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
                   </button>
                 </li>
 
-                {/* 11. 📅 Event Decoration ⌵ (With Red Calendar Icon) */}
+                {/* 11. 📅 Event Decoration (With Red Calendar Icon) */}
                 <li className="shrink-0 hidden 2xl:block">
                   <button
                     type="button"
@@ -937,7 +932,6 @@ export default function Header({
                   >
                     <EventCalendarIcon className="w-4 h-4 shrink-0" />
                     <span>Event Decoration</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#0B3B24]" />
                   </button>
                 </li>
 
