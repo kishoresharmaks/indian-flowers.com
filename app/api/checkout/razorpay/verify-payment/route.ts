@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json(
-        { success: false, message: 'Missing Razorpay payment verification parameters.' },
+        { success: false, message: 'Missing payment verification parameters.' },
         { status: 400 }
       );
     }
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
     if (!isValid) {
       return NextResponse.json(
-        { success: false, message: 'Invalid Razorpay payment signature.' },
+        { success: false, message: 'Payment verification failed. Security signature could not be validated.' },
         { status: 400 }
       );
     }
@@ -339,14 +339,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Razorpay payment verified and order created successfully.',
+      message: 'Payment verified and order created successfully.',
       data: newOrder,
     });
   } catch (error: any) {
     if (reservedInventory.length > 0) await releaseInventory(reservedInventory);
     console.error('Error verifying Razorpay payment:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Payment verification failed' },
+      {
+        success: false,
+        message: 'Payment verification failed. If your card was charged, please contact customer support.',
+      },
       { status: 500 }
     );
   }

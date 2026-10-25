@@ -65,7 +65,7 @@ export async function createRazorpayOrder({
   }
 
   if (!config.keyId || !config.keySecret || config.keyId.includes('placeholder') || config.keySecret.includes('placeholder')) {
-    throw new Error('Razorpay is not configured for live payments.');
+    throw new Error('Online payment gateway is temporarily unavailable. Please choose Cash on Delivery or contact customer support.');
   }
 
   // Real Razorpay API call

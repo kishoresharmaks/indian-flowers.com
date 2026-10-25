@@ -217,13 +217,6 @@ export default async function ProductPage({ params }: Props) {
             },
           },
         },
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: String(product.rating || 4.9),
-          reviewCount: String(product.reviewsCount || 48),
-          bestRating: '5',
-          worstRating: '1',
-        },
       };
 
       breadcrumbJsonLd = {

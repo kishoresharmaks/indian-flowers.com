@@ -38,8 +38,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  Star,
-  Quote,
   ArrowRight,
   ShieldCheck,
   Headphones,
@@ -62,16 +60,6 @@ interface CartItem {
   product: Product;
   selectedVariant?: ProductVariant;
   quantity: number;
-}
-
-interface CustomerReview {
-  _id: string;
-  customerName: string;
-  location: string;
-  comment: string;
-  rating: number;
-  avatar?: string;
-  productName?: string;
 }
 
 interface TrackedOrder {
@@ -101,14 +89,12 @@ export default function CustomerStore() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [banners, setBanners] = useState<HeroSlide[]>([]);
-  const [reviews, setReviews] = useState<CustomerReview[]>([]);
   const [storeSettings, setStoreSettings] = useState<any>(null);
 
   // Loading States
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingBanners, setLoadingBanners] = useState(true);
-  const [loadingReviews, setLoadingReviews] = useState(true);
 
   // Filter & Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -466,29 +452,7 @@ export default function CustomerStore() {
     fetchBanners();
   }, []);
 
-  // 4. Fetch Reviews from DB
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        setLoadingReviews(true);
-        const res = await fetch('/api/reviews');
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          setReviews(data.data);
-        } else {
-          setReviews([]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch reviews from DB:', err);
-        setReviews([]);
-      } finally {
-        setLoadingReviews(false);
-      }
-    };
-    fetchReviews();
-  }, []);
-
-  // 5. Fetch Dynamic Products directly from MongoDB based on Search Query
+  // 4. Fetch Dynamic Products directly from MongoDB based on Search Query
   const fetchProducts = async () => {
     try {
       setLoadingProducts(true);
@@ -935,7 +899,19 @@ export default function CustomerStore() {
           if (rzpOrderData.errors) {
             setFieldErrors(rzpOrderData.errors);
           }
-          setFormError(rzpOrderData.message || 'Failed to initialize Razorpay checkout.');
+          const rawMsg = rzpOrderData.message || '';
+          const isDevMsg =
+            rawMsg.toLowerCase().includes('razorpay') ||
+            rawMsg.toLowerCase().includes('dashboard') ||
+            rawMsg.toLowerCase().includes('key') ||
+            rawMsg.toLowerCase().includes('secret') ||
+            rawMsg.toLowerCase().includes('gateway') ||
+            rawMsg.toLowerCase().includes('internal');
+          setFormError(
+            isDevMsg
+              ? 'Unable to initialize card payment at this time. Please try another card or select Cash on Delivery.'
+              : rawMsg || 'Failed to initialize payment gateway. Please choose Cash on Delivery.'
+          );
           setSubmittingOrder(false);
           return;
         }
@@ -1017,10 +993,10 @@ export default function CustomerStore() {
                 window.dispatchEvent(new Event('cart-updated'));
                 refreshCustomerAccount();
               } else {
-                setFormError(verifyData.message || 'Payment verification failed.');
+                setFormError(verifyData.message || 'Payment verification failed. If your card was charged, please contact customer support.');
               }
             } catch (vErr) {
-              setFormError('Connection error verifying payment with server.');
+              setFormError('Connection error verifying payment with server. If your card was charged, please contact customer support.');
             } finally {
               setSubmittingOrder(false);
             }
@@ -1043,12 +1019,23 @@ export default function CustomerStore() {
         const rzpInstance = new (window as any).Razorpay(options);
         rzpInstance.on('payment.failed', function (resp: any) {
           const rawError = resp.error?.description || 'Payment was unsuccessful.';
-          if (rawError.toLowerCase().includes('international cards')) {
+          const lower = rawError.toLowerCase();
+          if (
+            lower.includes('international') ||
+            lower.includes('card') ||
+            lower.includes('dashboard') ||
+            lower.includes('gateway') ||
+            lower.includes('not enabled') ||
+            lower.includes('merchant') ||
+            lower.includes('razorpay') ||
+            lower.includes('account & settings') ||
+            lower.includes('payment method')
+          ) {
             setFormError(
-              'International cards are not enabled on this payment gateway yet. In your Razorpay Dashboard, please enable International Payments (Account & Settings → Payment Methods → International Payments) or choose Cash on Delivery.'
+              'This card payment could not be processed at this time. Please try a different card or select Cash on Delivery to complete your order.'
             );
           } else {
-            setFormError(rawError);
+            setFormError(rawError || 'Payment was unsuccessful. Please try again or select Cash on Delivery.');
           }
           setSubmittingOrder(false);
         });
@@ -1410,92 +1397,7 @@ export default function CustomerStore() {
       {/* 6.5 BESPOKE & BULK CUSTOM ORDERS CONTACT FORM */}
       <CustomOrderSection />
 
-      {/* 7. CUSTOMER REVIEWS (Retrieved 100% Dynamically from DB) */}
-      <section className="py-12 sm:py-16 bg-white">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          {/* Section Header */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-[#C85A78] block">
-                AUTHENTIC REVIEWS ACROSS USA
-              </span>
-              <h2 className="text-[24px] sm:text-[32px] lg:text-[36px] font-bold tracking-[-0.03em] text-[#0B3B24] mt-1 leading-[1.2]">
-                Trusted by Families for Sacred Moments
-              </h2>
-            </div>
-            <div>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 hover:border-[#0B3B24] text-xs sm:text-sm font-medium text-gray-700 hover:text-[#0B3B24] transition-colors cursor-pointer shadow-2xs"
-              >
-                <span>View All Reviews</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Dynamic Review Cards */}
-          {loadingReviews ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="rounded-2xl bg-[#FCFAF7] p-6 border border-amber-100/50 h-44 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {reviews.slice(0, 3).map((rev) => (
-                <div
-                  key={rev._id}
-                  className="rounded-2xl bg-[#FCFAF7] p-6 border border-stone-200/80 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-xs transition-shadow"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-stone-200/50">
-                      <div className="flex items-center text-amber-400">
-                        {[...Array(rev.rating || 5)].map((_, i) => (
-                          <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                        ))}
-                      </div>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        Verified US Delivery
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-[13px] text-gray-700 italic leading-relaxed font-normal">
-                      &ldquo;{rev.comment}&rdquo;
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2 border-t border-stone-200/50">
-                    {rev.avatar ? (
-                      <img
-                        src={rev.avatar}
-                        alt={rev.customerName}
-                        className="w-9 h-9 rounded-full object-cover border border-amber-200/80"
-                      />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 text-[#0B3B24] flex items-center justify-center font-bold text-xs">
-                        {rev.customerName.charAt(0)}
-                      </div>
-                    )}
-                    <div>
-                      <h4 className="text-xs font-semibold text-gray-900">{rev.customerName}</h4>
-                      <span className="text-[11px] text-gray-500 font-normal flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-stone-400" />
-                        {rev.location}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 8. AUSPICIOUS FESTIVAL & EVENT REMINDER HUB */}
+      {/* 7. AUSPICIOUS FESTIVAL & EVENT REMINDER HUB */}
       <section className="relative py-12 sm:py-16 md:py-20 bg-gradient-to-b from-[#FAF6F0] via-[#FCF9F4] to-[#FAF6F0] border-t border-b border-stone-200/80">
         <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12 max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
@@ -2260,7 +2162,7 @@ export default function CustomerStore() {
                               <div>
                                 <div className="text-xs sm:text-sm font-semibold text-gray-900 flex items-center gap-1.5">
                                   <CreditCard className="w-4 h-4 text-[#0B3B24]" />
-                                  Razorpay Secure Checkout
+                                  Credit or Debit Card (Secure Checkout)
                                 </div>
                                 <p className="text-[11px] text-gray-500 mt-0.5 font-normal">
                                   Pay securely with US Credit Cards, Debit Cards, and NetBanking in USD.
@@ -2359,7 +2261,7 @@ export default function CustomerStore() {
                   {submittingOrder
                     ? 'Processing...'
                     : checkoutForm.paymentMethod === 'Razorpay'
-                      ? `Pay with Razorpay — ${formatCurrency(cartGrandTotal)}`
+                      ? `Pay with Card — ${formatCurrency(cartGrandTotal)}`
                       : `Place Order — ${formatCurrency(cartGrandTotal)}`}
                 </button>
 
@@ -2409,7 +2311,7 @@ export default function CustomerStore() {
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
                   <Check className="w-3 h-3 text-emerald-600" />
                   {orderSuccess.paymentMethod === 'Razorpay'
-                    ? 'Paid Online (Razorpay Verified)'
+                    ? 'Paid Online (Card Verified)'
                     : orderSuccess.paymentMethod === 'CreditCard'
                       ? 'Paid Online (Card Verified)'
                       : 'Cash on Delivery (COD)'}
@@ -2418,7 +2320,7 @@ export default function CustomerStore() {
               {orderSuccess.transactionId && (
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="text-gray-500">
-                    {orderSuccess.paymentMethod === 'Razorpay' ? 'Razorpay Payment ID:' : 'Transaction ID:'}
+                    Payment Reference ID:
                   </span>
                   <code className="font-mono font-medium text-gray-800">{orderSuccess.transactionId}</code>
                 </div>

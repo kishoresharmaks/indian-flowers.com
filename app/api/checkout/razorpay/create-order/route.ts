@@ -73,7 +73,7 @@ export async function POST(request: Request) {
           success: false,
           message:
             validation.firstErrorMessage ||
-            'Please verify all required customer and shipping details before loading Razorpay checkout.',
+            'Please verify all required customer and shipping details before proceeding with payment.',
           errors: validation.errors,
         },
         { status: 400 }
@@ -194,13 +194,11 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Error creating Razorpay order:', error);
-    const errorDesc =
-      error.error?.description ||
-      error.description ||
-      error.message ||
-      'Failed to create Razorpay order';
     return NextResponse.json(
-      { success: false, message: errorDesc },
+      {
+        success: false,
+        message: 'Online card checkout is temporarily unavailable. Please try another card or select Cash on Delivery to complete your order.',
+      },
       { status: 500 }
     );
   }

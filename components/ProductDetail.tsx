@@ -9,7 +9,6 @@ import {
   Truck,
   CheckCircle2,
   MessageCircle,
-  Star,
   Leaf,
   ShieldCheck,
   Check,
@@ -376,22 +375,6 @@ export default function ProductDetail({
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[-0.03em] text-[#111827] leading-[1.2]">
                 {product.name}
               </h1>
-
-              {/* Ratings & Social Proof */}
-              <div className="flex items-center gap-3 pt-1">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  ))}
-                </div>
-                <span className="text-xs font-semibold text-stone-700">
-                  4.9 / 5.0
-                </span>
-                <span className="text-xs text-stone-400">•</span>
-                <span className="text-xs text-stone-500">
-                  280+ Verified US Temple & Wedding Orders
-                </span>
-              </div>
             </div>
 
             {/* Price Box with Luxury Ivory Texture */}
