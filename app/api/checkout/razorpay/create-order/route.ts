@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createRazorpayOrder, getRazorpayConfig } from '@/lib/razorpay';
+import { createRazorpayOrder } from '@/lib/razorpay';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import Customer from '@/models/Customer';
@@ -41,6 +41,7 @@ export async function POST(request: Request) {
     const {
       items,
       shippingFee = 0,
+      deliveryMode,
       redeemPoints = 0,
       customerName,
       streetAddress,
@@ -98,32 +99,34 @@ export async function POST(request: Request) {
       }
 
       let unitPrice = dbProd.price;
-      if (item.variantName && dbProd.variants && dbProd.variants.length > 0) {
+      let variantName = item.variantName || '';
+      if (item.variantName && Array.isArray(dbProd.variants)) {
         const variant = dbProd.variants.find((v: any) => v.name === item.variantName);
         if (!variant) {
-          return NextResponse.json({ success: false, message: 'Selected product variant is unavailable.' }, { status: 400 });
+          return NextResponse.json({ success: false, message: 'Selected variant is no longer available.' }, { status: 400 });
         }
         unitPrice = variant.price;
       }
 
-      const quantity = Math.max(1, parseInt(item.quantity) || 1);
-      calculatedSubtotal += unitPrice * quantity;
+      const qty = Math.max(1, Number(item.quantity) || 1);
+      const lineSubtotal = unitPrice * qty;
+      calculatedSubtotal += lineSubtotal;
 
       taxItems.push({
         productId: String(item.productId),
-        name: dbProd.name || item.name || 'Item',
-        quantity,
+        name: variantName ? `${dbProd.name} (${variantName})` : dbProd.name,
+        quantity: qty,
         unitPrice,
-        lineSubtotal: unitPrice * quantity,
+        lineSubtotal,
         isTaxable: dbProd.isTaxable !== false,
         taxCode: dbProd.taxCode || '',
       });
     }
 
     const finalCustomerId = String(authenticatedCustomer._id);
-
     const loyaltyConfig = await getLoyaltyConfig();
     let pointsDiscountUSD = 0;
+
     if (finalCustomerId && Number(redeemPoints) > 0) {
       const availablePoints = authenticatedCustomer.pointsBalance || 0;
       const requestedPoints = Math.min(Math.floor(Number(redeemPoints)), availablePoints);
@@ -144,6 +147,31 @@ export async function POST(request: Request) {
     const totalDiscountCents = couponDiscountCents + pointsDiscountCents;
     const safeDiscount = fromCents(totalDiscountCents);
 
+    // Dynamic FedEx Shipping Verification
+    let safeShipping = Math.max(0, Number(shippingFee) || 0);
+    const deliveryModeId = deliveryMode?.id || '';
+
+    if (deliveryModeId === 'fedex-shipping' && (zipCode || state)) {
+      try {
+        const { getFedExRates } = await import('@/lib/shipping/fedexClient');
+        const fedexQuote = await getFedExRates({
+          destination: {
+            streetAddress: streetAddress || '',
+            city: city || '',
+            state: state || '',
+            zipCode: zipCode || '',
+            country: 'US',
+          },
+          items: taxItems,
+        });
+        if (fedexQuote?.recommendedRate?.amount) {
+          safeShipping = fedexQuote.recommendedRate.amount;
+        }
+      } catch (err) {
+        console.warn('FedEx dynamic calculation in razorpay create-order:', err);
+      }
+    }
+
     const taxResult = await calculateSalesTax({
       shippingAddress: {
         streetAddress: streetAddress || '',
@@ -154,12 +182,11 @@ export async function POST(request: Request) {
         country: 'US',
       },
       items: taxItems,
-      shippingFee: Number(shippingFee) || 0,
+      shippingFee: safeShipping,
       discountAmount: safeDiscount,
     });
 
     const calculatedTax = taxResult.taxAmount || 0;
-    const safeShipping = Math.max(0, Number(shippingFee) || 0);
 
     const totalCents =
       toCents(calculatedSubtotal) -

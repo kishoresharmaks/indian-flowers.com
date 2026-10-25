@@ -141,6 +141,8 @@ export default function CustomerStore() {
   const [checkoutTaxResult, setCheckoutTaxResult] = useState<any>(null);
   const [checkoutTaxAmount, setCheckoutTaxAmount] = useState<number>(0);
   const [calculatingTax, setCalculatingTax] = useState<boolean>(false);
+  const [fedexShippingQuote, setFedexShippingQuote] = useState<any>(null);
+  const [calculatingFedexRates, setCalculatingFedexRates] = useState<boolean>(false);
 
   // Loyalty Points State
   const [redeemPoints, setRedeemPoints] = useState<number>(0);
@@ -674,6 +676,7 @@ export default function CustomerStore() {
     const calculateTaxAsync = async () => {
       try {
         setCalculatingTax(true);
+        setCalculatingFedexRates(true);
         const res = await fetch('/api/checkout/calculate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -697,7 +700,9 @@ export default function CustomerStore() {
               isTaxable: item.product.isTaxable !== false,
             })),
             discountAmount: 0,
-            shippingFee: 0,
+            shippingFee: selectedDeliveryMode?.price || 0,
+            deliveryModeId: selectedDeliveryMode?.id || 'fedex-shipping',
+            deliveryMode: selectedDeliveryMode,
             redeemPoints: isApplyingPoints ? redeemPoints : 0,
             customerId: customer?._id || customer?.id || undefined,
             customerPointsBalance: customer?.pointsBalance || 0,
@@ -714,13 +719,48 @@ export default function CustomerStore() {
           if (data.data.loyaltyConfig) {
             setLoyaltyConfig(data.data.loyaltyConfig);
           }
+
+          // Handle Location-Based FedEx Shipping Rates
+          if (data.data.fedexRates && data.data.fedexRates.recommendedRate) {
+            const rec = data.data.fedexRates.recommendedRate;
+            setFedexShippingQuote(data.data.fedexRates);
+
+            setStoreSettings((prev: any) => {
+              if (!prev || !Array.isArray(prev.deliveryModes)) return prev;
+              const updatedModes = prev.deliveryModes.map((dm: IDeliveryMode) => {
+                if (dm.id === 'fedex-shipping') {
+                  return {
+                    ...dm,
+                    price: rec.amount,
+                    description: `Doorstep delivery: ${rec.zoneDescription} • Insulated thermal box with ice packs.`,
+                    estimatedDays: rec.estimatedTransitDays || 'Next-Day Delivery',
+                  };
+                }
+                return dm;
+              });
+              return { ...prev, deliveryModes: updatedModes };
+            });
+
+            setSelectedDeliveryMode((current: any) => {
+              if (current && current.id === 'fedex-shipping') {
+                return {
+                  ...current,
+                  price: rec.amount,
+                  description: `Doorstep delivery: ${rec.zoneDescription} • Insulated thermal box with ice packs.`,
+                  estimatedDays: rec.estimatedTransitDays || 'Next-Day Delivery',
+                };
+              }
+              return current;
+            });
+          }
         }
       } catch (err: any) {
         if (err.name !== 'AbortError') {
-          console.error('Tax calculation error:', err);
+          console.error('Tax & Shipping calculation error:', err);
         }
       } finally {
         setCalculatingTax(false);
+        setCalculatingFedexRates(false);
       }
     };
 
@@ -735,6 +775,8 @@ export default function CustomerStore() {
     cart,
     checkoutForm.state,
     checkoutForm.zipCode,
+    checkoutForm.city,
+    selectedDeliveryMode?.id,
     isApplyingPoints,
     redeemPoints,
     customer,
@@ -2101,6 +2143,14 @@ export default function CustomerStore() {
                                   </p>
                                 )}
 
+                                {mode.id === 'fedex-shipping' && fedexShippingQuote?.destination?.zoneName && checkoutForm.zipCode && (
+                                  <div className="mt-1">
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                      📍 Location Rated: {fedexShippingQuote.destination.zoneName}
+                                    </span>
+                                  </div>
+                                )}
+
                                 {isPickup && mode.pickupLocation && (
                                   <p className="text-[10px] text-stone-500 font-normal mt-0.5">
                                     Pickup Hub: {mode.pickupLocation}
@@ -2112,6 +2162,19 @@ export default function CustomerStore() {
                         );
                       })}
                   </div>
+
+                  {selectedDeliveryMode?.id === 'fedex-shipping' && (
+                    <div className="p-2.5 rounded-xl bg-purple-50/80 border border-purple-200 text-[11px] text-purple-950 flex items-start gap-2">
+                      <Truck className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="font-semibold block">FedEx Priority Direct Doorstep Delivery</strong>
+                        <span>
+                          Packed fresh in insulated thermal cartons with cold ice packs dispatched from Fontana, CA.
+                          {fedexShippingQuote?.destination?.zoneName ? ` Accurate location-based rate applied for ${fedexShippingQuote.destination.zoneName}.` : ' Enter your destination ZIP code to calculate live dynamic carrier rates.'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {selectedDeliveryMode?.type === 'pickup' && (
                     <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">

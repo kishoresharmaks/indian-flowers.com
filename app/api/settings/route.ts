@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
           : {
               ...settings,
               razorpayKeySecret: undefined,
+              fedexSecretKey: undefined,
+              fedexAuthKey: undefined,
               bankAccountNo: undefined,
               bankRoutingNo: undefined,
               bankHolder: undefined,
@@ -70,6 +72,22 @@ export async function POST(request: NextRequest) {
     if (typeof enableCOD === 'boolean') updateFields.enableCOD = enableCOD;
     if (typeof razorpayKeyId === 'string') updateFields.razorpayKeyId = razorpayKeyId.trim();
     if (typeof razorpayKeySecret === 'string') updateFields.razorpayKeySecret = razorpayKeySecret.trim();
+
+    // FedEx Web Integration Solutions (WIS) Configuration
+    if (typeof body.fedexEnabled === 'boolean') updateFields.fedexEnabled = body.fedexEnabled;
+    if (typeof body.fedexAccountNumber === 'string') updateFields.fedexAccountNumber = body.fedexAccountNumber.trim();
+    if (typeof body.fedexProductionMeterNumber === 'string') updateFields.fedexProductionMeterNumber = body.fedexProductionMeterNumber.trim();
+    if (typeof body.fedexTestMeterNumber === 'string') updateFields.fedexTestMeterNumber = body.fedexTestMeterNumber.trim();
+    if (typeof body.fedexAuthKey === 'string') updateFields.fedexAuthKey = body.fedexAuthKey.trim();
+    if (typeof body.fedexSecretKey === 'string') updateFields.fedexSecretKey = body.fedexSecretKey.trim();
+    if (body.fedexEnvironment === 'production' || body.fedexEnvironment === 'test') {
+      updateFields.fedexEnvironment = body.fedexEnvironment;
+    }
+    if (typeof body.fedexOriginZip === 'string') updateFields.fedexOriginZip = body.fedexOriginZip.trim();
+    if (typeof body.fedexCompanyName === 'string') updateFields.fedexCompanyName = body.fedexCompanyName.trim();
+    if (typeof body.fedexContactName === 'string') updateFields.fedexContactName = body.fedexContactName.trim();
+    if (typeof body.fedexEmail === 'string') updateFields.fedexEmail = body.fedexEmail.trim();
+
     // Delivery Modes Configuration
     if (Array.isArray(body.deliveryModes)) {
       updateFields.deliveryModes = body.deliveryModes.map((dm: any, idx: number) => ({
@@ -84,6 +102,7 @@ export async function POST(request: NextRequest) {
         order: Number(dm.order ?? idx),
       }));
     }
+
     // Loyalty System Configurations
     if (typeof body.loyaltyEnabled === 'boolean') updateFields.loyaltyEnabled = body.loyaltyEnabled;
     if (typeof body.loyaltyRedemptionEnabled === 'boolean') updateFields.loyaltyRedemptionEnabled = body.loyaltyRedemptionEnabled;

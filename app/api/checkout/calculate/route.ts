@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
+import Settings from '@/models/Settings';
 import { calculateSalesTax } from '@/lib/tax';
 import { toCents, fromCents } from '@/lib/tax/taxProvider';
+import { getFedExRates } from '@/lib/shipping/fedexClient';
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +15,8 @@ export async function POST(request: Request) {
       shippingAddress,
       items,
       shippingFee = 0,
+      deliveryModeId,
+      deliveryMode,
     } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -75,6 +79,56 @@ export async function POST(request: Request) {
     const safeDiscountCents = 0; // Coupons are not implemented; never trust a client-supplied discount.
     const safeDiscount = fromCents(safeDiscountCents);
 
+    // Dynamic Location-Based FedEx Shipping Calculation
+    let fedexResult: any = null;
+    const destZip = (shippingAddress?.zipCode || '').trim();
+    const destState = (shippingAddress?.state || '').trim();
+
+    if (destZip || destState) {
+      try {
+        const settings = await Settings.findOne({ key: 'global' }).lean();
+        const customCreds = settings ? {
+          accountNumber: settings.fedexAccountNumber,
+          meterNumber: settings.fedexProductionMeterNumber,
+          testMeterNumber: settings.fedexTestMeterNumber,
+          authKey: settings.fedexAuthKey,
+          secretKey: settings.fedexSecretKey,
+          environment: settings.fedexEnvironment || 'production',
+          originAddress: {
+            street: settings.companyAddress || '14922 Bobcat lane',
+            city: settings.companyCity || 'Fontana',
+            state: settings.companyState || 'CA',
+            zipCode: settings.fedexOriginZip || settings.companyZip || '92336',
+            country: settings.companyCountry || 'US',
+          },
+        } : undefined;
+
+        fedexResult = await getFedExRates(
+          {
+            destination: {
+              streetAddress: shippingAddress?.streetAddress || '',
+              city: shippingAddress?.city || '',
+              state: destState,
+              zipCode: destZip,
+              country: shippingAddress?.country || 'US',
+            },
+            items: verifiedItems,
+          },
+          customCreds
+        );
+      } catch (err) {
+        console.warn('FedEx rating calculation in checkout calculate failed:', err);
+      }
+    }
+
+    // Determine authoritative shipping fee
+    const activeDeliveryModeId = deliveryModeId || deliveryMode?.id || '';
+    let effectiveShippingFee = Math.max(0, Number(shippingFee) || 0);
+
+    if (activeDeliveryModeId === 'fedex-shipping' && fedexResult?.recommendedRate) {
+      effectiveShippingFee = fedexResult.recommendedRate.amount;
+    }
+
     // Loyalty Points Redemption Evaluation
     const { getLoyaltyConfig, calculatePointsDiscount, calculatePointsEarned } = await import(
       '@/lib/loyalty/loyaltyEngine'
@@ -124,12 +178,12 @@ export async function POST(request: Request) {
       },
       items: verifiedItems,
       discountAmount: totalDiscount,
-      shippingFee: Number(shippingFee) || 0,
+      shippingFee: effectiveShippingFee,
     };
 
     const taxResult = await calculateSalesTax(taxRequest);
 
-    const safeShippingFee = Math.max(0, Number(shippingFee) || 0);
+    const safeShippingFee = Math.max(0, effectiveShippingFee);
     const totalAmountCents =
       calculatedSubtotalCents - totalDiscountCents + toCents(taxResult.taxAmount) + toCents(safeShippingFee);
     const totalAmount = fromCents(Math.max(0, totalAmountCents));
@@ -150,6 +204,7 @@ export async function POST(request: Request) {
         totalAmount,
         taxSnapshot: taxResult,
         loyaltyConfig,
+        fedexRates: fedexResult,
       },
     });
   } catch (error: any) {

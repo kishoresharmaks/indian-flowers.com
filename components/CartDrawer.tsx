@@ -236,6 +236,11 @@ export default function CartDrawer({
                                 {mode.description}
                               </p>
                             )}
+                            {mode.id === 'fedex-shipping' && (
+                              <p className="text-[9px] text-purple-700 font-medium mt-0.5">
+                                Dynamic location pricing applied based on destination ZIP code.
+                              </p>
+                            )}
                             {isPickup && mode.pickupLocation && (
                               <p className="text-[10px] text-stone-500 font-normal mt-0.5">
                                 Hub: {mode.pickupLocation}

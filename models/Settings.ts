@@ -150,6 +150,18 @@ export interface ISettings extends Document {
   loyaltyPointsPerDollar?: number;
   loyaltyMinPointsToRedeem?: number;
   loyaltyMaxRedemptionPercent?: number;
+  // FedEx Web Integration Solutions (WIS) Configuration
+  fedexEnabled?: boolean;
+  fedexAccountNumber?: string;
+  fedexProductionMeterNumber?: string;
+  fedexTestMeterNumber?: string;
+  fedexAuthKey?: string;
+  fedexSecretKey?: string;
+  fedexEnvironment?: 'production' | 'test';
+  fedexOriginZip?: string;
+  fedexCompanyName?: string;
+  fedexContactName?: string;
+  fedexEmail?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -192,6 +204,18 @@ const SettingsSchema: Schema = new Schema(
     loyaltyPointsPerDollar: { type: Number, default: 10 },
     loyaltyMinPointsToRedeem: { type: Number, default: 10 },
     loyaltyMaxRedemptionPercent: { type: Number, default: 100 },
+    // FedEx Web Integration Solutions (WIS) Configuration Defaults
+    fedexEnabled: { type: Boolean, default: true },
+    fedexAccountNumber: { type: String, default: '695333510' },
+    fedexProductionMeterNumber: { type: String, default: '256593981' },
+    fedexTestMeterNumber: { type: String, default: '256456943' },
+    fedexAuthKey: { type: String, default: 'odhEUIQgzxYnhfOR' },
+    fedexSecretKey: { type: String, default: '' },
+    fedexEnvironment: { type: String, enum: ['production', 'test'], default: 'production' },
+    fedexOriginZip: { type: String, default: '92336' },
+    fedexCompanyName: { type: String, default: 'Malar Traders' },
+    fedexContactName: { type: String, default: 'George Joseph' },
+    fedexEmail: { type: String, default: 'indianflowers2020@gmail.com' },
     // Delivery Modes & Shipping Configuration
     deliveryModes: {
       type: [
@@ -209,7 +233,6 @@ const SettingsSchema: Schema = new Schema(
       ],
       default: () => DEFAULT_DELIVERY_MODES,
     },
-
   },
   { timestamps: true }
 );

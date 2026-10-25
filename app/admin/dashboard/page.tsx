@@ -530,7 +530,25 @@ export default function AdminDashboard() {
     loyaltyMinPointsToRedeem: 10,
     loyaltyMaxRedemptionPercent: 100,
     deliveryModes: DEFAULT_DELIVERY_MODES,
+    // FedEx Web Integration Solutions (WIS) Configuration Defaults
+    fedexEnabled: true,
+    fedexAccountNumber: '695333510',
+    fedexProductionMeterNumber: '256593981',
+    fedexTestMeterNumber: '256456943',
+    fedexAuthKey: 'odhEUIQgzxYnhfOR',
+    fedexSecretKey: '',
+    fedexEnvironment: 'production',
+    fedexOriginZip: '92336',
+    fedexCompanyName: 'Malar Traders',
+    fedexContactName: 'George Joseph',
+    fedexEmail: 'indianflowers2020@gmail.com',
   });
+
+  // FedEx Live Rate Tester State
+  const [testZipCode, setTestZipCode] = useState('90210');
+  const [testRateResult, setTestRateResult] = useState<any>(null);
+  const [testingRate, setTestingRate] = useState(false);
+  const [testRateError, setTestRateError] = useState('');
 
   // Delivery Modes Modal State
   const [isDeliveryModeModalOpen, setIsDeliveryModeModalOpen] = useState(false);
@@ -786,6 +804,17 @@ export default function AdminDashboard() {
           deliveryModes: Array.isArray(data.data.deliveryModes) && data.data.deliveryModes.length > 0
             ? data.data.deliveryModes
             : DEFAULT_DELIVERY_MODES,
+          fedexEnabled: data.data.fedexEnabled !== false,
+          fedexAccountNumber: data.data.fedexAccountNumber || '695333510',
+          fedexProductionMeterNumber: data.data.fedexProductionMeterNumber || '256593981',
+          fedexTestMeterNumber: data.data.fedexTestMeterNumber || '256456943',
+          fedexAuthKey: data.data.fedexAuthKey || 'odhEUIQgzxYnhfOR',
+          fedexSecretKey: data.data.fedexSecretKey || '',
+          fedexEnvironment: data.data.fedexEnvironment || 'production',
+          fedexOriginZip: data.data.fedexOriginZip || '92336',
+          fedexCompanyName: data.data.fedexCompanyName || 'Malar Traders',
+          fedexContactName: data.data.fedexContactName || 'George Joseph',
+          fedexEmail: data.data.fedexEmail || 'indianflowers2020@gmail.com',
         });
       }
     } catch (err) {
@@ -851,6 +880,35 @@ export default function AdminDashboard() {
   const handleResetDeliveryModes = () => {
     if (!confirm('Reset all delivery modes back to standard defaults (Southwest Air Cargo, FedEx, and 7 regional local pickups)?')) return;
     setPaymentSettings({ ...paymentSettings, deliveryModes: DEFAULT_DELIVERY_MODES });
+  };
+
+  const handleTestFedExRate = async () => {
+    if (!testZipCode.trim()) return;
+    setTestingRate(true);
+    setTestRateError('');
+    setTestRateResult(null);
+    try {
+      const res = await fetch('/api/shipping/fedex-rates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destination: {
+            zipCode: testZipCode.trim(),
+          },
+          items: [{ name: 'Wedding Jasmine Garland (Sample)', quantity: 2, price: 45 }],
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTestRateResult(data);
+      } else {
+        setTestRateError(data.message || 'Failed to calculate rate');
+      }
+    } catch (err: any) {
+      setTestRateError(err.message || 'Error querying rate calculation');
+    } finally {
+      setTestingRate(false);
+    }
   };
 
   // Save Payment Settings
@@ -4664,6 +4722,197 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* FedEx Web Integration Solutions (WIS) & Location Rating Section */}
+                <div className="pt-6 border-t border-[#E8EDF2] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-extrabold text-sm text-[#163B5C] flex items-center gap-2">
+                        <Truck className="w-5 h-5 text-purple-600" /> FedEx Web Integration Solutions (WIS)
+                      </h3>
+                      <p className="text-xs text-[#64748B] mt-0.5">
+                        Dynamic location-based FedEx rate calculation & carrier settings. Rates scale automatically by US destination Zone.
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200">
+                      <input
+                        type="checkbox"
+                        checked={paymentSettings.fedexEnabled}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexEnabled: e.target.checked })}
+                        className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 accent-purple-600"
+                      />
+                      <span className="text-xs font-bold text-purple-900">Dynamic FedEx Active</span>
+                    </label>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      FedEx 9-Digit Account Number
+                      <input
+                        type="text"
+                        value={paymentSettings.fedexAccountNumber}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexAccountNumber: e.target.value })}
+                        placeholder="695333510"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-purple-600"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Production Meter Number
+                      <input
+                        type="text"
+                        value={paymentSettings.fedexProductionMeterNumber}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexProductionMeterNumber: e.target.value })}
+                        placeholder="256593981"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-purple-600"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Test Meter Number
+                      <input
+                        type="text"
+                        value={paymentSettings.fedexTestMeterNumber}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexTestMeterNumber: e.target.value })}
+                        placeholder="256456943"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-purple-600"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Production Authentication Key
+                      <input
+                        type="text"
+                        value={paymentSettings.fedexAuthKey}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexAuthKey: e.target.value })}
+                        placeholder="odhEUIQgzxYnhfOR"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-purple-600"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Environment
+                      <select
+                        value={paymentSettings.fedexEnvironment}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexEnvironment: e.target.value })}
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-purple-600"
+                      >
+                        <option value="production">Production (WIS Live)</option>
+                        <option value="test">Test / Sandbox</option>
+                      </select>
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Shipper Origin Zip (Fontana Hub)
+                      <input
+                        type="text"
+                        value={paymentSettings.fedexOriginZip}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexOriginZip: e.target.value })}
+                        placeholder="92336"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-purple-600"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Company Name (Per WIS Form)
+                      <input
+                        type="text"
+                        value={paymentSettings.fedexCompanyName}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexCompanyName: e.target.value })}
+                        placeholder="Malar Traders"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-purple-600"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Authorized Contact Name
+                      <input
+                        type="text"
+                        value={paymentSettings.fedexContactName}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexContactName: e.target.value })}
+                        placeholder="George Joseph"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-purple-600"
+                      />
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Contact Email
+                      <input
+                        type="email"
+                        value={paymentSettings.fedexEmail}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, fedexEmail: e.target.value })}
+                        placeholder="indianflowers2020@gmail.com"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-purple-600"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Interactive Live Rate Tester */}
+                  <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-extrabold text-[#163B5C] flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" /> Live ZIP Rate Calculator & Zone Tester
+                        </span>
+                        <p className="text-[11px] text-[#64748B]">
+                          Test dynamic billing rates from Fontana, CA (92336) to any US location.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={testZipCode}
+                        onChange={(e) => setTestZipCode(e.target.value)}
+                        placeholder="e.g. 90210, 77001, 10001, 99501"
+                        className="max-w-[180px] rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-semibold outline-none focus:border-purple-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleTestFedExRate}
+                        disabled={testingRate}
+                        className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        {testingRate ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Calculate Dynamic Rate'}
+                      </button>
+                    </div>
+
+                    {testRateError && (
+                      <div className="p-2.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium border border-rose-200">
+                        {testRateError}
+                      </div>
+                    )}
+
+                    {testRateResult && testRateResult.recommendedRate && (
+                      <div className="p-3.5 rounded-xl bg-white border border-purple-200 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-purple-950 flex items-center gap-1">
+                            <span>📍 Destination:</span>
+                            <span className="text-purple-700 font-bold">{testRateResult.destination.zoneName}</span>
+                          </span>
+                          <span className="text-sm font-black text-emerald-700 tabular-nums">
+                            {formatCurrency(testRateResult.recommendedRate.amount)}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-gray-600 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <div>
+                            <span className="text-gray-400 block">Service:</span>
+                            <span className="font-semibold text-gray-800">{testRateResult.recommendedRate.serviceName}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block">Transit Time:</span>
+                            <span className="font-semibold text-emerald-800">{testRateResult.recommendedRate.estimatedTransitDays}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block">Billed Weight:</span>
+                            <span className="font-semibold text-gray-800">{testRateResult.recommendedRate.billedWeightLbs} lbs (Thermal Pack)</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

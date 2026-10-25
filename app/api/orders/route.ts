@@ -230,6 +230,29 @@ export async function POST(request: Request) {
     const totalDiscountCents = couponDiscountCents + pointsDiscountCents;
     const safeDiscount = fromCents(totalDiscountCents);
 
+    // Dynamic Location-Based FedEx Shipping Fee Verification
+    let safeShippingFee = Math.max(0, Number(shippingFee) || 0);
+    if (deliveryMode?.id === 'fedex-shipping' && (finalZip || finalState)) {
+      try {
+        const { getFedExRates } = await import('@/lib/shipping/fedexClient');
+        const fedexQuote = await getFedExRates({
+          destination: {
+            streetAddress: finalStreet,
+            city: finalCity,
+            state: finalState,
+            zipCode: finalZip,
+            country: country || 'US',
+          },
+          items: processedItems,
+        });
+        if (fedexQuote?.recommendedRate?.amount) {
+          safeShippingFee = fedexQuote.recommendedRate.amount;
+        }
+      } catch (err) {
+        console.warn('FedEx dynamic calculation in orders POST:', err);
+      }
+    }
+
     // 2. Authoritative Server-side US Sales Tax Calculation
     const taxResult = await calculateSalesTax({
       shippingAddress: {
@@ -242,7 +265,7 @@ export async function POST(request: Request) {
       },
       items: taxItems,
       discountAmount: safeDiscount,
-      shippingFee: Number(shippingFee) || 0,
+      shippingFee: safeShippingFee,
     });
 
     if (!taxResult.success && taxResult.status === 'UNSUPPORTED_JURISDICTION') {
@@ -256,7 +279,6 @@ export async function POST(request: Request) {
     }
 
     const calculatedTax = taxResult.taxAmount || 0;
-    const safeShippingFee = Math.max(0, Number(shippingFee) || 0);
     const totalAmountCents =
       subtotalCents - totalDiscountCents + toCents(calculatedTax) + toCents(safeShippingFee);
     const totalAmount = fromCents(Math.max(0, totalAmountCents));
