@@ -5,7 +5,7 @@ import { dispatchItemAdded } from '@/components/ItemAddedNotification';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
-import { US_STATES } from '@/lib/tax';
+import { US_STATES, validateZipForState } from '@/lib/tax';
 import { validateCheckoutForm } from '@/lib/checkoutValidation';
 import Header from '@/components/Header';
 import HeroSection, { HeroSlide } from '@/components/HeroSection';
@@ -155,6 +155,7 @@ export default function CustomerStore() {
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [zipStateSuggestion, setZipStateSuggestion] = useState<{ code: string; name: string } | null>(null);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
   const [newsletterLoading, setNewsletterLoading] = useState(false);
@@ -657,7 +658,11 @@ export default function CustomerStore() {
     0
   );
   const effectivePointsDiscount = isApplyingPoints ? pointsDiscount : 0;
-  const hasZipEntered = Boolean(checkoutForm.zipCode && checkoutForm.zipCode.trim().replace(/\D/g, '').length >= 5);
+  const isZipValidForState = useMemo(() => {
+    if (!checkoutForm.zipCode) return false;
+    return validateZipForState(checkoutForm.zipCode, checkoutForm.state).isValid;
+  }, [checkoutForm.zipCode, checkoutForm.state]);
+  const hasZipEntered = Boolean(checkoutForm.zipCode && isZipValidForState);
   const isFedEx = selectedDeliveryMode?.id === 'fedex-shipping';
 
   // For FedEx: do NOT show or charge default pricing until zip code is entered.
@@ -1946,9 +1951,24 @@ export default function CustomerStore() {
                       required
                       value={checkoutForm.state}
                       onChange={(e) => {
-                        setCheckoutForm({ ...checkoutForm, state: e.target.value });
+                        const newState = e.target.value;
+                        setCheckoutForm({ ...checkoutForm, state: newState });
                         if (fieldErrors.state) {
                           setFieldErrors((prev) => ({ ...prev, state: '' }));
+                        }
+                        if (checkoutForm.zipCode && checkoutForm.zipCode.trim().length >= 5) {
+                          const check = validateZipForState(checkoutForm.zipCode, newState);
+                          if (!check.isValid) {
+                            setFieldErrors((prev) => ({ ...prev, zipCode: check.error || 'Invalid ZIP code for selected state' }));
+                            if (check.suggestedState && check.detectedStateName) {
+                              setZipStateSuggestion({ code: check.suggestedState, name: check.detectedStateName });
+                            } else {
+                              setZipStateSuggestion(null);
+                            }
+                          } else {
+                            setFieldErrors((prev) => ({ ...prev, zipCode: '' }));
+                            setZipStateSuggestion(null);
+                          }
                         }
                       }}
                       className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal bg-white transition-colors ${fieldErrors.state
@@ -1980,12 +2000,53 @@ export default function CustomerStore() {
                       id="checkout-zipCode"
                       type="text"
                       required
+                      maxLength={10}
                       placeholder="e.g. 94538"
                       value={checkoutForm.zipCode}
                       onChange={(e) => {
-                        setCheckoutForm({ ...checkoutForm, zipCode: e.target.value });
-                        if (fieldErrors.zipCode) {
+                        const val = e.target.value;
+                        setCheckoutForm({ ...checkoutForm, zipCode: val });
+                        const clean = val.trim();
+                        const digits = clean.replace(/\D/g, '');
+
+                        if (!clean) {
                           setFieldErrors((prev) => ({ ...prev, zipCode: '' }));
+                          setZipStateSuggestion(null);
+                          return;
+                        }
+
+                        // Immediate validation when 5 or more characters entered
+                        if (digits.length >= 5) {
+                          const check = validateZipForState(clean, checkoutForm.state);
+                          if (!check.isValid) {
+                            setFieldErrors((prev) => ({ ...prev, zipCode: check.error || 'Please enter a valid 5-digit US ZIP code.' }));
+                            if (check.suggestedState && check.detectedStateName) {
+                              setZipStateSuggestion({ code: check.suggestedState, name: check.detectedStateName });
+                            } else {
+                              setZipStateSuggestion(null);
+                            }
+                          } else {
+                            setFieldErrors((prev) => ({ ...prev, zipCode: '' }));
+                            setZipStateSuggestion(null);
+                          }
+                        } else {
+                          // While typing digits 1-4, clear error to avoid interrupting input
+                          if (fieldErrors.zipCode) {
+                            setFieldErrors((prev) => ({ ...prev, zipCode: '' }));
+                          }
+                          setZipStateSuggestion(null);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        if (val) {
+                          const check = validateZipForState(val, checkoutForm.state);
+                          if (!check.isValid) {
+                            setFieldErrors((prev) => ({ ...prev, zipCode: check.error || 'Please enter a valid 5-digit US ZIP code.' }));
+                            if (check.suggestedState && check.detectedStateName) {
+                              setZipStateSuggestion({ code: check.suggestedState, name: check.detectedStateName });
+                            }
+                          }
                         }
                       }}
                       className={`w-full px-3.5 py-2 rounded-lg border text-xs sm:text-sm focus:outline-none font-normal transition-colors ${fieldErrors.zipCode
@@ -1994,10 +2055,27 @@ export default function CustomerStore() {
                         }`}
                     />
                     {fieldErrors.zipCode && (
-                      <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 shrink-0" />
-                        {fieldErrors.zipCode}
-                      </p>
+                      <div className="mt-1.5 space-y-1.5">
+                        <p className="text-[11px] text-rose-600 font-medium flex items-start gap-1 leading-snug">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-rose-500" />
+                          <span>{fieldErrors.zipCode}</span>
+                        </p>
+                        {zipStateSuggestion && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const targetCode = zipStateSuggestion.code;
+                              setCheckoutForm((prev) => ({ ...prev, state: targetCode }));
+                              setZipStateSuggestion(null);
+                              setFieldErrors((prev) => ({ ...prev, zipCode: '' }));
+                            }}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-md transition-colors cursor-pointer shadow-2xs"
+                          >
+                            <span>Switch state to {zipStateSuggestion.name} ({zipStateSuggestion.code})</span>
+                            <ArrowRight className="w-3 h-3 text-emerald-700" />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div>

@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest) {
     const stateErr = validateState(state);
     if (stateErr) errors.state = stateErr;
 
-    const zipErr = validateZipCode(zipCode);
+    const zipErr = validateZipCode(zipCode, state);
     if (zipErr) errors.zipCode = zipErr;
 
     if (Object.keys(errors).length > 0) {

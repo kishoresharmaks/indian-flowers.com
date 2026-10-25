@@ -5,7 +5,7 @@
  * before initiating the Razorpay checkout modal or creating an order.
  */
 
-import { isValidUSState, isValidUSZip, normalizeStateCode, US_STATES } from './tax/jurisdiction';
+import { isValidUSState, isValidUSZip, normalizeStateCode, US_STATES, validateZipForState } from './tax/jurisdiction';
 
 export interface CheckoutFormData {
   customerName: string;
@@ -148,15 +148,9 @@ export function validateState(state?: string | null): string | null {
 /**
  * Validates a US ZIP code (5 digits or ZIP+4).
  */
-export function validateZipCode(zip?: string | null): string | null {
-  if (!zip || typeof zip !== 'string') {
-    return 'ZIP code is required.';
-  }
-  const trimmed = zip.trim();
-  if (!isValidUSZip(trimmed)) {
-    return 'Please enter a valid 5-digit US ZIP code (e.g., 94538).';
-  }
-  return null;
+export function validateZipCode(zip?: string | null, stateCode?: string | null): string | null {
+  const result = validateZipForState(zip, stateCode);
+  return result.isValid ? null : (result.error || 'Please enter a valid 5-digit US ZIP code.');
 }
 
 /**
@@ -203,7 +197,7 @@ export function validateCheckoutForm(
   }
 
   if (!isPickup || form.zipCode) {
-    const zipError = validateZipCode(form.zipCode);
+    const zipError = validateZipCode(form.zipCode, form.state);
     if (zipError) errors.zipCode = zipError;
   }
 
@@ -290,7 +284,7 @@ export function validateCustomerRegistration(
   const stateError = validateState(data.state);
   if (stateError) errors.state = stateError;
 
-  const zipError = validateZipCode(data.zipCode);
+  const zipError = validateZipCode(data.zipCode, data.state);
   if (zipError) errors.zipCode = zipError;
 
   const passError = validatePassword(data.password);

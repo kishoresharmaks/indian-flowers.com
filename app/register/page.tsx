@@ -21,7 +21,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
-import { US_STATES } from '@/lib/tax/jurisdiction';
+import { US_STATES, validateZipForState } from '@/lib/tax/jurisdiction';
 import { validateCustomerRegistration } from '@/lib/checkoutValidation';
 
 function RegisterFormContent() {
@@ -58,6 +58,28 @@ function RegisterFormContent() {
         delete next[field];
         return next;
       });
+    }
+
+    if (field === 'zipCode') {
+      const clean = value.trim();
+      const digits = clean.replace(/\D/g, '');
+      if (digits.length >= 5) {
+        const check = validateZipForState(clean, formData.state);
+        if (!check.isValid) {
+          setFieldErrors((prev) => ({ ...prev, zipCode: check.error || 'Please enter a valid 5-digit US ZIP code.' }));
+        }
+      }
+    } else if (field === 'state' && formData.zipCode && formData.zipCode.trim().length >= 5) {
+      const check = validateZipForState(formData.zipCode, value);
+      if (!check.isValid) {
+        setFieldErrors((prev) => ({ ...prev, zipCode: check.error || 'Invalid ZIP code for selected state' }));
+      } else {
+        setFieldErrors((prev) => {
+          const next = { ...prev };
+          delete next.zipCode;
+          return next;
+        });
+      }
     }
   };
 

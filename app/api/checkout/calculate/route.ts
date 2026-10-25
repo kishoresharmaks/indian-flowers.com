@@ -5,6 +5,7 @@ import Settings from '@/models/Settings';
 import { calculateSalesTax } from '@/lib/tax';
 import { toCents, fromCents } from '@/lib/tax/taxProvider';
 import { getFedExRates } from '@/lib/shipping/fedexClient';
+import { validateZipForState } from '@/lib/tax/jurisdiction';
 
 export async function POST(request: Request) {
   try {
@@ -84,7 +85,8 @@ export async function POST(request: Request) {
     let fedexError: string | null = null;
     const destZip = (shippingAddress?.zipCode || '').trim();
     const destState = (shippingAddress?.state || '').trim();
-    const hasZip = Boolean(destZip && destZip.replace(/\D/g, '').length >= 5);
+    const zipValidation = destZip ? validateZipForState(destZip, destState) : { isValid: false, error: 'ZIP code required' };
+    const hasZip = Boolean(destZip && zipValidation.isValid);
 
     if (hasZip) {
       try {
@@ -218,6 +220,11 @@ export async function POST(request: Request) {
         fedexRates: fedexResult,
         fedexFetchFailed: hasZip && (!fedexResult || !fedexResult.success),
         hasZipEntered: hasZip,
+        zipValidation: {
+          isValid: zipValidation.isValid,
+          error: zipValidation.isValid ? null : zipValidation.error,
+          suggestedState: zipValidation.suggestedState || null,
+        },
       },
     });
   } catch (error: any) {

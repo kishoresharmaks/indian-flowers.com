@@ -31,7 +31,7 @@ import {
   Tag,
   HelpCircle,
 } from 'lucide-react';
-import { US_STATES } from '@/lib/tax/jurisdiction';
+import { US_STATES, validateZipForState } from '@/lib/tax/jurisdiction';
 import { formatCurrency } from '@/lib/currency';
 
 export default function AccountPage() {
@@ -128,6 +128,12 @@ export default function AccountPage() {
     e.preventDefault();
     setEditError('');
     setEditSuccess('');
+
+    const zipCheck = validateZipForState(editForm.zipCode, editForm.state);
+    if (!zipCheck.isValid) {
+      setEditError(zipCheck.error || 'Please enter a valid 5-digit US ZIP code.');
+      return;
+    }
 
     try {
       setEditLoading(true);
