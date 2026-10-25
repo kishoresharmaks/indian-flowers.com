@@ -318,13 +318,20 @@ export default function ShopByCategory({
 
         {/* 2. MAIN HORIZONTAL CATEGORY CAROUSEL */}
         {loading && (!categories || categories.length === 0) ? (
-          // Loading Skeleton
-          <div className="flex items-stretch gap-3 sm:gap-4 overflow-hidden py-2">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+          // Loading Skeleton matching auto-aligned layout
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 py-2 w-full">
+            {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="w-[145px] sm:w-[175px] md:w-[195px] lg:w-[205px] h-[220px] sm:h-[260px] rounded-2xl bg-stone-200/60 animate-pulse border border-stone-200 shrink-0"
-              />
+                className="w-full h-[320px] sm:h-[340px] lg:h-[360px] rounded-3xl bg-stone-100/90 animate-pulse border border-stone-200/60 p-4 flex flex-col justify-between"
+              >
+                <div className="w-24 h-5 rounded-full bg-stone-200" />
+                <div className="w-full h-[180px] rounded-2xl bg-stone-200/70" />
+                <div className="space-y-2 pt-2">
+                  <div className="w-3/4 h-5 rounded-lg bg-stone-200" />
+                  <div className="w-1/2 h-4 rounded-lg bg-stone-200/60" />
+                </div>
+              </div>
             ))}
           </div>
         ) : (

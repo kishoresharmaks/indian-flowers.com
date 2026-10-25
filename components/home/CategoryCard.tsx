@@ -8,17 +8,20 @@ export interface CategoryCardProps {
   name: string;
   slug?: string;
   image?: string;
+  subcategories?: any[];
   isSelected?: boolean;
   onClick?: () => void;
   index?: number;
 }
 
-// Category-specific pastel palettes matching Style 5 mockup
 interface ThemeStyle {
   bgGradient: string;
   borderColor: string;
   hoverBorder: string;
   arrowColor: string;
+  badgeBg: string;
+  tagline: string;
+  preview: string;
 }
 
 function getCategoryTheme(name: string, index: number): ThemeStyle {
@@ -26,120 +29,77 @@ function getCategoryTheme(name: string, index: number): ThemeStyle {
 
   if (lower.includes('wedding')) {
     return {
-      bgGradient: 'from-[#FFF0F3] via-[#FFF5F7] to-[#FFE2E8]',
-      borderColor: 'border-rose-100',
-      hoverBorder: 'hover:border-rose-300',
-      arrowColor: 'text-rose-700',
-    };
-  }
-  if (lower.includes('nanthiyavattom') || lower.includes('mallipoo')) {
-    return {
-      bgGradient: 'from-[#F2FBF5] via-[#F8FCF9] to-[#E2F7EB]',
-      borderColor: 'border-emerald-100',
-      hoverBorder: 'hover:border-emerald-300',
-      arrowColor: 'text-[#064E3B]',
-    };
-  }
-  if (lower.includes('tube rose') || lower.includes('lily') || lower.includes('sampangi')) {
-    return {
-      bgGradient: 'from-[#FFF0F7] via-[#FFF5F9] to-[#FCE2EF]',
-      borderColor: 'border-pink-100',
-      hoverBorder: 'hover:border-pink-300',
-      arrowColor: 'text-pink-700',
-    };
-  }
-  if (lower.includes('pooja flower') || lower.includes('loose flower')) {
-    return {
-      bgGradient: 'from-[#FFFDF0] via-[#FFFDF5] to-[#FFF6D6]',
-      borderColor: 'border-amber-100',
-      hoverBorder: 'hover:border-amber-300',
-      arrowColor: 'text-amber-700',
-    };
-  }
-  if (lower.includes('pooja leave') || lower.includes('leaves')) {
-    return {
-      bgGradient: 'from-[#F4FAF5] via-[#F7FCF8] to-[#E5F5E8]',
-      borderColor: 'border-emerald-100',
-      hoverBorder: 'hover:border-emerald-300',
-      arrowColor: 'text-[#064E3B]',
-    };
-  }
-  if (lower.includes('string') || lower.includes('garland string')) {
-    return {
-      bgGradient: 'from-[#FAF7F2] via-[#FDFBF8] to-[#F3EDE2]',
-      borderColor: 'border-stone-200',
-      hoverBorder: 'hover:border-stone-300',
-      arrowColor: 'text-stone-700',
-    };
-  }
-  if (lower.includes('decor')) {
-    return {
-      bgGradient: 'from-[#FFF9F2] via-[#FFFDF8] to-[#FEEED8]',
-      borderColor: 'border-amber-100',
-      hoverBorder: 'hover:border-amber-300',
-      arrowColor: 'text-amber-800',
-    };
-  }
-  if (lower.includes('coconut')) {
-    return {
-      bgGradient: 'from-[#FAF6F2] via-[#FDFBF9] to-[#F1EAE2]',
-      borderColor: 'border-amber-100',
-      hoverBorder: 'hover:border-amber-300',
-      arrowColor: 'text-amber-900',
-    };
-  }
-  if (lower.includes('event')) {
-    return {
-      bgGradient: 'from-[#FFF5F2] via-[#FFF9F7] to-[#FEE8E2]',
-      borderColor: 'border-rose-100',
-      hoverBorder: 'hover:border-rose-300',
-      arrowColor: 'text-rose-700',
-    };
-  }
-  if (lower.includes('temple')) {
-    return {
-      bgGradient: 'from-[#FFFBF0] via-[#FFFDF7] to-[#FEF4DA]',
-      borderColor: 'border-amber-100',
-      hoverBorder: 'hover:border-amber-300',
-      arrowColor: 'text-amber-800',
+      bgGradient: 'from-[#FFF0F4] via-[#FFF6F8] to-[#FDE4EC]',
+      borderColor: 'border-rose-200/80',
+      hoverBorder: 'hover:border-rose-400',
+      arrowColor: 'text-[#C85A78]',
+      badgeBg: 'bg-rose-100 text-rose-800',
+      tagline: 'Vivah & Varmala',
+      preview: 'Rose Petal, Button Rose, Veni',
     };
   }
   if (lower.includes('house warming')) {
     return {
-      bgGradient: 'from-[#FFF5F0] via-[#FFF8F5] to-[#FEE9DD]',
-      borderColor: 'border-orange-100',
-      hoverBorder: 'hover:border-orange-300',
-      arrowColor: 'text-orange-800',
+      bgGradient: 'from-[#FFF5F0] via-[#FFF8F5] to-[#FEE8DC]',
+      borderColor: 'border-orange-200/80',
+      hoverBorder: 'hover:border-orange-400',
+      arrowColor: 'text-orange-700',
+      badgeBg: 'bg-orange-100 text-orange-800',
+      tagline: 'Grihapravesam',
+      preview: 'Doorway Torans & Strands',
     };
   }
-  if (lower.includes('veni')) {
+  if (lower.includes('temple')) {
     return {
-      bgGradient: 'from-[#FAF7F2] via-[#FCFAF6] to-[#F3EFE6]',
-      borderColor: 'border-stone-200',
-      hoverBorder: 'hover:border-stone-300',
-      arrowColor: 'text-stone-700',
+      bgGradient: 'from-[#FFFDF0] via-[#FFFDF5] to-[#FEF3C7]',
+      borderColor: 'border-amber-200/80',
+      hoverBorder: 'hover:border-amber-400',
+      arrowColor: 'text-amber-800',
+      badgeBg: 'bg-amber-100 text-amber-800',
+      tagline: 'Deity Offerings',
+      preview: 'Vilvam, Vadamalli & Lilly',
+    };
+  }
+  if (lower.includes('string') || lower.includes('leaves')) {
+    return {
+      bgGradient: 'from-[#F2FBF5] via-[#F7FCF9] to-[#E5F7ED]',
+      borderColor: 'border-emerald-200/80',
+      hoverBorder: 'hover:border-emerald-400',
+      arrowColor: 'text-[#0B3B24]',
+      badgeBg: 'bg-emerald-100 text-emerald-800',
+      tagline: 'Strings & Leaves',
+      preview: 'Jasmine, Sacred Leaves, Decor',
     };
   }
 
-  // Fallback cyclic rotation
+  // Fallbacks
   const fallbacks: ThemeStyle[] = [
     {
-      bgGradient: 'from-[#FFF0F3] via-[#FFF5F7] to-[#FFE2E8]',
-      borderColor: 'border-rose-100',
-      hoverBorder: 'hover:border-rose-300',
-      arrowColor: 'text-rose-700',
+      bgGradient: 'from-[#FFF0F4] via-[#FFF6F8] to-[#FDE4EC]',
+      borderColor: 'border-rose-200/80',
+      hoverBorder: 'hover:border-rose-400',
+      arrowColor: 'text-[#C85A78]',
+      badgeBg: 'bg-rose-100 text-rose-800',
+      tagline: 'Wedding Flowers',
+      preview: 'Traditional Garlands',
     },
     {
-      bgGradient: 'from-[#F2FBF5] via-[#F8FCF9] to-[#E2F7EB]',
-      borderColor: 'border-emerald-100',
-      hoverBorder: 'hover:border-emerald-300',
-      arrowColor: 'text-[#064E3B]',
+      bgGradient: 'from-[#F2FBF5] via-[#F7FCF9] to-[#E5F7ED]',
+      borderColor: 'border-emerald-200/80',
+      hoverBorder: 'hover:border-emerald-400',
+      arrowColor: 'text-[#0B3B24]',
+      badgeBg: 'bg-emerald-100 text-emerald-800',
+      tagline: 'Fresh Jasmine',
+      preview: 'Sacred Floral Strands',
     },
     {
-      bgGradient: 'from-[#FFFDF0] via-[#FFFDF5] to-[#FFF6D6]',
-      borderColor: 'border-amber-100',
-      hoverBorder: 'hover:border-amber-300',
-      arrowColor: 'text-amber-700',
+      bgGradient: 'from-[#FFFDF0] via-[#FFFDF5] to-[#FEF3C7]',
+      borderColor: 'border-amber-200/80',
+      hoverBorder: 'hover:border-amber-400',
+      arrowColor: 'text-amber-800',
+      badgeBg: 'bg-amber-100 text-amber-800',
+      tagline: 'Temple Puja',
+      preview: 'Auspicious Offerings',
     },
   ];
   return fallbacks[index % fallbacks.length];
@@ -148,15 +108,18 @@ function getCategoryTheme(name: string, index: number): ThemeStyle {
 export default function CategoryCard({
   name,
   image,
+  subcategories = [],
   isSelected = false,
   onClick,
   index = 0,
 }: CategoryCardProps) {
   const [imgSrc, setImgSrc] = useState(image || DEFAULT_FLORAL_PLACEHOLDER);
   const theme = getCategoryTheme(name, index);
+  const subCount = Array.isArray(subcategories) ? subcategories.length : 0;
 
   return (
     <div
+      data-category-card
       role="button"
       tabIndex={0}
       onClick={onClick}
@@ -167,42 +130,59 @@ export default function CategoryCard({
         }
       }}
       aria-label={`Browse ${name} category`}
-      className={`group/card relative flex flex-col justify-between overflow-hidden rounded-2xl border transition-all duration-300 text-left cursor-pointer select-none snap-start bg-gradient-to-b ${
+      className={`group/card relative flex flex-col justify-between overflow-hidden rounded-3xl border transition-all duration-300 text-left cursor-pointer select-none snap-center bg-gradient-to-b ${
         theme.bgGradient
       } ${theme.borderColor} ${theme.hoverBorder} ${
         isSelected
-          ? 'ring-2 ring-[#064E3B] border-[#064E3B] shadow-md'
-          : 'shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:shadow-lg hover:-translate-y-0.5'
-      } w-[142px] min-w-[142px] sm:w-[172px] sm:min-w-[172px] md:w-[190px] md:min-w-[190px] lg:w-[204px] lg:min-w-[204px] h-[220px] sm:h-[250px] md:h-[270px] lg:h-[280px] p-2.5 sm:p-3 shrink-0`}
+          ? 'ring-2 ring-[#0B3B24] border-[#0B3B24] shadow-md scale-[1.01]'
+          : 'shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5'
+      } w-[74vw] max-w-[290px] min-w-[230px] sm:w-[260px] sm:min-w-[260px] md:w-full md:min-w-0 md:max-w-none h-auto min-h-[300px] sm:min-h-[320px] md:min-h-[340px] lg:min-h-[360px] p-3.5 sm:p-4 shrink-0 md:shrink`}
     >
+      {/* Top Header: Badge Eyebrow & Subcategory Count */}
+      <div className="flex items-center justify-between gap-2 mb-2 sm:mb-2.5">
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-[10.5px] font-bold uppercase tracking-wider ${theme.badgeBg}`}
+        >
+          {theme.tagline}
+        </span>
+        {subCount > 0 && (
+          <span className="text-[11px] font-semibold text-stone-500/90">
+            {subCount} Collections
+          </span>
+        )}
+      </div>
+
       {/* Top Image Showcase with Soft Floral Shadow & Subtle Rounded Container */}
-      <div className="relative w-full h-[135px] sm:h-[155px] md:h-[170px] lg:h-[178px] rounded-xl overflow-hidden bg-white/70 shadow-xs flex items-center justify-center p-1 sm:p-1.5 transition-colors group-hover/card:bg-white">
+      <div className="relative w-full h-[165px] sm:h-[180px] md:h-[195px] lg:h-[215px] rounded-2xl overflow-hidden bg-white/80 shadow-xs flex items-center justify-center p-1.5 transition-colors group-hover/card:bg-white border border-white/60">
         <img
           src={imgSrc}
           alt={`${name} collection`}
           loading="lazy"
           onError={() => setImgSrc(DEFAULT_FLORAL_PLACEHOLDER)}
-          className="w-full h-full object-cover object-center rounded-lg transition-transform duration-500 ease-out group-hover/card:scale-108"
+          className="w-full h-full object-cover object-center rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-106"
         />
       </div>
 
-      {/* Bottom Content Area: Category Name + Circular Arrow Action */}
-      <div className="pt-2 sm:pt-2.5 flex items-end justify-between gap-1.5 min-w-0">
+      {/* Bottom Content Area: Category Name + Subtitle + Circular Arrow Action */}
+      <div className="pt-3 sm:pt-3.5 flex items-end justify-between gap-2 min-w-0 mt-auto">
         <div className="min-w-0 flex-1">
-          <h4 className="text-[13px] sm:text-[14px] md:text-[14.5px] font-bold text-[#18231F] group-hover/card:text-[#064E3B] transition-colors leading-[1.2] line-clamp-2">
+          <h4 className="text-[14.5px] sm:text-[15.5px] md:text-[16px] lg:text-[17px] font-extrabold text-[#111827] group-hover/card:text-[#0B3B24] transition-colors leading-[1.25] tracking-tight line-clamp-2">
             {name}
           </h4>
+          <p className="text-[11.5px] sm:text-xs text-stone-500 font-medium truncate mt-0.5">
+            {theme.preview}
+          </p>
         </div>
 
         {/* Circular Action Button */}
         <div
-          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white shadow-xs border border-stone-200/60 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/card:bg-[#064E3B] group-hover/card:border-[#064E3B] group-hover/card:scale-105 ${
-            isSelected ? 'bg-[#064E3B] border-[#064E3B]' : ''
+          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white shadow-xs border border-stone-200/70 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/card:bg-[#0B3B24] group-hover/card:border-[#0B3B24] group-hover/card:scale-105 ${
+            isSelected ? 'bg-[#0B3B24] border-[#0B3B24]' : ''
           }`}
           aria-hidden="true"
         >
           <ArrowRight
-            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors ${
+            className={`w-4 h-4 transition-colors ${
               isSelected ? 'text-white' : `${theme.arrowColor} group-hover/card:text-white`
             }`}
           />
