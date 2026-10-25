@@ -81,10 +81,12 @@ export async function POST(request: Request) {
 
     // Dynamic Location-Based FedEx Shipping Calculation
     let fedexResult: any = null;
+    let fedexError: string | null = null;
     const destZip = (shippingAddress?.zipCode || '').trim();
     const destState = (shippingAddress?.state || '').trim();
+    const hasZip = Boolean(destZip && destZip.replace(/\D/g, '').length >= 5);
 
-    if (destZip || destState) {
+    if (hasZip) {
       try {
         const settings = await Settings.findOne({ key: 'global' }).lean();
         const customCreds = settings ? {
@@ -116,8 +118,9 @@ export async function POST(request: Request) {
           },
           customCreds
         );
-      } catch (err) {
+      } catch (err: any) {
         console.warn('FedEx rating calculation in checkout calculate failed:', err);
+        fedexError = err?.message || 'Failed to fetch dynamic FedEx rates';
       }
     }
 
@@ -125,8 +128,16 @@ export async function POST(request: Request) {
     const activeDeliveryModeId = deliveryModeId || deliveryMode?.id || '';
     let effectiveShippingFee = Math.max(0, Number(shippingFee) || 0);
 
-    if (activeDeliveryModeId === 'fedex-shipping' && fedexResult?.recommendedRate) {
-      effectiveShippingFee = fedexResult.recommendedRate.amount;
+    if (activeDeliveryModeId === 'fedex-shipping') {
+      if (hasZip && fedexResult?.recommendedRate) {
+        effectiveShippingFee = fedexResult.recommendedRate.amount;
+      } else if (hasZip && (!fedexResult || !fedexResult.success)) {
+        // If there is failure in fetching dynamic pricing with entered ZIP, fallback to default stored in DB
+        effectiveShippingFee = Math.max(0, Number(shippingFee) || 48.0);
+      } else {
+        // Do not charge or assume default FedEx pricing until ZIP code is entered
+        effectiveShippingFee = 0;
+      }
     }
 
     // Loyalty Points Redemption Evaluation
@@ -205,6 +216,8 @@ export async function POST(request: Request) {
         taxSnapshot: taxResult,
         loyaltyConfig,
         fedexRates: fedexResult,
+        fedexFetchFailed: hasZip && (!fedexResult || !fedexResult.success),
+        hasZipEntered: hasZip,
       },
     });
   } catch (error: any) {

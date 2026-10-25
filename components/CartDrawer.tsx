@@ -182,7 +182,11 @@ export default function CartDrawer({
                   </span>
                   {selectedDeliveryMode && (
                     <span className="text-[11px] font-semibold text-brand-900 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200">
-                      {selectedDeliveryMode.price > 0 ? formatCurrency(selectedDeliveryMode.price) : 'Local Pickup'}
+                      {selectedDeliveryMode.id === 'fedex-shipping'
+                        ? 'Calculated by ZIP'
+                        : selectedDeliveryMode.price > 0
+                        ? formatCurrency(selectedDeliveryMode.price)
+                        : 'Local Pickup'}
                     </span>
                   )}
                 </div>
@@ -193,6 +197,7 @@ export default function CartDrawer({
                     .map((mode) => {
                       const isSelected = selectedDeliveryMode?.id === mode.id;
                       const isPickup = mode.type === 'pickup';
+                      const isFedEx = mode.id === 'fedex-shipping';
 
                       return (
                         <label
@@ -225,7 +230,15 @@ export default function CartDrawer({
                                 <span className="truncate">{mode.name}</span>
                               </span>
                               <span className="text-xs font-bold text-brand-900 shrink-0 tabular-nums">
-                                {mode.price > 0 ? formatCurrency(mode.price) : '$0.00'}
+                                {isFedEx ? (
+                                  <span className="text-[10px] font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                    Calculated by ZIP
+                                  </span>
+                                ) : mode.price > 0 ? (
+                                  formatCurrency(mode.price)
+                                ) : (
+                                  '$0.00'
+                                )}
                               </span>
                             </div>
 
@@ -236,9 +249,9 @@ export default function CartDrawer({
                                 {mode.description}
                               </p>
                             )}
-                            {mode.id === 'fedex-shipping' && (
+                            {isFedEx && (
                               <p className="text-[9px] text-purple-700 font-medium mt-0.5">
-                                Dynamic location pricing applied based on destination ZIP code.
+                                Rates calculate dynamically at checkout once you enter your destination ZIP code.
                               </p>
                             )}
                             {isPickup && mode.pickupLocation && (
@@ -266,7 +279,11 @@ export default function CartDrawer({
                     Shipment ({selectedDeliveryMode.name}):
                   </span>
                   <span className="tabular-nums font-semibold text-brand-900 shrink-0">
-                    {selectedDeliveryMode.price > 0 ? formatCurrency(selectedDeliveryMode.price) : '$0.00 (Pay at Pickup)'}
+                    {selectedDeliveryMode.id === 'fedex-shipping'
+                      ? 'Calculated at checkout'
+                      : selectedDeliveryMode.price > 0
+                      ? formatCurrency(selectedDeliveryMode.price)
+                      : '$0.00 (Pay at Pickup)'}
                   </span>
                 </div>
               )}
@@ -276,14 +293,28 @@ export default function CartDrawer({
               </div>
               <div className="flex justify-between font-bold text-sm text-text border-t border-border pt-2">
                 <span>Total</span>
-                <span className="tabular-nums text-brand-900">{formatCurrency(grandTotal)}</span>
+                <span className="tabular-nums text-brand-900">
+                  {formatCurrency(
+                    selectedDeliveryMode?.id === 'fedex-shipping'
+                      ? subtotal + gstTotal
+                      : grandTotal
+                  )}
+                </span>
               </div>
+              {selectedDeliveryMode?.id === 'fedex-shipping' && (
+                <span className="text-[10px] text-purple-700 font-medium block text-right">
+                  + FedEx delivery fee calculated after destination ZIP entered
+                </span>
+              )}
             </div>
 
             {/* CTA */}
             <button
-              onClick={onCheckout}
-              className="w-full px-4 py-3 rounded-lg bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium transition-all shadow-xs"
+              onClick={() => {
+                onClose();
+                onCheckout();
+              }}
+              className="w-full px-4 py-3 rounded-lg bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium transition-all shadow-xs cursor-pointer"
             >
               Proceed to Checkout
             </button>

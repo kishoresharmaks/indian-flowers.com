@@ -88,25 +88,43 @@ export default function StorefrontGlobalNav() {
     const handleCartUpdated = () => syncCart();
     const handleWishlistUpdated = () => syncWishlist();
     const handleOpenCart = () => setIsCartOpen(true);
+    const handleCloseCart = () => setIsCartOpen(false);
     const handleOpenWishlist = () => setIsWishlistOpen(true);
+    const handleCloseWishlist = () => setIsWishlistOpen(false);
 
     window.addEventListener('cart-updated', handleCartUpdated);
     window.addEventListener('wishlist-updated', handleWishlistUpdated);
     window.addEventListener('open-cart', handleOpenCart);
+    window.addEventListener('close-cart', handleCloseCart);
     window.addEventListener('open-wishlist', handleOpenWishlist);
+    window.addEventListener('close-wishlist', handleCloseWishlist);
     window.addEventListener('storage', handleCartUpdated);
 
     return () => {
       window.removeEventListener('cart-updated', handleCartUpdated);
       window.removeEventListener('wishlist-updated', handleWishlistUpdated);
       window.removeEventListener('open-cart', handleOpenCart);
+      window.removeEventListener('close-cart', handleCloseCart);
       window.removeEventListener('open-wishlist', handleOpenWishlist);
+      window.removeEventListener('close-wishlist', handleCloseWishlist);
       window.removeEventListener('storage', handleCartUpdated);
     };
   }, [syncCart, syncWishlist]);
 
-  // NEVER render on admin or installation/setup pages
-  if (!pathname || pathname.startsWith('/admin') || pathname.startsWith('/setup')) {
+  // Ensure drawers are always closed upon any route navigation
+  useEffect(() => {
+    setIsCartOpen(false);
+    setIsWishlistOpen(false);
+  }, [pathname]);
+
+  // NEVER render on admin, installation/setup, or customer auth pages (prevents cart drawer overlaying login/register)
+  if (
+    !pathname ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/setup') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register')
+  ) {
     return null;
   }
 
@@ -226,6 +244,9 @@ export default function StorefrontGlobalNav() {
 
   const handleCheckout = () => {
     setIsCartOpen(false);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('close-cart'));
+    }
     if (!customer) {
       router.push('/login?redirect=checkout');
     } else {

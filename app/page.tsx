@@ -142,6 +142,7 @@ export default function CustomerStore() {
   const [checkoutTaxAmount, setCheckoutTaxAmount] = useState<number>(0);
   const [calculatingTax, setCalculatingTax] = useState<boolean>(false);
   const [fedexShippingQuote, setFedexShippingQuote] = useState<any>(null);
+  const [fedexFetchFailed, setFedexFetchFailed] = useState<boolean>(false);
   const [calculatingFedexRates, setCalculatingFedexRates] = useState<boolean>(false);
 
   // Loyalty Points State
@@ -353,8 +354,11 @@ export default function CustomerStore() {
   }, [router]);
 
   const handleInitiateCheckout = () => {
+    setIsCartOpen(false);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('close-cart'));
+    }
     if (!customer) {
-      setIsCartOpen(false);
       router.push('/login?redirect=checkout');
       return;
     }
@@ -369,19 +373,24 @@ export default function CustomerStore() {
       state: prev.state || customer.state || 'CA',
       zipCode: prev.zipCode || customer.zipCode || '',
     }));
-    setIsCartOpen(false);
     setIsCheckoutOpen(true);
   };
 
-  // Listen for open-cart and open-wishlist from global navigation
+  // Listen for open-cart, close-cart, and wishlist events from global navigation
   useEffect(() => {
     const handleOpenCart = () => setIsCartOpen(true);
+    const handleCloseCart = () => setIsCartOpen(false);
     const handleOpenWishlist = () => setIsWishlistOpen(true);
+    const handleCloseWishlist = () => setIsWishlistOpen(false);
     window.addEventListener('open-cart', handleOpenCart);
+    window.addEventListener('close-cart', handleCloseCart);
     window.addEventListener('open-wishlist', handleOpenWishlist);
+    window.addEventListener('close-wishlist', handleCloseWishlist);
     return () => {
       window.removeEventListener('open-cart', handleOpenCart);
+      window.removeEventListener('close-cart', handleCloseCart);
       window.removeEventListener('open-wishlist', handleOpenWishlist);
+      window.removeEventListener('close-wishlist', handleCloseWishlist);
     };
   }, []);
 
@@ -648,7 +657,27 @@ export default function CustomerStore() {
     0
   );
   const effectivePointsDiscount = isApplyingPoints ? pointsDiscount : 0;
-  const deliveryFee = Number(selectedDeliveryMode?.price || 0);
+  const hasZipEntered = Boolean(checkoutForm.zipCode && checkoutForm.zipCode.trim().replace(/\D/g, '').length >= 5);
+  const isFedEx = selectedDeliveryMode?.id === 'fedex-shipping';
+
+  // For FedEx: do NOT show or charge default pricing until zip code is entered.
+  // If failure in fetching, fallback to default stored in DB.
+  let deliveryFee = Number(selectedDeliveryMode?.price || 0);
+  if (isFedEx) {
+    if (hasZipEntered) {
+      if (fedexShippingQuote?.recommendedRate?.amount) {
+        deliveryFee = fedexShippingQuote.recommendedRate.amount;
+      } else if (fedexFetchFailed) {
+        const dbDefaultMode = (storeSettings?.deliveryModes || DEFAULT_DELIVERY_MODES).find((m: any) => m.id === 'fedex-shipping');
+        deliveryFee = Number(dbDefaultMode?.price || 48.0);
+      } else {
+        deliveryFee = 0;
+      }
+    } else {
+      deliveryFee = 0;
+    }
+  }
+
   const cartGrandTotal = Number(
     Math.max(0, cartSubtotal - effectivePointsDiscount + (checkoutTaxAmount || 0) + deliveryFee).toFixed(2)
   );
@@ -684,9 +713,9 @@ export default function CustomerStore() {
             shippingAddress: {
               streetAddress: checkoutForm.streetAddress || 'General Delivery',
               aptSuite: checkoutForm.aptSuite || '',
-              city: checkoutForm.city || 'City',
+              city: checkoutForm.city || '',
               state: checkoutForm.state || 'CA',
-              zipCode: checkoutForm.zipCode || '94538',
+              zipCode: checkoutForm.zipCode ? checkoutForm.zipCode.trim() : '',
               country: 'US',
             },
             items: cart.map((item) => ({
@@ -724,6 +753,7 @@ export default function CustomerStore() {
           if (data.data.fedexRates && data.data.fedexRates.recommendedRate) {
             const rec = data.data.fedexRates.recommendedRate;
             setFedexShippingQuote(data.data.fedexRates);
+            setFedexFetchFailed(false);
 
             setStoreSettings((prev: any) => {
               if (!prev || !Array.isArray(prev.deliveryModes)) return prev;
@@ -752,6 +782,24 @@ export default function CustomerStore() {
               }
               return current;
             });
+          } else if (data.data.fedexFetchFailed) {
+            setFedexShippingQuote(null);
+            setFedexFetchFailed(true);
+            const dbDefaultMode = (storeSettings?.deliveryModes || DEFAULT_DELIVERY_MODES).find((m: any) => m.id === 'fedex-shipping');
+            const fallbackPrice = Number(dbDefaultMode?.price || 48.0);
+            setSelectedDeliveryMode((current: any) => {
+              if (current && current.id === 'fedex-shipping') {
+                return {
+                  ...current,
+                  price: fallbackPrice,
+                  description: 'Standard flat rate delivery in insulated thermal box with ice packs.',
+                };
+              }
+              return current;
+            });
+          } else if (!hasZipEntered) {
+            setFedexShippingQuote(null);
+            setFedexFetchFailed(false);
           }
         }
       } catch (err: any) {
@@ -2084,7 +2132,13 @@ export default function CustomerStore() {
                     </label>
                     {selectedDeliveryMode && (
                       <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
-                        {selectedDeliveryMode.price > 0 ? formatCurrency(selectedDeliveryMode.price) : 'Local Pickup'}
+                        {selectedDeliveryMode.id === 'fedex-shipping'
+                          ? hasZipEntered && (fedexShippingQuote?.recommendedRate || fedexFetchFailed)
+                            ? formatCurrency(deliveryFee)
+                            : 'Calculated by ZIP'
+                          : selectedDeliveryMode.price > 0
+                          ? formatCurrency(selectedDeliveryMode.price)
+                          : 'Local Pickup'}
                       </span>
                     )}
                   </div>
@@ -2098,6 +2152,7 @@ export default function CustomerStore() {
                       .map((mode: any) => {
                         const isSelected = selectedDeliveryMode?.id === mode.id;
                         const isPickup = mode.type === 'pickup';
+                        const isFedExMode = mode.id === 'fedex-shipping';
 
                         return (
                           <label
@@ -2131,7 +2186,21 @@ export default function CustomerStore() {
                                     <span className="truncate">{mode.name}</span>
                                   </span>
                                   <span className="text-xs font-bold text-[#0B3B24] shrink-0 tabular-nums">
-                                    {mode.price > 0 ? formatCurrency(mode.price) : '$0.00'}
+                                    {isFedExMode ? (
+                                      hasZipEntered && fedexShippingQuote?.recommendedRate ? (
+                                        formatCurrency(fedexShippingQuote.recommendedRate.amount)
+                                      ) : hasZipEntered && fedexFetchFailed ? (
+                                        formatCurrency(mode.price > 0 ? mode.price : 48.0)
+                                      ) : (
+                                        <span className="text-[11px] font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                          Enter ZIP to calculate
+                                        </span>
+                                      )
+                                    ) : mode.price > 0 ? (
+                                      formatCurrency(mode.price)
+                                    ) : (
+                                      '$0.00'
+                                    )}
                                   </span>
                                 </div>
 
@@ -2143,11 +2212,21 @@ export default function CustomerStore() {
                                   </p>
                                 )}
 
-                                {mode.id === 'fedex-shipping' && fedexShippingQuote?.destination?.zoneName && checkoutForm.zipCode && (
+                                {isFedExMode && (
                                   <div className="mt-1">
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
-                                      📍 Location Rated: {fedexShippingQuote.destination.zoneName}
-                                    </span>
+                                    {hasZipEntered && fedexShippingQuote?.destination?.zoneName ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                        📍 Location Rated: {fedexShippingQuote.destination.zoneName}
+                                      </span>
+                                    ) : hasZipEntered && fedexFetchFailed ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                        ⚠️ Standard flat rate applied (carrier server fallback)
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-700 bg-purple-50/70 px-2 py-0.5 rounded-md border border-purple-100">
+                                        📍 Enter destination ZIP code below to calculate live delivery fee
+                                      </span>
+                                    )}
                                   </div>
                                 )}
 
@@ -2169,8 +2248,13 @@ export default function CustomerStore() {
                       <div>
                         <strong className="font-semibold block">FedEx Priority Direct Doorstep Delivery</strong>
                         <span>
-                          Packed fresh in insulated thermal cartons with cold ice packs dispatched from Fontana, CA.
-                          {fedexShippingQuote?.destination?.zoneName ? ` Accurate location-based rate applied for ${fedexShippingQuote.destination.zoneName}.` : ' Enter your destination ZIP code to calculate live dynamic carrier rates.'}
+                          {hasZipEntered && fedexShippingQuote?.destination?.zoneName ? (
+                            `Packed fresh in insulated thermal cartons with cold ice packs from Fontana, CA. Accurate location-based rate of ${formatCurrency(deliveryFee)} applied for ${fedexShippingQuote.destination.zoneName}.`
+                          ) : hasZipEntered && fedexFetchFailed ? (
+                            `Packed fresh in insulated thermal cartons with cold ice packs from Fontana, CA. Standard flat shipping fee of ${formatCurrency(deliveryFee)} applied.`
+                          ) : (
+                            `Packed fresh in insulated thermal cartons with cold ice packs from Fontana, CA. Enter your destination ZIP code below to calculate your dynamic carrier delivery fee.`
+                          )}
                         </span>
                       </div>
                     </div>
@@ -2288,7 +2372,15 @@ export default function CustomerStore() {
                         Shipment ({selectedDeliveryMode.name}):
                       </span>
                       <span className="tabular-nums font-semibold text-emerald-800 shrink-0">
-                        {deliveryFee > 0 ? formatCurrency(deliveryFee) : '$0.00 (Pay at Pickup)'}
+                        {isFedEx && !hasZipEntered ? (
+                          <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                            Enter ZIP below
+                          </span>
+                        ) : deliveryFee > 0 ? (
+                          formatCurrency(deliveryFee)
+                        ) : (
+                          '$0.00 (Pay at Pickup)'
+                        )}
                       </span>
                     </div>
                   )}
@@ -2313,6 +2405,11 @@ export default function CustomerStore() {
                     <span className="text-gray-700 font-semibold">Order Total (USD):</span>
                     <span className="text-lg font-bold text-[#0B3B24] tabular-nums">{formatCurrency(cartGrandTotal)}</span>
                   </div>
+                  {isFedEx && !hasZipEntered && (
+                    <p className="text-[10px] text-purple-700 font-medium text-right mt-0.5">
+                      + FedEx delivery fee will calculate and add once your destination ZIP is entered
+                    </p>
+                  )}
                 </div>
 
                 <button
