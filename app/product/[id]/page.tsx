@@ -106,6 +106,7 @@ export default async function ProductPage({ params }: Props) {
   let productJsonLd: any = null;
   let breadcrumbJsonLd: any = null;
   let serverProduct: any = null;
+  let serverRelatedProducts: any[] = [];
 
   try {
     await connectToDatabase();
@@ -124,6 +125,31 @@ export default async function ProductPage({ params }: Props) {
 
     if (product) {
       serverProduct = JSON.parse(JSON.stringify(product));
+
+      try {
+        const relatedQuery: any = {
+          _id: { $ne: product._id },
+          name: { $not: /arugampul|bilva|vilva|durva grass/i },
+        };
+        if (product.category) {
+          relatedQuery.category = product.category;
+        }
+        let related = await Product.find(relatedQuery).limit(4).lean();
+        if (related.length < 4) {
+          const excludeIds = [product._id, ...related.map((r: any) => r._id)];
+          const additional = await Product.find({
+            _id: { $nin: excludeIds },
+            name: { $not: /arugampul|bilva|vilva|durva grass/i },
+          })
+            .limit(4 - related.length)
+            .lean();
+          related = [...related, ...additional];
+        }
+        serverRelatedProducts = JSON.parse(JSON.stringify(related));
+      } catch (relErr) {
+        console.warn('Could not query related products:', relErr);
+      }
+
       const productImageUrl = product.image
         ? product.image.startsWith('http')
           ? product.image
@@ -243,7 +269,11 @@ export default async function ProductPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
       )}
-      <ProductClientRedirect id={params.id} initialProduct={serverProduct} />
+      <ProductClientRedirect
+        id={params.id}
+        initialProduct={serverProduct}
+        initialRelatedProducts={serverRelatedProducts}
+      />
     </>
   );
 }
