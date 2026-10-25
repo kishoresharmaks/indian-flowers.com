@@ -21,6 +21,8 @@ import { IDeliveryMode, DEFAULT_DELIVERY_MODES } from '@/lib/delivery';
 import WishlistDrawer from '@/components/WishlistDrawer';
 import CustomOrderSection from '@/components/CustomOrderSection';
 import FloatingCartBar from '@/components/FloatingCartBar';
+import EventDeliveryChecker from '@/components/home/EventDeliveryChecker';
+import ColdChainStorySection from '@/components/home/ColdChainStorySection';
 import {
   ShoppingBag,
   Search,
@@ -1153,6 +1155,14 @@ export default function CustomerStore() {
         onShopClick={() => handleSelectCategory('All')}
       />
 
+      {/* 2.5 EVENT DATE & US ZIP FAST-CHECKER (Hallmark Arrival Guarantee) */}
+      <EventDeliveryChecker
+        onCheckSuccess={() => {
+          const el = document.getElementById('products-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+      />
+
       {/* 3. UNIFIED BOTANICAL CATALOG SECTION ENCLOSING ALL CATEGORIES */}
       <section
         id="products-section"
@@ -1274,68 +1284,83 @@ export default function CustomerStore() {
         </div>
       </section>
 
-      {/* 5. OCCASION FEATURE DUAL BANNERS (CREATIVE BORDERLESS EDITORIAL CARDS WITH CRISP CLEAR RIGHT-SIDE PHOTOS) */}
+      {/* 5. OCCASION FEATURE DUAL BANNERS (ASYMMETRIC EDITORIAL LAYOUT) */}
       <section className="py-10 sm:py-16 bg-white overflow-hidden">
         <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-7">
-            {/* Banner 1: Wedding & Temple Garlands */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FAF5ED] via-[#F6EFE5] to-[#EFE2D4] border border-stone-200/80 shadow-xs hover:shadow-[0_12px_32px_rgba(11,59,36,0.08)] transition-all duration-500 flex flex-col sm:flex-row items-stretch group">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-7">
+            {/* Banner 1: Wedding & Temple Garlands (7 cols / 58% width) */}
+            <div className="lg:col-span-7 relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FAF5ED] via-[#F6EFE5] to-[#EFE2D4] border border-stone-200/80 shadow-xs hover:shadow-[0_16px_40px_rgba(11,59,36,0.09)] transition-all duration-500 flex flex-col sm:flex-row items-stretch group">
               {/* Left Side: Text & Action */}
-              <div className="w-full sm:w-[54%] p-6 sm:p-7 lg:p-8 flex flex-col justify-between z-10 space-y-4">
+              <div className="w-full sm:w-[56%] p-6 sm:p-7 lg:p-8 flex flex-col justify-between z-10 space-y-4">
                 <div className="space-y-2.5">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-600/10 text-amber-900 text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase self-start border border-amber-600/20">
-                    <Flower2 className="w-3 h-3 text-amber-600 shrink-0" />
-                    <span>Traditional &amp; Custom</span>
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-600/10 text-amber-900 text-[10px] sm:text-[11px] font-bold tracking-[0.12em] uppercase border border-amber-600/20">
+                      <Flower2 className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>Traditional &amp; Custom</span>
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-white/90 text-stone-700 text-[10px] font-bold tracking-wide border border-stone-200/60 shadow-2xs">
+                      2.5 ft • 3 ft • 3.5 ft
+                    </span>
+                  </div>
 
-                  <h3 className="text-[20px] sm:text-[23px] lg:text-[25px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.25]">
+                  <h3 className="text-[21px] sm:text-[24px] lg:text-[27px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.2]">
                     Wedding &amp; Temple Garlands
                   </h3>
 
                   <p className="text-[12px] sm:text-[13px] text-stone-600 leading-relaxed font-normal">
-                    Handcrafted rose petal Jai Malas, fragrant jasmine, and gold-trimmed garlands designed for sacred celebrations.
+                    Handcrafted rose petal Jai Malas, fragrant jasmine strands, and gold-trimmed garlands curated for sacred rituals across the USA.
                   </p>
                 </div>
 
-                <div className="pt-1 sm:pt-2">
+                <div className="pt-1 sm:pt-2 flex flex-wrap items-center gap-2.5">
                   <button
                     onClick={() => handleSelectCategory(weddingCategory?.name || 'Wedding & Temple Garlands')}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0B3B24] hover:bg-[#134633] active:bg-[#072718] text-white text-xs sm:text-[13px] font-semibold tracking-wide shadow-sm hover:shadow-md transition-all hover:translate-x-0.5 active:scale-95 group/btn cursor-pointer"
                   >
-                    <span>Explore Wedding Garlands</span>
+                    <span>Explore Garlands</span>
                     <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById('custom-orders-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    className="inline-flex items-center gap-1 px-4 py-2.5 rounded-full bg-white/80 hover:bg-white text-stone-700 hover:text-[#0B3B24] text-xs sm:text-[12.5px] font-semibold tracking-wide border border-stone-200 transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <span>Custom Pair Inquiry</span>
                   </button>
                 </div>
               </div>
 
               {/* Right Side: Clear, Crisp Image Canvas */}
-              <div className="w-full sm:w-[46%] relative min-h-[220px] sm:min-h-full overflow-hidden">
+              <div className="w-full sm:w-[44%] relative min-h-[220px] sm:min-h-full overflow-hidden">
                 <img
                   src="/images/banners/occasion-wedding-garlands.jpg"
                   alt="Wedding &amp; Temple Garlands"
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
-                {/* Subtle soft edge feather on left only where it meets text */}
                 <div className="hidden sm:block absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#FAF5ED] to-transparent pointer-events-none" />
               </div>
             </div>
 
-            {/* Banner 2: Pooja Flowers & Temple Decor */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FDF6F2] via-[#F8EDE6] to-[#F2DED7] border border-stone-200/80 shadow-xs hover:shadow-[0_12px_32px_rgba(11,59,36,0.08)] transition-all duration-500 flex flex-col sm:flex-row items-stretch group">
+            {/* Banner 2: Pooja Flowers & Temple Decor (5 cols / 42% width) */}
+            <div className="lg:col-span-5 relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FDF6F2] via-[#F8EDE6] to-[#F2DED7] border border-stone-200/80 shadow-xs hover:shadow-[0_16px_40px_rgba(11,59,36,0.09)] transition-all duration-500 flex flex-col sm:flex-row items-stretch group">
               {/* Left Side: Text & Action */}
-              <div className="w-full sm:w-[54%] p-6 sm:p-7 lg:p-8 flex flex-col justify-between z-10 space-y-4">
+              <div className="w-full sm:w-[58%] p-6 sm:p-7 lg:p-8 flex flex-col justify-between z-10 space-y-4">
                 <div className="space-y-2.5">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600/10 text-rose-900 text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase self-start border border-rose-600/20">
-                    <Flower2 className="w-3 h-3 text-[#C85A78] shrink-0" />
-                    <span>Daily Worship &amp; Decor</span>
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600/10 text-rose-900 text-[10px] sm:text-[11px] font-bold tracking-[0.12em] uppercase border border-rose-600/20">
+                      <Flower2 className="w-3 h-3 text-[#C85A78] shrink-0" />
+                      <span>Daily Worship &amp; Decor</span>
+                    </span>
+                  </div>
 
-                  <h3 className="text-[20px] sm:text-[23px] lg:text-[25px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.25]">
-                    Pooja Flowers &amp; Temple Decor
+                  <h3 className="text-[21px] sm:text-[23px] lg:text-[25px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.2]">
+                    Pooja Flowers &amp; Sacred Leaves
                   </h3>
 
-                  <p className="text-[12px] sm:text-[13px] text-stone-600 leading-relaxed font-normal">
-                    Fresh sacred blossoms, holy tulsi, and festive loose marigolds curated for your daily home puja rituals.
+                  <p className="text-[12px] sm:text-[12.5px] text-stone-600 leading-relaxed font-normal">
+                    Sacred lotus stems, fresh bilva, betel leaves, and vibrant loose marigolds packed for daily home puja rituals.
                   </p>
                 </div>
 
@@ -1351,13 +1376,12 @@ export default function CustomerStore() {
               </div>
 
               {/* Right Side: Clear, Crisp Image Canvas */}
-              <div className="w-full sm:w-[46%] relative min-h-[220px] sm:min-h-full overflow-hidden">
+              <div className="w-full sm:w-[42%] relative min-h-[220px] sm:min-h-full overflow-hidden">
                 <img
                   src="/images/banners/occasion-pooja-box.jpg"
                   alt="Pooja Flowers &amp; Temple Decor"
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
-                {/* Subtle soft edge feather on left only where it meets text */}
                 <div className="hidden sm:block absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#FDF6F2] to-transparent pointer-events-none" />
               </div>
             </div>
@@ -1365,79 +1389,8 @@ export default function CustomerStore() {
         </div>
       </section>
 
-      {/* 6. WHY CHOOSE INDIAN-FLOWERS.COM SECTION */}
-      <section className="py-12 sm:py-16 bg-[#FAFAF8] border-y border-gray-100">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          {/* Header */}
-          <div className="text-center space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#C85A78]">
-              WHY CHOOSE INDIAN-FLOWERS.COM
-            </span>
-            <h2 className="text-[24px] sm:text-[30px] lg:text-[36px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.2] px-2">
-              Your Trusted Flower Partner in the USA
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-            {/* Feature 1 */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-xs transition-shadow text-center space-y-2">
-              <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100/80">
-                <Flower2 className="w-5 h-5" />
-              </div>
-              <h4 className="text-xs sm:text-sm font-semibold text-gray-900 leading-snug">
-                Authentic Indian Flowers
-              </h4>
-              <p className="text-[11px] text-gray-500 leading-tight font-normal">Sourced with care</p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-xs transition-shadow text-center space-y-2">
-              <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-100/80">
-                <Truck className="w-5 h-5" />
-              </div>
-              <h4 className="text-xs sm:text-sm font-semibold text-gray-900 leading-snug">
-                FedEx &amp; Southwest Delivery
-              </h4>
-              <p className="text-[11px] text-gray-500 leading-tight font-normal">
-                Fast and secure delivery via FedEx and Southwest across the USA
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-xs transition-shadow text-center space-y-2">
-              <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100/80">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <h4 className="text-xs sm:text-sm font-semibold text-gray-900 leading-snug">
-                Wide Variety
-              </h4>
-              <p className="text-[11px] text-gray-500 leading-tight font-normal">Flowers, garlands, leaves &amp; more</p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-xs transition-shadow text-center space-y-2">
-              <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100/80">
-                <Heart className="w-5 h-5" />
-              </div>
-              <h4 className="text-xs sm:text-sm font-semibold text-gray-900 leading-snug">
-                Trusted by Customers
-              </h4>
-              <p className="text-[11px] text-gray-500 leading-tight font-normal">10,000+ happy customers</p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-xs transition-shadow text-center space-y-2">
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-100/80">
-                <Headphones className="w-5 h-5" />
-              </div>
-              <h4 className="text-xs sm:text-sm font-semibold text-gray-900 leading-snug">
-                Dedicated Support
-              </h4>
-              <p className="text-[11px] text-gray-500 leading-tight font-normal">We&apos;re here to help</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 6. COLD-CHAIN FRESHNESS PROMISE (Replacing the generic 5-box feature grid) */}
+      <ColdChainStorySection />
 
       {/* 6.5 BESPOKE & BULK CUSTOM ORDERS CONTACT FORM */}
       <CustomOrderSection />
@@ -1449,16 +1402,16 @@ export default function CustomerStore() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-[#C85A78] block">
-                CUSTOMER REVIEWS
+                AUTHENTIC REVIEWS ACROSS USA
               </span>
-              <h2 className="text-[24px] sm:text-[32px] lg:text-[36px] font-bold tracking-[-0.03em] text-gray-900 mt-1 leading-[1.2]">
-                What Our Customers Say
+              <h2 className="text-[24px] sm:text-[32px] lg:text-[36px] font-bold tracking-[-0.03em] text-[#0B3B24] mt-1 leading-[1.2]">
+                Trusted by Families for Sacred Moments
               </h2>
             </div>
             <div>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 hover:border-[#0B3B24] text-xs sm:text-sm font-medium text-gray-700 hover:text-[#0B3B24] transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 hover:border-[#0B3B24] text-xs sm:text-sm font-medium text-gray-700 hover:text-[#0B3B24] transition-colors cursor-pointer shadow-2xs"
               >
                 <span>View All Reviews</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -1481,17 +1434,18 @@ export default function CustomerStore() {
               {reviews.slice(0, 3).map((rev) => (
                 <div
                   key={rev._id}
-                  className="rounded-2xl bg-[#FCFAF7] p-6 border border-amber-100/50 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-xs transition-shadow"
+                  className="rounded-2xl bg-[#FCFAF7] p-6 border border-stone-200/80 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-xs transition-shadow"
                 >
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pb-2 border-b border-stone-200/50">
                       <div className="flex items-center text-amber-400">
                         {[...Array(rev.rating || 5)].map((_, i) => (
                           <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                         ))}
                       </div>
-                      <span className="text-amber-500/30 text-2xl font-serif font-normal leading-none">
-                        &ldquo;&ldquo;
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Verified US Delivery
                       </span>
                     </div>
                     <p className="text-xs sm:text-[13px] text-gray-700 italic leading-relaxed font-normal">
@@ -1499,7 +1453,7 @@ export default function CustomerStore() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-2 border-t border-amber-100/40">
+                  <div className="flex items-center gap-3 pt-2 border-t border-stone-200/50">
                     {rev.avatar ? (
                       <img
                         src={rev.avatar}
@@ -1513,7 +1467,10 @@ export default function CustomerStore() {
                     )}
                     <div>
                       <h4 className="text-xs font-semibold text-gray-900">{rev.customerName}</h4>
-                      <span className="text-[11px] text-gray-500 font-normal">{rev.location}</span>
+                      <span className="text-[11px] text-gray-500 font-normal flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-stone-400" />
+                        {rev.location}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1523,20 +1480,33 @@ export default function CustomerStore() {
         </div>
       </section>
 
-      {/* 8. NEWSLETTER SIGNUP BANNER */}
-      <section className="relative py-12 sm:py-16 md:py-20 bg-[#FAF6F0]/60 border-t border-b border-gray-100/80">
+      {/* 8. AUSPICIOUS FESTIVAL & EVENT REMINDER HUB */}
+      <section className="relative py-12 sm:py-16 md:py-20 bg-gradient-to-b from-[#FAF6F0] via-[#FCF9F4] to-[#FAF6F0] border-t border-b border-stone-200/80">
         <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12 max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
-            <div className="space-y-2 text-center lg:text-left max-w-lg">
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#C85A78]">
-                Exclusive US Offers &amp; Flower Care
-              </span>
-              <h3 className="text-[22px] sm:text-[26px] md:text-[30px] font-bold tracking-[-0.03em] text-gray-900 leading-[1.2]">
-                Get Flower Updates &amp; Special Offers
+            <div className="space-y-3 text-center lg:text-left max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600/10 text-rose-900 text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase border border-rose-600/20">
+                <Clock className="w-3 h-3 text-[#C85A78] shrink-0" />
+                <span>NEVER MISS SACRED FLOWER CUTOFFS</span>
+              </div>
+              <h3 className="text-[22px] sm:text-[27px] md:text-[32px] font-bold tracking-[-0.03em] text-[#0B3B24] leading-[1.2]">
+                Festival &amp; Wedding Delivery Reminders
               </h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-normal leading-relaxed max-w-md mx-auto lg:mx-0">
-                Subscribe to our newsletter and be the first to know about new arrivals, seasonal festival flowers, and ceremonial discounts.
+              <p className="text-xs sm:text-sm text-stone-600 font-normal leading-relaxed max-w-md mx-auto lg:mx-0">
+                Fresh flowers fly in directly for upcoming auspicious dates. Subscribe to receive timely reminder alerts 10 days before flight order cutoffs.
               </p>
+
+              {/* Festival Quick-Pills for Contextual Discovery */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-1.5 pt-1">
+                {['Diwali 🪔', 'Varalakshmi Vratham 🌸', 'Ganesh Chaturthi 🌺', 'Navratri 🌼', 'Wedding Muhurtham 💍'].map((festival) => (
+                  <span
+                    key={festival}
+                    className="px-2.5 py-1 rounded-full bg-white text-stone-700 text-[11px] font-medium border border-stone-200/90 shadow-2xs"
+                  >
+                    {festival}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div className="w-full sm:w-auto max-w-md shrink-0 flex flex-col items-stretch">
@@ -1550,7 +1520,7 @@ export default function CustomerStore() {
                     type="email"
                     required
                     disabled={newsletterLoading}
-                    placeholder="Enter your email address"
+                    placeholder="Enter your email for reminders"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 sm:py-3.5 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0B3B24] focus:ring-1 focus:ring-[#0B3B24] font-normal shadow-2xs disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
@@ -1559,12 +1529,12 @@ export default function CustomerStore() {
                 <button
                   type="submit"
                   disabled={newsletterLoading || newsletterSubscribed}
-                  className="w-full sm:w-auto px-6 py-3 sm:py-3.5 rounded-xl bg-[#0B3B24] hover:bg-[#134633] disabled:bg-[#0B3B24]/80 text-white font-semibold text-xs sm:text-sm whitespace-nowrap shadow-xs transition-colors cursor-pointer flex items-center justify-center min-w-[120px]"
+                  className="w-full sm:w-auto px-6 py-3 sm:py-3.5 rounded-xl bg-[#0B3B24] hover:bg-[#134633] disabled:bg-[#0B3B24]/80 text-white font-semibold text-xs sm:text-sm whitespace-nowrap shadow-xs transition-colors cursor-pointer flex items-center justify-center min-w-[130px]"
                 >
                   {newsletterLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin text-white" />
-                      <span>Subscribing...</span>
+                      <span>Saving...</span>
                     </>
                   ) : newsletterSubscribed ? (
                     <>
@@ -1572,17 +1542,18 @@ export default function CustomerStore() {
                       <span>Subscribed!</span>
                     </>
                   ) : (
-                    'Subscribe'
+                    'Get Reminders'
                   )}
                 </button>
               </form>
 
               {newsletterMessage && (
                 <div
-                  className={`mt-2.5 flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-lg border transition-all ${newsletterStatus === 'error'
+                  className={`mt-2.5 flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-lg border transition-all ${
+                    newsletterStatus === 'error'
                       ? 'bg-rose-50 text-rose-800 border-rose-200'
                       : 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                    }`}
+                  }`}
                 >
                   {newsletterStatus === 'error' ? (
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />
