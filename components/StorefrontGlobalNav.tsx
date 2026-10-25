@@ -226,7 +226,11 @@ export default function StorefrontGlobalNav() {
 
   const handleCheckout = () => {
     setIsCartOpen(false);
-    router.push('/?checkout=true');
+    if (!customer) {
+      router.push('/login?redirect=checkout');
+    } else {
+      router.push('/?checkout=true');
+    }
   };
 
   const handleOpenCartClick = () => {

@@ -137,7 +137,7 @@ export default function MobileBottomNav({
     if (onOpenCart) {
       onOpenCart();
     } else {
-      router.push('/?checkout=true');
+      router.push('/?action=cart');
     }
   };
 

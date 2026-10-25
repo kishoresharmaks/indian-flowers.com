@@ -69,6 +69,29 @@ export async function POST(request: Request) {
       );
     }
 
+    // Enforce Customer Authentication: Only authenticated logged-in customers can place orders
+    const customerSession = getCustomerFromToken(request);
+    if (!customerSession || !customerSession.customerId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Authentication required. Please sign in or register to complete your order.',
+        },
+        { status: 401 }
+      );
+    }
+
+    const authenticatedCustomer = await Customer.findById(customerSession.customerId);
+    if (!authenticatedCustomer || authenticatedCustomer.isActive === false) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Customer account not found or deactivated. Please sign in again.',
+        },
+        { status: 401 }
+      );
+    }
+
     // 3. Validate Order Details Payload
     if (!orderDetails) {
       return NextResponse.json(
@@ -170,9 +193,7 @@ export async function POST(request: Request) {
 
     const subtotal = fromCents(subtotalCents);
 
-    // A submitted customer ID is untrusted; only a signed session can redeem points.
-    const customerSession = getCustomerFromToken(request);
-    const finalCustomerId = customerSession?.customerId;
+    const finalCustomerId = String(authenticatedCustomer._id);
 
     // Calculate loyalty points redemption discount if requested
     const loyaltyConfig = await getLoyaltyConfig();
@@ -180,8 +201,7 @@ export async function POST(request: Request) {
     let pointsDiscountUSD = 0;
 
     if (finalCustomerId && Number(redeemPoints) > 0) {
-      const customer = await Customer.findById(finalCustomerId);
-      const availablePoints = customer?.pointsBalance || 0;
+      const availablePoints = authenticatedCustomer.pointsBalance || 0;
       const requestedPoints = Math.min(Math.floor(Number(redeemPoints)), availablePoints);
 
       if (requestedPoints > 0) {

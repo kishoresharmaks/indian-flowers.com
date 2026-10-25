@@ -348,34 +348,39 @@ export default function CustomerStore() {
         } else {
           setCustomer(null);
           if (isCheckoutRedirect) {
-            setIsCheckoutOpen(true);
+            setIsCheckoutOpen(false);
             window.history.replaceState({}, '', window.location.pathname);
+            router.push('/login?redirect=checkout');
           }
         }
       })
       .catch(() => {
         setCustomer(null);
         if (isCheckoutRedirect) {
-          setIsCheckoutOpen(true);
+          setIsCheckoutOpen(false);
           window.history.replaceState({}, '', window.location.pathname);
+          router.push('/login?redirect=checkout');
         }
       });
   }, [router]);
 
   const handleInitiateCheckout = () => {
-    if (customer) {
-      setCheckoutForm((prev) => ({
-        ...prev,
-        customerName: prev.customerName || customer.name || '',
-        customerPhone: prev.customerPhone || customer.phone || '',
-        customerEmail: prev.customerEmail || customer.email || '',
-        streetAddress: prev.streetAddress || customer.address || '',
-        aptSuite: prev.aptSuite || customer.aptSuite || '',
-        city: prev.city || customer.district || customer.city || '',
-        state: prev.state || customer.state || 'CA',
-        zipCode: prev.zipCode || customer.zipCode || '',
-      }));
+    if (!customer) {
+      setIsCartOpen(false);
+      router.push('/login?redirect=checkout');
+      return;
     }
+    setCheckoutForm((prev) => ({
+      ...prev,
+      customerName: prev.customerName || customer.name || '',
+      customerPhone: prev.customerPhone || customer.phone || '',
+      customerEmail: prev.customerEmail || customer.email || '',
+      streetAddress: prev.streetAddress || customer.address || '',
+      aptSuite: prev.aptSuite || customer.aptSuite || '',
+      city: prev.city || customer.district || customer.city || '',
+      state: prev.state || customer.state || 'CA',
+      zipCode: prev.zipCode || customer.zipCode || '',
+    }));
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
   };
@@ -802,6 +807,16 @@ export default function CustomerStore() {
     setFormError('');
     setFieldErrors({});
 
+    // Enforce Customer Authentication: Only logged-in customers can place orders
+    if (!customer) {
+      setFormError('Authentication required. Please sign in or register to complete your order.');
+      setTimeout(() => {
+        setIsCheckoutOpen(false);
+        router.push('/login?redirect=checkout');
+      }, 700);
+      return;
+    }
+
     // 1. Pre-flight Form Validation — Strictly verify all filled form details before initializing Razorpay
 
     const validation = validateCheckoutForm(checkoutForm, cart.length, selectedDeliveryMode?.type || 'shipping');
@@ -842,7 +857,7 @@ export default function CustomerStore() {
         }, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zipCode}`;
 
       const payload = {
-        customerId: customer?._id || customer?.id || undefined,
+        customerId: customer._id || customer.id,
         customerName: checkoutForm.customerName.trim(),
         customerPhone: checkoutForm.customerPhone.trim(),
         customerEmail: checkoutForm.customerEmail.trim(),
@@ -1734,7 +1749,42 @@ export default function CustomerStore() {
                 </div>
               )}
 
-              <form onSubmit={handlePlaceOrder} className="space-y-3.5">
+              {!customer ? (
+                <div className="p-6 text-center space-y-4 bg-stone-50 rounded-2xl border border-stone-200">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-[#0B3B24] flex items-center justify-center mx-auto">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-base font-bold text-gray-900">Sign In Required to Checkout</h4>
+                    <p className="text-xs text-gray-600 max-w-sm mx-auto leading-relaxed font-normal">
+                      Only verified accounts can complete flower orders for guaranteed cold-chain arrival. Your shopping cart items are securely saved.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2.5 justify-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCheckoutOpen(false);
+                        router.push('/login?redirect=checkout');
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
+                    >
+                      Sign In to Checkout
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCheckoutOpen(false);
+                        router.push('/register?redirect=checkout');
+                      }}
+                      className="px-5 py-2.5 rounded-xl border border-stone-300 hover:border-stone-400 bg-white text-stone-700 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      Create Account
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handlePlaceOrder} className="space-y-3.5">
                 <div>
                   <label className="text-xs font-medium text-gray-700 block mb-1">
                     Full Name *
@@ -2318,6 +2368,7 @@ export default function CustomerStore() {
                   <span>256-Bit SSL Encrypted & Protected US Checkout</span>
                 </div>
               </form>
+              )}
             </div>
           </div>
         </div>
