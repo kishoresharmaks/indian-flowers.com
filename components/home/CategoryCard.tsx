@@ -174,18 +174,12 @@ export default function CategoryCard({
           </p>
         </div>
 
-        {/* Circular Action Button */}
+        {/* Circular Action Button — High-Contrast Forest Green with Crisp White Arrow */}
         <div
-          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white shadow-xs border border-stone-200/70 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/card:bg-[#0B3B24] group-hover/card:border-[#0B3B24] group-hover/card:scale-105 ${
-            isSelected ? 'bg-[#0B3B24] border-[#0B3B24]' : ''
-          }`}
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#0B3B24] text-white shadow-xs flex items-center justify-center shrink-0 transition-all duration-300 group-hover/card:bg-[#1C563F] group-hover/card:scale-110 active:scale-95"
           aria-hidden="true"
         >
-          <ArrowRight
-            className={`w-4 h-4 transition-colors ${
-              isSelected ? 'text-white' : `${theme.arrowColor} group-hover/card:text-white`
-            }`}
-          />
+          <ArrowRight className="w-4 h-4 text-white stroke-[2.2] transition-transform duration-300 group-hover/card:translate-x-0.5" />
         </div>
       </div>
     </div>
