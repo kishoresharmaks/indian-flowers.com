@@ -12,10 +12,12 @@ import {
   ShieldCheck,
   Heart,
   Clock,
+  Share2,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 import { Product, ProductVariant } from '@/components/ProductCard';
+import { openProductShareModal } from './ProductShareModal';
 
 interface ProductQuickViewModalProps {
   isOpen: boolean;
@@ -120,13 +122,24 @@ export default function ProductQuickViewModal({
         {/* Drag Handle & Header */}
         <div className="relative pt-2.5 pb-2 px-4 flex items-center justify-between border-b border-gray-100 shrink-0 bg-stone-50/70">
           <div className="w-10 h-1 bg-stone-300 rounded-full mx-auto" />
-          <button
-            onClick={onClose}
-            className="absolute right-3 top-2.5 w-8 h-8 rounded-full bg-white hover:bg-stone-100 text-stone-600 border border-stone-200/80 flex items-center justify-center transition-all active:scale-95 shadow-2xs"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4 stroke-[2.2]" />
-          </button>
+          <div className="absolute right-3 top-2 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => openProductShareModal(product)}
+              className="w-8 h-8 rounded-full bg-white hover:bg-stone-100 text-stone-600 hover:text-[#0B3B24] border border-stone-200/80 flex items-center justify-center transition-all active:scale-95 shadow-2xs cursor-pointer"
+              aria-label="Share product"
+              title="Share this product"
+            >
+              <Share2 className="w-3.5 h-3.5 stroke-[2.2]" />
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white hover:bg-stone-100 text-stone-600 border border-stone-200/80 flex items-center justify-center transition-all active:scale-95 shadow-2xs cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4 stroke-[2.2]" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Content Body */}
@@ -336,6 +349,17 @@ export default function ProductQuickViewModal({
                 />
               </button>
             )}
+
+            {/* Share Button */}
+            <button
+              type="button"
+              onClick={() => openProductShareModal(product)}
+              className="h-11 w-11 rounded-xl border border-gray-200 hover:border-gray-300 bg-white text-gray-600 hover:text-[#0B3B24] hover:bg-gray-50 flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-2xs cursor-pointer"
+              title="Share this product"
+              aria-label="Share product"
+            >
+              <Share2 className="w-4 h-4 stroke-[2.2]" />
+            </button>
           </div>
 
           {/* Subtle Trust Note */}
@@ -350,14 +374,25 @@ export default function ProductQuickViewModal({
       {/* DESKTOP VIEW (md: and up): Spacious 2-Column Luxury Modal */}
       {/* ======================================================== */}
       <div className="hidden md:flex relative bg-white rounded-3xl max-w-4xl w-full max-h-[88vh] lg:max-h-[640px] flex-row overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] border border-gray-100 animate-in zoom-in-95 duration-200">
-        {/* Desktop Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-white/95 hover:bg-white text-gray-500 hover:text-gray-900 border border-gray-200/80 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3B24]"
-          aria-label="Close dialog"
-        >
-          <X className="w-5 h-5 stroke-[2.2]" />
-        </button>
+        {/* Desktop Header Actions (Share & Close) */}
+        <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => openProductShareModal(product)}
+            className="w-10 h-10 rounded-full bg-white/95 hover:bg-white text-gray-600 hover:text-[#0B3B24] border border-gray-200/80 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3B24] cursor-pointer"
+            title="Share this product"
+            aria-label="Share product"
+          >
+            <Share2 className="w-4.5 h-4.5 stroke-[2.2]" />
+          </button>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-white/95 hover:bg-white text-gray-500 hover:text-gray-900 border border-gray-200/80 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3B24] cursor-pointer"
+            aria-label="Close dialog"
+          >
+            <X className="w-5 h-5 stroke-[2.2]" />
+          </button>
+        </div>
 
         {/* Left Column: Image & Badges */}
         <div className="w-5/12 bg-[#FAF7F2] p-6 lg:p-7 flex flex-col justify-between items-center relative border-r border-stone-200/60 shrink-0">
@@ -548,7 +583,7 @@ export default function ProductQuickViewModal({
                 <button
                   type="button"
                   onClick={() => onToggleWishlist(product)}
-                  className={`h-11 w-11 rounded-xl border flex items-center justify-center transition-all shrink-0 active:scale-95 ${
+                  className={`h-11 w-11 rounded-xl border flex items-center justify-center transition-all shrink-0 active:scale-95 cursor-pointer ${
                     isWishlisted
                       ? 'border-[#C85A78] bg-rose-50 text-[#C85A78] shadow-2xs'
                       : 'border-gray-200 hover:border-gray-300 text-gray-600 hover:text-[#C85A78] hover:bg-gray-50'
@@ -563,6 +598,17 @@ export default function ProductQuickViewModal({
                   />
                 </button>
               )}
+
+              {/* Share Button */}
+              <button
+                type="button"
+                onClick={() => openProductShareModal(product)}
+                className="h-11 w-11 rounded-xl border border-gray-200 hover:border-gray-300 bg-white text-gray-600 hover:text-[#0B3B24] hover:bg-gray-50 flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-2xs cursor-pointer"
+                title="Share this product"
+                aria-label="Share product"
+              >
+                <Share2 className="w-4.5 h-4.5 stroke-[2.2]" />
+              </button>
             </div>
 
             {/* Subtle Trust Assurance */}

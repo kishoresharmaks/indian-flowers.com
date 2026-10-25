@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, Heart, Check, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, Check, ChevronDown } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
+import { openProductShareModal } from './ProductShareModal';
 
 export interface ProductVariant {
   _id?: string;
@@ -42,6 +43,7 @@ interface ProductCardProps {
   isWishlisted?: boolean;
   onToggleWishlist?: (product: Product) => void;
   loading?: boolean;
+  onShare?: (product: Product) => void;
 }
 
 export default function ProductCard({
@@ -50,6 +52,7 @@ export default function ProductCard({
   onProductClick,
   isWishlisted,
   onToggleWishlist,
+  onShare,
 }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
@@ -131,6 +134,30 @@ export default function ProductCard({
     }
   };
 
+  const handleShareClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onShare) {
+      onShare(product);
+      return;
+    }
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://indian-flowers.com';
+    const shareUrl = `${origin}/product/${product._id}`;
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: `${product.name} — Indian-Flowers.com`,
+          text: `Order fresh ${product.name} online from Indian-Flowers.com! Fresh Indian Flowers & Garlands delivered across USA.`,
+          url: shareUrl,
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      }
+    }
+    openProductShareModal(product);
+  };
+
   return (
     <article className="group h-full flex flex-col bg-white rounded-xl sm:rounded-2xl border border-stone-200/80 hover:border-emerald-300/80 overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgba(11,59,36,0.08)] transition-all duration-300 hover:-translate-y-0.5 justify-between relative">
       {/* 1. Top Image Container: Full-bleed clean header with subtle rounded top */}
@@ -164,32 +191,46 @@ export default function ProductCard({
           </span>
         ) : null}
 
-        {/* Top-Right: Clean Heart Icon Wishlist Button (Without round white background) */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onToggleWishlist) {
-              onToggleWishlist(product);
-            } else {
-              setLocalFavorite(!localFavorite);
-            }
-          }}
-          className={`absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-10 p-1.5 flex items-center justify-center transition-all duration-200 hover:scale-115 active:scale-90 cursor-pointer ${
-            isFavorite
-              ? 'text-[#ed2353] drop-shadow-[0_2px_4px_rgba(237,35,83,0.35)]'
-              : 'text-stone-700 hover:text-[#ed2353] drop-shadow-[0_1px_2px_rgba(255,255,255,0.85)]'
-          }`}
-          aria-label={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
-          title={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
-          aria-pressed={isFavorite}
-        >
-          <Heart
-            className={`h-5 w-5 sm:h-5.5 sm:w-5.5 transition-colors ${
-              isFavorite ? 'fill-[#ed2353] text-[#ed2353]' : 'stroke-[2.2]'
+        {/* Top-Right: Clean Wishlist + Share Vertical Action Stack */}
+        <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-10 flex flex-col gap-1 items-center">
+          {/* Wishlist Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onToggleWishlist) {
+                onToggleWishlist(product);
+              } else {
+                setLocalFavorite(!localFavorite);
+              }
+            }}
+            className={`p-1.5 flex items-center justify-center transition-all duration-200 hover:scale-115 active:scale-90 cursor-pointer ${
+              isFavorite
+                ? 'text-[#ed2353] drop-shadow-[0_2px_4px_rgba(237,35,83,0.35)]'
+                : 'text-stone-700 hover:text-[#ed2353] drop-shadow-[0_1px_2px_rgba(255,255,255,0.85)]'
             }`}
-          />
-        </button>
+            aria-label={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
+            title={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
+            aria-pressed={isFavorite}
+          >
+            <Heart
+              className={`h-5 w-5 sm:h-5.5 sm:w-5.5 transition-colors ${
+                isFavorite ? 'fill-[#ed2353] text-[#ed2353]' : 'stroke-[2.2]'
+              }`}
+            />
+          </button>
+
+          {/* Share Button (Under the Wishlist Button) */}
+          <button
+            type="button"
+            onClick={handleShareClick}
+            className="p-1.5 flex items-center justify-center text-stone-700 hover:text-[#0B3B24] drop-shadow-[0_1px_2px_rgba(255,255,255,0.85)] transition-all duration-200 hover:scale-115 active:scale-90 cursor-pointer"
+            aria-label={`Share ${product.name}`}
+            title="Share this product"
+          >
+            <Share2 className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[2.2]" />
+          </button>
+        </div>
       </div>
 
       {/* 2. Content Body Area */}

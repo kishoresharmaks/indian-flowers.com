@@ -167,7 +167,7 @@ export default function CategoryCard({
         }
       }}
       aria-label={`Browse ${name} category`}
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border transition-all duration-300 text-left cursor-pointer select-none snap-start bg-gradient-to-b ${
+      className={`group/card relative flex flex-col justify-between overflow-hidden rounded-2xl border transition-all duration-300 text-left cursor-pointer select-none snap-start bg-gradient-to-b ${
         theme.bgGradient
       } ${theme.borderColor} ${theme.hoverBorder} ${
         isSelected
@@ -176,34 +176,34 @@ export default function CategoryCard({
       } w-[142px] min-w-[142px] sm:w-[172px] sm:min-w-[172px] md:w-[190px] md:min-w-[190px] lg:w-[204px] lg:min-w-[204px] h-[220px] sm:h-[250px] md:h-[270px] lg:h-[280px] p-2.5 sm:p-3 shrink-0`}
     >
       {/* Top Image Showcase with Soft Floral Shadow & Subtle Rounded Container */}
-      <div className="relative w-full h-[135px] sm:h-[155px] md:h-[170px] lg:h-[178px] rounded-xl overflow-hidden bg-white/70 shadow-xs flex items-center justify-center p-1 sm:p-1.5 transition-colors group-hover:bg-white">
+      <div className="relative w-full h-[135px] sm:h-[155px] md:h-[170px] lg:h-[178px] rounded-xl overflow-hidden bg-white/70 shadow-xs flex items-center justify-center p-1 sm:p-1.5 transition-colors group-hover/card:bg-white">
         <img
           src={imgSrc}
           alt={`${name} collection`}
           loading="lazy"
           onError={() => setImgSrc(DEFAULT_FLORAL_PLACEHOLDER)}
-          className="w-full h-full object-cover object-center rounded-lg transition-transform duration-500 ease-out group-hover:scale-108"
+          className="w-full h-full object-cover object-center rounded-lg transition-transform duration-500 ease-out group-hover/card:scale-108"
         />
       </div>
 
       {/* Bottom Content Area: Category Name + Circular Arrow Action */}
       <div className="pt-2 sm:pt-2.5 flex items-end justify-between gap-1.5 min-w-0">
         <div className="min-w-0 flex-1">
-          <h4 className="text-[13px] sm:text-[14px] md:text-[14.5px] font-bold text-[#18231F] group-hover:text-[#064E3B] transition-colors leading-[1.2] line-clamp-2">
+          <h4 className="text-[13px] sm:text-[14px] md:text-[14.5px] font-bold text-[#18231F] group-hover/card:text-[#064E3B] transition-colors leading-[1.2] line-clamp-2">
             {name}
           </h4>
         </div>
 
         {/* Circular Action Button */}
         <div
-          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white shadow-xs border border-stone-200/60 flex items-center justify-center shrink-0 transition-all duration-300 group-hover:bg-[#064E3B] group-hover:border-[#064E3B] group-hover:scale-105 ${
+          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white shadow-xs border border-stone-200/60 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/card:bg-[#064E3B] group-hover/card:border-[#064E3B] group-hover/card:scale-105 ${
             isSelected ? 'bg-[#064E3B] border-[#064E3B]' : ''
           }`}
           aria-hidden="true"
         >
           <ArrowRight
             className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors ${
-              isSelected ? 'text-white' : `${theme.arrowColor} group-hover:text-white`
+              isSelected ? 'text-white' : `${theme.arrowColor} group-hover/card:text-white`
             }`}
           />
         </div>

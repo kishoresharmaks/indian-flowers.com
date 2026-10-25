@@ -3,6 +3,7 @@ import { getSiteUrl } from "@/lib/siteUrl";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import StorefrontGlobalNav from "@/components/StorefrontGlobalNav";
 import GlobalPageLoader from "@/components/GlobalPageLoader";
+import ProductShareModal from "@/components/ProductShareModal";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic';
@@ -241,6 +242,7 @@ export default function RootLayout({
         {children}
         <StorefrontGlobalNav />
         <CookieConsentBanner />
+        <ProductShareModal />
       </body>
     </html>
   );

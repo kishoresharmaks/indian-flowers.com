@@ -99,7 +99,7 @@ export default function CategoryCarousel({
   return (
     <div className="relative w-full">
       {/* Outer Wrapper with Left/Right Edge Fades on Mobile & Floating Arrows on Desktop */}
-      <div className="relative group">
+      <div className="relative">
         {/* Left Arrow Button */}
         <button
           type="button"
