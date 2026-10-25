@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import mongoose from 'mongoose';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import ProductClientRedirect from './ProductClientRedirect';
@@ -16,7 +17,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const fallbackImage = `${siteUrl}/images/banners/hero-wedding-1920x650.jpg`;
   try {
     await connectToDatabase();
-    const product: any = await Product.findById(params.id).lean();
+    let product: any = null;
+    if (mongoose.isValidObjectId(params.id)) {
+      product = await Product.findById(params.id).lean();
+    }
+    if (!product) {
+      product = await Product.findOne({
+        $or: [
+          { slug: params.id },
+          { name: new RegExp(`^${params.id.replace(/-/g, ' ')}$`, 'i') },
+        ],
+      }).lean();
+    }
     if (!product) {
       return {
         title: 'Product Not Found',
@@ -93,12 +105,25 @@ export default async function ProductPage({ params }: Props) {
   const fallbackImage = `${siteUrl}/images/banners/hero-wedding-1920x650.jpg`;
   let productJsonLd: any = null;
   let breadcrumbJsonLd: any = null;
+  let serverProduct: any = null;
 
   try {
     await connectToDatabase();
-    const product: any = await Product.findById(params.id).lean();
+    let product: any = null;
+    if (mongoose.isValidObjectId(params.id)) {
+      product = await Product.findById(params.id).lean();
+    }
+    if (!product) {
+      product = await Product.findOne({
+        $or: [
+          { slug: params.id },
+          { name: new RegExp(`^${params.id.replace(/-/g, ' ')}$`, 'i') },
+        ],
+      }).lean();
+    }
 
     if (product) {
+      serverProduct = JSON.parse(JSON.stringify(product));
       const productImageUrl = product.image
         ? product.image.startsWith('http')
           ? product.image
@@ -218,7 +243,7 @@ export default async function ProductPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
       )}
-      <ProductClientRedirect id={params.id} />
+      <ProductClientRedirect id={params.id} initialProduct={serverProduct} />
     </>
   );
 }

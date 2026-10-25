@@ -1,17 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
     const { id } = params;
-    const product = await Product.findById(id).lean();
+
+    let product = null;
+    if (mongoose.isValidObjectId(id)) {
+      product = await Product.findById(id).lean();
+    }
+
+    if (!product) {
+      // Fallback lookup by slug or exact name
+      product = await Product.findOne({
+        $or: [
+          { slug: id },
+          { name: new RegExp(`^${id.replace(/-/g, ' ')}$`, 'i') },
+        ],
+      }).lean();
+    }
+
     if (!product) {
       return NextResponse.json(
         { success: false, message: 'Product not found' },
@@ -62,6 +79,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!isAuthenticatedAdmin(request as any)) return unauthenticatedResponse();
     await connectToDatabase();
     const { id } = params;
     const body = await request.json();

@@ -32,12 +32,24 @@ interface Product {
   createdAt?: string;
 }
 
-export default function ProductClientRedirect({ id }: { id: string }) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function ProductClientRedirect({
+  id,
+  initialProduct,
+}: {
+  id: string;
+  initialProduct?: Product | null;
+}) {
+  const [product, setProduct] = useState<Product | null>(initialProduct || null);
+  const [loading, setLoading] = useState<boolean>(!initialProduct);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialProduct) {
+      setProduct(initialProduct);
+      setLoading(false);
+      return;
+    }
+
     const fetchProduct = async () => {
       try {
         setLoading(true);
@@ -53,7 +65,7 @@ export default function ProductClientRedirect({ id }: { id: string }) {
     };
 
     fetchProduct();
-  }, [id]);
+  }, [id, initialProduct]);
 
   const handleAddToCart = (variant?: ProductVariant, quantity: number = 1) => {
     if (!product) return;
