@@ -35,6 +35,7 @@ export interface Product {
   gst?: number;
   category?: string;
   categorySlug?: string;
+  parentCategorySlug?: string;
   subcategory?: string;
   rating?: number;
   reviewsCount?: number;

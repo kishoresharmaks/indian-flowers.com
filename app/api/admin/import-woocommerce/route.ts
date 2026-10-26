@@ -98,6 +98,48 @@ export async function GET(request: NextRequest) {
 }
 
 // POST: Batch Import a Specific Page (e.g. page=1, per_page=100)
+function resolveParentCategory(slug: string): { parentSlug: string; subName: string } {
+  const map: Record<string, { parentSlug: string; subName: string }> = {
+    'jasmine-flower': { parentSlug: 'strings-and-leaves', subName: 'Strings / Jasmine Strings' },
+    'green-leafs': { parentSlug: 'strings-and-leaves', subName: 'Pooja Leaves' },
+    'green-leaf': { parentSlug: 'strings-and-leaves', subName: 'Pooja Leaves' },
+    'pooja-leaves': { parentSlug: 'strings-and-leaves', subName: 'Pooja Leaves' },
+    'pooja-flowers': { parentSlug: 'strings-and-leaves', subName: 'Pooja Flowers' },
+    'pooja-flowers-pooja-flowers': { parentSlug: 'strings-and-leaves', subName: 'Pooja Flowers' },
+    'banana-leaves': { parentSlug: 'strings-and-leaves', subName: 'Banana Leaves' },
+    'coconut': { parentSlug: 'strings-and-leaves', subName: 'Coconut' },
+    'decor-items': { parentSlug: 'strings-and-leaves', subName: 'Decor Items' },
+    'strings-and-leaves': { parentSlug: 'strings-and-leaves', subName: 'Strings / Jasmine Strings' },
+
+    'wedding-garlands': { parentSlug: 'wedding-garlands', subName: 'Wedding Garlands' },
+    'rose-petal-garlands': { parentSlug: 'wedding-garlands', subName: 'Rose Petal Garlands' },
+    'button-rose-garlands': { parentSlug: 'wedding-garlands', subName: 'Button Rose Garlands' },
+    'lilly-garlands': { parentSlug: 'wedding-garlands', subName: 'Lilly Garlands' },
+    'tube-rose-garlands': { parentSlug: 'wedding-garlands', subName: 'Lilly Garlands' },
+    'carnation-garlands': { parentSlug: 'wedding-garlands', subName: 'Carnation Garlands' },
+    'exchange-garlands': { parentSlug: 'wedding-garlands', subName: 'Exchange Garlands' },
+    'north-indian-garlands': { parentSlug: 'wedding-garlands', subName: 'North Indian Garlands' },
+    'indian-wedding-garlands': { parentSlug: 'wedding-garlands', subName: 'Indian Wedding Garlands' },
+    'indian-wedding-garlands-in-bay-area': { parentSlug: 'wedding-garlands', subName: 'Wedding Garlands' },
+    'veni': { parentSlug: 'wedding-garlands', subName: 'Veni, Jadai' },
+
+    'house-warming-garlands': { parentSlug: 'house-warming-garlands', subName: 'Door Garlands' },
+    'button-rose-door-garlands': { parentSlug: 'house-warming-garlands', subName: 'Button Rose Door Garlands' },
+    'coconut-thoranam': { parentSlug: 'house-warming-garlands', subName: 'Coconut Thoranam' },
+    'mango-leaves-thoranam': { parentSlug: 'house-warming-garlands', subName: 'Mango Leaves Thoranam' },
+    'button-rose-string': { parentSlug: 'house-warming-garlands', subName: 'Button Rose String' },
+
+    'temple-and-pooja-garlands': { parentSlug: 'temple-garlands', subName: 'Temple and Pooja Garlands' },
+    'temple-garlands': { parentSlug: 'temple-garlands', subName: 'Temple and Pooja Garlands' },
+    'button-rose-pooja-garlands': { parentSlug: 'temple-garlands', subName: 'Button Rose Pooja Garlands' },
+    'lilly-temple-garlands': { parentSlug: 'temple-garlands', subName: 'Lilly Garlands' },
+    'nanthiyavattam-garlands': { parentSlug: 'temple-garlands', subName: 'Nanthiyavattam Garlands' },
+    'vilvam-garlands': { parentSlug: 'temple-garlands', subName: 'Vilvam Garlands' },
+    'vadamalli-garlands': { parentSlug: 'temple-garlands', subName: 'Vadamalli Garlands' },
+  };
+  return map[slug] || { parentSlug: slug, subName: '' };
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!isAuthenticatedAdmin(request)) {
@@ -244,6 +286,8 @@ export async function POST(request: NextRequest) {
         const rawDescription = item.description || item.short_description || name;
         const plainSummary = stripHtmlTags(item.short_description || item.description || name).slice(0, 260);
 
+        const parentResolution = resolveParentCategory(primaryCatSlug);
+
         const updatePayload: any = {
           name,
           slug,
@@ -260,6 +304,8 @@ export async function POST(request: NextRequest) {
           isTaxable: true,
           category: primaryCat,
           categorySlug: primaryCatSlug,
+          parentCategorySlug: parentResolution.parentSlug,
+          subcategory: parentResolution.subName || undefined,
           categories: categoriesList,
           tags,
           variants: variants.length > 0 ? variants : existing?.variants || [],

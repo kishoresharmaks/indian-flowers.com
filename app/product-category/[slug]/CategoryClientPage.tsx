@@ -15,6 +15,9 @@ interface Props {
   categoryName: string;
   categoryDescription?: string;
   initialProducts: Product[];
+  initialNextCursor?: string | null;
+  initialHasMore?: boolean;
+  initialTotalCount?: number;
 }
 
 export default function CategoryClientPage({
@@ -22,9 +25,17 @@ export default function CategoryClientPage({
   categoryName,
   categoryDescription,
   initialProducts = [],
+  initialNextCursor = null,
+  initialHasMore = false,
+  initialTotalCount = 0,
 }: Props) {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
+  const [hasMore, setHasMore] = useState<boolean>(initialHasMore);
+  const [totalCount, setTotalCount] = useState<number>(initialTotalCount || initialProducts.length);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isChangingSort, setIsChangingSort] = useState(false);
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'name'>('featured');
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
@@ -160,13 +171,53 @@ export default function CategoryClientPage({
     });
   };
 
-  // Sorting Logic
-  const sortedProducts = [...products].sort((a, b) => {
-    if (sortBy === 'price-asc') return (a.price || 0) - (b.price || 0);
-    if (sortBy === 'price-desc') return (b.price || 0) - (a.price || 0);
-    if (sortBy === 'name') return a.name.localeCompare(b.name);
-    return 0; // featured/default
-  });
+  // Cursor-Based Sort Switching
+  const handleSortChange = async (newSort: 'featured' | 'price-asc' | 'price-desc' | 'name') => {
+    setSortBy(newSort);
+    setIsChangingSort(true);
+    try {
+      const res = await fetch(
+        `/api/products?categorySlug=${encodeURIComponent(categorySlug)}&sortBy=${newSort}&limit=16&paginate=true`
+      );
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setProducts(data.data);
+        setNextCursor(data.nextCursor || null);
+        setHasMore(!!data.hasMore);
+        if (typeof data.totalCount === 'number') {
+          setTotalCount(data.totalCount);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to change sort order:', err);
+    } finally {
+      setIsChangingSort(false);
+    }
+  };
+
+  // Cursor-Based "Load More" Stream
+  const handleLoadMore = async () => {
+    if (!nextCursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const res = await fetch(
+        `/api/products?categorySlug=${encodeURIComponent(categorySlug)}&sortBy=${sortBy}&cursor=${encodeURIComponent(nextCursor)}&limit=16&paginate=true`
+      );
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setProducts((prev) => [...prev, ...data.data]);
+        setNextCursor(data.nextCursor || null);
+        setHasMore(!!data.hasMore);
+        if (typeof data.totalCount === 'number') {
+          setTotalCount(data.totalCount);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load more products:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const cartItemCount = cartItems.reduce(
     (sum, item) => sum + (Number(item.quantity) || 1),
@@ -177,6 +228,8 @@ export default function CategoryClientPage({
     (sum, item) => sum + (Number(item.product?.price || item.selectedVariant?.price || 0) * (Number(item.quantity) || 1)),
     0
   );
+
+  const progressPercent = Math.min(100, Math.round((products.length / Math.max(1, totalCount)) * 100));
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] flex flex-col justify-between selection:bg-[#0B3B24] selection:text-white">
@@ -230,7 +283,7 @@ export default function CategoryClientPage({
                 `Explore our handcrafted collection of authentic ${categoryName.toLowerCase()}. Shipped fresh via priority cold-chain delivery nationwide across the United States.`}
             </p>
             <div className="mt-4 flex items-center gap-4 text-xs sm:text-sm text-emerald-200/80">
-              <span>{products.length} {products.length === 1 ? 'Product Available' : 'Products Available'}</span>
+              <span>{totalCount} {totalCount === 1 ? 'Product Available' : 'Products Available'}</span>
               <span>•</span>
               <span>100% Guaranteed Freshness</span>
               <span>•</span>
@@ -240,9 +293,17 @@ export default function CategoryClientPage({
         </div>
 
         {/* Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-stone-200">
-          <div className="text-sm text-stone-600 font-medium">
-            Showing <span className="font-semibold text-stone-900">{products.length}</span> handcrafted designs
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-6 border-b border-stone-200">
+          <div>
+            <div className="text-sm text-stone-600 font-medium">
+              Showing <span className="font-semibold text-stone-900">{products.length}</span> of <span className="font-semibold text-stone-900">{totalCount}</span> handcrafted designs
+            </div>
+            <div className="w-48 sm:w-64 bg-stone-200 h-1.5 rounded-full overflow-hidden mt-1.5">
+              <div
+                className="bg-gradient-to-r from-[#0B3B24] to-[#2F6B4F] h-full transition-all duration-500 rounded-full"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -253,8 +314,9 @@ export default function CategoryClientPage({
             <select
               id="sort-select"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-xs sm:text-sm font-medium bg-white border border-stone-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0B3B24] text-stone-800"
+              onChange={(e) => handleSortChange(e.target.value as any)}
+              disabled={isChangingSort}
+              className="text-xs sm:text-sm font-medium bg-white border border-stone-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0B3B24] text-stone-800 disabled:opacity-50"
             >
               <option value="featured">Featured / Newest</option>
               <option value="price-asc">Price: Low to High</option>
@@ -265,18 +327,52 @@ export default function CategoryClientPage({
         </div>
 
         {/* Product Grid */}
-        {sortedProducts.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-            {sortedProducts.map((prod) => (
-              <ProductCard
-                key={prod._id}
-                product={prod}
-                isWishlisted={wishlist.some((w) => w._id === prod._id)}
-                onToggleWishlist={handleToggleWishlist}
-                onAddToCart={handleAddToCart}
-              />
-            ))}
-          </div>
+        {products.length > 0 ? (
+          <>
+            <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 transition-opacity duration-200 ${isChangingSort ? 'opacity-50' : 'opacity-100'}`}>
+              {products.map((prod) => (
+                <ProductCard
+                  key={prod._id}
+                  product={prod}
+                  isWishlisted={wishlist.some((w) => w._id === prod._id)}
+                  onToggleWishlist={handleToggleWishlist}
+                  onAddToCart={handleAddToCart}
+                />
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="mt-10 sm:mt-14 text-center flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#0B3B24] to-[#1C563F] hover:from-[#134633] hover:to-[#2F6B4F] text-white font-bold text-sm transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center gap-2.5 cursor-pointer border border-emerald-400/20"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Loading Handcrafted Flowers...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Load More Products</span>
+                      <span className="text-xs bg-white/20 text-emerald-100 px-2 py-0.5 rounded-full font-semibold">
+                        {Math.max(0, totalCount - products.length)} more
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {!hasMore && products.length > 0 && (
+              <div className="mt-12 text-center text-xs sm:text-sm text-stone-500 font-medium py-3 px-4 rounded-xl bg-stone-100/70 border border-stone-200/60 max-w-md mx-auto">
+                🌿 You have viewed all {totalCount} handcrafted arrangements in {categoryName}.
+              </div>
+            )}
+          </>
         ) : (
           <div className="bg-white rounded-2xl border border-stone-200 p-12 text-center max-w-lg mx-auto my-12 shadow-sm">
             <div className="w-16 h-16 mx-auto mb-4 bg-emerald-50 text-[#0B3B24] rounded-full flex items-center justify-center">

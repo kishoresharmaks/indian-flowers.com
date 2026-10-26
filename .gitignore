@@ -33,6 +33,7 @@ scripts/*
 !scripts/prebuild.js
 !scripts/import-woocommerce.mjs
 !scripts/migrate-base64-images.mjs
+!scripts/sync-category-slugs.mjs
 tests/
 *.py
 *.ps1

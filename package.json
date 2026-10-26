@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "node scripts/runTests.js",
     "import:wp": "node scripts/import-woocommerce.mjs",
-    "clean:base64": "node scripts/migrate-base64-images.mjs"
+    "clean:base64": "node scripts/migrate-base64-images.mjs",
+    "sync:categories": "node scripts/sync-category-slugs.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

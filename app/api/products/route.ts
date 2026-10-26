@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
+import { fetchCursorPaginatedProducts, SortOption } from '@/lib/cursorPagination';
 import { captureServerEvent, captureServerException } from '@/lib/telemetry';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
@@ -16,11 +17,50 @@ export async function GET(request: Request) {
     const categorySlug = searchParams.get('categorySlug');
     const subcategory = searchParams.get('subcategory');
     const slug = searchParams.get('slug');
+    const cursor = searchParams.get('cursor');
+    const limitParam = searchParams.get('limit');
+    const sortBy = (searchParams.get('sortBy') as SortOption) || 'featured';
+    const isPaginated = searchParams.has('cursor') || searchParams.has('limit') || searchParams.has('paginate') || searchParams.has('sortBy');
 
-    let filter: any = {};
+    // 1. Single product slug lookup
     if (slug) {
-      filter.slug = slug.toLowerCase().trim();
+      const product = await Product.findOne({ slug: slug.toLowerCase().trim() }).lean();
+      if (!product) {
+        return NextResponse.json({ success: false, message: 'Product not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, data: product });
     }
+
+    // 2. Cursor-based paginated search (used by /product-category/[slug] and /shop)
+    if (isPaginated && limitParam !== 'all') {
+      const result = await fetchCursorPaginatedProducts({
+        categorySlug: categorySlug || category || undefined,
+        subcategory: subcategory || undefined,
+        search: query || undefined,
+        sortBy,
+        cursor,
+        limit: limitParam ? parseInt(limitParam, 10) : 16,
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          count: result.data.length,
+          data: result.data,
+          nextCursor: result.nextCursor,
+          hasMore: result.hasMore,
+          totalCount: result.totalCount,
+        },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        }
+      );
+    }
+
+    // 3. Unpaginated fallback (for Admin Dashboard inventory)
+    let filter: any = {};
     if (query && query.trim()) {
       const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
@@ -34,6 +74,7 @@ export async function GET(request: Request) {
     if (categorySlug && categorySlug !== 'All') {
       filter.$or = [
         { categorySlug: categorySlug.toLowerCase() },
+        { parentCategorySlug: categorySlug.toLowerCase() },
         { 'categories.slug': categorySlug.toLowerCase() },
       ];
     } else if (category && category !== 'All') {
@@ -52,9 +93,8 @@ export async function GET(request: Request) {
       // Ignore index creation warnings if already created
     }
 
-    // Use indexed sort, allowDiskUse(true), and .lean() for maximum performance
     const products = await Product.find(filter).sort({ createdAt: -1 }).allowDiskUse(true).lean();
-    
+
     return NextResponse.json(
       { success: true, count: products.length, data: products },
       {

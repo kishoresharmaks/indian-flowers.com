@@ -4,6 +4,7 @@ import Product from '@/models/Product';
 import Category from '@/models/Category';
 import ShopClientPage from './ShopClientPage';
 import { getSiteUrl } from '@/lib/siteUrl';
+import { fetchCursorPaginatedProducts } from '@/lib/cursorPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,32 +51,71 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ShopPage() {
   const siteUrl = getSiteUrl();
-  let products: any[] = [];
-  let categories: any[] = [];
+  let initialProducts: any[] = [];
+  let initialNextCursor: string | null = null;
+  let initialHasMore = false;
+  let totalCount = 0;
+  let mainCategories: any[] = [];
 
   try {
     await connectToDatabase();
 
-    const [rawProducts, rawCategories] = await Promise.all([
-      Product.find({}).sort({ createdAt: -1 }).lean(),
+    const [paginated, rawCategories, productsCol] = await Promise.all([
+      fetchCursorPaginatedProducts({ limit: 16, sortBy: 'featured' }),
       Category.find({}).sort({ order: 1, name: 1 }).lean(),
+      Product.collection,
     ]);
 
-    products = JSON.parse(JSON.stringify(rawProducts));
+    initialProducts = paginated.data;
+    initialNextCursor = paginated.nextCursor;
+    initialHasMore = paginated.hasMore;
+    totalCount = paginated.totalCount;
 
-    // Aggregate category counts from products
-    const countsBySlug: Record<string, number> = {};
-    products.forEach((p: any) => {
-      if (p.categorySlug) {
-        countsBySlug[p.categorySlug] = (countsBySlug[p.categorySlug] || 0) + 1;
-      }
-    });
+    // Fetch counts for each main category and each subcategory
+    mainCategories = await Promise.all(
+      rawCategories.map(async (cat: any) => {
+        const catSlug = cat.slug || cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        
+        // Count products for this main category (including all child subcategory terms)
+        const mainCatCount = await productsCol.countDocuments({
+          $or: [
+            { categorySlug: catSlug },
+            { parentCategorySlug: catSlug },
+            { 'categories.slug': catSlug },
+            { category: new RegExp(`^${cat.name}$`, 'i') },
+          ],
+        });
 
-    categories = rawCategories.map((c: any) => ({
-      name: c.name,
-      slug: c.slug || c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      count: countsBySlug[c.slug] || 0,
-    }));
+        // Count products for each subcategory
+        const subcategoriesWithCounts = await Promise.all(
+          (cat.subcategories || []).map(async (sub: any) => {
+            const subSlug = sub.slug || sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const subCount = await productsCol.countDocuments({
+              $or: [
+                { subcategory: new RegExp(`^${sub.name}$`, 'i') },
+                { categorySlug: subSlug },
+                { 'categories.slug': subSlug },
+              ],
+            });
+            return {
+              _id: sub._id ? sub._id.toString() : subSlug,
+              name: sub.name,
+              slug: subSlug,
+              image: sub.image || '',
+              count: subCount,
+            };
+          })
+        );
+
+        return {
+          _id: cat._id ? cat._id.toString() : catSlug,
+          name: cat.name,
+          slug: catSlug,
+          count: mainCatCount,
+          subcategories: subcategoriesWithCounts,
+        };
+      })
+    );
   } catch (err) {
     console.error('Error fetching shop data:', err);
   }
@@ -105,7 +145,13 @@ export default async function ShopPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      <ShopClientPage initialProducts={products} categories={categories} />
+      <ShopClientPage
+        initialProducts={initialProducts}
+        initialNextCursor={initialNextCursor}
+        initialHasMore={initialHasMore}
+        initialTotalCount={totalCount}
+        mainCategories={mainCategories}
+      />
     </>
   );
 }

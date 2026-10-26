@@ -38,6 +38,7 @@ export interface IProduct extends Document {
   gst?: number;
   category?: string;
   categorySlug?: string;
+  parentCategorySlug?: string;
   categories?: ICategoryRef[];
   tags?: string[];
   subcategory?: string;
@@ -84,6 +85,7 @@ const ProductSchema: Schema = new Schema(
     gst: { type: Number, min: 0, default: 0 },
     category: { type: String, default: 'General' },
     categorySlug: { type: String, default: 'general', index: true },
+    parentCategorySlug: { type: String, default: '', index: true },
     categories: [
       {
         id: { type: Number },
@@ -108,9 +110,14 @@ const ProductSchema: Schema = new Schema(
 
 // Optimized Indexes for MongoDB Atlas
 ProductSchema.index({ slug: 1 }, { unique: true, sparse: true });
-ProductSchema.index({ createdAt: -1 });
+ProductSchema.index({ createdAt: -1, _id: -1 });
 ProductSchema.index({ category: 1, subcategory: 1, createdAt: -1 });
-ProductSchema.index({ categorySlug: 1, createdAt: -1 });
+ProductSchema.index({ categorySlug: 1, createdAt: -1, _id: -1 });
+ProductSchema.index({ categorySlug: 1, price: 1, _id: 1 });
+ProductSchema.index({ categorySlug: 1, price: -1, _id: -1 });
+ProductSchema.index({ categorySlug: 1, name: 1, _id: 1 });
+ProductSchema.index({ 'categories.slug': 1, createdAt: -1, _id: -1 });
+ProductSchema.index({ subcategory: 1, createdAt: -1, _id: -1 });
 ProductSchema.index({ name: 'text', description: 'text' });
 
 // Pre-save hook to ensure slug, categorySlug, and discount percentage

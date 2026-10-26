@@ -4,6 +4,7 @@ import Product from '@/models/Product';
 import Category from '@/models/Category';
 import CategoryClientPage from './CategoryClientPage';
 import { getSiteUrl } from '@/lib/siteUrl';
+import { fetchCursorPaginatedProducts } from '@/lib/cursorPagination';
 
 interface Props {
   params: { slug: string };
@@ -76,7 +77,10 @@ export default async function CategoryPage({ params }: Props) {
   const cleanSlug = (params.slug || '').toLowerCase().trim();
   let categoryName = slugToName(cleanSlug);
   let categoryDescription = '';
-  let products: any[] = [];
+  let initialProducts: any[] = [];
+  let initialNextCursor: string | null = null;
+  let initialHasMore = false;
+  let totalCount = 0;
 
   try {
     await connectToDatabase();
@@ -86,19 +90,16 @@ export default async function CategoryPage({ params }: Props) {
       categoryName = cat.name;
     }
 
-    // Flexible query: matches categorySlug, categories array, or regex category name
-    const rawProducts = await Product.find({
-      $or: [
-        { categorySlug: cleanSlug },
-        { 'categories.slug': cleanSlug },
-        { category: new RegExp(`^${categoryName}$`, 'i') },
-        { category: new RegExp(`^${cleanSlug.replace(/-/g, ' ')}$`, 'i') },
-      ],
-    })
-      .sort({ createdAt: -1 })
-      .lean();
+    const paginated = await fetchCursorPaginatedProducts({
+      categorySlug: cleanSlug,
+      limit: 16,
+      sortBy: 'featured',
+    });
 
-    products = JSON.parse(JSON.stringify(rawProducts));
+    initialProducts = paginated.data;
+    initialNextCursor = paginated.nextCursor;
+    initialHasMore = paginated.hasMore;
+    totalCount = paginated.totalCount;
   } catch (err) {
     console.error(`Error loading category ${cleanSlug}:`, err);
   }
@@ -138,7 +139,7 @@ export default async function CategoryPage({ params }: Props) {
     description: `Shop authentic ${categoryName} online with fast nationwide delivery across the United States.`,
     mainEntity: {
       '@type': 'ItemList',
-      itemListElement: products.slice(0, 24).map((prod: any, idx: number) => ({
+      itemListElement: initialProducts.map((prod: any, idx: number) => ({
         '@type': 'ListItem',
         position: idx + 1,
         url: `${siteUrl}/product/${prod.slug || prod._id}`,
@@ -161,7 +162,10 @@ export default async function CategoryPage({ params }: Props) {
         categorySlug={cleanSlug}
         categoryName={categoryName}
         categoryDescription={categoryDescription}
-        initialProducts={products}
+        initialProducts={initialProducts}
+        initialNextCursor={initialNextCursor}
+        initialHasMore={initialHasMore}
+        initialTotalCount={totalCount}
       />
     </>
   );
