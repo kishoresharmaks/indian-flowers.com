@@ -2,17 +2,33 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IProductVariant {
   _id?: string;
-  name: string;      // e.g. "250g", "500g", "1kg"
-  mrp: number;       // e.g. 250
-  price: number;     // e.g. 199
+  name: string;      // e.g. "2.0 feet", "2.5 feet"
+  mrp: number;       // e.g. 120
+  price: number;     // e.g. 100
   quantity: number;  // stock for variant
   discount?: number;
 }
 
+export interface ICategoryRef {
+  id?: number;
+  name: string;
+  slug: string;
+}
+
+export interface IProductAttribute {
+  name: string;
+  terms: string[];
+}
+
 export interface IProduct extends Document {
   name: string;
+  slug: string;
+  wpId?: number;
   description: string;
-  image: string;
+  descriptionHtml?: string;
+  shortDescription?: string;
+  image: string;     // Clean path or external URL (NO Base64)
+  images?: string[]; // Array of clean paths or external URLs (NO Base64)
   mrp: number;
   price: number;
   discount?: number;
@@ -21,10 +37,14 @@ export interface IProduct extends Document {
   taxCode?: string;
   gst?: number;
   category?: string;
+  categorySlug?: string;
+  categories?: ICategoryRef[];
+  tags?: string[];
   subcategory?: string;
   rating?: number;
   reviewsCount?: number;
   variants?: IProductVariant[];
+  attributes?: IProductAttribute[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,8 +68,13 @@ VariantSchema.pre('save', function (this: any, next) {
 const ProductSchema: Schema = new Schema(
   {
     name: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, trim: true, lowercase: true },
+    wpId: { type: Number, index: true, sparse: true },
     description: { type: String, required: true },
-    image: { type: String, required: true },
+    descriptionHtml: { type: String, default: '' },
+    shortDescription: { type: String, default: '' },
+    image: { type: String, required: true, trim: true },
+    images: { type: [String], default: [] },
     mrp: { type: Number, required: true, min: 0 },
     price: { type: Number, required: true, min: 0 },
     discount: { type: Number, default: 0 },
@@ -58,21 +83,54 @@ const ProductSchema: Schema = new Schema(
     taxCode: { type: String, default: '' },
     gst: { type: Number, min: 0, default: 0 },
     category: { type: String, default: 'General' },
+    categorySlug: { type: String, default: 'general', index: true },
+    categories: [
+      {
+        id: { type: Number },
+        name: { type: String },
+        slug: { type: String },
+      },
+    ],
+    tags: { type: [String], default: [] },
     subcategory: { type: String, default: '' },
     rating: { type: Number, default: 4.8 },
     reviewsCount: { type: Number, default: 50 },
     variants: [VariantSchema],
+    attributes: [
+      {
+        name: { type: String },
+        terms: [{ type: String }],
+      },
+    ],
   },
   { timestamps: true }
 );
 
-// Indexes to optimize MongoDB Atlas queries & avoid 32MB memory sort limit
+// Optimized Indexes for MongoDB Atlas
+ProductSchema.index({ slug: 1 }, { unique: true, sparse: true });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ category: 1, subcategory: 1, createdAt: -1 });
+ProductSchema.index({ categorySlug: 1, createdAt: -1 });
 ProductSchema.index({ name: 'text', description: 'text' });
 
-// Pre-save hook to calculate discount percentage if not manually specified
+// Pre-save hook to ensure slug, categorySlug, and discount percentage
 ProductSchema.pre('save', function (this: IProduct, next) {
+  if (!this.slug && this.name) {
+    this.slug = this.name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+  if (this.category && !this.categorySlug) {
+    this.categorySlug = this.category
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
   if (this.mrp && this.price && this.mrp > this.price) {
     this.discount = Math.round(((this.mrp - this.price) / this.mrp) * 100);
   }

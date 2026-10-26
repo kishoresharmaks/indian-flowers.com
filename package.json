@@ -7,7 +7,9 @@
     "build": "node scripts/prebuild.js && next build",
     "start": "next start -H 0.0.0.0",
     "lint": "next lint",
-    "test": "node scripts/runTests.js"
+    "test": "node scripts/runTests.js",
+    "import:wp": "node scripts/import-woocommerce.mjs",
+    "clean:base64": "node scripts/migrate-base64-images.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -23,6 +23,7 @@ import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 import { openProductShareModal } from '@/components/ProductShareModal';
 import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
+import ProductDescriptionRenderer from './ProductDescriptionRenderer';
 
 export interface ProductDetailProps {
   product: Product;
@@ -659,9 +660,11 @@ export default function ProductDetail({
 
               <div className="text-xs sm:text-sm text-stone-600 leading-relaxed pt-1">
                 {activeTab === 'details' && (
-                  <div className="space-y-2">
-                    <p>{product.description || 'Authentic fresh flowers handcrafted for traditional Indian ceremonies across the United States.'}</p>
-                    <p className="text-stone-500 text-xs">
+                  <div className="space-y-4">
+                    <ProductDescriptionRenderer
+                      content={product.descriptionHtml || product.description}
+                    />
+                    <p className="text-stone-500 text-xs pt-2 border-t border-stone-100">
                       Category: <strong className="text-stone-800">{product.category || 'Fresh Floral Essentials'}</strong>
                     </p>
                   </div>

@@ -4,6 +4,8 @@ import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import Category from '@/models/Category';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+import fs from 'fs/promises';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -229,6 +231,25 @@ export async function POST(request: NextRequest) {
       )
         .toString()
         .trim();
+
+      // Ensure no Base64 is stored in MongoDB: decode and write to disk
+      if (image.startsWith('data:image')) {
+        try {
+          const matches = image.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            let ext = matches[1].toLowerCase();
+            if (ext === 'jpeg') ext = 'jpg';
+            if (ext === 'svg+xml') ext = 'svg';
+            const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+            const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products');
+            await fs.mkdir(uploadDir, { recursive: true });
+            await fs.writeFile(path.join(uploadDir, filename), Buffer.from(matches[2], 'base64'));
+            image = `/uploads/products/${filename}`;
+          }
+        } catch (err) {
+          console.warn('Failed to save bulk-import base64 image to disk:', err);
+        }
+      }
 
       // 6. Extract Variants (Separate Non-Technical Columns First, fallback to semicolon format)
       let parsedVariants: any[] = [];

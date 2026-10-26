@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
+import { stripHtmlTags } from '@/lib/htmlUtils';
 import { Product, ProductVariant } from '@/components/ProductCard';
 import { openProductShareModal } from './ProductShareModal';
 
@@ -201,7 +202,7 @@ export default function ProductQuickViewModal({
           {/* Description */}
           {product.description && (
             <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
-              {product.description}
+              {stripHtmlTags(product.description)}
             </p>
           )}
 
@@ -479,7 +480,7 @@ export default function ProductQuickViewModal({
 
             {/* Description */}
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-normal">
-              {product.description ||
+              {stripHtmlTags(product.description || '') ||
                 'Delicate, fragrant fresh blossoms strung and handled with ritual purity for temple altars, home daily pooja, and auspicious ceremonies. Delivered fresh across the USA.'}
             </p>
 

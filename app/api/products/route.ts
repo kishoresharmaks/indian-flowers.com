@@ -13,9 +13,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('search');
     const category = searchParams.get('category');
+    const categorySlug = searchParams.get('categorySlug');
     const subcategory = searchParams.get('subcategory');
+    const slug = searchParams.get('slug');
 
     let filter: any = {};
+    if (slug) {
+      filter.slug = slug.toLowerCase().trim();
+    }
     if (query && query.trim()) {
       const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
@@ -23,9 +28,15 @@ export async function GET(request: Request) {
         { description: { $regex: sanitizedQuery, $options: 'i' } },
         { category: { $regex: sanitizedQuery, $options: 'i' } },
         { subcategory: { $regex: sanitizedQuery, $options: 'i' } },
+        { tags: { $regex: sanitizedQuery, $options: 'i' } },
       ];
     }
-    if (category && category !== 'All') {
+    if (categorySlug && categorySlug !== 'All') {
+      filter.$or = [
+        { categorySlug: categorySlug.toLowerCase() },
+        { 'categories.slug': categorySlug.toLowerCase() },
+      ];
+    } else if (category && category !== 'All') {
       const sanitizedCat = category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.category = { $regex: new RegExp(`^${sanitizedCat}$`, 'i') };
     }
@@ -66,7 +77,25 @@ export async function POST(request: NextRequest) {
     await connectToDatabase();
     const body = await request.json();
 
-    const { name, description, image, mrp, price, quantity, gst, category, subcategory, variants } = body;
+    const {
+      name,
+      slug,
+      wpId,
+      description,
+      image,
+      images,
+      mrp,
+      price,
+      quantity,
+      gst,
+      category,
+      categorySlug,
+      categories,
+      tags,
+      subcategory,
+      variants,
+      attributes,
+    } = body;
 
     // Validation
     if (!name || !description || !image || mrp === undefined || price === undefined || quantity === undefined || gst === undefined) {
@@ -91,18 +120,33 @@ export async function POST(request: NextRequest) {
       discount: Number(v.mrp) > Number(v.price) ? Math.round(((Number(v.mrp) - Number(v.price)) / Number(v.mrp)) * 100) : 0,
     })) : [];
 
+    const generatedSlug = slug
+      ? slug.toLowerCase().trim()
+      : name.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+
+    const generatedCatSlug = categorySlug
+      ? categorySlug.toLowerCase().trim()
+      : (category || 'General').toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+
     const newProduct = await Product.create({
       name,
+      slug: generatedSlug,
+      wpId: wpId ? Number(wpId) : undefined,
       description,
       image,
+      images: Array.isArray(images) ? images : [image],
       mrp: numMrp,
       price: numPrice,
       discount,
       quantity: numQuantity,
       gst: numGst,
       category: category || 'General',
+      categorySlug: generatedCatSlug,
+      categories: Array.isArray(categories) ? categories : [],
+      tags: Array.isArray(tags) ? tags : [],
       subcategory: subcategory || '',
       variants: formattedVariants,
+      attributes: Array.isArray(attributes) ? attributes : [],
     });
 
     await captureServerEvent(request, 'product_created', {

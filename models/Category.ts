@@ -28,13 +28,27 @@ const SubcategorySchema: Schema = new Schema({
 const CategorySchema: Schema = new Schema(
   {
     name: { type: String, required: true, unique: true, trim: true },
-    slug: { type: String, trim: true },
+    slug: { type: String, trim: true, lowercase: true },
     image: { type: String, default: '' },
     order: { type: Number, default: 0 },
     subcategories: { type: [SubcategorySchema], default: [] },
   },
   { timestamps: true }
 );
+
+CategorySchema.index({ slug: 1 }, { unique: true, sparse: true });
+
+CategorySchema.pre('save', function (this: ICategory, next) {
+  if (!this.slug && this.name) {
+    this.slug = this.name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+  next();
+});
 
 const Category: Model<ICategory> =
   mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);

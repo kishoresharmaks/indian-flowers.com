@@ -15,16 +15,18 @@ export async function GET(
     const { id } = params;
 
     let product = null;
-    if (mongoose.isValidObjectId(id)) {
+    product = await Product.findOne({ slug: id.toLowerCase().trim() }).lean();
+
+    if (!product && mongoose.isValidObjectId(id)) {
       product = await Product.findById(id).lean();
     }
 
     if (!product) {
-      // Fallback lookup by slug or exact name
+      // Fallback lookup by exact or hyphenated name
       product = await Product.findOne({
         $or: [
-          { slug: id },
           { name: new RegExp(`^${id.replace(/-/g, ' ')}$`, 'i') },
+          { name: new RegExp(`^${id}$`, 'i') },
         ],
       }).lean();
     }
@@ -88,10 +90,18 @@ export async function PUT(
       body.discount = Math.round(((body.mrp - body.price) / body.mrp) * 100);
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, body, {
-      new: true,
-      runValidators: true,
-    });
+    let updatedProduct = null;
+    if (mongoose.isValidObjectId(id)) {
+      updatedProduct = await Product.findByIdAndUpdate(id, body, {
+        new: true,
+        runValidators: true,
+      });
+    } else {
+      updatedProduct = await Product.findOneAndUpdate({ slug: id }, body, {
+        new: true,
+        runValidators: true,
+      });
+    }
 
     if (!updatedProduct) {
       return NextResponse.json(

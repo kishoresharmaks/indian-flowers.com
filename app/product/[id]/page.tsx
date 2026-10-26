@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import mongoose from 'mongoose';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import ProductClientRedirect from './ProductClientRedirect';
 import { formatCurrency } from '@/lib/currency';
 import { getSiteUrl } from '@/lib/siteUrl';
+import { stripHtmlTags } from '@/lib/htmlUtils';
 
 interface Props {
   params: { id: string };
@@ -18,17 +20,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     await connectToDatabase();
     let product: any = null;
-    if (mongoose.isValidObjectId(params.id)) {
-      product = await Product.findById(params.id).lean();
+    const cleanId = (params.id || '').trim();
+
+    // 1. Slug Lookup First (Preferred SEO URL)
+    product = await Product.findOne({ slug: cleanId.toLowerCase() }).lean();
+
+    // 2. ObjectId Lookup Fallback
+    if (!product && mongoose.isValidObjectId(cleanId)) {
+      product = await Product.findById(cleanId).lean();
     }
+
+    // 3. Name or Hyphenated Regex Fallback
     if (!product) {
       product = await Product.findOne({
         $or: [
-          { slug: params.id },
-          { name: new RegExp(`^${params.id.replace(/-/g, ' ')}$`, 'i') },
+          { name: new RegExp(`^${cleanId.replace(/-/g, ' ')}$`, 'i') },
+          { name: new RegExp(`^${cleanId}$`, 'i') },
         ],
       }).lean();
     }
+
     if (!product) {
       return {
         title: 'Product Not Found',
@@ -51,6 +62,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         : `${siteUrl}${product.image.startsWith('/') ? '' : '/'}${product.image}`
       : fallbackImage;
 
+    const canonicalSlug = product.slug || cleanId;
+
     return {
       title,
       description,
@@ -64,12 +77,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'Pooja Essentials',
       ],
       alternates: {
-        canonical: `${siteUrl}/product/${params.id}`,
+        canonical: `${siteUrl}/product/${canonicalSlug}`,
       },
       openGraph: {
         title: `${product.name} | Indian-Flowers.com`,
         description,
-        url: `${siteUrl}/product/${params.id}`,
+        url: `${siteUrl}/product/${canonicalSlug}`,
         siteName: 'Indian-Flowers.com',
         images: [
           {
@@ -111,19 +124,32 @@ export default async function ProductPage({ params }: Props) {
   try {
     await connectToDatabase();
     let product: any = null;
-    if (mongoose.isValidObjectId(params.id)) {
-      product = await Product.findById(params.id).lean();
+    const cleanId = (params.id || '').trim();
+
+    // 1. Slug Lookup First
+    product = await Product.findOne({ slug: cleanId.toLowerCase() }).lean();
+
+    // 2. ObjectId Lookup
+    if (!product && mongoose.isValidObjectId(cleanId)) {
+      product = await Product.findById(cleanId).lean();
     }
+
+    // 3. Name Regex Fallback
     if (!product) {
       product = await Product.findOne({
         $or: [
-          { slug: params.id },
-          { name: new RegExp(`^${params.id.replace(/-/g, ' ')}$`, 'i') },
+          { name: new RegExp(`^${cleanId.replace(/-/g, ' ')}$`, 'i') },
+          { name: new RegExp(`^${cleanId}$`, 'i') },
         ],
       }).lean();
     }
 
     if (product) {
+      // 301 Permanent Redirect if accessed by Mongo ObjectId or un-slugified ID and slug exists
+      if (mongoose.isValidObjectId(cleanId) && product.slug && product.slug !== cleanId) {
+        redirect(`/product/${product.slug}`);
+      }
+
       serverProduct = JSON.parse(JSON.stringify(product));
 
       try {
@@ -155,6 +181,10 @@ export default async function ProductPage({ params }: Props) {
         : fallbackImage;
 
       const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
+      const canonicalProductUrl = `${siteUrl}/product/${product.slug || product._id}`;
+      const categoryUrl = product.categorySlug
+        ? `${siteUrl}/product-category/${product.categorySlug}`
+        : `${siteUrl}/shop`;
 
       productJsonLd = {
         '@context': 'https://schema.org',
@@ -162,10 +192,10 @@ export default async function ProductPage({ params }: Props) {
         name: product.name,
         image: [productImageUrl],
         description:
-          product.description ||
+          stripHtmlTags(product.shortDescription || product.description) ||
           `Fresh handcrafted ${product.name} delivered across the United States.`,
-        sku: String(product._id),
-        mpn: String(product._id),
+        sku: String(product.wpId || product._id),
+        mpn: String(product.wpId || product._id),
         brand: {
           '@type': 'Brand',
           name: 'Indian-Flowers.com',
@@ -173,7 +203,7 @@ export default async function ProductPage({ params }: Props) {
         category: product.category || 'Fresh Indian Flowers',
         offers: {
           '@type': 'Offer',
-          url: `${siteUrl}/product/${product._id}`,
+          url: canonicalProductUrl,
           priceCurrency: 'USD',
           price: Number(product.price || 0).toFixed(2),
           priceValidUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
@@ -231,13 +261,13 @@ export default async function ProductPage({ params }: Props) {
             '@type': 'ListItem',
             position: 2,
             name: product.category || 'Catalog',
-            item: `${siteUrl}/#products-section`,
+            item: categoryUrl,
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: product.name,
-            item: `${siteUrl}/product/${product._id}`,
+            item: canonicalProductUrl,
           },
         ],
       };

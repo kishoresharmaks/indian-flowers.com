@@ -19,8 +19,13 @@ export interface ProductVariant {
 export interface Product {
   _id: string;
   name: string;
+  slug?: string;
+  wpId?: number;
   description?: string;
+  descriptionHtml?: string;
+  shortDescription?: string;
   image: string;
+  images?: string[];
   mrp: number;
   price: number;
   discount: number;
@@ -29,6 +34,7 @@ export interface Product {
   taxCode?: string;
   gst?: number;
   category?: string;
+  categorySlug?: string;
   subcategory?: string;
   rating?: number;
   reviewsCount?: number;
@@ -163,7 +169,7 @@ export default function ProductCard({
       {/* 1. Top Image Container: Full-bleed clean header with subtle rounded top */}
       <div className="relative aspect-square w-full overflow-hidden bg-stone-100 rounded-t-xl sm:rounded-t-2xl">
         <Link
-          href={`/product/${product._id}`}
+          href={`/product/${product.slug || product._id}`}
           onClick={openProduct}
           className="block w-full h-full relative"
         >
@@ -242,7 +248,7 @@ export default function ProductCard({
           </div>
 
           {/* Product Title */}
-          <Link href={`/product/${product._id}`} onClick={openProduct} className="block group/title">
+          <Link href={`/product/${product.slug || product._id}`} onClick={openProduct} className="block group/title">
             <h3 className="text-[12.5px] sm:text-[14px] font-semibold text-stone-900 group-hover/title:text-[#0B3B24] transition-colors leading-[1.3] line-clamp-2 min-h-[33px] sm:min-h-[37px] text-left">
               {product.name}
             </h3>

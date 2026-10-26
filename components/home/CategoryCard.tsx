@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 
@@ -12,6 +12,7 @@ export interface CategoryCardProps {
   isSelected?: boolean;
   onClick?: () => void;
   index?: number;
+  isGrid?: boolean;
 }
 
 interface ThemeStyle {
@@ -60,7 +61,51 @@ function getCategoryTheme(name: string, index: number): ThemeStyle {
       preview: 'Vilvam, Vadamalli & Lilly',
     };
   }
-  if (lower.includes('string') || lower.includes('leaves')) {
+  if (lower.includes('brass')) {
+    return {
+      bgGradient: 'from-[#FFFDF0] via-[#FFFDF5] to-[#FEF3C7]',
+      borderColor: 'border-amber-200/80',
+      hoverBorder: 'hover:border-amber-400',
+      arrowColor: 'text-amber-800',
+      badgeBg: 'bg-amber-100 text-amber-900',
+      tagline: 'Brass & Sacred Decor',
+      preview: 'Pooja Idols, Lamps & Plates',
+    };
+  }
+  if (lower.includes('pooja') || lower.includes('puja')) {
+    return {
+      bgGradient: 'from-[#F2FBF5] via-[#F7FCF9] to-[#E5F7ED]',
+      borderColor: 'border-emerald-200/80',
+      hoverBorder: 'hover:border-emerald-400',
+      arrowColor: 'text-[#0B3B24]',
+      badgeBg: 'bg-emerald-100 text-emerald-800',
+      tagline: 'Sacred Pooja',
+      preview: 'Fresh Offerings & Leaves',
+    };
+  }
+  if (lower.includes('carnation')) {
+    return {
+      bgGradient: 'from-[#FFF0F4] via-[#FFF6F8] to-[#FDE4EC]',
+      borderColor: 'border-rose-200/80',
+      hoverBorder: 'hover:border-rose-400',
+      arrowColor: 'text-[#C85A78]',
+      badgeBg: 'bg-rose-100 text-rose-800',
+      tagline: 'Carnation Garlands',
+      preview: 'Handcrafted Celebrations',
+    };
+  }
+  if (lower.includes('rose')) {
+    return {
+      bgGradient: 'from-[#FFF0F4] via-[#FFF6F8] to-[#FDE4EC]',
+      borderColor: 'border-rose-200/80',
+      hoverBorder: 'hover:border-rose-400',
+      arrowColor: 'text-[#C85A78]',
+      badgeBg: 'bg-rose-100 text-rose-800',
+      tagline: 'Fresh Roses',
+      preview: 'Button Rose & Petals',
+    };
+  }
+  if (lower.includes('string') || lower.includes('leaves') || lower.includes('jasmine')) {
     return {
       bgGradient: 'from-[#F2FBF5] via-[#F7FCF9] to-[#E5F7ED]',
       borderColor: 'border-emerald-200/80',
@@ -72,7 +117,7 @@ function getCategoryTheme(name: string, index: number): ThemeStyle {
     };
   }
 
-  // Fallbacks
+  // Balanced Fallbacks
   const fallbacks: ThemeStyle[] = [
     {
       bgGradient: 'from-[#FFF0F4] via-[#FFF6F8] to-[#FDE4EC]',
@@ -80,7 +125,7 @@ function getCategoryTheme(name: string, index: number): ThemeStyle {
       hoverBorder: 'hover:border-rose-400',
       arrowColor: 'text-[#C85A78]',
       badgeBg: 'bg-rose-100 text-rose-800',
-      tagline: 'Wedding Flowers',
+      tagline: 'Floral Collection',
       preview: 'Traditional Garlands',
     },
     {
@@ -89,8 +134,8 @@ function getCategoryTheme(name: string, index: number): ThemeStyle {
       hoverBorder: 'hover:border-emerald-400',
       arrowColor: 'text-[#0B3B24]',
       badgeBg: 'bg-emerald-100 text-emerald-800',
-      tagline: 'Fresh Jasmine',
-      preview: 'Sacred Floral Strands',
+      tagline: 'Fresh Flowers',
+      preview: 'Auspicious Strands',
     },
     {
       bgGradient: 'from-[#FFFDF0] via-[#FFFDF5] to-[#FEF3C7]',
@@ -98,7 +143,7 @@ function getCategoryTheme(name: string, index: number): ThemeStyle {
       hoverBorder: 'hover:border-amber-400',
       arrowColor: 'text-amber-800',
       badgeBg: 'bg-amber-100 text-amber-800',
-      tagline: 'Temple Puja',
+      tagline: 'Ceremonial Essentials',
       preview: 'Auspicious Offerings',
     },
   ];
@@ -112,10 +157,17 @@ export default function CategoryCard({
   isSelected = false,
   onClick,
   index = 0,
+  isGrid = false,
 }: CategoryCardProps) {
   const [imgSrc, setImgSrc] = useState(image || DEFAULT_FLORAL_PLACEHOLDER);
   const theme = getCategoryTheme(name, index);
   const subCount = Array.isArray(subcategories) ? subcategories.length : 0;
+
+  useEffect(() => {
+    if (image) {
+      setImgSrc(image);
+    }
+  }, [image]);
 
   return (
     <div
@@ -130,13 +182,17 @@ export default function CategoryCard({
         }
       }}
       aria-label={`Browse ${name} category`}
-      className={`group/card relative flex flex-col justify-between overflow-hidden rounded-3xl border transition-all duration-300 text-left cursor-pointer select-none snap-center bg-gradient-to-b ${
+      className={`group/card relative flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border transition-all duration-300 text-left cursor-pointer select-none snap-start bg-gradient-to-b ${
         theme.bgGradient
       } ${theme.borderColor} ${theme.hoverBorder} ${
         isSelected
           ? 'ring-2 ring-[#0B3B24] border-[#0B3B24] shadow-md scale-[1.01]'
           : 'shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5'
-      } w-[74vw] max-w-[290px] min-w-[230px] sm:w-[260px] sm:min-w-[260px] md:w-full md:min-w-0 md:max-w-none h-auto min-h-[300px] sm:min-h-[320px] md:min-h-[340px] lg:min-h-[360px] p-3.5 sm:p-4 shrink-0 md:shrink`}
+      } ${
+        isGrid
+          ? 'w-full min-w-0'
+          : 'w-[220px] min-w-[220px] sm:w-[250px] sm:min-w-[250px] md:w-[270px] md:min-w-[270px] lg:w-[280px] lg:min-w-[280px] shrink-0'
+      } h-[310px] sm:h-[330px] md:h-[350px] p-3.5 sm:p-4`}
     >
       {/* Top Header: Badge Eyebrow & Subcategory Count */}
       <div className="flex items-center justify-between gap-2 mb-2 sm:mb-2.5">
@@ -153,28 +209,28 @@ export default function CategoryCard({
       </div>
 
       {/* Top Image Showcase with Soft Floral Shadow & Subtle Rounded Container */}
-      <div className="relative w-full h-[165px] sm:h-[180px] md:h-[195px] lg:h-[215px] rounded-2xl overflow-hidden bg-white/80 shadow-xs flex items-center justify-center p-1.5 transition-colors group-hover/card:bg-white border border-white/60">
+      <div className="relative w-full h-[155px] sm:h-[170px] md:h-[185px] rounded-2xl overflow-hidden bg-white/85 shadow-xs flex items-center justify-center p-2 transition-colors group-hover/card:bg-white border border-white/60">
         <img
           src={imgSrc}
           alt={`${name} collection`}
           loading="lazy"
           onError={() => setImgSrc(DEFAULT_FLORAL_PLACEHOLDER)}
-          className="w-full h-full object-cover object-center rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-106"
+          className="w-full h-full object-cover object-center rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
         />
       </div>
 
       {/* Bottom Content Area: Category Name + Subtitle + Circular Arrow Action */}
-      <div className="pt-3 sm:pt-3.5 flex items-end justify-between gap-2 min-w-0 mt-auto">
+      <div className="pt-2.5 sm:pt-3 flex items-end justify-between gap-2 min-w-0 mt-auto">
         <div className="min-w-0 flex-1">
-          <h4 className="text-[14.5px] sm:text-[15.5px] md:text-[16px] lg:text-[17px] font-extrabold text-[#111827] group-hover/card:text-[#0B3B24] transition-colors leading-[1.25] tracking-tight line-clamp-2">
+          <h4 className="text-[14px] sm:text-[15px] md:text-[16px] font-extrabold text-[#111827] group-hover/card:text-[#0B3B24] transition-colors leading-[1.3] tracking-tight line-clamp-2">
             {name}
           </h4>
-          <p className="text-[11.5px] sm:text-xs text-stone-500 font-medium truncate mt-0.5">
+          <p className="text-[11px] sm:text-xs text-stone-500 font-medium truncate mt-0.5">
             {theme.preview}
           </p>
         </div>
 
-        {/* Circular Action Button — High-Contrast Forest Green with Crisp White Arrow */}
+        {/* Circular Action Button — Forest Green with Crisp White Arrow */}
         <div
           className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#0B3B24] text-white shadow-xs flex items-center justify-center shrink-0 transition-all duration-300 group-hover/card:bg-[#1C563F] group-hover/card:scale-110 active:scale-95"
           aria-hidden="true"

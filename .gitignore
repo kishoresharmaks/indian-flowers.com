@@ -31,6 +31,8 @@ docs/
 # 3. Test Scripts, Debugging Tools & Verification Artifacts
 scripts/*
 !scripts/prebuild.js
+!scripts/import-woocommerce.mjs
+!scripts/migrate-base64-images.mjs
 tests/
 *.py
 *.ps1

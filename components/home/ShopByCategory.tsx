@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import CategoryCarousel, { CategoryItem } from './CategoryCarousel';
 import { SEED_CATEGORIES } from '@/lib/seedData';
@@ -305,15 +306,14 @@ export default function ShopByCategory({
           </div>
 
           {/* Right Action: "View all categories →" */}
-          <button
-            type="button"
-            onClick={() => onSelectCategory && onSelectCategory('All')}
+          <Link
+            href="/shop"
             className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#F97316] hover:text-[#EA580C] transition-colors self-start sm:self-auto cursor-pointer"
             aria-label="View all categories and flowers"
           >
             <span>View all categories</span>
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </button>
+          </Link>
         </div>
 
         {/* 2. MAIN HORIZONTAL CATEGORY CAROUSEL */}

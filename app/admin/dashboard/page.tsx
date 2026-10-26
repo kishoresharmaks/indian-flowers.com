@@ -53,6 +53,7 @@ import {
   CheckCircle2,
   AlertCircle,
   FolderPlus,
+  DownloadCloud,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { parseExcelRowsToImportItems, ParsedImportRow } from '@/lib/bulkImportHelpers';
@@ -66,6 +67,7 @@ import PolicyManagerTab from '@/components/admin/PolicyManagerTab';
 import CustomersTab from '@/components/admin/CustomersTab';
 import ReportsTab from '@/components/admin/ReportsTab';
 import MailManagerTab from '@/components/admin/MailManagerTab';
+import WordPressImportModal from '@/components/admin/WordPressImportModal';
 import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
 
 interface BannerItem {
@@ -368,6 +370,9 @@ export default function AdminDashboard() {
     errors?: string[];
   } | null>(null);
 
+
+  // WordPress Migration Modal State
+  const [isWpImportModalOpen, setIsWpImportModalOpen] = useState(false);
 
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -1022,16 +1027,35 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   });
 };
 
-  // Handle Banner Image File Selection with Auto Compression
+  // Helper to upload image file to disk storage instead of storing Base64 in MongoDB
+  const uploadAdminImage = async (file: File, folder: string = 'products'): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Upload failed');
+    }
+    return data.url;
+  };
+
+  // Handle Banner Image File Selection with Pure Path Upload (No Base64 in DB)
   const handleBannerImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressedBase64 = await compressImage(file, 1600, 0.85);
-        setNewBannerImage(compressedBase64);
-        setBannerImagePreview(compressedBase64);
-      } catch (err) {
-        console.error('Banner image compression failed', err);
+        const previewUrl = URL.createObjectURL(file);
+        setBannerImagePreview(previewUrl);
+        const uploadedUrl = await uploadAdminImage(file, 'banners');
+        setNewBannerImage(uploadedUrl);
+        setBannerImagePreview(uploadedUrl);
+      } catch (err: any) {
+        console.error('Banner image upload failed', err);
+        alert(err.message || 'Banner upload failed');
       }
     }
   };
@@ -1040,11 +1064,14 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressedBase64 = await compressImage(file, 1600, 0.85);
-        setEditBannerImage(compressedBase64);
-        setEditBannerImagePreview(compressedBase64);
-      } catch (err) {
-        console.error('Edit banner image compression failed', err);
+        const previewUrl = URL.createObjectURL(file);
+        setEditBannerImagePreview(previewUrl);
+        const uploadedUrl = await uploadAdminImage(file, 'banners');
+        setEditBannerImage(uploadedUrl);
+        setEditBannerImagePreview(uploadedUrl);
+      } catch (err: any) {
+        console.error('Edit banner image upload failed', err);
+        alert(err.message || 'Banner upload failed');
       }
     }
   };
@@ -1302,16 +1329,19 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     }
   }, [activeTab, isAuthenticated]);
 
-  // Handle Product Image Upload & Canvas Compression
+  // Handle Product Image Upload with Pure Path Storage (No Base64 in DB)
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressedBase64 = await compressImage(file, 800, 0.8);
-        setProductForm((prev) => ({ ...prev, image: compressedBase64 }));
-        setImagePreview(compressedBase64);
-      } catch (err) {
-        console.error('Product image compression failed', err);
+        const previewUrl = URL.createObjectURL(file);
+        setImagePreview(previewUrl);
+        const uploadedUrl = await uploadAdminImage(file, 'products');
+        setProductForm((prev) => ({ ...prev, image: uploadedUrl }));
+        setImagePreview(uploadedUrl);
+      } catch (err: any) {
+        console.error('Product image upload failed', err);
+        alert(err.message || 'Product image upload failed');
       }
     }
   };
@@ -1467,16 +1497,19 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     }
   };
 
-  // Category Image File Upload Handlers
+  // Category Image File Upload Handlers with Pure Path Storage (No Base64 in DB)
   const handleNewCatImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressedBase64 = await compressImage(file, 400, 0.85);
-        setNewCatImage(compressedBase64);
-        setNewCatImagePreview(compressedBase64);
-      } catch (err) {
-        console.error('Category image compression failed', err);
+        const previewUrl = URL.createObjectURL(file);
+        setNewCatImagePreview(previewUrl);
+        const uploadedUrl = await uploadAdminImage(file, 'categories');
+        setNewCatImage(uploadedUrl);
+        setNewCatImagePreview(uploadedUrl);
+      } catch (err: any) {
+        console.error('Category image upload failed', err);
+        alert(err.message || 'Category image upload failed');
       }
     }
   };
@@ -1485,11 +1518,14 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressedBase64 = await compressImage(file, 400, 0.85);
-        setEditCatImage(compressedBase64);
-        setEditCatImagePreview(compressedBase64);
-      } catch (err) {
-        console.error('Edit category image compression failed', err);
+        const previewUrl = URL.createObjectURL(file);
+        setEditCatImagePreview(previewUrl);
+        const uploadedUrl = await uploadAdminImage(file, 'categories');
+        setEditCatImage(uploadedUrl);
+        setEditCatImagePreview(uploadedUrl);
+      } catch (err: any) {
+        console.error('Edit category image upload failed', err);
+        alert(err.message || 'Edit category image upload failed');
       }
     }
   };
@@ -2801,6 +2837,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   <span>Bulk Import (.xlsx)</span>
                 </button>
                 <button
+                  type="button"
+                  onClick={() => setIsWpImportModalOpen(true)}
+                  className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#0B3B24] to-[#1C563F] hover:from-[#134633] hover:to-[#2F6B4F] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0 border border-emerald-400/30"
+                  title="Import all 1,946 products directly from live WordPress/WooCommerce site with exact slugs and zero SEO loss"
+                >
+                  <DownloadCloud className="w-4 h-4 text-emerald-300" />
+                  <span>Import from Old WordPress</span>
+                </button>
+                <button
                   onClick={openAddProductModal}
                   className="px-4 py-2.5 rounded-xl bg-[#ED3500] hover:bg-[#D02E00] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0"
                 >
@@ -2900,6 +2945,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 <Package className="w-12 h-12 text-[#64748B] mx-auto opacity-40" />
                 <h3 className="text-xl font-bold text-[#163B5C]">No products in inventory</h3>
                 <p className="text-sm text-[#64748B]">Click below to add your first product.</p>
+                <button
+                  type="button"
+                  onClick={() => setIsWpImportModalOpen(true)}
+                  className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#0B3B24] to-[#1C563F] hover:from-[#134633] hover:to-[#2F6B4F] text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0 border border-emerald-400/30"
+                  title="Import all 1,946 products directly from live WordPress/WooCommerce site with exact slugs and zero SEO loss"
+                >
+                  <DownloadCloud className="w-4 h-4 text-emerald-300" />
+                  <span>Import from Old WordPress</span>
+                </button>
                 <button
                   onClick={openAddProductModal}
                   className="px-5 py-2.5 rounded-full bg-[#ED3500] text-white font-bold text-xs uppercase tracking-wider"
@@ -7402,6 +7456,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           onClose={() => setReceiptOrder(null)}
         />
       )}
+
+      {/* WordPress / WooCommerce Migration Modal */}
+      <WordPressImportModal
+        isOpen={isWpImportModalOpen}
+        onClose={() => setIsWpImportModalOpen(false)}
+        onImportComplete={fetchProducts}
+      />
 
       {/* Footer */}
       <footer className="bg-white border-t border-[#E8EDF2] py-3.5 px-6 text-xs text-[#64748B] flex items-center justify-center">
