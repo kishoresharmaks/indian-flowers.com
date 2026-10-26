@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BrandLogo from '@/components/BrandLogo';
 import LotusLoader from '@/components/LotusLoader';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ShoppingBag, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 function LoginFormContent() {
@@ -102,6 +103,19 @@ function LoginFormContent() {
             <p className="text-xs sm:text-sm text-gray-600 mt-1.5">
               Access your saved delivery addresses and track fresh flower orders
             </p>
+          </div>
+
+          {/* Primary 1-Click Google Sign-In */}
+          <div className="mb-5">
+            <GoogleSignInButton isSignUp={false} />
+          </div>
+
+          {/* Subtle Modern Divider */}
+          <div className="relative my-6 flex items-center justify-center">
+            <div className="border-t border-gray-200 w-full" />
+            <span className="bg-white px-3 text-[11px] uppercase tracking-wider text-gray-500 font-medium">
+              or sign in with email
+            </span>
           </div>
 
           {errorMessage && (

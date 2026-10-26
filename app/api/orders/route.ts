@@ -383,6 +383,36 @@ export async function POST(request: Request) {
       }
     }
 
+    // 6. Safe Customer Profile Synchronization (Strictly derived from authenticated session)
+    if (authenticatedCustomer && finalStreet && finalCity && finalState && finalZip) {
+      try {
+        const hasNoSavedAddress = !authenticatedCustomer.address || authenticatedCustomer.address.trim() === '';
+        const hasNoSavedPhone = !authenticatedCustomer.phone || authenticatedCustomer.phone.trim() === '' || authenticatedCustomer.phone === '0000000000';
+        const explicitSaveRequested = Boolean(body.saveAddressToProfile);
+
+        let profileModified = false;
+        if (hasNoSavedAddress || explicitSaveRequested) {
+          authenticatedCustomer.address = finalStreet;
+          authenticatedCustomer.aptSuite = finalApt;
+          authenticatedCustomer.city = finalCity;
+          authenticatedCustomer.district = (district || '').trim();
+          authenticatedCustomer.state = finalState;
+          authenticatedCustomer.zipCode = finalZip;
+          authenticatedCustomer.country = country || 'US';
+          profileModified = true;
+        }
+        if ((hasNoSavedPhone || explicitSaveRequested) && customerPhone && customerPhone !== '0000000000') {
+          authenticatedCustomer.phone = customerPhone.trim();
+          profileModified = true;
+        }
+        if (profileModified) {
+          await authenticatedCustomer.save();
+        }
+      } catch (profileErr) {
+        console.error('Failed to sync customer profile from checkout:', profileErr);
+      }
+    }
+
     await captureServerEvent(
       request,
       'online_order_placed',

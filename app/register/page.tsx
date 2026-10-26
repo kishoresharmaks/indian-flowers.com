@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BrandLogo from '@/components/BrandLogo';
 import LotusLoader from '@/components/LotusLoader';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 import {
   User,
   Phone,
@@ -20,6 +21,8 @@ import {
   ShoppingBag,
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { US_STATES, validateZipForState } from '@/lib/tax/jurisdiction';
 import { validateCustomerRegistration } from '@/lib/checkoutValidation';
@@ -45,6 +48,7 @@ function RegisterFormContent() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState('');
@@ -168,25 +172,68 @@ function RegisterFormContent() {
               Create Customer Account
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-1.5">
-              US Delivery Address &amp; Contact Information
+              Instant 1-Click Access or Traditional US Address Registration
             </p>
           </div>
 
-          {errorMessage && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs sm:text-sm text-red-700 flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
+          {/* Primary 1-Click Google Sign-Up Box */}
+          <div className="mb-6 bg-emerald-50/60 border border-emerald-100 rounded-2xl p-4 sm:p-5">
+            <div className="text-center mb-3">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-[#0B3B24] tracking-wide uppercase mb-1">
+                Fastest Option
+              </span>
+              <h2 className="text-sm sm:text-base font-bold text-gray-900">
+                1-Click Sign Up with Google
+              </h2>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Instant registration. No password to remember. Add shipping address at checkout.
+              </p>
             </div>
-          )}
+            <GoogleSignInButton isSignUp={true} />
+          </div>
 
-          {successMessage && (
-            <div className="mb-5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs sm:text-sm text-emerald-800 flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span>{successMessage}</span>
-            </div>
-          )}
+          {/* Divider */}
+          <div className="relative my-6 flex items-center justify-center">
+            <div className="border-t border-gray-200 w-full" />
+            <span className="bg-white px-3 text-[11px] uppercase tracking-wider text-gray-500 font-medium">
+              or register with email and address
+            </span>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Collapsible Accordion Toggle for Manual Registration */}
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={() => setShowManualForm(!showManualForm)}
+              className="w-full py-3 px-4 rounded-xl border border-gray-200 hover:border-gray-300 bg-gray-50/60 hover:bg-gray-50 text-xs sm:text-sm font-semibold text-gray-700 flex items-center justify-between transition-colors cursor-pointer"
+              aria-expanded={showManualForm}
+            >
+              <span>Prefer manual entry? (Full Address &amp; Password)</span>
+              {showManualForm ? (
+                <ChevronUp className="w-4 h-4 text-gray-500" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              )}
+            </button>
+          </div>
+
+          {showManualForm && (
+            <div className="animate-in fade-in duration-200">
+              {errorMessage && (
+                <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs sm:text-sm text-red-700 flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="mb-5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs sm:text-sm text-emerald-800 flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>{successMessage}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
             {/* Contact Information Group */}
             <div className="border-b border-gray-100 pb-4">
               <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
@@ -502,6 +549,8 @@ function RegisterFormContent() {
               )}
             </button>
           </form>
+          </div>
+          )}
 
           {/* Login prompt */}
           <div className="mt-6 pt-6 border-t border-gray-100 text-center">
