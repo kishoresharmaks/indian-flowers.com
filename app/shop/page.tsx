@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
@@ -145,13 +146,15 @@ export default async function ShopPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      <ShopClientPage
-        initialProducts={initialProducts}
-        initialNextCursor={initialNextCursor}
-        initialHasMore={initialHasMore}
-        initialTotalCount={totalCount}
-        mainCategories={mainCategories}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-[#FAF9F6] animate-pulse" />}>
+        <ShopClientPage
+          initialProducts={initialProducts}
+          initialNextCursor={initialNextCursor}
+          initialHasMore={initialHasMore}
+          initialTotalCount={totalCount}
+          mainCategories={mainCategories}
+        />
+      </Suspense>
     </>
   );
 }

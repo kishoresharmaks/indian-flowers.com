@@ -123,6 +123,7 @@ interface CategoryItem {
   slug?: string;
   image?: string;
   order?: number;
+  showOnHome?: boolean;
   subcategories?: SubcategoryItem[];
   createdAt: string;
 }
@@ -340,6 +341,9 @@ export default function AdminDashboard() {
   const [editCatName, setEditCatName] = useState('');
   const [editCatImage, setEditCatImage] = useState('');
   const [editCatImagePreview, setEditCatImagePreview] = useState('');
+  const [newCatShowOnHome, setNewCatShowOnHome] = useState(true);
+  const [editCatShowOnHome, setEditCatShowOnHome] = useState(true);
+  const [togglingHomeCatId, setTogglingHomeCatId] = useState<string | null>(null);
   const [isEditCatModalOpen, setIsEditCatModalOpen] = useState(false);
 
   // Subcategory management state
@@ -1535,7 +1539,40 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     setEditCatName(cat.name);
     setEditCatImage(cat.image || '');
     setEditCatImagePreview(cat.image || '');
+    setEditCatShowOnHome(cat.showOnHome !== false);
     setIsEditCatModalOpen(true);
+  };
+
+  // Toggle Category Homepage Status
+  const handleToggleCategoryHome = async (cat: CategoryItem) => {
+    const nextVal = !(cat.showOnHome !== false);
+    setTogglingHomeCatId(cat._id);
+    // Optimistic UI update
+    setCategories((prev) =>
+      prev.map((c) => (c._id === cat._id ? { ...c, showOnHome: nextVal } : c))
+    );
+    try {
+      const res = await fetch(`/api/categories/${cat._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ showOnHome: nextVal }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        // Rollback
+        setCategories((prev) =>
+          prev.map((c) => (c._id === cat._id ? { ...c, showOnHome: cat.showOnHome } : c))
+        );
+        alert(data.message || 'Failed to update homepage status');
+      }
+    } catch (err: any) {
+      setCategories((prev) =>
+        prev.map((c) => (c._id === cat._id ? { ...c, showOnHome: cat.showOnHome } : c))
+      );
+      alert(err.message || 'Error updating homepage status');
+    } finally {
+      setTogglingHomeCatId(null);
+    }
   };
 
   // Add Category
@@ -1552,6 +1589,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         body: JSON.stringify({
           name: newCatName.trim(),
           image: newCatImage.trim() || undefined,
+          showOnHome: newCatShowOnHome,
         }),
       });
       const data = await res.json();
@@ -1559,6 +1597,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         setNewCatName('');
         setNewCatImage('');
         setNewCatImagePreview('');
+        setNewCatShowOnHome(true);
         fetchCategories();
       } else {
         setCatError(data.message || 'Failed to add category');
@@ -1582,6 +1621,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         body: JSON.stringify({
           name: editCatName.trim(),
           image: editCatImage,
+          showOnHome: editCatShowOnHome,
         }),
       });
       const data = await res.json();
@@ -3189,6 +3229,24 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     </div>
                   </div>
 
+                  {/* Show on Homepage Toggle */}
+                  <label className="flex items-center justify-between p-3 rounded-xl border border-[#E8EDF2] bg-[#FAFDFB] hover:bg-emerald-50/40 cursor-pointer transition-colors">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-[#163B5C] block">
+                        Show in Homepage Section
+                      </span>
+                      <span className="text-[11px] text-[#64748B] block">
+                        Enable to feature this category and its product carousel on the store homepage.
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={newCatShowOnHome}
+                      onChange={(e) => setNewCatShowOnHome(e.target.checked)}
+                      className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+                    />
+                  </label>
+
                   <div className="pt-1 flex justify-end">
                     <button
                       type="submit"
@@ -3289,8 +3347,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 <div className="p-4 bg-[#FFFCFB] border-b border-[#E8EDF2] font-bold text-xs text-[#64748B] uppercase tracking-wider grid grid-cols-12 gap-3 items-center">
                   <span className="col-span-2 sm:col-span-1">Icon</span>
                   <span className="col-span-4 sm:col-span-3">Category Name</span>
-                  <span className="col-span-4 sm:col-span-6">Subcategories</span>
-                  <span className="col-span-2 text-right">Actions</span>
+                  <span className="col-span-3 sm:col-span-4">Subcategories</span>
+                  <span className="col-span-2 sm:col-span-2 text-center">Home Showcase</span>
+                  <span className="col-span-1 sm:col-span-2 text-right">Actions</span>
                 </div>
                 <div className="divide-y divide-[#E8EDF2]">
                   {categories.map((cat) => (
@@ -3322,7 +3381,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       </div>
 
                       {/* Subcategories Badges */}
-                      <div className="col-span-4 sm:col-span-6">
+                      <div className="col-span-3 sm:col-span-4">
                         <div className="flex flex-wrap items-center gap-1.5">
                           {cat.subcategories && cat.subcategories.length > 0 ? (
                             cat.subcategories.map((sub) => (
@@ -3400,8 +3459,28 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         </div>
                       </div>
 
+                      {/* Home Showcase Toggle */}
+                      <div className="col-span-2 sm:col-span-2 flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCategoryHome(cat)}
+                          disabled={togglingHomeCatId === cat._id}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                            cat.showOnHome !== false
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs'
+                              : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                          }`}
+                          title={cat.showOnHome !== false ? 'Featured on Homepage (Click to Hide)' : 'Hidden from Homepage (Click to Show)'}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${cat.showOnHome !== false ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                          <span className="hidden sm:inline">
+                            {cat.showOnHome !== false ? 'On Home' : 'Hidden'}
+                          </span>
+                        </button>
+                      </div>
+
                       {/* Actions */}
-                      <div className="col-span-2 flex items-center justify-end gap-1.5">
+                      <div className="col-span-1 sm:col-span-2 flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => handleOpenEditCategory(cat)}
                           className="p-2 rounded-xl text-purple-600 hover:bg-purple-50 transition-colors"
@@ -6070,6 +6149,24 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     )}
                   </div>
                 </div>
+
+                {/* Show on Homepage Toggle in Edit Modal */}
+                <label className="flex items-center justify-between p-3 rounded-xl border border-[#E8EDF2] bg-[#FAFDFB] hover:bg-emerald-50/40 cursor-pointer transition-colors">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-[#163B5C] block">
+                      Show in Homepage Section
+                    </span>
+                    <span className="text-[11px] text-[#64748B] block">
+                      Display this category and its product carousel on the store homepage.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editCatShowOnHome}
+                    onChange={(e) => setEditCatShowOnHome(e.target.checked)}
+                    className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+                  />
+                </label>
 
                 <div className="pt-2 flex items-center gap-3">
                   <button

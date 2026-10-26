@@ -44,18 +44,21 @@ export async function PUT(
     await connectToDatabase();
     const { id } = params;
     const body = await request.json();
-    const { name, image, order, subcategories } = body;
+    const { name, image, order, showOnHome, subcategories } = body;
 
-    if (!name || !name.trim()) {
-      return NextResponse.json(
-        { success: false, message: 'Category name is required' },
-        { status: 400 }
-      );
+    const updateData: any = {};
+    if (name !== undefined) {
+      if (!name.trim()) {
+        return NextResponse.json(
+          { success: false, message: 'Category name cannot be empty' },
+          { status: 400 }
+        );
+      }
+      updateData.name = name.trim();
     }
-
-    const updateData: any = { name: name.trim() };
     if (image !== undefined) updateData.image = image;
     if (order !== undefined) updateData.order = order;
+    if (showOnHome !== undefined) updateData.showOnHome = Boolean(showOnHome);
     if (subcategories !== undefined) updateData.subcategories = subcategories;
 
     const updated = await Category.findByIdAndUpdate(

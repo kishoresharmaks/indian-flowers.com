@@ -13,6 +13,7 @@ export interface ICategory extends Document {
   slug?: string;
   image?: string;
   order?: number;
+  showOnHome?: boolean;
   subcategories?: ISubcategory[];
   createdAt: Date;
   updatedAt: Date;
@@ -31,12 +32,14 @@ const CategorySchema: Schema = new Schema(
     slug: { type: String, trim: true, lowercase: true },
     image: { type: String, default: '' },
     order: { type: Number, default: 0 },
+    showOnHome: { type: Boolean, default: false },
     subcategories: { type: [SubcategorySchema], default: [] },
   },
   { timestamps: true }
 );
 
 CategorySchema.index({ slug: 1 }, { unique: true, sparse: true });
+CategorySchema.index({ showOnHome: 1, order: 1 });
 
 CategorySchema.pre('save', function (this: ICategory, next) {
   if (!this.slug && this.name) {

@@ -10,6 +10,7 @@ export interface CategoryItem {
   slug?: string;
   image?: string;
   order?: number;
+  showOnHome?: boolean;
   subcategories?: any[];
 }
 

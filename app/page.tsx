@@ -1334,50 +1334,55 @@ export default function CustomerStore() {
               </div>
             </div>
           ) : (
-            /* ALL CATEGORIES RENDERED DOWN BY DOWN INSIDE THIS COMMON BOTANICAL CONTAINER */
+            /* CATEGORIES RENDERED DOWN BY DOWN (RESTRICTED TO SHOW-ON-HOME ENABLED CATEGORIES) */
             <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-4">
-              {categories.map((category, idx) => {
-                const catProducts = getProductsForCategory(category.name);
-                if (catProducts.length === 0 && !loadingProducts) return null;
-                const meta = getCategoryMeta(category.name);
-                const slug = category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+              {categories
+                .filter((category) => category.showOnHome !== false)
+                .map((category, idx) => {
+                  const catProducts = getProductsForCategory(category.name);
+                  if (catProducts.length === 0 && !loadingProducts) return null;
+                  const meta = getCategoryMeta(category.name);
+                  const slug = category.slug || category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-                return (
-                  <div
-                    key={category._id || category.name}
-                    id={`category-${slug}`}
-                    className="scroll-mt-24 sm:scroll-mt-28"
-                  >
-                    {idx > 0 && (
-                      <div className="flex items-center justify-center my-6 sm:my-8 px-4" aria-hidden="true">
-                        <div className="h-px bg-gradient-to-r from-transparent via-amber-300/40 to-amber-200/70 flex-1 max-w-xs sm:max-w-md" />
-                        <div className="mx-3 sm:mx-4 flex items-center gap-1.5 text-amber-600/70">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
-                          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500/80" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C12 2 9 6.5 9 10C9 12.21 10.34 14.1 12 14.73C13.66 14.1 15 12.21 15 10C15 6.5 12 2 12 2Z" opacity="0.9" />
-                            <path d="M7.5 7.5C7.5 7.5 5 11 5.5 13.5C5.85 15.24 7.23 16.59 9 17C8.17 15.5 8 13.5 8.5 11.5C8.85 10.1 7.5 7.5 7.5 7.5Z" opacity="0.75" />
-                            <path d="M16.5 7.5C16.5 7.5 19 11 18.5 13.5C18.15 15.24 16.77 16.59 15 17C15.83 15.5 16 13.5 15.5 11.5C15.15 10.1 16.5 7.5 16.5 7.5Z" opacity="0.75" />
-                            <circle cx="12" cy="18.5" r="1.5" />
-                          </svg>
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
+                  return (
+                    <div
+                      key={category._id || category.name}
+                      id={`category-${slug}`}
+                      className="scroll-mt-24 sm:scroll-mt-28"
+                    >
+                      {idx > 0 && (
+                        <div className="flex items-center justify-center my-6 sm:my-8 px-4" aria-hidden="true">
+                          <div className="h-px bg-gradient-to-r from-transparent via-amber-300/40 to-amber-200/70 flex-1 max-w-xs sm:max-w-md" />
+                          <div className="mx-3 sm:mx-4 flex items-center gap-1.5 text-amber-600/70">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500/80" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2C12 2 9 6.5 9 10C9 12.21 10.34 14.1 12 14.73C13.66 14.1 15 12.21 15 10C15 6.5 12 2 12 2Z" opacity="0.9" />
+                              <path d="M7.5 7.5C7.5 7.5 5 11 5.5 13.5C5.85 15.24 7.23 16.59 9 17C8.17 15.5 8 13.5 8.5 11.5C8.85 10.1 7.5 7.5 7.5 7.5Z" opacity="0.75" />
+                              <path d="M16.5 7.5C16.5 7.5 19 11 18.5 13.5C18.15 15.24 16.77 16.59 15 17C15.83 15.5 16 13.5 15.5 11.5C15.15 10.1 16.5 7.5 16.5 7.5Z" opacity="0.75" />
+                              <circle cx="12" cy="18.5" r="1.5" />
+                            </svg>
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
+                          </div>
+                          <div className="h-px bg-gradient-to-l from-transparent via-amber-300/40 to-amber-200/70 flex-1 max-w-xs sm:max-w-md" />
                         </div>
-                        <div className="h-px bg-gradient-to-l from-transparent via-amber-300/40 to-amber-200/70 flex-1 max-w-xs sm:max-w-md" />
-                      </div>
-                    )}
-                    <ProductCarousel
-                      products={catProducts}
-                      eyebrow={meta.eyebrow}
-                      title={meta.title || category.name}
-                      subtitle={meta.description}
-                      wishlist={wishlist}
-                      onToggleWishlist={handleToggleWishlist}
-                      onAddToCart={(prod, v) => addToCart(prod, v, 1)}
-                      onProductClick={(prod) => setSelectedProduct(prod)}
-                      loading={loadingProducts}
-                    />
-                  </div>
-                );
-              })}
+                      )}
+                      <ProductCarousel
+                        products={catProducts}
+                        eyebrow={meta.eyebrow}
+                        title={meta.title || category.name}
+                        subtitle={meta.description}
+                        categorySlug={slug}
+                        categoryName={category.name}
+                        showShopAll={true}
+                        wishlist={wishlist}
+                        onToggleWishlist={handleToggleWishlist}
+                        onAddToCart={(prod, v) => addToCart(prod, v, 1)}
+                        onProductClick={(prod) => setSelectedProduct(prod)}
+                        loading={loadingProducts}
+                      />
+                    </div>
+                  );
+                })}
             </div>
           )}
         </div>

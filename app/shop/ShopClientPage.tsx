@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
@@ -54,6 +54,7 @@ export default function ShopClientPage({
   mainCategories = [],
 }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Storefront & Pagination State
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -261,6 +262,22 @@ export default function ShopClientPage({
       setIsFiltering(false);
     }
   };
+
+  // Synchronize URL query parameters (e.g. /shop?search=varmala)
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    const catParam = searchParams.get('category');
+    if (searchParam && searchParam.trim()) {
+      const trimmed = searchParam.trim();
+      setSearchQuery(trimmed);
+      fetchFilteredProducts({
+        search: trimmed,
+        category: catParam || 'all',
+        cursor: null,
+        append: false,
+      });
+    }
+  }, [searchParams]);
 
   // Handlers for Filters
   const handleSelectMainCategory = (slug: string) => {

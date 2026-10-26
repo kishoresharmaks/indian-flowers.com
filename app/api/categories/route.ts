@@ -5,10 +5,20 @@ import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
-    const categories = await Category.find({}).sort({ order: 1, name: 1 }).lean();
+    const { searchParams } = new URL(request.url);
+    const showOnHome = searchParams.get('showOnHome');
+
+    const filter: any = {};
+    if (showOnHome === 'true') {
+      filter.showOnHome = true;
+    } else if (showOnHome === 'false') {
+      filter.showOnHome = false;
+    }
+
+    const categories = await Category.find(filter).sort({ order: 1, name: 1 }).lean();
     return NextResponse.json({ success: true, count: categories.length, data: categories });
   } catch (error: any) {
     return NextResponse.json(
@@ -22,7 +32,7 @@ export async function POST(request: NextRequest) {
   try {
     if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
-    const { name, image, order, subcategories } = await request.json();
+    const { name, image, order, showOnHome, subcategories } = await request.json();
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -35,6 +45,7 @@ export async function POST(request: NextRequest) {
     if (existing) {
       if (image !== undefined) existing.image = image;
       if (order !== undefined) existing.order = order;
+      if (showOnHome !== undefined) existing.showOnHome = Boolean(showOnHome);
       if (subcategories !== undefined) existing.subcategories = subcategories;
       await existing.save();
       return NextResponse.json(
@@ -47,6 +58,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       image: image || '',
       order: order || 0,
+      showOnHome: showOnHome !== undefined ? Boolean(showOnHome) : false,
       subcategories: Array.isArray(subcategories) ? subcategories : [],
     });
     return NextResponse.json(
