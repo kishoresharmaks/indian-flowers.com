@@ -541,7 +541,7 @@ export default function ShopClientPage({
         <div className="flex flex-col lg:flex-row items-start gap-8 relative">
           {/* LEFT SIDEBAR: HALLMARK SUBCATEGORY NAVIGATION (FIXED/STICKY ON SCROLL) */}
           <aside
-            className={`w-full lg:w-72 shrink-0 lg:sticky lg:top-28 lg:self-start z-30 transition-all ${
+            className={`w-full lg:w-72 shrink-0 lg:sticky lg:top-[116px] lg:self-start z-30 ${
               isMobileDrawerOpen ? 'block' : 'hidden lg:block'
             }`}
           >
