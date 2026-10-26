@@ -148,8 +148,8 @@ export default function CategoryCarousel({
           aria-label="Categories showcase"
           className={
             isSmallCatalog
-              ? 'flex items-stretch gap-3.5 sm:gap-4 lg:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory py-2.5 px-1 no-scrollbar md:grid md:grid-cols-2 lg:grid-cols-4 md:gap-4 lg:gap-5 xl:gap-6 md:overflow-visible md:py-1 w-full'
-              : 'flex items-stretch gap-3.5 sm:gap-4 lg:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory py-2.5 px-1 no-scrollbar w-full'
+              ? 'flex items-stretch gap-3.5 sm:gap-4 lg:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory py-2.5 px-3 sm:px-1 no-scrollbar md:grid md:grid-cols-2 lg:grid-cols-4 md:gap-4 lg:gap-5 xl:gap-6 md:overflow-visible md:py-1 w-full'
+              : 'flex items-stretch gap-3.5 sm:gap-4 lg:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory py-2.5 px-3 sm:px-1 no-scrollbar w-full'
           }
         >
           {categories.map((category, index) => {

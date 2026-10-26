@@ -182,7 +182,7 @@ export default function CategoryCard({
         }
       }}
       aria-label={`Browse ${name} category`}
-      className={`group/card relative flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border transition-all duration-300 text-left cursor-pointer select-none snap-start bg-gradient-to-b ${
+      className={`group/card relative flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border transition-all duration-300 text-left cursor-pointer select-none snap-center sm:snap-start bg-gradient-to-b ${
         theme.bgGradient
       } ${theme.borderColor} ${theme.hoverBorder} ${
         isSelected
@@ -190,8 +190,8 @@ export default function CategoryCard({
           : 'shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:-translate-y-1.5'
       } ${
         isGrid
-          ? 'w-full min-w-0'
-          : 'w-[220px] min-w-[220px] sm:w-[250px] sm:min-w-[250px] md:w-[270px] md:min-w-[270px] lg:w-[280px] lg:min-w-[280px] shrink-0'
+          ? 'w-[75vw] min-w-[240px] max-w-[280px] shrink-0 md:w-full md:min-w-0 md:max-w-none md:shrink'
+          : 'w-[75vw] min-w-[240px] max-w-[280px] sm:w-[250px] sm:min-w-[250px] md:w-[270px] md:min-w-[270px] lg:w-[280px] lg:min-w-[280px] shrink-0'
       } h-[310px] sm:h-[330px] md:h-[350px] p-3.5 sm:p-4`}
     >
       {/* Top Header: Badge Eyebrow & Subcategory Count */}
