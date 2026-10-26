@@ -538,16 +538,16 @@ export default function ShopClientPage({
         </div>
 
         {/* MAIN STOREFRONT 2-COLUMN LAYOUT */}
-        <div className="flex flex-col lg:flex-row items-start gap-8">
-          {/* LEFT SIDEBAR: HALLMARK SUBCATEGORY NAVIGATION */}
+        <div className="flex flex-col lg:flex-row items-start gap-8 relative">
+          {/* LEFT SIDEBAR: HALLMARK SUBCATEGORY NAVIGATION (FIXED/STICKY ON SCROLL) */}
           <aside
-            className={`w-full lg:w-72 shrink-0 ${
+            className={`w-full lg:w-72 shrink-0 lg:sticky lg:top-28 lg:self-start z-30 transition-all ${
               isMobileDrawerOpen ? 'block' : 'hidden lg:block'
             }`}
           >
-            <div className="bg-white rounded-2xl border border-stone-200/90 p-5 shadow-sm sticky top-24">
+            <div className="bg-white rounded-2xl border border-stone-200/90 p-5 shadow-sm max-h-[calc(100vh-8.5rem)] flex flex-col">
               {/* Sidebar Header */}
-              <div className="pb-4 mb-4 border-b border-stone-100 flex items-center justify-between">
+              <div className="pb-3.5 mb-3 border-b border-stone-100 flex items-center justify-between shrink-0">
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-800 flex items-center gap-1 mb-1">
                     <Sparkles className="w-3 h-3 text-emerald-600" />
@@ -569,8 +569,8 @@ export default function ShopClientPage({
                 )}
               </div>
 
-              {/* Subcategories List */}
-              <div className="space-y-1.5 max-h-[70vh] overflow-y-auto pr-1">
+              {/* Subcategories List - Scrollable inside fixed card */}
+              <div className="space-y-1.5 overflow-y-auto pr-1 flex-1 scrollbar-thin">
                 {/* "All in Category" Option */}
                 {activeMainCategory && (
                   <button
@@ -649,7 +649,7 @@ export default function ShopClientPage({
 
               {/* Reset All Button */}
               {(selectedCategory !== 'all' || selectedSubcategory !== 'all' || searchQuery) && (
-                <div className="mt-5 pt-4 border-t border-stone-100">
+                <div className="mt-4 pt-3 border-t border-stone-100 shrink-0">
                   <button
                     type="button"
                     onClick={handleResetFilters}
