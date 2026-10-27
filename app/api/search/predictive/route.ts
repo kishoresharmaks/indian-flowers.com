@@ -44,6 +44,8 @@ export async function GET(request: NextRequest) {
 
     const productQuery = {
       isActive: { $ne: false },
+      isSeoLanding: { $ne: true },
+      hideFromHome: { $ne: true },
       $and: productConditions,
     };
 

@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const cursor = searchParams.get('cursor');
     const limitParam = searchParams.get('limit');
     const sortBy = (searchParams.get('sortBy') as SortOption) || 'featured';
-    const excludeSeo = searchParams.get('excludeSeo') === 'true' || searchParams.get('hideSeo') === 'true' || searchParams.get('forHome') === 'true';
+    const excludeSeo = searchParams.get('includeSeo') !== 'true';
     const forHome = searchParams.get('forHome') === 'true';
     const isPaginated = searchParams.has('cursor') || searchParams.has('limit') || searchParams.has('paginate') || searchParams.has('sortBy');
 
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
         sortBy,
         cursor,
         limit: limitParam ? parseInt(limitParam, 10) : 16,
-        excludeSeo: excludeSeo || (!query && !searchParams.has('includeSeo')),
+        excludeSeo,
       });
 
       return NextResponse.json(
@@ -63,35 +63,43 @@ export async function GET(request: Request) {
     }
 
     // 3. Unpaginated fallback (for Homepage showcases or Admin inventory)
-    let filter: any = {};
+    const conditions: any[] = [];
     if (forHome || excludeSeo) {
-      filter.isSeoLanding = { $ne: true };
-      filter.hideFromHome = { $ne: true };
+      conditions.push({
+        isSeoLanding: { $ne: true },
+        hideFromHome: { $ne: true },
+      });
     }
     if (query && query.trim()) {
       const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      filter.$or = [
-        { name: { $regex: sanitizedQuery, $options: 'i' } },
-        { description: { $regex: sanitizedQuery, $options: 'i' } },
-        { category: { $regex: sanitizedQuery, $options: 'i' } },
-        { subcategory: { $regex: sanitizedQuery, $options: 'i' } },
-        { tags: { $regex: sanitizedQuery, $options: 'i' } },
-      ];
+      conditions.push({
+        $or: [
+          { name: { $regex: sanitizedQuery, $options: 'i' } },
+          { description: { $regex: sanitizedQuery, $options: 'i' } },
+          { category: { $regex: sanitizedQuery, $options: 'i' } },
+          { subcategory: { $regex: sanitizedQuery, $options: 'i' } },
+          { tags: { $regex: sanitizedQuery, $options: 'i' } },
+        ],
+      });
     }
     if (categorySlug && categorySlug !== 'All') {
-      filter.$or = [
-        { categorySlug: categorySlug.toLowerCase() },
-        { parentCategorySlug: categorySlug.toLowerCase() },
-        { 'categories.slug': categorySlug.toLowerCase() },
-      ];
+      conditions.push({
+        $or: [
+          { categorySlug: categorySlug.toLowerCase() },
+          { parentCategorySlug: categorySlug.toLowerCase() },
+          { 'categories.slug': categorySlug.toLowerCase() },
+        ],
+      });
     } else if (category && category !== 'All') {
       const sanitizedCat = category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      filter.category = { $regex: new RegExp(`^${sanitizedCat}$`, 'i') };
+      conditions.push({ category: { $regex: new RegExp(`^${sanitizedCat}$`, 'i') } });
     }
     if (subcategory && subcategory !== 'All') {
       const sanitizedSub = subcategory.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      filter.subcategory = { $regex: new RegExp(`^${sanitizedSub}$`, 'i') };
+      conditions.push({ subcategory: { $regex: new RegExp(`^${sanitizedSub}$`, 'i') } });
     }
+
+    const filter = conditions.length > 0 ? { $and: conditions } : {};
 
     // Ensure database indexes exist
     try {

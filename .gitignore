@@ -29,6 +29,7 @@ docs/
 *.xlsx
 
 # 3. Test Scripts, Debugging Tools & Verification Artifacts
+scratch/
 scripts/*
 !scripts/prebuild.js
 !scripts/import-woocommerce.mjs

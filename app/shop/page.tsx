@@ -80,6 +80,7 @@ export default async function ShopPage() {
         // Count products for this main category (including all child subcategory terms)
         const mainCatCount = await productsCol.countDocuments({
           isSeoLanding: { $ne: true },
+          hideFromHome: { $ne: true },
           $or: [
             { categorySlug: catSlug },
             { parentCategorySlug: catSlug },
@@ -94,6 +95,7 @@ export default async function ShopPage() {
             const subSlug = sub.slug || sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             const subCount = await productsCol.countDocuments({
               isSeoLanding: { $ne: true },
+              hideFromHome: { $ne: true },
               $or: [
                 { subcategory: new RegExp(`^${sub.name}$`, 'i') },
                 { categorySlug: subSlug },

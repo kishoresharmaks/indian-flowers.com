@@ -155,6 +155,8 @@ export default async function ProductPage({ params }: Props) {
       try {
         const relatedQuery: any = {
           _id: { $ne: product._id },
+          isSeoLanding: { $ne: true },
+          hideFromHome: { $ne: true },
         };
         if (product.category) {
           relatedQuery.category = product.category;
@@ -164,6 +166,8 @@ export default async function ProductPage({ params }: Props) {
           const excludeIds = [product._id, ...related.map((r: any) => r._id)];
           const additional = await Product.find({
             _id: { $nin: excludeIds },
+            isSeoLanding: { $ne: true },
+            hideFromHome: { $ne: true },
           })
             .limit(4 - related.length)
             .lean();

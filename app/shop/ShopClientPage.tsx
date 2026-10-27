@@ -238,6 +238,7 @@ export default function ShopClientPage({
       params.set('sortBy', sort);
       params.set('limit', '16');
       params.set('paginate', 'true');
+      params.set('excludeSeo', 'true');
       if (cursor) params.set('cursor', cursor);
 
       const res = await fetch(`/api/products?${params.toString()}`);

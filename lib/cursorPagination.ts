@@ -107,7 +107,7 @@ export async function fetchCursorPaginatedProducts({
   sortBy = 'featured',
   cursor,
   limit = 16,
-  excludeSeo = false,
+  excludeSeo = true,
 }: PaginateOptions): Promise<PaginatedResult> {
   const safeLimit = Math.min(Math.max(1, Number(limit) || 16), 48);
   const { sortField, isAscending, mongoSort } = getSortConfig(sortBy);
