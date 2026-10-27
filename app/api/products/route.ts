@@ -20,6 +20,8 @@ export async function GET(request: Request) {
     const cursor = searchParams.get('cursor');
     const limitParam = searchParams.get('limit');
     const sortBy = (searchParams.get('sortBy') as SortOption) || 'featured';
+    const excludeSeo = searchParams.get('excludeSeo') === 'true' || searchParams.get('hideSeo') === 'true' || searchParams.get('forHome') === 'true';
+    const forHome = searchParams.get('forHome') === 'true';
     const isPaginated = searchParams.has('cursor') || searchParams.has('limit') || searchParams.has('paginate') || searchParams.has('sortBy');
 
     // 1. Single product slug lookup
@@ -40,6 +42,7 @@ export async function GET(request: Request) {
         sortBy,
         cursor,
         limit: limitParam ? parseInt(limitParam, 10) : 16,
+        excludeSeo: excludeSeo || (!query && !searchParams.has('includeSeo')),
       });
 
       return NextResponse.json(
@@ -59,8 +62,12 @@ export async function GET(request: Request) {
       );
     }
 
-    // 3. Unpaginated fallback (for Admin Dashboard inventory)
+    // 3. Unpaginated fallback (for Homepage showcases or Admin inventory)
     let filter: any = {};
+    if (forHome || excludeSeo) {
+      filter.isSeoLanding = { $ne: true };
+      filter.hideFromHome = { $ne: true };
+    }
     if (query && query.trim()) {
       const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [

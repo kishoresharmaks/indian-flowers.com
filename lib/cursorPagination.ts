@@ -15,6 +15,7 @@ export interface PaginateOptions {
   sortBy?: SortOption;
   cursor?: string | null;
   limit?: number;
+  excludeSeo?: boolean;
 }
 
 export interface PaginatedResult<T = any> {
@@ -106,12 +107,21 @@ export async function fetchCursorPaginatedProducts({
   sortBy = 'featured',
   cursor,
   limit = 16,
+  excludeSeo = false,
 }: PaginateOptions): Promise<PaginatedResult> {
   const safeLimit = Math.min(Math.max(1, Number(limit) || 16), 48);
   const { sortField, isAscending, mongoSort } = getSortConfig(sortBy);
 
   // 1. Build Base Match Filter
   const baseConditions: any[] = [];
+
+  // Exclude programmatic city/state SEO landing products from regular browsing
+  if (excludeSeo) {
+    baseConditions.push({
+      isSeoLanding: { $ne: true },
+      hideFromHome: { $ne: true },
+    });
+  }
 
   // Category filter
   if (categorySlug && categorySlug.toLowerCase() !== 'all') {

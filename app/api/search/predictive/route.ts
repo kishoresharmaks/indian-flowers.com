@@ -50,8 +50,8 @@ export async function GET(request: NextRequest) {
     // Parallel fetch: top 6 products, count, and matching categories
     const [matchingProducts, totalMatches, allCategories] = await Promise.all([
       Product.find(productQuery)
-        .select('_id name slug price salePrice images category subCategory inStock isBestSeller')
-        .sort({ inStock: -1, isBestSeller: -1, updatedAt: -1 })
+        .select('_id name slug price salePrice images category subCategory inStock isBestSeller isSeoLanding')
+        .sort({ isSeoLanding: 1, inStock: -1, isBestSeller: -1, updatedAt: -1 })
         .limit(6)
         .lean(),
       Product.countDocuments(productQuery),

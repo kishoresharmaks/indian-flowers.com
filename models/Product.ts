@@ -44,6 +44,8 @@ export interface IProduct extends Document {
   subcategory?: string;
   rating?: number;
   reviewsCount?: number;
+  isSeoLanding?: boolean;
+  hideFromHome?: boolean;
   variants?: IProductVariant[];
   attributes?: IProductAttribute[];
   createdAt: Date;
@@ -97,6 +99,8 @@ const ProductSchema: Schema = new Schema(
     subcategory: { type: String, default: '' },
     rating: { type: Number, default: 4.8 },
     reviewsCount: { type: Number, default: 50 },
+    isSeoLanding: { type: Boolean, default: false, index: true },
+    hideFromHome: { type: Boolean, default: false, index: true },
     variants: [VariantSchema],
     attributes: [
       {
@@ -118,9 +122,10 @@ ProductSchema.index({ categorySlug: 1, price: -1, _id: -1 });
 ProductSchema.index({ categorySlug: 1, name: 1, _id: 1 });
 ProductSchema.index({ 'categories.slug': 1, createdAt: -1, _id: -1 });
 ProductSchema.index({ subcategory: 1, createdAt: -1, _id: -1 });
+ProductSchema.index({ isSeoLanding: 1, hideFromHome: 1, createdAt: -1 });
 ProductSchema.index({ name: 'text', description: 'text' });
 
-// Pre-save hook to ensure slug, categorySlug, and discount percentage
+// Pre-save hook to ensure slug, categorySlug, SEO landing flag, and discount percentage
 ProductSchema.pre('save', function (this: IProduct, next) {
   if (!this.slug && this.name) {
     this.slug = this.name
@@ -140,6 +145,14 @@ ProductSchema.pre('save', function (this: IProduct, next) {
   }
   if (this.mrp && this.price && this.mrp > this.price) {
     this.discount = Math.round(((this.mrp - this.price) / this.mrp) * 100);
+  }
+  // Auto-flag programmatic state/city SEO landing products
+  if (this.isSeoLanding === undefined && this.name) {
+    const stateUsaRegex = /(\b(Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)\b.*USA)|(USA\s*$)/i;
+    if (stateUsaRegex.test(this.name)) {
+      this.isSeoLanding = true;
+      this.hideFromHome = true;
+    }
   }
   next();
 });

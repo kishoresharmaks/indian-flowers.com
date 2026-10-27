@@ -469,6 +469,8 @@ export default function CustomerStore() {
     try {
       setLoadingProducts(true);
       const url = new URL('/api/products', window.location.origin);
+      url.searchParams.append('forHome', 'true');
+      url.searchParams.append('excludeSeo', 'true');
       if (searchQuery.trim()) url.searchParams.append('search', searchQuery.trim());
 
       const res = await fetch(url.toString(), { cache: 'no-store' });
@@ -495,10 +497,29 @@ export default function CustomerStore() {
   const productsByCategory = useMemo(() => {
     const map = new Map<string, Product[]>();
     for (const p of products) {
-      const key = (p.category || '').trim().toLowerCase();
-      const existing = map.get(key) || [];
-      existing.push(p);
-      map.set(key, existing);
+      // Exclude state/city SEO landing pages from homepage showcases
+      if (p.isSeoLanding || p.hideFromHome) continue;
+
+      const keys = new Set<string>();
+      if (p.category) keys.add(p.category.trim().toLowerCase());
+      if (p.categorySlug) {
+        keys.add(p.categorySlug.trim().toLowerCase());
+        keys.add(p.categorySlug.trim().toLowerCase().replace(/-/g, ' '));
+        keys.add(p.categorySlug.trim().toLowerCase().replace(/-/g, ' & '));
+      }
+      if (p.parentCategorySlug) {
+        keys.add(p.parentCategorySlug.trim().toLowerCase());
+        keys.add(p.parentCategorySlug.trim().toLowerCase().replace(/-/g, ' '));
+        keys.add(p.parentCategorySlug.trim().toLowerCase().replace(/-/g, ' & '));
+      }
+
+      for (const k of keys) {
+        const existing = map.get(k) || [];
+        if (!existing.some((item) => item._id === p._id)) {
+          existing.push(p);
+          map.set(k, existing);
+        }
+      }
     }
     return map;
   }, [products]);

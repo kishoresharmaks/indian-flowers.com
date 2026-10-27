@@ -62,7 +62,7 @@ export default async function ShopPage() {
     await connectToDatabase();
 
     const [paginated, rawCategories, productsCol] = await Promise.all([
-      fetchCursorPaginatedProducts({ limit: 16, sortBy: 'featured' }),
+      fetchCursorPaginatedProducts({ limit: 16, sortBy: 'featured', excludeSeo: true }),
       Category.find({}).sort({ order: 1, name: 1 }).lean(),
       Product.collection,
     ]);
@@ -72,13 +72,14 @@ export default async function ShopPage() {
     initialHasMore = paginated.hasMore;
     totalCount = paginated.totalCount;
 
-    // Fetch counts for each main category and each subcategory
+    // Fetch counts for each main category and each subcategory (excluding SEO landing pages)
     mainCategories = await Promise.all(
       rawCategories.map(async (cat: any) => {
         const catSlug = cat.slug || cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         
         // Count products for this main category (including all child subcategory terms)
         const mainCatCount = await productsCol.countDocuments({
+          isSeoLanding: { $ne: true },
           $or: [
             { categorySlug: catSlug },
             { parentCategorySlug: catSlug },
@@ -92,6 +93,7 @@ export default async function ShopPage() {
           (cat.subcategories || []).map(async (sub: any) => {
             const subSlug = sub.slug || sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             const subCount = await productsCol.countDocuments({
+              isSeoLanding: { $ne: true },
               $or: [
                 { subcategory: new RegExp(`^${sub.name}$`, 'i') },
                 { categorySlug: subSlug },

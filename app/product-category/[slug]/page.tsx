@@ -94,6 +94,7 @@ export default async function CategoryPage({ params }: Props) {
       categorySlug: cleanSlug,
       limit: 16,
       sortBy: 'featured',
+      excludeSeo: true,
     });
 
     initialProducts = paginated.data;
