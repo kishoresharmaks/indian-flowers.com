@@ -73,6 +73,7 @@ import CustomersTab from '@/components/admin/CustomersTab';
 import ReportsTab from '@/components/admin/ReportsTab';
 import MailManagerTab from '@/components/admin/MailManagerTab';
 import WordPressImportModal from '@/components/admin/WordPressImportModal';
+import ConsolidatedPackingModal from '@/components/admin/ConsolidatedPackingModal';
 import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
 
 interface BannerItem {
@@ -383,6 +384,7 @@ export default function AdminDashboard() {
 
   // WordPress Migration Modal State
   const [isWpImportModalOpen, setIsWpImportModalOpen] = useState(false);
+  const [isBatchPackingModalOpen, setIsBatchPackingModalOpen] = useState(false);
 
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -3678,6 +3680,16 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 </div>
 
                   <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setIsBatchPackingModalOpen(true)}
+                      className="px-3.5 py-1.5 rounded-xl bg-[#163B5C] hover:bg-[#112F4A] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+                      title="Open Date-wise Consolidated Packing & Dispatch List (Separated by Customer)"
+                    >
+                      <Table className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Consolidated Packing List</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setActiveTab('reports')}
@@ -8016,6 +8028,14 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         isOpen={isWpImportModalOpen}
         onClose={() => setIsWpImportModalOpen(false)}
         onImportComplete={fetchProducts}
+      />
+
+      {/* Date-wise Consolidated Packing & Dispatch Modal (Image 2 style) */}
+      <ConsolidatedPackingModal
+        isOpen={isBatchPackingModalOpen}
+        onClose={() => setIsBatchPackingModalOpen(false)}
+        orders={orders}
+        products={products}
       />
 
       {/* Footer */}
