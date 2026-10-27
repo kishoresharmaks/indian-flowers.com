@@ -418,15 +418,15 @@ export default function ProductDetail({
               </div>
             </div>
 
-            {/* 1-Week Advance Notice Delivery Callout */}
+            {/* 10-Day Advance Notice Delivery Callout */}
             <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200/90 flex items-start gap-3 text-xs text-amber-950">
               <Clock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <h4 className="font-bold uppercase tracking-wider text-[11px] text-amber-900">
-                  1-Week Advance Notice Recommended
+                  10-Day Advance Notice Required
                 </h4>
                 <p className="text-stone-700 leading-relaxed text-[12px]">
-                  Fresh jasmine strands and handcrafted wedding garlands are picked and strung 24–48 hours prior to your event date. Cold-chain air delivery arrives fresh by 10:30 AM before your auspicious <em>Muhurtham</em>.
+                  Fresh jasmine strands and handcrafted wedding garlands are picked and strung 24–48 hours prior to your event date. A minimum 10-day advance lead time is required for harvesting and reservation of cold-chain air cargo (FedEx / Southwest).
                 </p>
               </div>
             </div>

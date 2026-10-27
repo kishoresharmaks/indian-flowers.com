@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { getMinDeliveryDateString, MIN_DELIVERY_LEAD_DAYS } from '@/lib/dateUtils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {
@@ -69,7 +70,7 @@ export default function ContactPage() {
     }
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const minEventDate = getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS);
 
   return (
     <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between font-sans">
@@ -283,7 +284,7 @@ export default function ContactPage() {
                           </label>
                           <input
                             type="date"
-                            min={todayStr}
+                            min={minEventDate}
                             value={formData.eventDate}
                             onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
                             className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] focus:ring-1 focus:ring-[#0B3B24]/20 bg-white"

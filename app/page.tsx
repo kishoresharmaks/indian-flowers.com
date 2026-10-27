@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
 import { US_STATES, validateZipForState } from '@/lib/tax';
 import { validateCheckoutForm } from '@/lib/checkoutValidation';
-import { getLocalTodayString } from '@/lib/dateUtils';
+import { getLocalTodayString, getMinDeliveryDateString, formatReadableDate, MIN_DELIVERY_LEAD_DAYS } from '@/lib/dateUtils';
 import Header from '@/components/Header';
 import HeroSection, { HeroSlide } from '@/components/HeroSection';
 import ShopByCategory from '@/components/home/ShopByCategory';
@@ -1286,10 +1286,12 @@ export default function CustomerStore() {
       {/* 2.5 EVENT DATE & US ZIP FAST-CHECKER (Hallmark Arrival Guarantee) */}
       <EventDeliveryChecker
         onCheckSuccess={(date, zip) => {
-          if (date || zip) {
+          const minDate = getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS);
+          const validDate = date && date >= minDate ? date : '';
+          if (validDate || zip) {
             setCheckoutForm((prev) => ({
               ...prev,
-              ...(date ? { deliveryDate: date } : {}),
+              ...(validDate ? { deliveryDate: validDate } : {}),
               ...(zip ? { zipCode: zip } : {}),
             }));
           }
@@ -2168,16 +2170,16 @@ export default function CustomerStore() {
                       id="checkout-deliveryDate"
                       type="date"
                       required
-                      min={getLocalTodayString()}
+                      min={getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS)}
                       value={checkoutForm.deliveryDate}
                       onChange={(e) => {
                         const chosen = e.target.value;
-                        const today = getLocalTodayString();
-                        if (chosen && chosen < today) {
+                        const minDate = getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS);
+                        if (chosen && chosen < minDate) {
                           setCheckoutForm({ ...checkoutForm, deliveryDate: '' });
                           setFieldErrors((prev) => ({
                             ...prev,
-                            deliveryDate: 'Past dates cannot be selected. Please choose today or a future date.',
+                            deliveryDate: `Orders require a minimum ${MIN_DELIVERY_LEAD_DAYS}-day advance notice for floral harvesting and cold-chain air dispatch. Earliest available date is ${formatReadableDate(minDate)}.`,
                           }));
                           return;
                         }
@@ -2192,6 +2194,9 @@ export default function CustomerStore() {
                           : 'border-stone-300 text-stone-900 focus:border-[#0B3B24] focus:ring-2 focus:ring-[#0B3B24]/15'
                       }`}
                     />
+                    <p className="text-[11px] text-stone-500 font-medium mt-1">
+                      Earliest available delivery date: <span className="font-bold text-[#0B3B24]">{formatReadableDate(getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS))}</span> ({MIN_DELIVERY_LEAD_DAYS}-day cold-chain lead time)
+                    </p>
                     {fieldErrors.deliveryDate && (
                       <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1.5">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
@@ -2200,15 +2205,15 @@ export default function CustomerStore() {
                     )}
                   </div>
 
-                  {/* 1-WEEK DELIVERY NOTICE & MANDATORY CONFIRMATION CHECKBOX */}
+                  {/* 10-DAY DELIVERY NOTICE & MANDATORY CONFIRMATION CHECKBOX */}
                   <div className="pt-2.5 border-t border-emerald-200/70 space-y-2.5">
                     <div className="flex items-start gap-2.5 text-stone-700 bg-amber-50/80 p-3 rounded-xl border border-amber-200/80">
                       <Clock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                       <div className="text-[11.5px] leading-relaxed text-amber-950">
                         <strong className="text-amber-900 font-bold block uppercase tracking-wider text-[10.5px]">
-                          1-Week Advance Delivery Notice
+                          10-Day Advance Delivery Notice
                         </strong>
-                        All fresh Indian floral garlands and loose puja blossoms are handcrafted to order and transported via priority cold-chain air cargo (FedEx / Southwest). A minimum 1-week preparation and dispatch timeframe is required for all orders.
+                        All fresh Indian floral garlands and loose puja blossoms are handcrafted to order and transported via priority cold-chain air cargo (FedEx / Southwest). A minimum 10-day preparation and dispatch timeframe is required for all orders. Earliest selectable delivery date is <strong>{formatReadableDate(getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS))}</strong>.
                       </div>
                     </div>
 
@@ -2239,7 +2244,7 @@ export default function CustomerStore() {
                         className="mt-0.5 h-4 w-4 rounded border-stone-300 text-[#0B3B24] focus:ring-[#0B3B24] accent-[#0B3B24] cursor-pointer shrink-0"
                       />
                       <span className="text-xs font-semibold leading-snug">
-                        I confirm that I have reviewed and acknowledge that my order requires at least 1-week advance preparation &amp; cold-chain delivery. *
+                        I confirm that I have reviewed and acknowledge that my order requires at least 10-day advance preparation &amp; cold-chain delivery. *
                       </span>
                     </label>
 

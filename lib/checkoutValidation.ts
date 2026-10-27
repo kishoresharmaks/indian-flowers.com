@@ -6,7 +6,7 @@
  */
 
 import { isValidUSState, isValidUSZip, normalizeStateCode, US_STATES, validateZipForState } from './tax/jurisdiction';
-import { getLocalTodayString } from './dateUtils';
+import { getLocalTodayString, getMinDeliveryDateString, formatReadableDate, MIN_DELIVERY_LEAD_DAYS } from './dateUtils';
 
 export interface CheckoutFormData {
   customerName: string;
@@ -156,8 +156,9 @@ export function validateZipCode(zip?: string | null, stateCode?: string | null):
 
 /**
  * Validates requested event / delivery date.
+ * Locks out dates within the mandatory 10-day advance preparation period.
  */
-export function validateDeliveryDate(dateStr?: string | null): string | null {
+export function validateDeliveryDate(dateStr?: string | null, leadDays: number = MIN_DELIVERY_LEAD_DAYS): string | null {
   if (!dateStr || typeof dateStr !== 'string' || !dateStr.trim()) {
     return 'Please select your requested event / delivery date.';
   }
@@ -168,7 +169,11 @@ export function validateDeliveryDate(dateStr?: string | null): string | null {
   }
   const todayStr = getLocalTodayString();
   if (cleanDate < todayStr) {
-    return 'Past dates cannot be selected. Please choose today or a future date.';
+    return 'Past dates cannot be selected. Please choose a future event date.';
+  }
+  const minDeliveryDate = getMinDeliveryDateString(leadDays);
+  if (cleanDate < minDeliveryDate) {
+    return `Orders require a minimum ${leadDays}-day advance notice for floral harvesting and cold-chain air dispatch. Earliest available date is ${formatReadableDate(minDeliveryDate)}.`;
   }
   return null;
 }
@@ -226,7 +231,7 @@ export function validateCheckoutForm(
 
   if (form.acknowledgedDeliveryTimeframe !== true) {
     errors.acknowledgedDeliveryTimeframe =
-      'Please confirm acknowledgment of the 1-week advance preparation & delivery timeframe.';
+      'Please confirm acknowledgment of the 10-day advance preparation & delivery timeframe.';
   }
 
 

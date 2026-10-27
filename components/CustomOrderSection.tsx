@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { getLocalTodayString } from '@/lib/dateUtils';
+import { getMinDeliveryDateString, formatReadableDate, MIN_DELIVERY_LEAD_DAYS } from '@/lib/dateUtils';
 import {
   Flower2,
   Calendar,
@@ -296,17 +296,19 @@ export default function CustomOrderSection() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-medium text-gray-700 block mb-1">
-                        Ceremony / Event Date *
+                        Ceremony / Event Date * <span className="text-[10.5px] text-stone-500 font-normal">(Min 10-day notice)</span>
                       </label>
                       <input
                         type="date"
                         required
-                        min={getLocalTodayString()}
+                        min={getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS)}
                         value={formData.eventDate}
                         onChange={(e) => {
                           const val = e.target.value;
-                          if (val && val < getLocalTodayString()) {
+                          const minDate = getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS);
+                          if (val && val < minDate) {
                             setFormData({ ...formData, eventDate: '' });
+                            alert(`Ceremony orders require at least 10 days advance notice. Earliest selectable date is ${formatReadableDate(minDate)}.`);
                             return;
                           }
                           setFormData({ ...formData, eventDate: val });

@@ -26,10 +26,10 @@ export default function ProductDescriptionRenderer({
         <Clock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
         <div className="space-y-0.5">
           <strong className="block text-[11px] uppercase tracking-wider text-amber-900 font-bold">
-            1-Week Advance Delivery Notice
+            10-Day Advance Delivery Notice
           </strong>
           <p className="text-[12px] text-amber-900/90 leading-relaxed font-normal">
-            All fresh Indian floral garlands and loose blossoms are handcrafted to order and transported via priority cold-chain air cargo (FedEx / Southwest). A minimum 1-week preparation and dispatch timeframe is required for all orders across the United States.
+            All fresh Indian floral garlands and loose blossoms are handcrafted to order and transported via priority cold-chain air cargo (FedEx / Southwest). A minimum 10-day preparation and dispatch timeframe is required for all orders across the United States.
           </p>
         </div>
       </div>

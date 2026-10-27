@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Calendar, MapPin, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react';
-import { getLocalTodayString } from '@/lib/dateUtils';
+import { getMinDeliveryDateString, formatReadableDate, MIN_DELIVERY_LEAD_DAYS } from '@/lib/dateUtils';
 
 interface EventDeliveryCheckerProps {
   onCheckSuccess?: (date: string, zip: string) => void;
@@ -13,14 +13,14 @@ export default function EventDeliveryChecker({ onCheckSuccess }: EventDeliveryCh
   const [zipCode, setZipCode] = useState('');
   const [status, setStatus] = useState<'idle' | 'checking' | 'available' | 'invalid'>('idle');
 
-  // Today's date in YYYY-MM-DD for min date attribute
-  const todayStr = getLocalTodayString();
+  // Earliest allowable delivery date (mandatory 10-day advance cold-chain notice)
+  const minDeliveryDate = getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS);
 
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanZip = zipCode.trim();
 
-    if (!cleanZip || cleanZip.length < 5 || !/^\d{5}$/.test(cleanZip) || (eventDate && eventDate < todayStr)) {
+    if (!cleanZip || cleanZip.length < 5 || !/^\d{5}$/.test(cleanZip) || (eventDate && eventDate < minDeliveryDate)) {
       setStatus('invalid');
       return;
     }
@@ -73,19 +73,19 @@ export default function EventDeliveryChecker({ onCheckSuccess }: EventDeliveryCh
               className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 shrink-0"
             >
               {/* Event Date Input */}
-              <div className="relative flex items-center bg-stone-50 hover:bg-stone-100/70 rounded-xl border border-stone-200/90 focus-within:border-[#0B3B24] focus-within:ring-2 focus-within:ring-[#0B3B24]/15 px-3 py-2 sm:py-2.5 sm:w-48 transition-all h-11 sm:h-12">
+              <div className="relative flex items-center bg-stone-50 hover:bg-stone-100/70 rounded-xl border border-stone-200/90 focus-within:border-[#0B3B24] focus-within:ring-2 focus-within:ring-[#0B3B24]/15 px-3 py-2 sm:py-2.5 sm:w-52 transition-all h-11 sm:h-12">
                 <Calendar className="w-4 h-4 text-[#0B3B24] shrink-0 mr-2.5" />
                 <div className="flex-1 min-w-0">
-                  <span className="block text-[9.5px] font-bold uppercase tracking-wider text-stone-400 leading-none mb-0.5">
-                    Event Date
+                  <span className="block text-[9.5px] font-bold uppercase tracking-wider text-stone-400 leading-none mb-0.5 truncate">
+                    Event Date (Min 10 Days)
                   </span>
                   <input
                     type="date"
-                    min={todayStr}
+                    min={minDeliveryDate}
                     value={eventDate}
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (val && val < todayStr) {
+                      if (val && val < minDeliveryDate) {
                         setEventDate('');
                         setStatus('invalid');
                         return;
@@ -153,7 +153,7 @@ export default function EventDeliveryChecker({ onCheckSuccess }: EventDeliveryCh
 
           {status === 'invalid' && (
             <div className="mt-3 pt-3 border-t border-rose-100 text-xs text-rose-600 font-medium">
-              Please enter a valid 5-digit US ZIP code (e.g. 94538, 75001, 08820).
+              Please enter a valid 5-digit US ZIP code and select an event date on or after {formatReadableDate(minDeliveryDate)} (minimum 10-day advance notice for fresh flowers).
             </div>
           )}
         </div>
