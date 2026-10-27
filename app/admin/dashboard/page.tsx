@@ -154,6 +154,7 @@ interface Order {
   zipCode?: string;
   shippingAddress: string;
   pincode?: string;
+  deliveryDate?: string;
   items: OrderItem[];
   subtotal: number;
   totalTax?: number;
@@ -3765,6 +3766,14 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                                     minute: '2-digit',
                                   })}
                                 </p>
+                                {order.deliveryDate && (
+                                  <div className="pt-0.5">
+                                    <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                      <Calendar className="w-3 h-3 text-emerald-600 shrink-0" />
+                                      <span>For: {order.deliveryDate}</span>
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </td>
 
@@ -6672,6 +6681,17 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             .filter(Boolean)
                             .join(', ')}
                         </p>
+                      )}
+                      {selectedOrderForDetails.deliveryDate && (
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                          <span className="text-slate-500 flex items-center gap-1 font-medium">
+                            <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+                            <span>Requested Event / Delivery Date:</span>
+                          </span>
+                          <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
+                            {selectedOrderForDetails.deliveryDate}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>

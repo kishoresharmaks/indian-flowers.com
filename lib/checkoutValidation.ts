@@ -154,6 +154,25 @@ export function validateZipCode(zip?: string | null, stateCode?: string | null):
 }
 
 /**
+ * Validates requested event / delivery date.
+ */
+export function validateDeliveryDate(dateStr?: string | null): string | null {
+  if (!dateStr || typeof dateStr !== 'string' || !dateStr.trim()) {
+    return 'Please select your requested event / delivery date.';
+  }
+  const cleanDate = dateStr.trim();
+  const parsed = new Date(cleanDate);
+  if (isNaN(parsed.getTime())) {
+    return 'Please enter a valid delivery date.';
+  }
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (cleanDate < todayStr) {
+    return 'Delivery date cannot be in the past.';
+  }
+  return null;
+}
+
+/**
  * Comprehensive pre-flight checkout form validator.
  * Validates every customer field before loading Razorpay or submitting order.
  */
@@ -200,6 +219,9 @@ export function validateCheckoutForm(
     const zipError = validateZipCode(form.zipCode, form.state);
     if (zipError) errors.zipCode = zipError;
   }
+
+  const deliveryDateError = validateDeliveryDate(form.deliveryDate);
+  if (deliveryDateError) errors.deliveryDate = deliveryDateError;
 
 
   const fieldKeys = Object.keys(errors);

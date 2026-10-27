@@ -114,6 +114,7 @@ export async function POST(request: Request) {
       items,
       shippingFee = 0,
       deliveryMode,
+      deliveryDate,
       redeemPoints = 0,
     } = orderDetails;
 
@@ -275,6 +276,7 @@ export async function POST(request: Request) {
       country: country || 'US',
       shippingAddress: fullShippingAddress,
       pincode: finalZip,
+      deliveryDate: (deliveryDate || '').trim(),
       items: processedItems,
       subtotal,
       discountAmount: safeDiscount,

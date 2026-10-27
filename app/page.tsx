@@ -27,6 +27,7 @@ import {
   ShoppingBag,
   Search,
   CheckCircle2,
+  Calendar,
   X,
   Truck,
   Clock,
@@ -70,6 +71,7 @@ interface TrackedOrder {
   customerEmail: string;
   shippingAddress: string;
   pincode: string;
+  deliveryDate?: string;
   items: Array<{ name: string; price: number; quantity: number; image?: string }>;
   subtotal: number;
   totalAmount: number;
@@ -956,6 +958,7 @@ export default function CustomerStore() {
         transactionId: '',
         redeemPoints: isApplyingPoints ? redeemPoints : 0,
         shippingFee: deliveryFee,
+        deliveryDate: checkoutForm.deliveryDate.trim(),
         deliveryMode: selectedDeliveryMode ? {
           id: selectedDeliveryMode.id,
           name: selectedDeliveryMode.name,
@@ -1009,6 +1012,7 @@ export default function CustomerStore() {
             customerId: customer?._id || customer?.id || undefined,
             redeemPoints: isApplyingPoints ? redeemPoints : 0,
             shippingFee: deliveryFee,
+            deliveryDate: checkoutForm.deliveryDate.trim(),
           }),
         });
 
@@ -1277,7 +1281,14 @@ export default function CustomerStore() {
 
       {/* 2.5 EVENT DATE & US ZIP FAST-CHECKER (Hallmark Arrival Guarantee) */}
       <EventDeliveryChecker
-        onCheckSuccess={() => {
+        onCheckSuccess={(date, zip) => {
+          if (date || zip) {
+            setCheckoutForm((prev) => ({
+              ...prev,
+              ...(date ? { deliveryDate: date } : {}),
+              ...(zip ? { zipCode: zip } : {}),
+            }));
+          }
           const el = document.getElementById('products-section');
           if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }}
@@ -1726,6 +1737,12 @@ export default function CustomerStore() {
                       <div className="text-gray-600 font-normal">
                         Total Amount: <strong className="font-semibold">{formatCurrency(ord.totalAmount)}</strong>
                       </div>
+                      {ord.deliveryDate && (
+                        <div className="text-emerald-800 font-semibold flex items-center gap-1 pt-0.5">
+                          <Calendar className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                          <span>Delivery Date: {ord.deliveryDate}</span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -2116,6 +2133,57 @@ export default function CustomerStore() {
                       value="United States (US)"
                       className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm bg-gray-50 text-gray-600 font-normal cursor-not-allowed"
                     />
+                  </div>
+                </div>
+
+                {/* REQUESTED EVENT / PREFERRED DELIVERY DATE */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#F4F8F4] to-[#FAF6F0] border border-emerald-200/80 space-y-3 shadow-2xs">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#0B3B24] text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                      <Calendar className="w-4 h-4 text-emerald-100" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <label htmlFor="checkout-deliveryDate" className="text-xs font-bold text-[#0B3B24] uppercase tracking-wider block">
+                          {selectedDeliveryMode?.type === 'pickup'
+                            ? 'Event / Scheduled Pickup Date *'
+                            : 'Event / Preferred Delivery Date *'}
+                        </label>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold tracking-wider uppercase border border-emerald-200/60">
+                          🌿 USA Cold-Chain
+                        </span>
+                      </div>
+                      <p className="text-[11.5px] text-stone-600 font-normal leading-relaxed mt-0.5">
+                        All fresh Indian floral garlands and loose blossoms are harvested &amp; dispatched via refrigerated express to arrive fresh for your event date.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <input
+                      id="checkout-deliveryDate"
+                      type="date"
+                      required
+                      min={typeof window !== 'undefined' ? new Date().toISOString().split('T')[0] : ''}
+                      value={checkoutForm.deliveryDate}
+                      onChange={(e) => {
+                        setCheckoutForm({ ...checkoutForm, deliveryDate: e.target.value });
+                        if (fieldErrors.deliveryDate) {
+                          setFieldErrors((prev) => ({ ...prev, deliveryDate: '' }));
+                        }
+                      }}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all bg-white cursor-pointer focus:outline-none ${
+                        fieldErrors.deliveryDate
+                          ? 'border-rose-400 bg-rose-50/20 text-rose-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                          : 'border-stone-300 text-stone-900 focus:border-[#0B3B24] focus:ring-2 focus:ring-[#0B3B24]/15'
+                      }`}
+                    />
+                    {fieldErrors.deliveryDate && (
+                      <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                        <span>{fieldErrors.deliveryDate}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -2563,6 +2631,15 @@ export default function CustomerStore() {
                 <span className="text-gray-500">Order Total:</span>
                 <strong className="font-semibold text-gray-900">{formatCurrency(orderSuccess.totalAmount)}</strong>
               </div>
+              {orderSuccess.deliveryDate && (
+                <div className="flex justify-between items-center text-[11px] bg-emerald-50/80 p-2 rounded-lg border border-emerald-200/80 text-emerald-900 font-semibold">
+                  <span className="flex items-center gap-1 text-emerald-800">
+                    <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Requested Delivery Date:</span>
+                  </span>
+                  <span>{orderSuccess.deliveryDate}</span>
+                </div>
+              )}
               {orderSuccess.deliveryMode && (
                 <div className="flex justify-between items-center text-[11px] bg-stone-100 p-2 rounded-lg border border-stone-200">
                   <span className="text-gray-600 font-medium flex items-center gap-1">

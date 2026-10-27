@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       items,
       shippingFee = 0,
       deliveryMode,
+      deliveryDate,
       redeemPoints = 0,
       customerName,
       streetAddress,
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
         city,
         state,
         zipCode,
+        deliveryDate,
       },
       items?.length || 0
     );

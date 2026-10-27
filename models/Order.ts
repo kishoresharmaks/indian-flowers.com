@@ -31,6 +31,7 @@ export interface IOrder extends Document {
   country?: string;
   shippingAddress: string;
   pincode?: string; // Kept for backward compatibility with historical Indian orders
+  deliveryDate?: string;
   items: IOrderItem[];
   subtotal: number;
   shippingFee?: number;
@@ -133,6 +134,7 @@ const OrderSchema: Schema = new Schema(
     country: { type: String, default: 'US' },
     shippingAddress: { type: String, required: true },
     pincode: { type: String, default: '' }, // relaxed from required for historical compatibility
+    deliveryDate: { type: String, default: '' },
     items: [OrderItemSchema],
     subtotal: { type: Number, required: true },
     shippingFee: { type: Number, default: 0 },

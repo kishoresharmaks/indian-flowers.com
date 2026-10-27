@@ -21,6 +21,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  Calendar,
   Truck,
   ShoppingBag,
   Award,
@@ -510,6 +511,12 @@ export default function AccountPage() {
                         Placed on {new Date(ord.createdAt).toLocaleDateString()} at{' '}
                         {new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
+                      {ord.deliveryDate && (
+                        <p className="text-xs font-semibold text-emerald-800 mt-1 inline-flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80">
+                          <Calendar className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                          <span>Event / Delivery Date: {ord.deliveryDate}</span>
+                        </p>
+                      )}
                     </div>
 
                     <div className="text-left sm:text-right">
