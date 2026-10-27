@@ -1,3 +1,4 @@
+import mongoose, { ClientSession } from 'mongoose';
 import Product from '@/models/Product';
 
 export interface InventoryReservation {
@@ -6,7 +7,7 @@ export interface InventoryReservation {
   variantName?: string;
 }
 
-export async function reserveInventory(items: InventoryReservation[]) {
+export async function reserveInventory(items: InventoryReservation[], session?: ClientSession) {
   const reserved: InventoryReservation[] = [];
 
   for (const item of items) {
@@ -16,10 +17,12 @@ export async function reserveInventory(items: InventoryReservation[]) {
     const update = item.variantName
       ? { $inc: { 'variants.$.quantity': -item.quantity } }
       : { $inc: { quantity: -item.quantity } };
-    const result = await Product.updateOne(filter, update);
+    const result = await Product.updateOne(filter, update, { session });
 
     if (result.modifiedCount !== 1) {
-      await releaseInventory(reserved);
+      if (!session) {
+        await releaseInventory(reserved);
+      }
       throw new Error(`Insufficient stock for ${item.variantName || 'this product'}.`);
     }
     reserved.push(item);
@@ -28,7 +31,7 @@ export async function reserveInventory(items: InventoryReservation[]) {
   return reserved;
 }
 
-export async function releaseInventory(items: InventoryReservation[]) {
+export async function releaseInventory(items: InventoryReservation[], session?: ClientSession) {
   await Promise.all(
     items.map((item) =>
       Product.updateOne(
@@ -37,7 +40,8 @@ export async function releaseInventory(items: InventoryReservation[]) {
           : { _id: item.productId },
         item.variantName
           ? { $inc: { 'variants.$.quantity': item.quantity } }
-          : { $inc: { quantity: item.quantity } }
+          : { $inc: { quantity: item.quantity } },
+        { session }
       )
     )
   );

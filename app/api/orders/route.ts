@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import connectToDatabase from '@/lib/db';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
@@ -300,60 +301,92 @@ export async function POST(request: Request) {
     const netMerchandiseSpend = Math.max(0, subtotal - fromCents(totalDiscountCents));
     const pointsEarned = calculatePointsEarned(netMerchandiseSpend, loyaltyConfig);
 
-    reservedInventory = await reserveInventory(
-      processedItems.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        variantName: item.variantName || undefined,
-      }))
-    );
+    // Run inventory reservation and order creation inside an atomic MongoDB session/transaction
+    let dbSession: mongoose.ClientSession | null = null;
+    let createdOrder: any = null;
+    try {
+      dbSession = await mongoose.startSession();
+      dbSession.startTransaction();
+    } catch {
+      // In standalone Mongo instances where transactions are not supported, fallback to non-transactional mode
+      dbSession = null;
+    }
 
-    // 4. Create Order with Durable Tax Snapshot and US Address
-    const newOrder = await Order.create({
-      orderId,
-      orderType: 'ONLINE',
-      invoiceNumber: orderId,
-      customerId: finalCustomerId,
-      customerName: customerName.trim(),
-      customerPhone: customerPhone.trim(),
-      customerEmail: (customerEmail || '').trim(),
-      streetAddress: finalStreet,
-      aptSuite: finalApt,
-      city: finalCity,
-      district: (district || '').trim(),
-      state: finalState,
-      zipCode: finalZip,
-      country: country || 'US',
-      shippingAddress: fullShippingAddress,
-      pincode: finalZip, // backward compatibility
-      deliveryDate: (deliveryDate || '').trim(),
-      acknowledgedDeliveryTimeframe: Boolean(acknowledgedDeliveryTimeframe),
-      items: processedItems,
-      subtotal,
-      discountAmount: safeDiscount,
-      pointsRedeemed: pointsToRedeem,
-      pointsDiscount: fromCents(pointsDiscountCents),
-      pointsEarned,
-      pointsAwarded: false, // Loyalty points are awarded ONLY AFTER order is Delivered
-      deliveryMode: deliveryMode ? {
-        id: String(deliveryMode.id || ''),
-        name: String(deliveryMode.name || ''),
-        type: String(deliveryMode.type || 'shipping'),
-        price: Number(deliveryMode.price) || 0,
-        description: String(deliveryMode.description || ''),
-        pickupLocation: String(deliveryMode.pickupLocation || ''),
-        estimatedDays: String(deliveryMode.estimatedDays || ''),
-      } : null,
-      shippingFee: safeShippingFee,
-      totalTax: calculatedTax,
-      totalGst: 0, // Kept 0 for backward compatibility
-      taxSnapshot: taxResult,
-      totalAmount,
-      paymentMethod: method,
-      paymentStatus: pStatus,
-      transactionId: '',
-      status: 'Pending',
-    });
+    try {
+      reservedInventory = await reserveInventory(
+        processedItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          variantName: item.variantName || undefined,
+        })),
+        dbSession || undefined
+      );
+
+      // 4. Create Order with Durable Tax Snapshot and US Address
+      const orderData = {
+        orderId,
+        orderType: 'ONLINE',
+        invoiceNumber: orderId,
+        customerId: finalCustomerId,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        customerEmail: (customerEmail || '').trim(),
+        streetAddress: finalStreet,
+        aptSuite: finalApt,
+        city: finalCity,
+        district: (district || '').trim(),
+        state: finalState,
+        zipCode: finalZip,
+        country: country || 'US',
+        shippingAddress: fullShippingAddress,
+        pincode: finalZip, // backward compatibility
+        deliveryDate: (deliveryDate || '').trim(),
+        acknowledgedDeliveryTimeframe: Boolean(acknowledgedDeliveryTimeframe),
+        items: processedItems,
+        subtotal,
+        discountAmount: safeDiscount,
+        pointsRedeemed: pointsToRedeem,
+        pointsDiscount: fromCents(pointsDiscountCents),
+        pointsEarned,
+        pointsAwarded: false, // Loyalty points are awarded ONLY AFTER order is Delivered
+        deliveryMode: deliveryMode ? {
+          id: String(deliveryMode.id || ''),
+          name: String(deliveryMode.name || ''),
+          type: String(deliveryMode.type || 'shipping'),
+          price: Number(deliveryMode.price) || 0,
+          description: String(deliveryMode.description || ''),
+          pickupLocation: String(deliveryMode.pickupLocation || ''),
+          estimatedDays: String(deliveryMode.estimatedDays || ''),
+        } : null,
+        shippingFee: safeShippingFee,
+        totalTax: calculatedTax,
+        totalGst: 0, // Kept 0 for backward compatibility
+        taxSnapshot: taxResult,
+        totalAmount,
+        paymentMethod: method,
+        paymentStatus: pStatus,
+        transactionId: '',
+        status: 'Pending',
+      };
+
+      const [newOrder] = dbSession
+        ? await Order.create([orderData], { session: dbSession })
+        : [await Order.create(orderData)];
+      createdOrder = newOrder;
+
+      if (dbSession) {
+        await dbSession.commitTransaction();
+      }
+    } catch (orderTxError) {
+      if (dbSession) {
+        await dbSession.abortTransaction();
+      }
+      throw orderTxError;
+    } finally {
+      if (dbSession) {
+        await dbSession.endSession();
+      }
+    }
 
     // Debit redeemed points from customer profile if points claimed
     if (finalCustomerId && pointsToRedeem > 0) {
@@ -428,11 +461,11 @@ export async function POST(request: Request) {
         total_amount: totalAmount,
         payment_method: method,
       },
-      `order:${String(newOrder._id)}`
+      `order:${String(createdOrder?._id || orderId)}`
     );
 
     return NextResponse.json(
-      { success: true, message: 'Order created successfully', data: newOrder },
+      { success: true, message: 'Order created successfully', data: createdOrder },
       { status: 201 }
     );
   } catch (error: any) {

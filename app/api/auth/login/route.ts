@@ -4,9 +4,16 @@ import jwt from 'jsonwebtoken';
 import connectToDatabase from '@/lib/db';
 import AdminUser from '@/models/AdminUser';
 import { captureServerEvent, captureServerException } from '@/lib/telemetry';
+import { getClientIp, checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const { allowed, retryAfterSeconds } = checkRateLimit(`admin-login:${ip}`, 5, 60 * 1000);
+    if (!allowed) {
+      return rateLimitResponse(retryAfterSeconds);
+    }
+
     const body = await request.json().catch(() => ({}));
     const username = typeof body.username === 'string' ? body.username.trim().toLowerCase() : '';
     const password = typeof body.password === 'string' ? body.password : '';

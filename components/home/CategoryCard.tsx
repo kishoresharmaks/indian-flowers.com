@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 
@@ -210,9 +211,11 @@ export default function CategoryCard({
 
       {/* Top Image Showcase with Soft Floral Shadow & Subtle Rounded Container */}
       <div className="relative w-full h-[155px] sm:h-[170px] md:h-[185px] rounded-2xl overflow-hidden bg-white/85 shadow-xs flex items-center justify-center p-2 transition-colors group-hover/card:bg-white border border-white/60">
-        <img
+        <Image
           src={imgSrc}
           alt={`${name} collection`}
+          fill
+          sizes="(max-width: 640px) 75vw, (max-width: 1024px) 250px, 280px"
           loading="lazy"
           onError={() => setImgSrc(DEFAULT_FLORAL_PLACEHOLDER)}
           className="w-full h-full object-cover object-center rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"

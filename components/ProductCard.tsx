@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShoppingCart, Heart, Share2, Check, ChevronDown } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
@@ -176,13 +177,15 @@ export default function ProductCard({
           onClick={openProduct}
           className="block w-full h-full relative"
         >
-          <img
+          <Image
             src={
               imgError || !product.image
                 ? DEFAULT_FLORAL_PLACEHOLDER
                 : product.image
             }
             alt={product.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="w-full h-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-106"
             loading="lazy"
             onError={() => setImgError(true)}

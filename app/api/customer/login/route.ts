@@ -4,11 +4,18 @@ import connectToDatabase from '@/lib/db';
 import Customer from '@/models/Customer';
 import { signCustomerToken, setCustomerSessionCookie } from '@/lib/customerAuth';
 import { captureServerEvent, captureServerException } from '@/lib/telemetry';
+import { getClientIp, checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const { allowed, retryAfterSeconds } = checkRateLimit(`customer-login:${ip}`, 5, 60 * 1000);
+    if (!allowed) {
+      return rateLimitResponse(retryAfterSeconds);
+    }
+
     await connectToDatabase();
     const body = await request.json();
     const { email, password } = body;

@@ -3,10 +3,18 @@ import bcrypt from 'bcryptjs';
 import connectToDatabase from '@/lib/db';
 import AdminUser from '@/models/AdminUser';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+import { getClientIp, checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
   try {
     if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
+
+    const ip = getClientIp(request);
+    const { allowed, retryAfterSeconds } = checkRateLimit(`verify-pass:${ip}`, 5, 60 * 1000);
+    if (!allowed) {
+      return rateLimitResponse(retryAfterSeconds);
+    }
+
     const body = await request.json().catch(() => ({}));
     const password = typeof body.password === 'string' ? body.password : '';
 
