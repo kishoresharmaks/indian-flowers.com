@@ -32,6 +32,7 @@ export interface IOrder extends Document {
   shippingAddress: string;
   pincode?: string; // Kept for backward compatibility with historical Indian orders
   deliveryDate?: string;
+  acknowledgedDeliveryTimeframe?: boolean;
   items: IOrderItem[];
   subtotal: number;
   shippingFee?: number;
@@ -135,6 +136,7 @@ const OrderSchema: Schema = new Schema(
     shippingAddress: { type: String, required: true },
     pincode: { type: String, default: '' }, // relaxed from required for historical compatibility
     deliveryDate: { type: String, default: '' },
+    acknowledgedDeliveryTimeframe: { type: Boolean, default: false },
     items: [OrderItemSchema],
     subtotal: { type: Number, required: true },
     shippingFee: { type: Number, default: 0 },

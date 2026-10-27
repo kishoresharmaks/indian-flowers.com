@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { getLocalTodayString } from '@/lib/dateUtils';
 import {
   Flower2,
   Calendar,
@@ -300,9 +301,16 @@ export default function CustomOrderSection() {
                       <input
                         type="date"
                         required
-                        min={new Date().toISOString().split('T')[0]}
+                        min={getLocalTodayString()}
                         value={formData.eventDate}
-                        onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val && val < getLocalTodayString()) {
+                            setFormData({ ...formData, eventDate: '' });
+                            return;
+                          }
+                          setFormData({ ...formData, eventDate: val });
+                        }}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal bg-white"
                       />
                     </div>

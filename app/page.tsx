@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
 import { US_STATES, validateZipForState } from '@/lib/tax';
 import { validateCheckoutForm } from '@/lib/checkoutValidation';
+import { getLocalTodayString } from '@/lib/dateUtils';
 import Header from '@/components/Header';
 import HeroSection, { HeroSlide } from '@/components/HeroSection';
 import ShopByCategory from '@/components/home/ShopByCategory';
@@ -137,6 +138,7 @@ export default function CustomerStore() {
     transactionId: '',
     notes: '',
     deliveryDate: '',
+    acknowledgedDeliveryTimeframe: false,
   });
   // Delivery Mode State (Configured dynamically via Admin Settings)
   const [selectedDeliveryMode, setSelectedDeliveryMode] = useState<IDeliveryMode | null>(null);
@@ -959,6 +961,7 @@ export default function CustomerStore() {
         redeemPoints: isApplyingPoints ? redeemPoints : 0,
         shippingFee: deliveryFee,
         deliveryDate: checkoutForm.deliveryDate.trim(),
+        acknowledgedDeliveryTimeframe: checkoutForm.acknowledgedDeliveryTimeframe,
         deliveryMode: selectedDeliveryMode ? {
           id: selectedDeliveryMode.id,
           name: selectedDeliveryMode.name,
@@ -1013,6 +1016,7 @@ export default function CustomerStore() {
             redeemPoints: isApplyingPoints ? redeemPoints : 0,
             shippingFee: deliveryFee,
             deliveryDate: checkoutForm.deliveryDate.trim(),
+        acknowledgedDeliveryTimeframe: checkoutForm.acknowledgedDeliveryTimeframe,
           }),
         });
 
@@ -2164,10 +2168,20 @@ export default function CustomerStore() {
                       id="checkout-deliveryDate"
                       type="date"
                       required
-                      min={typeof window !== 'undefined' ? new Date().toISOString().split('T')[0] : ''}
+                      min={getLocalTodayString()}
                       value={checkoutForm.deliveryDate}
                       onChange={(e) => {
-                        setCheckoutForm({ ...checkoutForm, deliveryDate: e.target.value });
+                        const chosen = e.target.value;
+                        const today = getLocalTodayString();
+                        if (chosen && chosen < today) {
+                          setCheckoutForm({ ...checkoutForm, deliveryDate: '' });
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            deliveryDate: 'Past dates cannot be selected. Please choose today or a future date.',
+                          }));
+                          return;
+                        }
+                        setCheckoutForm({ ...checkoutForm, deliveryDate: chosen });
                         if (fieldErrors.deliveryDate) {
                           setFieldErrors((prev) => ({ ...prev, deliveryDate: '' }));
                         }
@@ -2182,6 +2196,57 @@ export default function CustomerStore() {
                       <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1.5">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
                         <span>{fieldErrors.deliveryDate}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 1-WEEK DELIVERY NOTICE & MANDATORY CONFIRMATION CHECKBOX */}
+                  <div className="pt-2.5 border-t border-emerald-200/70 space-y-2.5">
+                    <div className="flex items-start gap-2.5 text-stone-700 bg-amber-50/80 p-3 rounded-xl border border-amber-200/80">
+                      <Clock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <div className="text-[11.5px] leading-relaxed text-amber-950">
+                        <strong className="text-amber-900 font-bold block uppercase tracking-wider text-[10.5px]">
+                          1-Week Advance Delivery Notice
+                        </strong>
+                        All fresh Indian floral garlands and loose puja blossoms are handcrafted to order and transported via priority cold-chain air cargo (FedEx / Southwest). A minimum 1-week preparation and dispatch timeframe is required for all orders.
+                      </div>
+                    </div>
+
+                    <label
+                      htmlFor="checkout-acknowledgedDeliveryTimeframe"
+                      className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                        fieldErrors.acknowledgedDeliveryTimeframe
+                          ? 'border-rose-400 bg-rose-50/50 text-rose-950 ring-1 ring-rose-400'
+                          : checkoutForm.acknowledgedDeliveryTimeframe
+                          ? 'border-emerald-400 bg-emerald-100/60 text-[#0B3B24]'
+                          : 'border-stone-200 bg-white hover:bg-stone-50 text-stone-800'
+                      }`}
+                    >
+                      <input
+                        id="checkout-acknowledgedDeliveryTimeframe"
+                        type="checkbox"
+                        required
+                        checked={checkoutForm.acknowledgedDeliveryTimeframe}
+                        onChange={(e) => {
+                          setCheckoutForm({
+                            ...checkoutForm,
+                            acknowledgedDeliveryTimeframe: e.target.checked,
+                          });
+                          if (fieldErrors.acknowledgedDeliveryTimeframe) {
+                            setFieldErrors((prev) => ({ ...prev, acknowledgedDeliveryTimeframe: '' }));
+                          }
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-stone-300 text-[#0B3B24] focus:ring-[#0B3B24] accent-[#0B3B24] cursor-pointer shrink-0"
+                      />
+                      <span className="text-xs font-semibold leading-snug">
+                        I confirm that I have reviewed and acknowledge that my order requires at least 1-week advance preparation &amp; cold-chain delivery. *
+                      </span>
+                    </label>
+
+                    {fieldErrors.acknowledgedDeliveryTimeframe && (
+                      <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                        <span>{fieldErrors.acknowledgedDeliveryTimeframe}</span>
                       </p>
                     )}
                   </div>

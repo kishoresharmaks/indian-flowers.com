@@ -6,6 +6,7 @@
  */
 
 import { isValidUSState, isValidUSZip, normalizeStateCode, US_STATES, validateZipForState } from './tax/jurisdiction';
+import { getLocalTodayString } from './dateUtils';
 
 export interface CheckoutFormData {
   customerName: string;
@@ -165,9 +166,9 @@ export function validateDeliveryDate(dateStr?: string | null): string | null {
   if (isNaN(parsed.getTime())) {
     return 'Please enter a valid delivery date.';
   }
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalTodayString();
   if (cleanDate < todayStr) {
-    return 'Delivery date cannot be in the past.';
+    return 'Past dates cannot be selected. Please choose today or a future date.';
   }
   return null;
 }
@@ -222,6 +223,11 @@ export function validateCheckoutForm(
 
   const deliveryDateError = validateDeliveryDate(form.deliveryDate);
   if (deliveryDateError) errors.deliveryDate = deliveryDateError;
+
+  if (form.acknowledgedDeliveryTimeframe !== true) {
+    errors.acknowledgedDeliveryTimeframe =
+      'Please confirm acknowledgment of the 1-week advance preparation & delivery timeframe.';
+  }
 
 
   const fieldKeys = Object.keys(errors);

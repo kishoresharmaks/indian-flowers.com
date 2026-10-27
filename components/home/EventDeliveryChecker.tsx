@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Calendar, MapPin, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { getLocalTodayString } from '@/lib/dateUtils';
 
 interface EventDeliveryCheckerProps {
   onCheckSuccess?: (date: string, zip: string) => void;
@@ -13,13 +14,13 @@ export default function EventDeliveryChecker({ onCheckSuccess }: EventDeliveryCh
   const [status, setStatus] = useState<'idle' | 'checking' | 'available' | 'invalid'>('idle');
 
   // Today's date in YYYY-MM-DD for min date attribute
-  const todayStr = typeof window !== 'undefined' ? new Date().toISOString().split('T')[0] : '';
+  const todayStr = getLocalTodayString();
 
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanZip = zipCode.trim();
 
-    if (!cleanZip || cleanZip.length < 5 || !/^\d{5}$/.test(cleanZip)) {
+    if (!cleanZip || cleanZip.length < 5 || !/^\d{5}$/.test(cleanZip) || (eventDate && eventDate < todayStr)) {
       setStatus('invalid');
       return;
     }
@@ -83,7 +84,13 @@ export default function EventDeliveryChecker({ onCheckSuccess }: EventDeliveryCh
                     min={todayStr}
                     value={eventDate}
                     onChange={(e) => {
-                      setEventDate(e.target.value);
+                      const val = e.target.value;
+                      if (val && val < todayStr) {
+                        setEventDate('');
+                        setStatus('invalid');
+                        return;
+                      }
+                      setEventDate(val);
                       if (status !== 'idle') setStatus('idle');
                     }}
                     className="w-full text-xs sm:text-sm font-semibold text-stone-900 bg-transparent outline-none cursor-pointer p-0"

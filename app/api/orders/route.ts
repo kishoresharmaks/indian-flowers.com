@@ -84,6 +84,7 @@ export async function POST(request: Request) {
       shippingFee = 0,
       deliveryMode,
       deliveryDate,
+      acknowledgedDeliveryTimeframe,
       redeemPoints = 0,
     } = body;
 
@@ -326,6 +327,7 @@ export async function POST(request: Request) {
       shippingAddress: fullShippingAddress,
       pincode: finalZip, // backward compatibility
       deliveryDate: (deliveryDate || '').trim(),
+      acknowledgedDeliveryTimeframe: Boolean(acknowledgedDeliveryTimeframe),
       items: processedItems,
       subtotal,
       discountAmount: safeDiscount,
