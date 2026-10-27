@@ -54,6 +54,11 @@ import {
   AlertCircle,
   FolderPlus,
   DownloadCloud,
+  Table,
+  LayoutGrid,
+  Copy,
+  MessageCircle,
+  Share2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { parseExcelRowsToImportItems, ParsedImportRow } from '@/lib/bulkImportHelpers';
@@ -388,6 +393,9 @@ export default function AdminDashboard() {
   const [orderPage, setOrderPage] = useState(1);
   const ordersPerPage = 10;
   const [selectedOrderForDetails, setSelectedOrderForDetails] = useState<Order | null>(null);
+  const [orderItemsViewMode, setOrderItemsViewMode] = useState<'cards' | 'table'>('cards');
+  const [copiedOrderItems, setCopiedOrderItems] = useState<boolean>(false);
+  const [groupByCategoryInTable, setGroupByCategoryInTable] = useState<boolean>(false);
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
   const [customerCount, setCustomerCount] = useState<number>(0);
 
@@ -479,6 +487,157 @@ export default function AdminDashboard() {
         };
       }),
     };
+  };
+
+  // Helper to format order items into an easily shareable text for WhatsApp / SMS / Clipboard
+  const formatOrderItemsForSharing = (order: Order | null) => {
+    if (!order || !order.items?.length) return '';
+    const lines: string[] = [];
+    lines.push(`🌸 INDIAN-FLOWERS.COM — PACKING & DISPATCH LIST`);
+    lines.push(`Order ID: #${order.orderId}`);
+    if (order.customerName) lines.push(`Customer: ${order.customerName}`);
+    if (order.customerPhone) lines.push(`Phone: ${order.customerPhone}`);
+    if (order.deliveryDate) lines.push(`Requested Delivery Date: ${order.deliveryDate}`);
+    lines.push(`──────────────────────────────`);
+    lines.push(`ITEMS & QUANTITIES:`);
+
+    order.items.forEach((it, idx) => {
+      const matchedProduct = products.find(
+        (p) => p._id === it.productId || p.name?.toLowerCase().trim() === it.name?.toLowerCase().trim()
+      );
+      const variant = (it.variantName && it.variantName.trim().length > 0)
+        ? it.variantName
+        : matchedProduct?.variants?.find((v) => Number(v.price) === Number(it.price))?.name;
+      const variantStr = variant ? ` [Variant: ${variant}]` : '';
+      lines.push(`${idx + 1}. ${it.name}${variantStr}  -->  Qty: ${it.quantity}`);
+    });
+
+    const totalUnits = order.items.reduce((sum, it) => sum + (it.quantity || 1), 0);
+    lines.push(`──────────────────────────────`);
+    lines.push(`TOTAL UNITS: ${totalUnits}`);
+    return lines.join('\n');
+  };
+
+  const handleCopyOrderItems = async (order: Order | null) => {
+    if (!order) return;
+    const text = formatOrderItemsForSharing(order);
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedOrderItems(true);
+      setTimeout(() => setCopiedOrderItems(false), 2200);
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  };
+
+  const handleShareOrderItems = (order: Order | null) => {
+    if (!order) return;
+    const text = formatOrderItemsForSharing(order);
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      (navigator as any).share({
+        title: `Order Items #${order.orderId}`,
+        text: text,
+      }).catch(() => {
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      });
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+  };
+
+  const handlePrintPackingList = (order: Order | null) => {
+    if (!order) return;
+    const printWindow = window.open('', '_blank', 'width=700,height=850');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const totalUnits = order.items?.reduce((sum, it) => sum + (it.quantity || 1), 0) || 0;
+    const itemsHtml = order.items?.map((it) => {
+      const matchedProduct = products.find(
+        (p) => p._id === it.productId || p.name?.toLowerCase().trim() === it.name?.toLowerCase().trim()
+      );
+      const variant = (it.variantName && it.variantName.trim().length > 0)
+        ? it.variantName
+        : matchedProduct?.variants?.find((v) => Number(v.price) === Number(it.price))?.name;
+      return `
+        <tr style="border-bottom: 2px solid #000;">
+          <td style="padding: 10px 14px; border-right: 2px solid #000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <div style="font-weight: 700; font-size: 14px; color: #000; line-height: 1.3;">${it.name}</div>
+            ${variant ? `<div style="font-size: 12px; font-weight: 700; color: #581c87; margin-top: 3px;">Variant: ${variant}</div>` : ''}
+          </td>
+          <td style="padding: 10px 14px; text-align: center; font-weight: 800; font-size: 17px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #000;">
+            ${it.quantity}
+          </td>
+        </tr>
+      `;
+    }).join('') || '';
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Packing List - Order #${order.orderId}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #000; background: #fff; margin: 0; }
+            .header { margin-bottom: 16px; border-bottom: 2px solid #000; padding-bottom: 12px; }
+            .header h2 { margin: 0 0 6px 0; font-size: 18px; font-weight: 800; }
+            .header p { margin: 2px 0; font-size: 12px; color: #222; }
+            table { width: 100%; border-collapse: collapse; border: 2px solid #000; margin-top: 12px; }
+            th { border-bottom: 2px solid #000; padding: 10px 14px; background: #f3f4f6; font-size: 12px; text-align: left; font-weight: 800; }
+            th.qty { text-align: center; width: 90px; border-left: 2px solid #000; }
+            td.qty { text-align: center; font-weight: 800; }
+            tfoot td { font-weight: 800; border-top: 2px solid #000; padding: 10px 14px; background: #f9fafb; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>Indian-Flowers.com — Packing / Dispatch Slip</h2>
+            <p><strong>Order ID:</strong> #${order.orderId}</p>
+            <p><strong>Customer:</strong> ${order.customerName || 'Walk-in Guest'}${order.customerPhone ? ' (' + order.customerPhone + ')' : ''}</p>
+            ${order.deliveryDate ? `<p><strong>Requested Delivery Date:</strong> ${order.deliveryDate}</p>` : ''}
+            <p><strong>Date Placed:</strong> ${new Date(order.createdAt).toLocaleString('en-US')}</p>
+          </div>
+          <table>
+            <thead>
+              <tr style="background: #e5e7eb;">
+                <th style="border-right: 2px solid #000; font-size: 14px;">${order.customerName || 'Customer Order'}</th>
+                <th class="qty" style="border-left: none; font-size: 16px;">${totalUnits}</th>
+              </tr>
+              <tr style="background: #f9fafb; font-size: 11px;">
+                <th style="border-right: 2px solid #000; text-transform: uppercase;">Product Name &amp; Variant</th>
+                <th class="qty" style="border-left: none; text-transform: uppercase;">Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style="border-right: 2px solid #000; text-transform: uppercase; font-size: 13px;">TOTAL UNITS</td>
+                <td style="text-align: center; font-size: 18px; font-weight: 900;">${totalUnits}</td>
+              </tr>
+            </tfoot>
+          </table>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   // Banners State
@@ -6731,111 +6890,358 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 {/* Column 2: Ordered Items & Bill Summary */}
                 <div className="lg:col-span-7 space-y-4">
                   <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#E8EDF2] space-y-3.5 shadow-2xs">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                      <h5 className="font-extrabold text-[#163B5C] text-xs uppercase tracking-wider flex items-center gap-1.5">
-                        <Package className="w-4 h-4 text-[#ED3500]" />
-                        <span>Ordered Items ({selectedOrderForDetails.items?.length || 0})</span>
-                      </h5>
-                      <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[11px]">
-                        Total Units: {selectedOrderForDetails.items?.reduce((sum, it) => sum + (it.quantity || 1), 0) || 0}
-                      </span>
+                    {/* Header with Title, Total Units, View Mode Toggle & Share Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <h5 className="font-extrabold text-[#163B5C] text-xs uppercase tracking-wider flex items-center gap-1.5">
+                          <Package className="w-4 h-4 text-[#ED3500]" />
+                          <span>Ordered Items ({selectedOrderForDetails.items?.length || 0})</span>
+                        </h5>
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-[11px]">
+                          Total Units: {selectedOrderForDetails.items?.reduce((sum, it) => sum + (it.quantity || 1), 0) || 0}
+                        </span>
+                      </div>
+
+                      {/* Layout Switcher & Quick Actions */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Segmented Layout Mode Button Group */}
+                        <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => setOrderItemsViewMode('cards')}
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
+                              orderItemsViewMode === 'cards'
+                                ? 'bg-white text-[#163B5C] shadow-2xs'
+                                : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                            title="Detailed Cards View"
+                          >
+                            <LayoutGrid className="w-3.5 h-3.5" />
+                            <span>Cards</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setOrderItemsViewMode('table')}
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
+                              orderItemsViewMode === 'table'
+                                ? 'bg-white text-[#163B5C] shadow-2xs'
+                                : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                            title="Compact 2-Column Packing Table (Image 2 style)"
+                          >
+                            <Table className="w-3.5 h-3.5" />
+                            <span>Table / List</span>
+                          </button>
+                        </div>
+
+                        {/* Copy Formatted List Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopyOrderItems(selectedOrderForDetails)}
+                          className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[11px] flex items-center gap-1 transition-colors shadow-2xs"
+                          title="Copy Items & Quantities to Clipboard"
+                        >
+                          {copiedOrderItems ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span className="text-emerald-700 font-bold">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-slate-500" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* WhatsApp / Native Share Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleShareOrderItems(selectedOrderForDetails)}
+                          className="px-2.5 py-1 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-[11px] flex items-center gap-1 transition-colors shadow-2xs"
+                          title="Share via WhatsApp or Native Share"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Share</span>
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="max-h-96 overflow-y-auto pr-1 space-y-2.5">
-                      {selectedOrderForDetails.items?.map((item, idx) => {
-                        const matchedProduct = products.find(
-                          (p) => p._id === item.productId || p.name?.toLowerCase().trim() === item.name?.toLowerCase().trim()
-                        );
-                        const matchedVariant =
-                          (item.variantName && item.variantName.trim().length > 0)
-                            ? item.variantName
-                            : matchedProduct?.variants?.find((v) => Number(v.price) === Number(item.price))?.name;
-                        const itemImage = item.image || matchedProduct?.image;
-                        const lineTotal = item.price * item.quantity;
-                        const categoryName = matchedProduct?.category;
+                    {orderItemsViewMode === 'cards' ? (
+                      /* Detailed Cards View */
+                      <div className="max-h-96 overflow-y-auto pr-1 space-y-2.5">
+                        {selectedOrderForDetails.items?.map((item, idx) => {
+                          const matchedProduct = products.find(
+                            (p) => p._id === item.productId || p.name?.toLowerCase().trim() === item.name?.toLowerCase().trim()
+                          );
+                          const matchedVariant =
+                            (item.variantName && item.variantName.trim().length > 0)
+                              ? item.variantName
+                              : matchedProduct?.variants?.find((v) => Number(v.price) === Number(item.price))?.name;
+                          const itemImage = item.image || matchedProduct?.image;
+                          const lineTotal = item.price * item.quantity;
+                          const categoryName = matchedProduct?.category;
 
-                        return (
-                          <div
-                            key={idx}
-                            className="p-3 sm:p-3.5 rounded-xl bg-[#FAFBFD] border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-                          >
-                            <div className="flex items-start gap-3 min-w-0 flex-1">
-                              {itemImage ? (
-                                <img
-                                  src={itemImage}
-                                  alt={item.name}
-                                  className="w-14 h-14 object-cover rounded-xl bg-white border border-slate-200 shrink-0 shadow-2xs"
-                                />
-                              ) : (
-                                <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-                                  <Package className="w-6 h-6" />
-                                </div>
-                              )}
+                          return (
+                            <div
+                              key={idx}
+                              className="p-3 sm:p-3.5 rounded-xl bg-[#FAFBFD] border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                            >
+                              <div className="flex items-start gap-3 min-w-0 flex-1">
+                                {itemImage ? (
+                                  <img
+                                    src={itemImage}
+                                    alt={item.name}
+                                    className="w-14 h-14 object-cover rounded-xl bg-white border border-slate-200 shrink-0 shadow-2xs"
+                                  />
+                                ) : (
+                                  <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                                    <Package className="w-6 h-6" />
+                                  </div>
+                                )}
 
-                              <div className="min-w-0 space-y-1.5 flex-1">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  <p className="font-extrabold text-[#163B5C] text-xs sm:text-sm leading-snug break-words">
-                                    {item.name}
-                                  </p>
-                                  {categoryName && (
-                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shrink-0">
-                                      {categoryName}
+                                <div className="min-w-0 space-y-1.5 flex-1">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <p className="font-extrabold text-[#163B5C] text-xs sm:text-sm leading-snug break-words">
+                                      {item.name}
+                                    </p>
+                                    {categoryName && (
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 shrink-0">
+                                        {categoryName}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Selected Variant Badge */}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {matchedVariant ? (
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs">
+                                        <Tag className="w-3 h-3 text-purple-600 shrink-0" />
+                                        <span>Variant: {matchedVariant}</span>
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                                        Standard Item
+                                      </span>
+                                    )}
+
+                                    {(item.productId || matchedProduct?._id) && (
+                                      <Link
+                                        href={`/product/${item.productId || matchedProduct?._id}`}
+                                        target="_blank"
+                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#063D29] hover:text-[#ED3500] hover:underline"
+                                      >
+                                        <span>View Product</span>
+                                        <ExternalLink className="w-3 h-3" />
+                                      </Link>
+                                    )}
+                                  </div>
+
+                                  {/* Price breakdown & tax info */}
+                                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 font-medium">
+                                    <span>
+                                      Qty: <strong className="text-slate-800 font-bold">{item.quantity}</strong> × {formatCurrency(item.price)} each
                                     </span>
-                                  )}
-                                </div>
-
-                                {/* Selected Variant Badge */}
-                                <div className="flex flex-wrap items-center gap-2">
-                                  {matchedVariant ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs">
-                                      <Tag className="w-3 h-3 text-purple-600 shrink-0" />
-                                      <span>Variant: {matchedVariant}</span>
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                                      Standard Item
-                                    </span>
-                                  )}
-
-                                  {(item.productId || matchedProduct?._id) && (
-                                    <Link
-                                      href={`/product/${item.productId || matchedProduct?._id}`}
-                                      target="_blank"
-                                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#063D29] hover:text-[#ED3500] hover:underline"
-                                    >
-                                      <span>View Product</span>
-                                      <ExternalLink className="w-3 h-3" />
-                                    </Link>
-                                  )}
-                                </div>
-
-                                {/* Price breakdown & tax info */}
-                                <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 font-medium">
-                                  <span>
-                                    Qty: <strong className="text-slate-800 font-bold">{item.quantity}</strong> × {formatCurrency(item.price)} each
-                                  </span>
-                                  {item.isTaxable !== false && (
-                                    <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px]">
-                                      {item.taxCode ? `Tax: ${item.taxCode}` : item.gst ? `Tax: ${item.gst}%` : 'Taxable'}
-                                    </span>
-                                  )}
+                                    {item.isTaxable !== false && (
+                                      <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px]">
+                                        {item.taxCode ? `Tax: ${item.taxCode}` : item.gst ? `Tax: ${item.gst}%` : 'Taxable'}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
 
-                            {/* Line Total */}
-                            <div className="sm:text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 flex sm:flex-col justify-between items-center sm:items-end w-full sm:w-auto">
-                              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold sm:block">
-                                Line Total
-                              </span>
-                              <span className="font-extrabold text-sm sm:text-base text-[#163B5C]">
-                                {formatCurrency(lineTotal)}
-                              </span>
+                              {/* Line Total */}
+                              <div className="sm:text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 flex sm:flex-col justify-between items-center sm:items-end w-full sm:w-auto">
+                                <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold sm:block">
+                                  Line Total
+                                </span>
+                                <span className="font-extrabold text-sm sm:text-base text-[#163B5C]">
+                                  {formatCurrency(lineTotal)}
+                                </span>
+                              </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      /* Table / Packing List Layout View (Image 2 style) */
+                      <div className="space-y-2">
+                        {/* Packing Table Controls Sub-bar */}
+                        <div className="flex items-center justify-between text-[11px] text-slate-600 px-0.5">
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-[#163B5C]">
+                              Packing &amp; Dispatch Table
+                            </span>
+                            <label className="inline-flex items-center gap-1.5 cursor-pointer text-slate-600 hover:text-slate-900 select-none">
+                              <input
+                                type="checkbox"
+                                checked={groupByCategoryInTable}
+                                onChange={(e) => setGroupByCategoryInTable(e.target.checked)}
+                                className="rounded border-slate-300 text-[#163B5C] focus:ring-0 w-3.5 h-3.5"
+                              />
+                              <span>Group by Category</span>
+                            </label>
                           </div>
-                        );
-                      })}
-                    </div>
+                          <button
+                            type="button"
+                            onClick={() => handlePrintPackingList(selectedOrderForDetails)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 underline underline-offset-2"
+                            title="Print Packing Slip"
+                          >
+                            <Printer className="w-3 h-3 text-slate-500" />
+                            <span>Print Slip</span>
+                          </button>
+                        </div>
+
+                        {/* Crisp 2-Column Table matching Image 2 */}
+                        <div className="max-h-96 overflow-y-auto pr-0.5 border-2 border-black bg-white shadow-2xs">
+                          <table className="w-full border-collapse text-left">
+                            <thead>
+                              <tr className="bg-slate-100 border-b-2 border-black text-[11px] font-black uppercase tracking-wider text-slate-900">
+                                <th className="py-2.5 px-3 sm:px-4 border-r-2 border-black">
+                                  Product Name &amp; Variant
+                                </th>
+                                <th className="py-2.5 px-3 sm:px-4 text-center w-20 sm:w-28 shrink-0">
+                                  Quantity
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                const enrichedItems = (selectedOrderForDetails.items || []).map((it) => {
+                                  const matchedProduct = products.find(
+                                    (p) => p._id === it.productId || p.name?.toLowerCase().trim() === it.name?.toLowerCase().trim()
+                                  );
+                                  const matchedVariant =
+                                    (it.variantName && it.variantName.trim().length > 0)
+                                      ? it.variantName
+                                      : matchedProduct?.variants?.find((v) => Number(v.price) === Number(it.price))?.name;
+                                  const categoryName = matchedProduct?.category || (it as any).category || 'Ceremonial Essentials';
+                                  return {
+                                    ...it,
+                                    matchedVariant,
+                                    categoryName,
+                                  };
+                                });
+
+                                if (groupByCategoryInTable) {
+                                  // Group by category
+                                  const catMap: { [cat: string]: typeof enrichedItems } = {};
+                                  enrichedItems.forEach((it) => {
+                                    const cat = it.categoryName || 'Other Items';
+                                    if (!catMap[cat]) catMap[cat] = [];
+                                    catMap[cat].push(it);
+                                  });
+
+                                  return Object.keys(catMap).map((catName) => {
+                                    const catItems = catMap[catName];
+                                    const catTotalQty = catItems.reduce((sum, it) => sum + (it.quantity || 1), 0);
+
+                                    return (
+                                      <React.Fragment key={catName}>
+                                        {/* Category Group Header Row matching Image 2 */}
+                                        <tr className="bg-slate-200/90 border-y-2 border-black font-black text-xs sm:text-sm text-black">
+                                          <td className="py-2 px-3 sm:px-4 border-r-2 border-black uppercase tracking-wide">
+                                            {catName}
+                                          </td>
+                                          <td className="py-2 px-3 sm:px-4 text-center font-black text-sm sm:text-base border-black tabular-nums">
+                                            {catTotalQty}
+                                          </td>
+                                        </tr>
+                                        {catItems.map((it, idx) => (
+                                          <tr
+                                            key={idx}
+                                            className="border-b border-black hover:bg-slate-50/90 transition-colors"
+                                          >
+                                            <td className="py-2.5 px-3 sm:px-4 border-r-2 border-black align-middle">
+                                              <div className="font-bold text-xs sm:text-sm text-black leading-snug">
+                                                {it.name}
+                                              </div>
+                                              {it.matchedVariant ? (
+                                                <div className="text-[11px] sm:text-xs font-semibold text-purple-800 mt-0.5 inline-flex items-center gap-1">
+                                                  <Tag className="w-3 h-3 text-purple-700 shrink-0" />
+                                                  <span>Variant: {it.matchedVariant}</span>
+                                                </div>
+                                              ) : (
+                                                <div className="text-[10px] text-slate-500 mt-0.5">Standard</div>
+                                              )}
+                                            </td>
+                                            <td className="py-2.5 px-3 sm:px-4 text-center align-middle font-black text-sm sm:text-base text-black tabular-nums">
+                                              {it.quantity}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </React.Fragment>
+                                    );
+                                  });
+                                }
+
+                                // Flat List (Default)
+                                const totalUnits = enrichedItems.reduce((sum, it) => sum + (it.quantity || 1), 0);
+                                return (
+                                  <>
+                                    {/* Order / Customer Header Row matching Image 2 top bar */}
+                                    <tr className="bg-slate-100 border-b-2 border-black font-black text-xs sm:text-sm text-black">
+                                      <td className="py-2 px-3 sm:px-4 border-r-2 border-black">
+                                        <span>{selectedOrderForDetails.customerName || 'Order Items'}</span>
+                                        <span className="text-[11px] font-medium text-slate-600 ml-1.5">
+                                          (Order #{selectedOrderForDetails.orderId.slice(-8)})
+                                        </span>
+                                      </td>
+                                      <td className="py-2 px-3 sm:px-4 text-center font-black text-sm sm:text-base border-black tabular-nums">
+                                        {totalUnits}
+                                      </td>
+                                    </tr>
+
+                                    {enrichedItems.map((it, idx) => (
+                                      <tr
+                                        key={idx}
+                                        className="border-b border-black hover:bg-slate-50/90 transition-colors"
+                                      >
+                                        <td className="py-2.5 px-3 sm:px-4 border-r-2 border-black align-middle">
+                                          <div className="font-bold text-xs sm:text-sm text-black leading-snug">
+                                            {it.name}
+                                          </div>
+                                          <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                            {it.matchedVariant ? (
+                                              <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-purple-800">
+                                                <Tag className="w-3 h-3 text-purple-700 shrink-0" />
+                                                <span>Variant: {it.matchedVariant}</span>
+                                              </span>
+                                            ) : (
+                                              <span className="text-[10px] text-slate-500">Standard</span>
+                                            )}
+                                            {it.categoryName && (
+                                              <span className="text-[9px] uppercase tracking-wider font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                                {it.categoryName}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td className="py-2.5 px-3 sm:px-4 text-center align-middle font-black text-sm sm:text-base text-black tabular-nums">
+                                          {it.quantity}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </>
+                                );
+                              })()}
+                            </tbody>
+                            <tfoot>
+                              <tr className="bg-slate-100 border-t-2 border-black font-black text-xs sm:text-sm text-black">
+                                <td className="py-2.5 px-3 sm:px-4 border-r-2 border-black uppercase tracking-wider">
+                                  Total Units
+                                </td>
+                                <td className="py-2.5 px-3 sm:px-4 text-center font-black text-base sm:text-lg text-black tabular-nums">
+                                  {selectedOrderForDetails.items?.reduce((sum, it) => sum + (it.quantity || 1), 0) || 0}
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Financial Breakdown */}
@@ -6905,17 +7311,48 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             </div>
 
             {/* Modal Bottom Footer */}
-            <div className="px-5 sm:px-6 py-4 bg-[#FFFCFB] border-t border-[#E8EDF2] flex items-center justify-between gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  setReceiptOrder(enrichOrderWithVariants(selectedOrderForDetails));
-                }}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
-              >
-                <Printer className="w-4 h-4 text-slate-500" />
-                <span>Print Receipt / Tax Invoice</span>
-              </button>
+            <div className="px-5 sm:px-6 py-4 bg-[#FFFCFB] border-t border-[#E8EDF2] flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReceiptOrder(enrichOrderWithVariants(selectedOrderForDetails));
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
+                >
+                  <Printer className="w-4 h-4 text-slate-500" />
+                  <span>Print Receipt / Tax Invoice</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handlePrintPackingList(selectedOrderForDetails)}
+                  className="px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
+                  title="Print 2-Column Packing Slip (Image 2 style)"
+                >
+                  <Table className="w-4 h-4 text-slate-500" />
+                  <span>Print Packing Slip</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopyOrderItems(selectedOrderForDetails)}
+                  className="px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
+                  title="Copy Packing List for WhatsApp or SMS"
+                >
+                  {copiedOrderItems ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span className="text-emerald-700">Copied List!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-slate-500" />
+                      <span>Copy List</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
               <button
                 type="button"
