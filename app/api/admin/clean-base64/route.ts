@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/db';
 import mongoose from 'mongoose';
 import fs from 'fs/promises';
 import path from 'path';
+import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,9 @@ function parseBase64(dataString: string) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAuthenticatedAdmin(req)) {
+    return unauthenticatedResponse();
+  }
   try {
     await connectToDatabase();
     const db = mongoose.connection.db;
