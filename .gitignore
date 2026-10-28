@@ -35,6 +35,7 @@ scripts/*
 !scripts/import-woocommerce.mjs
 !scripts/migrate-base64-images.mjs
 !scripts/sync-category-slugs.mjs
+!scripts/sync-core-images-to-seo.mjs
 tests/
 *.py
 *.ps1
