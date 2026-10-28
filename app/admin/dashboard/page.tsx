@@ -1559,11 +1559,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     setIsAddModalOpen(true);
   };
 
-  // Export Products to Excel (.xlsx) with all columns & image filenames
-  const handleExportProductsToExcel = async (scope: 'all' | 'filtered' = 'all') => {
+  // Export Products to Excel (.xlsx) with all columns & image filenames (supports core catalog vs all multi-sheet)
+  const handleExportProductsToExcel = async (
+    catalogType: 'core' | 'all' | 'seo' = 'core',
+    scope: 'all' | 'filtered' = 'all'
+  ) => {
     try {
       setIsExportingExcel(true);
       const params = new URLSearchParams();
+      params.append('catalogType', catalogType);
       params.append('scope', scope);
 
       if (scope === 'filtered') {
@@ -1589,8 +1593,14 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       const a = document.createElement('a');
       a.href = url;
       const dateStamp = new Date().toISOString().split('T')[0];
-      const suffix = scope === 'filtered' ? '_Filtered' : '_Complete';
-      a.download = `IndianFlowers_Products_Export${suffix}_${dateStamp}.xlsx`;
+      const typeLabel =
+        catalogType === 'core'
+          ? 'Core_Catalog'
+          : catalogType === 'seo'
+          ? 'State_SEO_Pages'
+          : 'Complete_Catalog_All';
+      const suffix = scope === 'filtered' ? '_Filtered' : '';
+      a.download = `IndianFlowers_${typeLabel}${suffix}_${dateStamp}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -3067,10 +3077,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 </a>
                 <button
                   type="button"
-                  onClick={() => handleExportProductsToExcel('all')}
+                  onClick={() => handleExportProductsToExcel('core', 'all')}
                   disabled={isExportingExcel}
                   className="px-3.5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-emerald-700/20 transition-all active:scale-95 shrink-0 disabled:opacity-50"
-                  title="Export complete products catalog to Excel (.xlsx) with all columns, pricing, variants, and image filenames"
+                  title="Export Core Store Products (clean list without state-name repetitions) with Image Filenames ready for bulk photo replacement"
                 >
                   {isExportingExcel ? (
                     <>
@@ -3080,14 +3090,24 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   ) : (
                     <>
                       <FileSpreadsheet className="w-4 h-4 text-emerald-200" />
-                      <span>Export Excel (.xlsx)</span>
+                      <span>Export Core Catalog (.xlsx)</span>
                     </>
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportProductsToExcel('all', 'all')}
+                  disabled={isExportingExcel}
+                  className="px-3 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 shrink-0 disabled:opacity-50"
+                  title="Export complete database with all 1,973 products neatly separated into Sheet 1: Core Catalog and Sheet 2: State SEO Landing Pages"
+                >
+                  <Download className="w-4 h-4 text-emerald-700" />
+                  <span>Export All (Multi-Tab)</span>
                 </button>
                 {filteredProducts.length !== products.length && (
                   <button
                     type="button"
-                    onClick={() => handleExportProductsToExcel('filtered')}
+                    onClick={() => handleExportProductsToExcel('core', 'filtered')}
                     disabled={isExportingExcel}
                     className="px-3 py-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 shrink-0 disabled:opacity-50"
                     title={`Export ${filteredProducts.length} filtered products currently visible in search/category`}
@@ -7693,13 +7713,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
                     <button
                       type="button"
-                      onClick={() => handleExportProductsToExcel('all')}
+                      onClick={() => handleExportProductsToExcel('core', 'all')}
                       disabled={isExportingExcel}
                       className="px-3.5 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-300 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0 disabled:opacity-50"
-                      title="Export complete existing store catalog with all image filenames to update and re-upload"
+                      title="Export clean 317-product store catalog with image filenames ready to update and re-upload"
                     >
                       <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>{isExportingExcel ? 'Exporting...' : 'Export Current Catalog (.xlsx)'}</span>
+                      <span>{isExportingExcel ? 'Exporting...' : 'Export Core Catalog (.xlsx)'}</span>
                     </button>
                     <a
                       href="/api/products/template"
