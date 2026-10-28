@@ -40,11 +40,14 @@ export interface ParsedImportRow {
 
 export function cleanStringForMatch(str: string): string {
   if (!str) return '';
-  return str
-    .toString()
+  // Extract base filename if a full directory path or URL was passed
+  const clean = str.toString().split('?')[0].split('#')[0].trim();
+  const segments = clean.split(/[/\\]/);
+  const base = segments[segments.length - 1] || clean;
+  return base
     .toLowerCase()
     .trim()
-    .replace(/\.[a-z0-9]+$/i, '') // strip extensions like .jpg, .png
+    .replace(/\.[a-z0-9]+$/i, '') // strip extensions like .jpg, .png, .webp
     .replace(/[^a-z0-9]/g, '');
 }
 
