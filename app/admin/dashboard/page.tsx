@@ -316,6 +316,7 @@ export default function AdminDashboard() {
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('All');
   const [productStockFilter, setProductStockFilter] = useState<'All' | 'inStock' | 'lowStock' | 'outOfStock'>('All');
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
 
   // Add/Edit Product Form State
   const [productForm, setProductForm] = useState({
@@ -1556,6 +1557,50 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     setImagePreview(product.image);
     setProductFormError('');
     setIsAddModalOpen(true);
+  };
+
+  // Export Products to Excel (.xlsx) with all columns & image filenames
+  const handleExportProductsToExcel = async (scope: 'all' | 'filtered' = 'all') => {
+    try {
+      setIsExportingExcel(true);
+      const params = new URLSearchParams();
+      params.append('scope', scope);
+
+      if (scope === 'filtered') {
+        if (productCategoryFilter && productCategoryFilter !== 'All') {
+          params.append('category', productCategoryFilter);
+        }
+        if (productStockFilter && productStockFilter !== 'All') {
+          params.append('stock', productStockFilter);
+        }
+        if (productSearch.trim()) {
+          params.append('search', productSearch.trim());
+        }
+      }
+
+      const res = await fetch(`/api/products/export?${params.toString()}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Export failed');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStamp = new Date().toISOString().split('T')[0];
+      const suffix = scope === 'filtered' ? '_Filtered' : '_Complete';
+      a.download = `IndianFlowers_Products_Export${suffix}_${dateStamp}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Failed to export products to Excel:', err);
+      alert(err.message || 'Failed to export products to Excel');
+    } finally {
+      setIsExportingExcel(false);
+    }
   };
 
   // Open Add Product Modal
@@ -3020,6 +3065,37 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   <Download className="w-4 h-4 text-emerald-700" />
                   <span>Excel Template</span>
                 </a>
+                <button
+                  type="button"
+                  onClick={() => handleExportProductsToExcel('all')}
+                  disabled={isExportingExcel}
+                  className="px-3.5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-emerald-700/20 transition-all active:scale-95 shrink-0 disabled:opacity-50"
+                  title="Export complete products catalog to Excel (.xlsx) with all columns, pricing, variants, and image filenames"
+                >
+                  {isExportingExcel ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-emerald-200" />
+                      <span>Exporting Excel...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-200" />
+                      <span>Export Excel (.xlsx)</span>
+                    </>
+                  )}
+                </button>
+                {filteredProducts.length !== products.length && (
+                  <button
+                    type="button"
+                    onClick={() => handleExportProductsToExcel('filtered')}
+                    disabled={isExportingExcel}
+                    className="px-3 py-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 shrink-0 disabled:opacity-50"
+                    title={`Export ${filteredProducts.length} filtered products currently visible in search/category`}
+                  >
+                    <Download className="w-4 h-4 text-teal-700" />
+                    <span>Export Filtered ({filteredProducts.length})</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -7614,14 +7690,26 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       Pre-formatted with color-coded headers, separate non-technical Variant columns (Variant 1, 2, 3, 4), and categories reference.
                     </p>
                   </div>
-                  <a
-                    href="/api/products/template"
-                    download="IndianFlowers_Products_Bulk_Import_Template.xlsx"
-                    className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0 self-start sm:self-auto"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download .xlsx</span>
-                  </a>
+                  <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => handleExportProductsToExcel('all')}
+                      disabled={isExportingExcel}
+                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-300 font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0 disabled:opacity-50"
+                      title="Export complete existing store catalog with all image filenames to update and re-upload"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>{isExportingExcel ? 'Exporting...' : 'Export Current Catalog (.xlsx)'}</span>
+                    </button>
+                    <a
+                      href="/api/products/template"
+                      download="IndianFlowers_Products_Bulk_Import_Template.xlsx"
+                      className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Blank Template</span>
+                    </a>
+                  </div>
                 </div>
 
                 {/* Upload Zones: 2 Columns (Excel File + Product Images Dropzone) */}
