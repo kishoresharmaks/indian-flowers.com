@@ -1219,7 +1219,6 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         setBannerImagePreview(previewUrl);
         const uploadedUrl = await uploadAdminImage(file, 'banners');
         setNewBannerImage(uploadedUrl);
-        setBannerImagePreview(uploadedUrl);
       } catch (err: any) {
         console.error('Banner image upload failed', err);
         alert(err.message || 'Banner upload failed');
@@ -1235,7 +1234,6 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         setEditBannerImagePreview(previewUrl);
         const uploadedUrl = await uploadAdminImage(file, 'banners');
         setEditBannerImage(uploadedUrl);
-        setEditBannerImagePreview(uploadedUrl);
       } catch (err: any) {
         console.error('Edit banner image upload failed', err);
         alert(err.message || 'Banner upload failed');
@@ -1505,7 +1503,6 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         setImagePreview(previewUrl);
         const uploadedUrl = await uploadAdminImage(file, 'products');
         setProductForm((prev) => ({ ...prev, image: uploadedUrl }));
-        setImagePreview(uploadedUrl);
       } catch (err: any) {
         console.error('Product image upload failed', err);
         alert(err.message || 'Product image upload failed');
@@ -1728,7 +1725,6 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         setNewCatImagePreview(previewUrl);
         const uploadedUrl = await uploadAdminImage(file, 'categories');
         setNewCatImage(uploadedUrl);
-        setNewCatImagePreview(uploadedUrl);
       } catch (err: any) {
         console.error('Category image upload failed', err);
         alert(err.message || 'Category image upload failed');
@@ -1744,7 +1740,6 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         setEditCatImagePreview(previewUrl);
         const uploadedUrl = await uploadAdminImage(file, 'categories');
         setEditCatImage(uploadedUrl);
-        setEditCatImagePreview(uploadedUrl);
       } catch (err: any) {
         console.error('Edit category image upload failed', err);
         alert(err.message || 'Edit category image upload failed');
@@ -3470,6 +3465,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                               src={newCatImagePreview}
                               alt="Category Preview"
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = '/images/categories/cat-wedding-garlands.jpg';
+                              }}
                             />
                           </div>
                           <button
@@ -4385,6 +4383,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         src={bannerImagePreview}
                         alt="Banner Preview"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/images/banners/hero-wedding-1920x650.jpg';
+                        }}
                       />
                     </div>
                   </div>
@@ -6076,6 +6077,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           src={imagePreview}
                           alt="Preview"
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/images/products/prod-rose-petal-varmala.jpg';
+                          }}
                         />
                       </div>
                     )}
@@ -6409,6 +6413,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             src={editCatImagePreview}
                             alt="Category Preview"
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = '/images/categories/cat-wedding-garlands.jpg';
+                            }}
                           />
                         </div>
                         <button
@@ -6628,6 +6635,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         src={editBannerImagePreview}
                         alt="Banner Preview"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/images/banners/hero-wedding-1920x650.jpg';
+                        }}
                       />
                     </div>
                   </div>
