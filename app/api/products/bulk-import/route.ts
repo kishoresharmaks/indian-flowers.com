@@ -418,6 +418,12 @@ export async function POST(request: NextRequest) {
           // Never overwrite an existing good photo with a blank or default placeholder!
           if (isNewImageProvided) {
             existingProduct.image = image;
+            existingProduct.images = [
+              image,
+              ...(Array.isArray(existingProduct.images)
+                ? existingProduct.images.filter((img: string) => img !== image)
+                : []),
+            ];
           }
 
           if (parsedVariants.length > 0) {

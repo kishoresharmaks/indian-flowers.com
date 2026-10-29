@@ -90,6 +90,14 @@ export async function PUT(
       body.discount = Math.round(((body.mrp - body.price) / body.mrp) * 100);
     }
 
+    if (body.image) {
+      if (!Array.isArray(body.images) || body.images.length === 0) {
+        body.images = [body.image];
+      } else if (body.images[0] !== body.image) {
+        body.images = [body.image, ...body.images.filter((img: string) => img !== body.image)];
+      }
+    }
+
     let updatedProduct = null;
     if (mongoose.isValidObjectId(id)) {
       updatedProduct = await Product.findByIdAndUpdate(id, body, {

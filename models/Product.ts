@@ -146,6 +146,15 @@ ProductSchema.pre('save', function (this: IProduct, next) {
   if (this.mrp && this.price && this.mrp > this.price) {
     this.discount = Math.round(((this.mrp - this.price) / this.mrp) * 100);
   }
+  // Auto-synchronize primary image with images gallery array
+  if (this.image) {
+    if (!Array.isArray(this.images) || this.images.length === 0) {
+      this.images = [this.image];
+    } else if (this.images[0] !== this.image) {
+      this.images = [this.image, ...this.images.filter((img) => img !== this.image)];
+    }
+  }
+
   // Auto-flag programmatic state/city SEO landing products
   if (this.isSeoLanding === undefined && this.name) {
     const stateUsaRegex = /(\b(Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)\b.*USA)|(USA\s*$)/i;

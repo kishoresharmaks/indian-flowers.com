@@ -23,6 +23,7 @@ interface SearchProduct {
   slug?: string;
   price: number;
   salePrice?: number;
+  image?: string;
   images?: string[];
   category?: string;
   subCategory?: string;
@@ -288,7 +289,7 @@ export default function PredictiveSearch({
                 </div>
                 {products.map((prod) => {
                   const targetSlug = prod.slug || prod._id;
-                  const thumb = prod.images && prod.images.length > 0 ? prod.images[0] : null;
+                  const thumb = prod.image || (prod.images && prod.images.length > 0 ? prod.images[0] : null);
                   const displayPrice = prod.salePrice && prod.salePrice < prod.price ? prod.salePrice : prod.price;
                   const hasDiscount = Boolean(prod.salePrice && prod.salePrice < prod.price);
 

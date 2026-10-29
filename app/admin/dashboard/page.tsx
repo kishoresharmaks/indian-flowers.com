@@ -1663,6 +1663,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           name: productForm.name,
           description: productForm.description,
           image: productForm.image,
+          images: [productForm.image],
           mrp: Number(productForm.mrp),
           price: Number(productForm.price),
           quantity: Number(productForm.quantity),
