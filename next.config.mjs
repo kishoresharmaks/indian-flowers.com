@@ -3,8 +3,10 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   images: {
-    // unoptimized removed — Next.js image optimization works fine with standalone output.
-    // This re-enables WebP conversion, responsive srcsets, and lazy loading.
+    // Next.js image optimization active with standalone output.
+    unoptimized: false,
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 2592000,
     remotePatterns: [
       {
         protocol: 'https',
