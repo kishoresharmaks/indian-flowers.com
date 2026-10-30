@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { getSiteUrl } from "@/lib/siteUrl";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import StorefrontGlobalNav from "@/components/StorefrontGlobalNav";
@@ -7,13 +7,13 @@ import GlobalPageLoader from "@/components/GlobalPageLoader";
 import ProductShareModal from "@/components/ProductShareModal";
 import "./globals.css";
 
-// Issue #2: Use next/font/google for Plus Jakarta Sans — eliminates render-blocking
-// Google Fonts network requests and prevents font flash on initial load.
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
+// Self-hosted Plus Jakarta Sans via next/font/local — eliminates build-time
+// external Google Fonts network calls that fail on Linux VPS with TypeError: Cannot read properties of null
+const plusJakartaSans = localFont({
+  src: "../public/fonts/PlusJakartaSans-Variable.woff2",
   variable: "--font-plus-jakarta",
-  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
+  weight: "400 800",
 });
 
 export const dynamic = 'force-dynamic';
