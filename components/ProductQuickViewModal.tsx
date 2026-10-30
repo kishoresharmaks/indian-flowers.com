@@ -13,6 +13,7 @@ import {
   Heart,
   Clock,
   Share2,
+  ZoomIn,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
@@ -41,6 +42,7 @@ export default function ProductQuickViewModal({
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
 
   // Initialize or reset selected variant and quantity when product changes
   useEffect(() => {
@@ -52,13 +54,20 @@ export default function ProductQuickViewModal({
       }
       setQuantity(1);
       setImgError(false);
+      setIsImageLightboxOpen(false);
     }
   }, [product]);
 
-  // Handle ESC key to close modal
+  // Handle ESC key to close lightbox or modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (isImageLightboxOpen) {
+          setIsImageLightboxOpen(false);
+        } else {
+          onClose();
+        }
+      }
     };
     if (isOpen) {
       window.addEventListener('keydown', handleKeyDown);
@@ -68,7 +77,7 @@ export default function ProductQuickViewModal({
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isImageLightboxOpen]);
 
   if (!isOpen || !product) return null;
 
@@ -147,21 +156,33 @@ export default function ProductQuickViewModal({
         <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
           {/* Product Summary Header Card: Thumbnail + Info */}
           <div className="flex gap-3.5 items-start">
-            {/* Product Thumbnail with Discount Badge */}
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden bg-[#FAF6F0] border border-stone-200/80 shadow-xs shrink-0">
+            {/* Product Thumbnail with Discount Badge & Tap to Zoom */}
+            <button
+              type="button"
+              onClick={() => setIsImageLightboxOpen(true)}
+              className="relative w-24 h-24 sm:w-28 sm:h-28 aspect-square rounded-2xl overflow-hidden bg-[#FAF6F0] border border-stone-200/80 shadow-xs shrink-0 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0B3B24] transition-transform active:scale-95 text-left"
+              title="Tap to enlarge image"
+              aria-label="Enlarge product image"
+            >
               {activeDiscount > 0 && (
                 <span className="absolute top-1.5 left-1.5 z-10 rounded-md bg-[#C83B47] px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-white shadow-xs">
                   {activeDiscount}% OFF
                 </span>
               )}
+
+              {/* Tap to Enlarge Indicator Badge */}
+              <div className="absolute bottom-1.5 right-1.5 z-10 w-6 h-6 rounded-lg bg-black/65 backdrop-blur-xs flex items-center justify-center text-white opacity-90 group-hover:opacity-100 transition-opacity shadow-xs">
+                <ZoomIn className="w-3.5 h-3.5 stroke-[2.2]" />
+              </div>
+
               <img
                 src={imgError || !product.image ? DEFAULT_FLORAL_PLACEHOLDER : product.image}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="eager"
                 onError={() => setImgError(true)}
               />
-            </div>
+            </button>
 
             {/* Title, Category & Price */}
             <div className="flex-1 min-w-0 space-y-1">
@@ -398,12 +419,22 @@ export default function ProductQuickViewModal({
         {/* Left Column: Image & Badges */}
         <div className="w-5/12 bg-[#FAF7F2] p-6 lg:p-7 flex flex-col justify-between items-center relative border-r border-stone-200/60 shrink-0">
           <div className="w-full my-auto flex items-center justify-center">
-            <div className="relative w-64 h-64 lg:w-72 lg:h-72 rounded-2xl overflow-hidden shadow-sm bg-white border border-stone-200/80 group">
+            <button
+              type="button"
+              onClick={() => setIsImageLightboxOpen(true)}
+              className="relative w-64 h-64 lg:w-72 lg:h-72 rounded-2xl overflow-hidden shadow-sm bg-white border border-stone-200/80 group cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-[#0B3B24]"
+              title="Click to enlarge image"
+              aria-label="Click to enlarge product image"
+            >
               {activeDiscount > 0 && (
                 <span className="absolute top-3 left-3 z-10 rounded-md bg-[#C83B47] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs">
                   {activeDiscount}% OFF
                 </span>
               )}
+              <div className="absolute bottom-3 right-3 z-10 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-xs flex items-center gap-1.5 text-white text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                <ZoomIn className="w-3.5 h-3.5 stroke-[2.2]" />
+                <span>Enlarge</span>
+              </div>
               <img
                 src={imgError || !product.image ? DEFAULT_FLORAL_PLACEHOLDER : product.image}
                 alt={product.name}
@@ -411,7 +442,7 @@ export default function ProductQuickViewModal({
                 loading="eager"
                 onError={() => setImgError(true)}
               />
-            </div>
+            </button>
           </div>
 
           {/* Badges Strip */}
@@ -631,6 +662,60 @@ export default function ProductQuickViewModal({
           </div>
         </div>
       </div>
+
+      {/* High-Resolution Image Lightbox Popup Modal */}
+      {isImageLightboxOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Enlarged product image preview"
+          className="fixed inset-0 z-[130] flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsImageLightboxOpen(false);
+          }}
+        >
+          {/* Top Bar with Product Title & Close Button */}
+          <div
+            className="absolute top-3 inset-x-3 sm:top-5 sm:inset-x-6 flex items-center justify-between text-white z-20 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="max-w-[75%]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 block">
+                {product.category || 'Fresh Floral Garland'}
+              </span>
+              <h3 className="text-sm sm:text-base font-bold text-white truncate drop-shadow-sm font-jakarta">
+                {product.name}
+              </h3>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsImageLightboxOpen(false)}
+              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur-md border border-white/20 transition-all active:scale-95 cursor-pointer shadow-lg"
+              aria-label="Close image preview"
+            >
+              <X className="w-5 h-5 stroke-[2.5]" />
+            </button>
+          </div>
+
+          {/* Centered Large Image with smooth display */}
+          <div
+            className="relative max-w-full max-h-[82vh] flex flex-col items-center justify-center z-10 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={imgError || !product.image ? DEFAULT_FLORAL_PLACEHOLDER : product.image}
+              alt={product.name}
+              className="max-w-[94vw] max-h-[76vh] sm:max-h-[82vh] object-contain rounded-2xl shadow-2xl border border-white/10 select-none animate-in zoom-in-95 duration-200"
+            />
+            <div className="flex items-center gap-2 mt-3 text-white/80 text-[11px] font-medium bg-black/40 px-3 py-1 rounded-full backdrop-blur-xs border border-white/10">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Tap anywhere outside or click ✕ to close</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

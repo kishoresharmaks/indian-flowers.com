@@ -18,6 +18,8 @@ import {
   Sparkles,
   Minus,
   Plus,
+  ZoomIn,
+  X,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
@@ -59,9 +61,27 @@ export default function ProductDetail({
   // Internal wishlist state for self-contained resilience & instant UI response
   const [localWishlisted, setLocalWishlisted] = useState<boolean>(false);
   const [wishlistToast, setWishlistToast] = useState<string | null>(null);
+  const [isImageLightboxOpen, setIsImageLightboxOpen] = useState<boolean>(false);
 
   // Active accordion tab for product care & details
   const [activeTab, setActiveTab] = useState<'details' | 'freshness' | 'delivery' | 'pooja'>('details');
+
+  // Handle ESC key to dismiss lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isImageLightboxOpen) {
+        setIsImageLightboxOpen(false);
+      }
+    };
+    if (isImageLightboxOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isImageLightboxOpen]);
 
   // Check wishlist status from props or localStorage
   useEffect(() => {
@@ -179,7 +199,9 @@ export default function ProductDetail({
   };
 
   // Share Handler
-  const handleShareClick = () => {
+  const handleShareClick = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     if (onShare) {
       onShare();
       return;
@@ -250,7 +272,11 @@ export default function ProductDetail({
           {/* LEFT: IMAGE SHOWCASE & TRUST CARDS (6 cols on lg) */}
           <div className="lg:col-span-6 space-y-5">
             {/* Main Product Image Container */}
-            <div className="relative aspect-square w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-white border border-stone-200/90 shadow-[0_4px_24px_rgba(11,59,36,0.06)] group">
+            <div
+              onClick={() => setIsImageLightboxOpen(true)}
+              className="relative aspect-square w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-white border border-stone-200/90 shadow-[0_4px_24px_rgba(11,59,36,0.06)] group cursor-pointer"
+              title="Click or tap to enlarge image"
+            >
               {/* Top Badges */}
               <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 flex flex-col gap-1.5 items-start">
                 {isOutOfStock ? (
@@ -300,11 +326,26 @@ export default function ProductDetail({
                 </button>
               </div>
 
+              {/* Enlarge Floating Pill */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsImageLightboxOpen(true);
+                }}
+                className="absolute bottom-12 sm:bottom-14 right-3 sm:right-4 z-10 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-black/65 hover:bg-black/85 text-white text-[11px] sm:text-xs font-semibold backdrop-blur-md flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+                title="Tap to enlarge"
+                aria-label="Enlarge product image"
+              >
+                <ZoomIn className="w-3.5 h-3.5 stroke-[2.2]" />
+                <span className="text-[10.5px]">Enlarge</span>
+              </button>
+
               {/* Product Image */}
               <img
                 src={product.image || DEFAULT_FLORAL_PLACEHOLDER}
                 alt={product.name}
-                className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-104"
+                className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-104 select-none"
                 onError={(e) => {
                   (e.target as HTMLElement).setAttribute('src', DEFAULT_FLORAL_PLACEHOLDER);
                 }}
@@ -791,6 +832,57 @@ export default function ProductDetail({
           </button>
         </div>
       </div>
+
+      {/* High-Resolution Full-Screen Image Lightbox Modal */}
+      {isImageLightboxOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Enlarged product image preview"
+          className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setIsImageLightboxOpen(false)}
+        >
+          {/* Top Bar with Title & Close Button */}
+          <div
+            className="absolute top-3 inset-x-3 sm:top-5 sm:inset-x-8 flex items-center justify-between text-white z-20 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="max-w-[75%]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 block">
+                {product.category || 'Fresh Floral Garland'}
+              </span>
+              <h3 className="text-sm sm:text-base font-bold text-white truncate drop-shadow-sm font-jakarta">
+                {product.name}
+              </h3>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsImageLightboxOpen(false)}
+              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur-md border border-white/20 transition-all active:scale-95 cursor-pointer shadow-lg"
+              aria-label="Close image preview"
+            >
+              <X className="w-5 h-5 stroke-[2.5]" />
+            </button>
+          </div>
+
+          {/* Centered Large Image */}
+          <div
+            className="relative max-w-full max-h-[82vh] flex flex-col items-center justify-center z-10 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={product.image || DEFAULT_FLORAL_PLACEHOLDER}
+              alt={product.name}
+              className="max-w-[94vw] max-h-[76vh] sm:max-h-[82vh] object-contain rounded-2xl shadow-2xl border border-white/10 select-none animate-in zoom-in-95 duration-200"
+            />
+            <div className="flex items-center gap-2 mt-3 text-white/80 text-[11px] font-medium bg-black/40 px-3 py-1 rounded-full backdrop-blur-xs border border-white/10">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Tap anywhere outside or click ✕ to close</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
