@@ -57,6 +57,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonicalUrl,
       siteName: 'Indian-Flowers.com',
+      // Issue #8: Added fallback OG image — category pages had no image, causing
+      // blank previews when shared on social media.
+      images: [
+        {
+          url: '/images/banners/hero-wedding-1920x650.jpg',
+          width: 1200,
+          height: 630,
+          alt: `${categoryName} — Indian-Flowers.com`,
+        },
+      ],
       locale: 'en_US',
       type: 'website',
     },

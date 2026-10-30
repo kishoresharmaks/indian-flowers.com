@@ -1,0 +1,44 @@
+# llms.txt — AI Agent & LLM Discovery File
+# https://llmstxt.org
+# Indian-Flowers.com — Fresh Indian Flowers, Garlands & Pooja Essentials, USA
+
+> Indian-Flowers.com is a premium US ecommerce store delivering authentic fresh Indian flowers,
+> handcrafted garlands (Jai Mala, Varmala, temple garlands), jasmine strands (Mallipoo),
+> pooja leaves (mango, betel), and ceremonial essentials overnight across all 50 US states.
+
+## About
+
+Indian-Flowers.com is operated from Fontana, California and serves the Indian diaspora
+community across the United States. All flowers are packed in insulated thermal cold-chain
+packaging with food-grade ice gel packs and shipped via FedEx/UPS overnight.
+
+Phone: +1-909-379-3678
+Email: indianflowersorder@gmail.com
+Address: 14922 Bobcat Lane, Fontana, CA 92336
+
+## Products
+
+- Fresh Indian flower garlands (Jai Mala, Varmala, marigold, rose, lotus)
+- Jasmine strands (Mallipoo / Malli poo)
+- Wedding garlands and custom bridal arrangements
+- Temple and pooja flowers
+- Sacred pooja leaves (mango/Mavilai, betel/Paan, banana, Tulsi)
+- Ceremonial and festive floral essentials
+
+## Key Pages
+
+- Homepage: https://indian-flowers.com/
+- Shop catalog: https://indian-flowers.com/shop
+- About us: https://indian-flowers.com/about
+- Contact: https://indian-flowers.com/contact
+- Blog: https://indian-flowers.com/blog
+- Privacy Policy: https://indian-flowers.com/policy/privacy-policy
+- Shipping Policy: https://indian-flowers.com/policy/shipping-policy
+- Return Policy: https://indian-flowers.com/policy/return-policy
+
+## Social
+
+- Facebook: https://www.facebook.com/indianflowersusa
+- Instagram: https://www.instagram.com/indian_flowers_usa/
+- YouTube: https://www.youtube.com/@Indianflowers-2020
+- Pinterest: https://in.pinterest.com/indianflowers01/

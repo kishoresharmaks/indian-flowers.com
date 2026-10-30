@@ -3,7 +3,8 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   images: {
-    unoptimized: true,
+    // unoptimized removed — Next.js image optimization works fine with standalone output.
+    // This re-enables WebP conversion, responsive srcsets, and lazy loading.
     remotePatterns: [
       {
         protocol: 'https',
@@ -161,6 +162,27 @@ const nextConfig = {
           {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
+          },
+          {
+            // Content-Security-Policy — report-only mode first so violations are
+            // surfaced without breaking the site. Switch to Content-Security-Policy
+            // (enforce) once CSP-Report-Uri is monitored and no violations remain.
+            key: 'Content-Security-Policy-Report-Only',
+            value: [
+              "default-src 'self'",
+              // Next.js inline scripts and hydration require 'unsafe-inline'; lock down
+              // further with nonces once next.js nonce support is wired in.
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://accounts.google.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: blob: https: http:",
+              "connect-src 'self' https: wss:",
+              "frame-src 'self' https://accounts.google.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "upgrade-insecure-requests",
+            ].join('; '),
           },
         ],
       },

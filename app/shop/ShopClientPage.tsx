@@ -377,6 +377,11 @@ export default function ShopClientPage({
       />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Semantic H1 for SEO Catalog Discovery */}
+        <h1 className="sr-only">
+          Shop Fresh Indian Flowers, Wedding Garlands &amp; Pooja Essentials USA
+        </h1>
+
         {/* Breadcrumb Navigation */}
         <nav aria-label="Breadcrumb" className="mb-5">
           <ol className="flex items-center space-x-2 text-xs sm:text-sm text-stone-500">

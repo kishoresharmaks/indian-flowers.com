@@ -93,6 +93,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           },
         ],
         locale: 'en_US',
+        // Note: Next.js OpenGraph type does not support 'product' — 'website' is correct
+        // here. The Product structured data (JSON-LD below) carries the product signals.
         type: 'website',
       },
       twitter: {
@@ -210,9 +212,13 @@ export default async function ProductPage({ params }: Props) {
           url: canonicalProductUrl,
           priceCurrency: 'USD',
           price: Number(product.price || 0).toFixed(2),
-          priceValidUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split('T')[0],
+          // Issue #19: Use a stable end-of-year date rather than Date.now()+60d.
+          // A rolling date changes on every SSR render, making structured data
+          // validation inconsistent. Update this once per year (or quarterly).
+          priceValidUntil: (() => {
+            const now = new Date();
+            return `${now.getFullYear()}-12-31`;
+          })(),
           itemCondition: 'https://schema.org/NewCondition',
           availability: isOutOfStock
             ? 'https://schema.org/OutOfStock'
@@ -247,6 +253,15 @@ export default async function ProductPage({ params }: Props) {
                 unitCode: 'd',
               },
             },
+          },
+          hasMerchantReturnPolicy: {
+            '@type': 'MerchantReturnPolicy',
+            applicableCountry: 'US',
+            returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            merchantReturnDays: 2,
+            returnMethod: 'https://schema.org/ReturnByMail',
+            returnFees: 'https://schema.org/FreeReturn',
+            url: `${siteUrl}/policy/return-policy`,
           },
         },
       };

@@ -1254,6 +1254,57 @@ export default function CustomerStore() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between bg-white text-gray-900 font-sans pb-16 md:pb-0">
+      {/* Issue #16: FAQPage JSON-LD moved here from root layout so it only appears
+          on the homepage, not on every page of the site. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            '@id': 'https://indian-flowers.com/#faq',
+            mainEntity: [
+              {
+                '@type': 'Question',
+                name: 'How are fresh Indian flowers shipped across the USA?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'All fresh flowers and wedding garlands are packed with insulated thermal cold-chain packaging and food-grade ice gel packs. Orders are dispatched via FedEx / UPS priority overnight delivery to ensure they arrive dewy and fresh for your auspicious muhurtham or pooja ceremony.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Can I pre-order custom wedding garlands (Jai Mala / Varmala)?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Yes! We specialize in custom Indian wedding garlands, including fragrant rose petal Varmalas, lotus malas, jasmine strings, and gold-trimmed garlands. You can select your required delivery date during checkout or contact our floral specialists for bespoke designs.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Where does Indian-Flowers.com deliver in the United States?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'We deliver fresh flowers, garlands, and pooja essentials across all 50 states in the USA, including California, Texas, New York, New Jersey, Florida, Illinois, Washington, and Ohio. Local pickup is also available in select metropolitan hubs including Fontana, Houston, Tampa, Sacramento, and Denver.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Are fresh pooja leaves like Mango and Betel leaves available year-round?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Yes, we provide fresh sacred pooja leaves including fresh Mango leaves (Mavilai), Betel leaves (Paan), Banana leaves, and fresh Tulsi sprigs for homams, Satyanarayan poojas, and festive rituals.',
+                },
+              },
+            ],
+          }).replace(/</g, '\\u003c'),
+        }}
+      />
+      {/* Semantic H1 for Search Engines & Assistive Tech */}
+      <h1 className="sr-only">
+        Fresh Indian Flowers, Handcrafted Garlands &amp; Pooja Essentials Delivered Across USA
+      </h1>
+
       {/* 1. TOP NAVBAR & PAGE LINKS (Retrieved from DB Categories) */}
       <Header
         cartItemCount={cartItemCount}

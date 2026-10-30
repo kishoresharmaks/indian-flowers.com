@@ -12,37 +12,45 @@ export const revalidate = 3600; // Revalidate every hour
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
 
+  // Static dates for pages with no real DB-driven lastModified source.
+  // Using stable dates avoids a constantly-changing sitemap on every request.
+  // Update these manually when the page content is substantially revised.
+  const SITE_LAUNCH_DATE = new Date('2024-01-01');
+  const LAST_LAYOUT_UPDATE = new Date('2025-01-01');
+
   // 1. Static Core Storefront Routes
   const routes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
-      lastModified: new Date(),
+      lastModified: LAST_LAYOUT_UPDATE,
       changeFrequency: 'daily',
       priority: 1.0,
     },
     {
       url: `${baseUrl}/shop`,
-      lastModified: new Date(),
+      lastModified: LAST_LAYOUT_UPDATE,
       changeFrequency: 'daily',
       priority: 0.95,
     },
     {
       url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.85,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'monthly',
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/contact`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.85,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
+    // /blog is listed at low priority — no individual post URLs yet.
+    // Raise priority and add /blog/[slug] entries when real posts exist.
     {
       url: `${baseUrl}/blog`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.75,
+      lastModified: SITE_LAUNCH_DATE,
+      changeFrequency: 'monthly',
+      priority: 0.5,
     },
   ];
 
@@ -82,7 +90,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 3. Category Landing Pages (/product-category/[slug])
   try {
-    const categorySlugs = new Set<string>();
+    const categoryMap = new Map<string, Date>();
 
     const [dbCategories, distinctCatSlugs] = await Promise.all([
       Category.find({}, 'slug updatedAt').lean(),
@@ -90,19 +98,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ]);
 
     dbCategories.forEach((c: any) => {
-      if (c.slug) categorySlugs.add(c.slug.toLowerCase().trim());
+      if (c.slug) {
+        const slug = c.slug.toLowerCase().trim();
+        categoryMap.set(slug, c.updatedAt ? new Date(c.updatedAt) : LAST_LAYOUT_UPDATE);
+      }
     });
 
     distinctCatSlugs.forEach((s: any) => {
       if (s && typeof s === 'string' && s.trim()) {
-        categorySlugs.add(s.toLowerCase().trim());
+        const slug = s.toLowerCase().trim();
+        if (!categoryMap.has(slug)) {
+          categoryMap.set(slug, LAST_LAYOUT_UPDATE);
+        }
       }
     });
 
-    categorySlugs.forEach((catSlug) => {
+    categoryMap.forEach((lastMod, catSlug) => {
       routes.push({
         url: `${baseUrl}/product-category/${catSlug}`,
-        lastModified: new Date(),
+        lastModified: lastMod,
         changeFrequency: 'daily',
         priority: 0.85,
       });

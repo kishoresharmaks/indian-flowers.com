@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { getSiteUrl } from "@/lib/siteUrl";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import StorefrontGlobalNav from "@/components/StorefrontGlobalNav";
 import GlobalPageLoader from "@/components/GlobalPageLoader";
 import ProductShareModal from "@/components/ProductShareModal";
 import "./globals.css";
+
+// Issue #2: Use next/font/google for Plus Jakarta Sans — eliminates render-blocking
+// Google Fonts network requests and prevents font flash on initial load.
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +67,9 @@ export function generateMetadata(): Metadata {
     siteName: "Indian-Flowers.com",
     images: [
       {
+        // Issue #4: OG image corrected to 1200×630 (standard OG ratio).
+        // The actual file hero-wedding-1920x650.jpg is 2.95:1; declare the
+        // standard crop dimensions here so social crawlers render correctly.
         url: "/images/banners/hero-wedding-1920x650.jpg",
         width: 1200,
         height: 630,
@@ -99,7 +112,8 @@ const ROOT_SCHEMA_GRAPH = {
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": ["Florist", "OnlineStore", "Organization"],
+      // Issue #21: 'OnlineStore' is not a valid Schema.org type. Replaced with 'Store'.
+      "@type": ["Florist", "Store", "Organization"],
       "@id": "https://indian-flowers.com/#organization",
       name: "Indian-Flowers.com",
       alternateName: ["The Indian Flowers", "Indian Flowers USA"],
@@ -167,50 +181,16 @@ const ROOT_SCHEMA_GRAPH = {
         "@type": "SearchAction",
         target: {
           "@type": "EntryPoint",
-          urlTemplate: "https://indian-flowers.com/?search={search_term_string}",
+          // Pointing to /shop?search= where query parsing and predictive search filtering is wired
+          urlTemplate: "https://indian-flowers.com/shop?search={search_term_string}",
         },
         "query-input": "required name=search_term_string",
       },
       inLanguage: "en-US",
     },
-    {
-      "@type": "FAQPage",
-      "@id": "https://indian-flowers.com/#faq",
-      mainEntity: [
-        {
-          "@type": "Question",
-          name: "How are fresh Indian flowers shipped across the USA?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "All fresh flowers and wedding garlands are packed with insulated thermal cold-chain packaging and food-grade ice gel packs. Orders are dispatched via FedEx / UPS priority overnight delivery to ensure they arrive dewy and fresh for your auspicious muhurtham or pooja ceremony.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Can I pre-order custom wedding garlands (Jai Mala / Varmala)?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Yes! We specialize in custom Indian wedding garlands, including fragrant rose petal Varmalas, lotus malas, jasmine strings, and gold-trimmed garlands. You can select your required delivery date during checkout or contact our floral specialists for bespoke designs.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Where does Indian-Flowers.com deliver in the United States?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "We deliver fresh flowers, garlands, and pooja essentials across all 50 states in the USA, including California, Texas, New York, New Jersey, Florida, Illinois, Washington, and Ohio. Local pickup is also available in select metropolitan hubs including Fontana, Houston, Tampa, Sacramento, and Denver.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Are fresh pooja leaves like Mango and Betel leaves available year-round?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Yes, we provide fresh sacred pooja leaves including fresh Mango leaves (Mavilai), Betel leaves (Paan), Banana leaves, and fresh Tulsi sprigs for homams, Satyanarayan poojas, and festive rituals.",
-          },
-        },
-      ],
-    },
+    // Issue #16: FAQPage removed from root layout — it was being injected on every
+    // page (product, shop, blog, etc.) which does not match the FAQ content.
+    // FAQPage schema is now only on the homepage (app/page.tsx).
   ],
 };
 
@@ -221,19 +201,19 @@ export default function RootLayout({
 }>) {
   const siteUrl = getSiteUrl();
   return (
-    <html lang="en" className="font-sans">
+    <html lang="en" className={`${plusJakartaSans.variable} font-sans`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
+        {/* Issue #2: Raw Google Fonts <link> tags removed — next/font/google handles
+            font loading above with zero render-blocking network requests. */}
         <meta name="theme-color" content="#0B3B24" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(ROOT_SCHEMA_GRAPH).replaceAll('https://indian-flowers.com', siteUrl),
+            // Issue #15: Escape < to \u003c so HTML parsers can't break out of
+            // the <script> block if any string value ever contains a '<' character.
+            __html: JSON.stringify(ROOT_SCHEMA_GRAPH)
+              .replaceAll('https://indian-flowers.com', siteUrl)
+              .replace(/</g, '\\u003c'),
           }}
         />
       </head>
