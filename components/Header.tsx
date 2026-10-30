@@ -810,33 +810,38 @@ export default function Header({
                         )}
                       </button>
 
-                      {/* LUXURY BOTANICAL VISUAL MEGA-MENU */}
+                      {/* LUXURY BOTANICAL VISUAL MEGA-MENU (FROSTED GLASS EFFECT & CRYSTAL-CLEAR TEXT) */}
                       {hasSub && isOpen && (
                         <div
                           className={`absolute ${
                             isAlignRight ? 'right-0' : 'left-0'
-                          } top-full mt-2 w-[580px] lg:w-[680px] max-w-[calc(100vw-32px)] bg-white/98 backdrop-blur-md rounded-2xl shadow-[0_20px_50px_rgba(11,59,36,0.16)] border border-stone-200/90 p-4 lg:p-5 z-50 animate-in fade-in zoom-in-98 duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3`}
-                          style={{ filter: 'drop-shadow(0 14px 32px rgba(0,0,0,0.12))' }}
+                          } top-full mt-2 w-[600px] lg:w-[700px] max-w-[calc(100vw-32px)] rounded-2xl border border-stone-200/90 p-4 lg:p-5 z-50 animate-in fade-in zoom-in-98 duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3`}
+                          style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                            backdropFilter: 'blur(24px)',
+                            WebkitBackdropFilter: 'blur(24px)',
+                            boxShadow: '0 24px 60px -12px rgba(11, 59, 36, 0.22), 0 0 0 1px rgba(229, 231, 235, 0.9)',
+                          }}
                         >
                           <div className="flex items-stretch gap-4 lg:gap-5">
                             {/* Left Side: Subcategories Grid with Product Thumbnails */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-stone-100">
-                                <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#0B3B24]">
+                              <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-stone-200/80">
+                                <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#0B3B24]">
                                   <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                                  <span>{cat.name}</span>
+                                  <span>{cat.name} COLLECTIONS</span>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => handleCategorySelect(cat.name)}
-                                  className="text-[11px] font-bold text-[#0B3B24] hover:text-[#1C563F] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                                  className="text-[11.5px] font-bold text-[#0B3B24] hover:text-[#1C563F] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
                                 >
                                   <span>View All ({cat.subcategories.length})</span>
-                                  <ChevronRight className="w-3 h-3" />
+                                  <ChevronRight className="w-3.5 h-3.5" />
                                 </button>
                               </div>
 
-                              <div className="grid grid-cols-2 gap-1.5 lg:gap-2">
+                              <div className="grid grid-cols-2 gap-2">
                                 {cat.subcategories.map((sub: any) => {
                                   const isSubSelected =
                                     selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() &&
@@ -848,14 +853,14 @@ export default function Header({
                                       key={sub.slug || sub.name}
                                       type="button"
                                       onClick={() => handleCategorySelect(cat.name, sub.name)}
-                                      className={`group flex items-center gap-2 p-1.5 rounded-xl text-left transition-all cursor-pointer ${
+                                      className={`group flex items-center gap-2.5 p-2 rounded-xl text-left transition-all cursor-pointer border ${
                                         isSubSelected
-                                          ? 'bg-emerald-50 text-[#0B3B24] font-bold ring-1 ring-emerald-200 shadow-2xs'
-                                          : 'text-stone-700 hover:text-[#0B3B24] hover:bg-emerald-50/50'
+                                          ? 'bg-emerald-50 text-[#0B3B24] border-emerald-300 ring-1 ring-emerald-200 shadow-2xs'
+                                          : 'bg-white hover:bg-emerald-50/70 border-stone-200/80 hover:border-emerald-300/80 shadow-2xs hover:shadow-xs'
                                       }`}
                                     >
-                                      {/* Thumbnail Image */}
-                                      <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-stone-200/80 bg-stone-100 group-hover:scale-105 transition-transform">
+                                      {/* High-Resolution Thumbnail */}
+                                      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-stone-200/90 bg-stone-50 group-hover:scale-105 transition-transform shadow-2xs">
                                         <img
                                           src={thumb}
                                           alt={sub.name}
@@ -867,12 +872,12 @@ export default function Header({
                                         />
                                       </div>
                                       <div className="min-w-0 flex-1">
-                                        <p className="text-[11.5px] font-semibold truncate group-hover:text-[#0B3B24] transition-colors">
+                                        <p className="text-xs font-bold text-stone-900 truncate group-hover:text-[#0B3B24] transition-colors">
                                           {sub.name}
                                         </p>
-                                        <span className="text-[9.5px] text-stone-400 group-hover:text-emerald-700 transition-colors flex items-center gap-0.5 leading-none">
-                                          <span>Shop now</span>
-                                          <ChevronRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <span className="text-[10px] font-semibold text-emerald-700 group-hover:text-[#0B3B24] transition-colors flex items-center gap-0.5 mt-0.5 leading-none">
+                                          <span>Shop collection</span>
+                                          <ChevronRight className="w-2.5 h-2.5" />
                                         </span>
                                       </div>
                                     </button>
@@ -882,9 +887,9 @@ export default function Header({
                             </div>
 
                             {/* Right Side: Featured Showcase Card */}
-                            <div className="w-48 lg:w-56 shrink-0 bg-gradient-to-b from-[#FAF8F5] via-[#F4F8F4] to-[#FAF8F5] rounded-xl p-3 border border-emerald-900/10 flex flex-col justify-between shadow-2xs">
+                            <div className="w-52 lg:w-56 shrink-0 bg-gradient-to-b from-[#FAF8F5] via-white to-[#F4F8F4] rounded-2xl p-3.5 border border-emerald-900/15 flex flex-col justify-between shadow-2xs">
                               <div>
-                                <div className="relative w-full h-24 lg:h-28 rounded-lg overflow-hidden mb-2 shadow-2xs border border-stone-200/80">
+                                <div className="relative w-full h-26 lg:h-28 rounded-xl overflow-hidden mb-2.5 shadow-2xs border border-stone-200/90">
                                   <img
                                     src={cat.image || '/images/categories/cat-wedding-garlands.jpg'}
                                     alt={cat.name}
@@ -893,14 +898,14 @@ export default function Header({
                                       (e.target as HTMLImageElement).src = '/images/banners/hero-wedding-tif-rose.jpg';
                                     }}
                                   />
-                                  <span className="absolute top-1.5 left-1.5 bg-[#0B3B24]/90 backdrop-blur-xs text-white text-[8.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-2xs">
+                                  <span className="absolute top-1.5 left-1.5 bg-[#0B3B24]/95 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-2xs">
                                     🌿 100% Fresh
                                   </span>
                                 </div>
-                                <h4 className="text-[12px] font-bold text-stone-900 leading-snug line-clamp-1">
+                                <h4 className="text-xs font-bold text-stone-900 leading-snug line-clamp-1">
                                   {cat.name}
                                 </h4>
-                                <p className="text-[10.5px] text-stone-500 line-clamp-2 mt-0.5 leading-relaxed">
+                                <p className="text-[11px] text-stone-600 line-clamp-2 mt-1 leading-relaxed">
                                   Handcrafted with fresh flowers, delivered cold-chain across USA.
                                 </p>
                               </div>
@@ -908,10 +913,10 @@ export default function Header({
                               <button
                                 type="button"
                                 onClick={() => handleCategorySelect(cat.name)}
-                                className="mt-2.5 w-full py-1.5 px-3 rounded-lg bg-[#0B3B24] hover:bg-[#134633] text-white text-[11px] font-bold text-center transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                                className="mt-3 w-full py-2 px-3 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white text-xs font-bold text-center transition-all flex items-center justify-center gap-1.5 shadow-xs hover:shadow-md cursor-pointer active:scale-95"
                               >
                                 <span>Shop {cat.name.split(' ')[0]}</span>
-                                <ChevronRight className="w-3 h-3" />
+                                <ChevronRight className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
