@@ -22,6 +22,19 @@ html, body {
   overflow-x: clip;
 }
 
+/* Balanced default desktop zoom scale: provides an airy, refined, zoomed-out appearance on desktop/laptop viewports */
+@media (min-width: 1024px) {
+  :root {
+    zoom: 0.92;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    zoom: 0.90;
+  }
+}
+
 body, button, input, select, textarea {
   font-family: var(--font-body);
 }

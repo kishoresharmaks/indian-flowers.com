@@ -104,21 +104,21 @@ export default function HeroSection({
   // Sized placeholder during initial loading with matching rounded border corners
   if (loading && (!slides || slides.length === 0)) {
     return (
-      <section className="w-full bg-[#FAF6F0] py-2 sm:py-3 md:py-4">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="w-full aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.85/1] lg:aspect-[3.1/1] max-h-[460px] rounded-2xl sm:rounded-3xl lg:rounded-[28px] bg-stone-200/60 animate-pulse border border-stone-200/80" />
+      <section className="w-full bg-[#FAF6F0] py-1.5 sm:py-2 md:py-3">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.9/1] lg:aspect-[3.4/1] xl:aspect-[3.6/1] max-h-[340px] sm:max-h-[360px] lg:max-h-[380px] xl:max-h-[400px] rounded-2xl sm:rounded-3xl lg:rounded-[26px] bg-stone-200/60 animate-pulse border border-stone-200/80" />
         </div>
       </section>
     );
   }
 
   return (
-    <section className="w-full bg-[#FAF6F0] py-2 sm:py-3 md:py-4">
+    <section className="w-full bg-[#FAF6F0] py-1.5 sm:py-2 md:py-3">
       {/* Contained within responsive site max-width exactly matching reference mockup */}
-      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Frame with High-End Rounded Corners & Border */}
         <div
-          className="relative w-full rounded-2xl sm:rounded-3xl lg:rounded-[28px] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-stone-200/80 bg-stone-100 select-none group"
+          className="relative w-full rounded-2xl sm:rounded-3xl lg:rounded-[26px] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-stone-200/80 bg-stone-100 select-none group"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onTouchStart={onTouchStart}
@@ -137,7 +137,7 @@ export default function HeroSection({
               return (
                 <div
                   key={slide._id || slide.id || idx}
-                  className="w-full shrink-0 relative cursor-pointer aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.85/1] lg:aspect-[3.1/1] max-h-[460px] 2xl:max-h-[480px]"
+                  className="w-full shrink-0 relative cursor-pointer aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.9/1] lg:aspect-[3.4/1] xl:aspect-[3.6/1] max-h-[340px] sm:max-h-[360px] lg:max-h-[380px] xl:max-h-[400px]"
                   onClick={() => handleSlideClick(slide)}
                 >
                   <picture className="w-full h-full block">

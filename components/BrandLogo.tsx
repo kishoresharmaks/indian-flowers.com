@@ -46,9 +46,9 @@ export default function BrandLogo({
 
   // Height sizing for the official logo
   const logoHeightClasses = {
-    sm: 'h-8 sm:h-9 max-h-[36px]',
-    md: 'h-9 sm:h-11 md:h-12 max-h-[48px]',
-    lg: 'h-11 sm:h-13 md:h-14 max-h-[56px]',
+    sm: 'h-7 sm:h-8 max-h-[32px]',
+    md: 'h-8 sm:h-10 md:h-11 max-h-[44px]',
+    lg: 'h-10 sm:h-12 md:h-13 max-h-[52px]',
   }[size];
 
   const content = isDark ? (
