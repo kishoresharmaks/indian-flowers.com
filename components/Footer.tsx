@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import BrandLogo, { LotusIcon } from './BrandLogo';
-import { IDeliveryMode, DEFAULT_DELIVERY_MODES, IPickupHub, DEFAULT_PICKUP_HUBS } from '@/models/Settings';
+import { IDeliveryMode, DEFAULT_DELIVERY_MODES, IPickupHub, DEFAULT_PICKUP_HUBS } from '@/lib/delivery';
 import {
   Phone,
   Mail,

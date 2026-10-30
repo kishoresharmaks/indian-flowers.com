@@ -28,7 +28,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { ReviewItem, DEFAULT_CUSTOMER_REVIEWS } from '@/lib/defaultReviews';
-import { IDeliveryMode, DEFAULT_DELIVERY_MODES, IPickupHub, DEFAULT_PICKUP_HUBS } from '@/models/Settings';
+import { IDeliveryMode, DEFAULT_DELIVERY_MODES, IPickupHub, DEFAULT_PICKUP_HUBS } from '@/lib/delivery';
 
 interface CMSManagerTabProps {
   paymentSettings: any;

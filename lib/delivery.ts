@@ -109,3 +109,32 @@ export const DEFAULT_DELIVERY_MODES: IDeliveryMode[] = [
     order: 9,
   },
 ];
+
+export interface IPickupHub {
+  id: string;
+  title: string;
+  address: string;
+  hours?: string;
+  active: boolean;
+  order?: number;
+}
+
+export const DEFAULT_PICKUP_HUBS: IPickupHub[] = [
+  {
+    id: 'hub-main-hq',
+    title: 'Main Location (HQ)',
+    address: '14922 Bobcat lane, Fontana, CA 92336, USA',
+    hours: 'Mon – Sun: 7:00 AM – 8:00 PM PST',
+    active: true,
+    order: 1,
+  },
+  {
+    id: 'hub-branch-midwest',
+    title: 'Branch Location (Midwest)',
+    address: '6893 Alverno ln, Inver Grove Heights, MN 55077',
+    hours: 'By Appointment / Event Scheduled',
+    active: true,
+    order: 2,
+  },
+];
+

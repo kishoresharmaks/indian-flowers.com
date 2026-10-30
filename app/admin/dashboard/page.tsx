@@ -64,8 +64,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { parseExcelRowsToImportItems, ParsedImportRow } from '@/lib/bulkImportHelpers';
-import { IDeliveryMode, DEFAULT_DELIVERY_MODES } from '@/lib/delivery';
-import { DEFAULT_PICKUP_HUBS } from '@/models/Settings';
+import { IDeliveryMode, DEFAULT_DELIVERY_MODES, DEFAULT_PICKUP_HUBS } from '@/lib/delivery';
 import POSCounter from './components/pos/POSCounter';
 import POSReceipt from './components/pos/POSReceipt';
 import SubscriptionTab from '@/components/licensing/SubscriptionTab';
