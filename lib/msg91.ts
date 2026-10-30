@@ -50,12 +50,15 @@ export function escapeHtml(str: string | undefined | null): string {
  * Fetch effective email settings from MongoDB or environment variables
  */
 export async function getEffectiveEmailConfig(): Promise<{
-  provider: 'msg91' | 'smtp';
+  provider: 'msg91' | 'brevo' | 'smtp';
   authKey: string;
   fromEmail: string;
   fromName: string;
   domain: string;
   templateId?: string;
+  brevoApiKey: string;
+  brevoFromEmail: string;
+  brevoFromName: string;
   adminEmail: string;
   smtpHost?: string;
   smtpPort?: number;
@@ -92,6 +95,21 @@ export async function getEffectiveEmailConfig(): Promise<{
     process.env.MSG91_DOMAIN ||
     'theindianflowers.com';
 
+  const brevoApiKey =
+    dbConfig?.brevoApiKey?.trim() ||
+    process.env.BREVO_API_KEY ||
+    '';
+
+  const brevoFromEmail =
+    dbConfig?.brevoFromEmail?.trim() ||
+    process.env.BREVO_FROM_EMAIL ||
+    'orders@theindianflowers.com';
+
+  const brevoFromName =
+    dbConfig?.brevoFromName?.trim() ||
+    process.env.BREVO_FROM_NAME ||
+    'The Indian Flowers';
+
   const adminEmail =
     dbConfig?.adminNotificationEmail?.trim() ||
     process.env.ADMIN_NOTIFICATION_EMAIL ||
@@ -107,6 +125,9 @@ export async function getEffectiveEmailConfig(): Promise<{
     fromName,
     domain,
     templateId,
+    brevoApiKey,
+    brevoFromEmail,
+    brevoFromName,
     adminEmail,
     smtpHost: dbConfig?.smtpHost,
     smtpPort: dbConfig?.smtpPort,
@@ -140,7 +161,7 @@ async function recordEmailLog({
   subject: string;
   type?: IEmailLog['type'];
   status: 'SENT' | 'FAILED' | 'SIMULATED';
-  provider: 'MSG91' | 'SMTP' | 'SIMULATOR';
+  provider: 'MSG91' | 'BREVO' | 'SMTP' | 'SIMULATOR';
   errorMessage?: string;
   htmlBody?: string;
   metadata?: Record<string, any>;
@@ -172,10 +193,161 @@ async function recordEmailLog({
 }
 
 /**
- * Send email via MSG91 Email API v5 with auto-logging into MongoDB
+ * Send email via Brevo (Sendinblue) Transactional REST API v3 with auto-logging into MongoDB
+ */
+export async function sendEmailViaBrevo(options: SendEmailOptions): Promise<Msg91EmailResult> {
+  const config = await getEffectiveEmailConfig();
+  const recipient = options.to[0] || { email: '', name: '' };
+  const recipientEmail = recipient.email;
+  const recipientName = recipient.name;
+
+  // If Brevo API Key is missing or placeholder, run in simulation mode & log it
+  if (!config.brevoApiKey || config.brevoApiKey.includes('placeholder')) {
+    console.warn(
+      `[Brevo] BREVO_API_KEY is not configured. Simulating email send to ${options.to.map((r) => r.email).join(', ')} with subject: "${options.subject}"`
+    );
+
+    const logId = await recordEmailLog({
+      to: recipientEmail,
+      recipientName,
+      from: `${config.brevoFromName || config.fromName} <${config.brevoFromEmail || config.fromEmail}>`,
+      subject: options.subject,
+      type: options.type || 'OTHER',
+      status: 'SIMULATED',
+      provider: 'SIMULATOR',
+      errorMessage: 'Simulated dispatch (BREVO_API_KEY not configured in Admin/Environment)',
+      htmlBody: options.htmlContent,
+      metadata: options.metadata || {},
+    });
+
+    return {
+      success: true,
+      simulated: true,
+      logId,
+      message: 'Email simulated (BREVO_API_KEY not configured)',
+    };
+  }
+
+  try {
+    const senderEmail = (options.from?.email || config.brevoFromEmail || config.fromEmail || 'orders@theindianflowers.com').trim();
+    const senderName = (options.from?.name || config.brevoFromName || config.fromName || 'The Indian Flowers').trim();
+
+    const payload: any = {
+      sender: {
+        name: senderName,
+        email: senderEmail,
+      },
+      to: options.to.map((r) => ({
+        email: r.email,
+        name: r.name || r.email,
+      })),
+      subject: options.subject,
+      htmlContent: options.htmlContent,
+      replyTo: {
+        email: config.adminEmail || 'indianflowersorder@gmail.com',
+        name: senderName,
+      },
+    };
+
+    if (options.textContent) {
+      payload.textContent = options.textContent;
+    }
+
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'api-key': config.brevoApiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data.messageId) {
+      const errMsg = data.message || `Brevo responded with HTTP ${response.status} (${data.code || 'unknown'})`;
+      console.error('[Brevo] Email dispatch failed:', response.status, data);
+
+      const logId = await recordEmailLog({
+        to: recipientEmail,
+        recipientName,
+        from: `${senderName} <${senderEmail}>`,
+        subject: options.subject,
+        type: options.type || 'OTHER',
+        status: 'FAILED',
+        provider: 'BREVO',
+        errorMessage: errMsg,
+        htmlBody: options.htmlContent,
+        metadata: {
+          responseData: data,
+          httpStatus: response.status,
+          ...(options.metadata || {}),
+        },
+      });
+
+      return {
+        success: false,
+        message: errMsg,
+        data,
+        logId,
+      };
+    }
+
+    const logId = await recordEmailLog({
+      to: recipientEmail,
+      recipientName,
+      from: `${senderName} <${senderEmail}>`,
+      subject: options.subject,
+      type: options.type || 'OTHER',
+      status: 'SENT',
+      provider: 'BREVO',
+      htmlBody: options.htmlContent,
+      metadata: {
+        brevoMessageId: data.messageId,
+        ...(options.metadata || {}),
+      },
+    });
+
+    return {
+      success: true,
+      data,
+      logId,
+      message: 'Email sent successfully via Brevo',
+    };
+  } catch (error: any) {
+    console.error('[Brevo] Network error during email dispatch:', error);
+    const logId = await recordEmailLog({
+      to: recipientEmail,
+      recipientName,
+      from: `${config.brevoFromName || config.fromName} <${config.brevoFromEmail || config.fromEmail}>`,
+      subject: options.subject,
+      type: options.type || 'OTHER',
+      status: 'FAILED',
+      provider: 'BREVO',
+      errorMessage: error.message || 'Network error communicating with Brevo API',
+      htmlBody: options.htmlContent,
+      metadata: options.metadata || {},
+    });
+
+    return {
+      success: false,
+      message: error.message || 'Failed to dispatch email via Brevo',
+      logId,
+    };
+  }
+}
+
+/**
+ * Send email via MSG91 Email API v5 (or active provider) with auto-logging into MongoDB
  */
 export async function sendEmailViaMsg91(options: SendEmailOptions): Promise<Msg91EmailResult> {
   const config = await getEffectiveEmailConfig();
+
+  // Route to Brevo if configured
+  if (config.provider === 'brevo') {
+    return sendEmailViaBrevo(options);
+  }
   const recipient = options.to[0] || { email: '', name: '' };
   const recipientEmail = recipient.email;
   const recipientName = recipient.name;
@@ -687,7 +859,11 @@ export async function sendManualReplyEmail({
  */
 export async function sendTestEmail(targetEmail: string): Promise<Msg91EmailResult> {
   const config = await getEffectiveEmailConfig();
-  const subject = `MSG91 Email Integration Test - The Indian Flowers`;
+  const isBrevo = config.provider === 'brevo';
+  const providerLabel = isBrevo ? 'Brevo (Sendinblue)' : config.provider === 'smtp' ? 'Custom SMTP' : 'MSG91';
+  const senderEmail = isBrevo ? (config.brevoFromEmail || config.fromEmail) : config.fromEmail;
+  const senderName = isBrevo ? (config.brevoFromName || config.fromName) : config.fromName;
+  const subject = `${providerLabel} Email Integration Test - The Indian Flowers`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -713,14 +889,14 @@ export async function sendTestEmail(targetEmail: string): Promise<Msg91EmailResu
     <div class="body">
       <div class="success-box">
         <strong>✓ Email Dispatch Successful!</strong><br>
-        Your MSG91 / Transactional email credentials in The Indian Flowers Admin Panel are connected and working properly.
+        Your ${providerLabel} credentials in The Indian Flowers Admin Panel are connected and working properly.
       </div>
       <div class="meta">
-        <strong>Provider:</strong> ${config.provider.toUpperCase()}<br>
-        <strong>Sender:</strong> ${config.fromName} &lt;${config.fromEmail}&gt;<br>
-        <strong>Domain:</strong> ${config.domain}<br>
+        <strong>Gateway:</strong> ${providerLabel}<br>
+        <strong>Sender:</strong> ${escapeHtml(senderName)} &lt;${escapeHtml(senderEmail)}&gt;<br>
+        ${isBrevo ? `<strong>Endpoint:</strong> https://api.brevo.com/v3/smtp/email<br>` : `<strong>Domain:</strong> ${escapeHtml(config.domain)}<br>`}
         <strong>Timestamp:</strong> ${new Date().toISOString()}<br>
-        <strong>Destination:</strong> ${targetEmail}
+        <strong>Destination:</strong> ${escapeHtml(targetEmail)}
       </div>
     </div>
   </div>
@@ -733,6 +909,11 @@ export async function sendTestEmail(targetEmail: string): Promise<Msg91EmailResu
     subject,
     htmlContent,
     type: 'TEST_EMAIL',
-    metadata: { testDispatch: true },
+    metadata: { testDispatch: true, gateway: config.provider },
   });
 }
+
+/**
+ * Universal alias for transactional email dispatching
+ */
+export const sendTransactionalEmail = sendEmailViaMsg91;

@@ -17,7 +17,7 @@ export interface IEmailLog extends Document {
     | 'PASSWORD_RESET'
     | 'OTHER';
   status: 'SENT' | 'FAILED' | 'SIMULATED';
-  provider: 'MSG91' | 'SMTP' | 'SIMULATOR';
+  provider: 'MSG91' | 'BREVO' | 'SMTP' | 'SIMULATOR';
   errorMessage?: string;
   htmlBody?: string;
   metadata?: Record<string, any>;
@@ -57,7 +57,7 @@ const EmailLogSchema: Schema = new Schema(
     },
     provider: {
       type: String,
-      enum: ['MSG91', 'SMTP', 'SIMULATOR'],
+      enum: ['MSG91', 'BREVO', 'SMTP', 'SIMULATOR'],
       default: 'MSG91',
     },
     errorMessage: { type: String, default: '' },

@@ -2,13 +2,17 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IEmailConfig extends Document {
   key: string;
-  provider: 'msg91' | 'smtp';
+  provider: 'msg91' | 'brevo' | 'smtp';
   // MSG91 Configuration
   msg91AuthKey: string;
   msg91FromEmail: string;
   msg91FromName: string;
   msg91Domain: string;
   msg91TemplateId: string;
+  // Brevo (Sendinblue) Configuration
+  brevoApiKey: string;
+  brevoFromEmail: string;
+  brevoFromName: string;
   // Alert Destination
   adminNotificationEmail: string;
   // SMTP Fallback Configuration
@@ -26,12 +30,16 @@ export interface IEmailConfig extends Document {
 const EmailConfigSchema: Schema = new Schema(
   {
     key: { type: String, required: true, unique: true, default: 'global' },
-    provider: { type: String, enum: ['msg91', 'smtp'], default: 'msg91' },
+    provider: { type: String, enum: ['msg91', 'brevo', 'smtp'], default: 'msg91' },
     msg91AuthKey: { type: String, default: '' },
     msg91FromEmail: { type: String, default: 'orders@theindianflowers.com' },
     msg91FromName: { type: String, default: 'The Indian Flowers' },
     msg91Domain: { type: String, default: 'theindianflowers.com' },
     msg91TemplateId: { type: String, default: '' },
+    // Brevo Configuration
+    brevoApiKey: { type: String, default: '' },
+    brevoFromEmail: { type: String, default: 'orders@theindianflowers.com' },
+    brevoFromName: { type: String, default: 'The Indian Flowers' },
     adminNotificationEmail: { type: String, default: 'indianflowersorder@gmail.com' },
     smtpHost: { type: String, default: '' },
     smtpPort: { type: Number, default: 587 },

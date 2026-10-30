@@ -24,6 +24,11 @@ export async function GET(req: NextRequest) {
         msg91FromName: config.fromName,
         msg91Domain: config.domain,
         msg91TemplateId: config.templateId || '',
+        // Brevo
+        brevoApiKey: config.brevoApiKey ? `${config.brevoApiKey.substring(0, 8)}••••••••${config.brevoApiKey.slice(-4)}` : '',
+        hasBrevoApiKey: Boolean(config.brevoApiKey && !config.brevoApiKey.includes('placeholder')),
+        brevoFromEmail: config.brevoFromEmail || 'orders@theindianflowers.com',
+        brevoFromName: config.brevoFromName || 'The Indian Flowers',
         adminNotificationEmail: config.adminEmail,
         smtpHost: dbConfig?.smtpHost || '',
         smtpPort: dbConfig?.smtpPort || 587,
@@ -56,6 +61,8 @@ export async function POST(req: NextRequest) {
       msg91FromName: body.msg91FromName?.trim() || 'The Indian Flowers',
       msg91Domain: body.msg91Domain?.trim() || 'theindianflowers.com',
       msg91TemplateId: body.msg91TemplateId?.trim() || '',
+      brevoFromEmail: body.brevoFromEmail?.trim() || 'orders@theindianflowers.com',
+      brevoFromName: body.brevoFromName?.trim() || 'The Indian Flowers',
       adminNotificationEmail: body.adminNotificationEmail?.trim() || 'indianflowersorder@gmail.com',
       smtpHost: body.smtpHost?.trim() || '',
       smtpPort: Number(body.smtpPort) || 587,
@@ -67,6 +74,11 @@ export async function POST(req: NextRequest) {
     // Only update auth key if new non-masked value was provided
     if (body.msg91AuthKey && !body.msg91AuthKey.includes('••••')) {
       updateFields.msg91AuthKey = body.msg91AuthKey.trim();
+    }
+
+    // Only update Brevo API key if new non-masked value was provided
+    if (body.brevoApiKey && !body.brevoApiKey.includes('••••')) {
+      updateFields.brevoApiKey = body.brevoApiKey.trim();
     }
 
     // Only update SMTP pass if non-masked

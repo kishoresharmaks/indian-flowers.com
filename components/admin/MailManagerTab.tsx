@@ -63,13 +63,17 @@ interface EmailLogItem {
 }
 
 interface MailConfig {
-  provider: 'msg91' | 'smtp';
+  provider: 'msg91' | 'brevo' | 'smtp';
   msg91AuthKey: string;
   hasAuthKey: boolean;
   msg91FromEmail: string;
   msg91FromName: string;
   msg91Domain: string;
   msg91TemplateId: string;
+  brevoApiKey: string;
+  hasBrevoApiKey: boolean;
+  brevoFromEmail: string;
+  brevoFromName: string;
   adminNotificationEmail: string;
   smtpHost: string;
   smtpPort: number;
@@ -116,6 +120,10 @@ export default function MailManagerTab() {
     msg91FromName: 'The Indian Flowers',
     msg91Domain: 'theindianflowers.com',
     msg91TemplateId: '',
+    brevoApiKey: '',
+    hasBrevoApiKey: false,
+    brevoFromEmail: 'orders@theindianflowers.com',
+    brevoFromName: 'The Indian Flowers',
     adminNotificationEmail: 'indianflowersorder@gmail.com',
     smtpHost: '',
     smtpPort: 587,
@@ -128,6 +136,7 @@ export default function MailManagerTab() {
   const [configLoading, setConfigLoading] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [showAuthKey, setShowAuthKey] = useState(false);
+  const [showBrevoKey, setShowBrevoKey] = useState(false);
   const [configToast, setConfigToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Test Email State
@@ -1062,8 +1071,16 @@ export default function MailManagerTab() {
                           </span>
                         </td>
 
-                        <td className="py-3 px-4 whitespace-nowrap font-mono text-[11px] text-slate-600">
-                          {log.provider}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                            log.provider === 'BREVO'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : log.provider === 'MSG91'
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {log.provider}
+                          </span>
                         </td>
 
                         <td className="py-3 px-4 whitespace-nowrap text-slate-500 text-[11px]">
@@ -1188,22 +1205,43 @@ export default function MailManagerTab() {
               {/* Provider Selection */}
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">Primary Email Gateway</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setConfig({ ...config, provider: 'brevo' })}
+                    className={`p-3 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+                      config.provider === 'brevo'
+                        ? 'border-[#0B3B24] bg-emerald-50/50 shadow-xs ring-1 ring-[#0B3B24]/20'
+                        : 'border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                      B
+                    </div>
+                    <div>
+                      <p className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        Brevo
+                        <span className="text-[9.5px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">REST API</span>
+                      </p>
+                      <p className="text-[11px] text-slate-500">Sendinblue (300 free/day)</p>
+                    </div>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setConfig({ ...config, provider: 'msg91' })}
                     className={`p-3 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
                       config.provider === 'msg91'
-                        ? 'border-[#0B3B24] bg-emerald-50/50 shadow-xs'
+                        ? 'border-[#0B3B24] bg-emerald-50/50 shadow-xs ring-1 ring-[#0B3B24]/20'
                         : 'border-slate-200 hover:bg-slate-50'
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-[#0B3B24] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#0B3B24] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                       M
                     </div>
                     <div>
-                      <p className="font-bold text-xs text-slate-900">MSG91 Email API v5</p>
-                      <p className="text-[11px] text-slate-500">Recommended for instant delivery</p>
+                      <p className="font-bold text-xs text-slate-900">MSG91 Email API</p>
+                      <p className="text-[11px] text-slate-500">v5 REST &amp; Templates</p>
                     </div>
                   </button>
 
@@ -1212,112 +1250,237 @@ export default function MailManagerTab() {
                     onClick={() => setConfig({ ...config, provider: 'smtp' })}
                     className={`p-3 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
                       config.provider === 'smtp'
-                        ? 'border-[#0B3B24] bg-emerald-50/50 shadow-xs'
+                        ? 'border-[#0B3B24] bg-emerald-50/50 shadow-xs ring-1 ring-[#0B3B24]/20'
                         : 'border-slate-200 hover:bg-slate-50'
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-slate-800 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-slate-800 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                       S
                     </div>
                     <div>
-                      <p className="font-bold text-xs text-slate-900">Custom SMTP Server</p>
-                      <p className="text-[11px] text-slate-500">Self-hosted or Google Workspace</p>
+                      <p className="font-bold text-xs text-slate-900">Custom SMTP</p>
+                      <p className="text-[11px] text-slate-500">Self-hosted / Google</p>
                     </div>
                   </button>
                 </div>
               </div>
 
+              {/* Brevo Fields */}
+              {config.provider === 'brevo' && (
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-slate-700">Brevo API Key (v3)</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowBrevoKey(!showBrevoKey)}
+                        className="text-[11px] text-[#0B3B24] font-semibold hover:underline cursor-pointer"
+                      >
+                        {showBrevoKey ? 'Hide key' : 'Show / edit key'}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showBrevoKey ? 'text' : 'password'}
+                        placeholder="xkeysib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx"
+                        value={config.brevoApiKey}
+                        onChange={(e) => setConfig({ ...config, brevoApiKey: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Found in your Brevo dashboard under <strong>Account &gt; SMTP &amp; API &gt; API Keys</strong> (Generate a new API key).
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">From Sender Email</label>
+                      <input
+                        type="email"
+                        value={config.brevoFromEmail}
+                        onChange={(e) => setConfig({ ...config, brevoFromEmail: e.target.value })}
+                        placeholder="orders@theindianflowers.com"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                      <p className="text-[10.5px] text-slate-500 mt-1 leading-snug">
+                        Must be a verified sender or authenticated domain in your Brevo account (under <strong>Senders &amp; IP</strong>).
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">From Sender Name</label>
+                      <input
+                        type="text"
+                        value={config.brevoFromName}
+                        onChange={(e) => setConfig({ ...config, brevoFromName: e.target.value })}
+                        placeholder="The Indian Flowers"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                      <p className="text-[10.5px] text-slate-400 mt-1">
+                        The display name appearing in the customer&apos;s email inbox.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* MSG91 Fields */}
-              <div className="space-y-4 pt-2">
+              {config.provider === 'msg91' && (
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-slate-700">MSG91 Auth Key</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowAuthKey(!showAuthKey)}
+                        className="text-[11px] text-[#0B3B24] font-semibold hover:underline cursor-pointer"
+                      >
+                        {showAuthKey ? 'Hide key' : 'Show / edit key'}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showAuthKey ? 'text' : 'password'}
+                        placeholder="Enter your MSG91 Auth Key (e.g. 382914Abcd...)"
+                        value={config.msg91AuthKey}
+                        onChange={(e) => setConfig({ ...config, msg91AuthKey: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Found in your MSG91 control panel under Developers &gt; AuthKey.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">From Email Address</label>
+                      <input
+                        type="email"
+                        value={config.msg91FromEmail}
+                        onChange={(e) => setConfig({ ...config, msg91FromEmail: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                      <p className="text-[10.5px] text-slate-500 mt-1 leading-snug">
+                        Must use your verified MSG91 domain (e.g. <span className="font-mono text-emerald-800">orders@{config.msg91Domain || 'yourdomain.com'}</span>).
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">From Sender Name</label>
+                      <input
+                        type="text"
+                        value={config.msg91FromName}
+                        onChange={(e) => setConfig({ ...config, msg91FromName: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                      <p className="text-[10.5px] text-slate-400 mt-1">The display name appearing in the customer&apos;s email inbox.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Sending Domain</label>
+                      <input
+                        type="text"
+                        value={config.msg91Domain}
+                        onChange={(e) => setConfig({ ...config, msg91Domain: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                      <p className="text-[10.5px] text-slate-500 mt-1 leading-snug">
+                        The exact domain registered &amp; verified in your MSG91 dashboard (under <strong>Email &gt; Domains</strong>).
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Template ID (Optional)</label>
+                      <input
+                        type="text"
+                        value={config.msg91TemplateId}
+                        onChange={(e) => setConfig({ ...config, msg91TemplateId: e.target.value })}
+                        placeholder="Optional custom template ID"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                      <p className="text-[10.5px] text-slate-400 mt-1">Leave empty to use built-in HTML responsive templates.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SMTP Fields */}
+              {config.provider === 'smtp' && (
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-700 block mb-1">SMTP Host</label>
+                      <input
+                        type="text"
+                        value={config.smtpHost}
+                        onChange={(e) => setConfig({ ...config, smtpHost: e.target.value })}
+                        placeholder="smtp-relay.brevo.com or smtp.gmail.com"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Port</label>
+                      <input
+                        type="number"
+                        value={config.smtpPort}
+                        onChange={(e) => setConfig({ ...config, smtpPort: Number(e.target.value) || 587 })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">SMTP Username</label>
+                      <input
+                        type="text"
+                        value={config.smtpUser}
+                        onChange={(e) => setConfig({ ...config, smtpUser: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">SMTP Password</label>
+                      <input
+                        type="password"
+                        value={config.smtpPass}
+                        onChange={(e) => setConfig({ ...config, smtpPass: e.target.value })}
+                        placeholder={config.hasSmtpPass ? '••••••••' : 'Enter password'}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Shared Destination & Signature */}
+              <div className="pt-2 border-t border-slate-100 space-y-4">
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-slate-700">MSG91 Auth Key</label>
-                    <button
-                      type="button"
-                      onClick={() => setShowAuthKey(!showAuthKey)}
-                      className="text-[11px] text-[#0B3B24] font-semibold hover:underline cursor-pointer"
-                    >
-                      {showAuthKey ? 'Hide key' : 'Show / edit key'}
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type={showAuthKey ? 'text' : 'password'}
-                      placeholder="Enter your MSG91 Auth Key (e.g. 382914Abcd...)"
-                      value={config.msg91AuthKey}
-                      onChange={(e) => setConfig({ ...config, msg91AuthKey: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
-                    />
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Found in your MSG91 control panel under Developers &gt; AuthKey.
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Admin Notification Alert Email</label>
+                  <input
+                    type="email"
+                    value={config.adminNotificationEmail}
+                    onChange={(e) => setConfig({ ...config, adminNotificationEmail: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                  />
+                  <p className="text-[10.5px] text-slate-500 mt-1 leading-snug">
+                    Your personal inbox (<span className="font-mono text-emerald-800">indianflowersorder@gmail.com</span>) where order alerts, inquiry notices, and customer replies arrive.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">From Email Address</label>
-                    <input
-                      type="email"
-                      value={config.msg91FromEmail}
-                      onChange={(e) => setConfig({ ...config, msg91FromEmail: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
-                    />
-                    <p className="text-[10.5px] text-slate-500 mt-1 leading-snug">
-                      Must use your verified MSG91 domain (e.g. <span className="font-mono text-emerald-800">orders@{config.msg91Domain || 'yourdomain.com'}</span>). <em>Note:</em> MSG91 rejects public <span className="font-mono">@gmail.com</span> senders — customer replies automatically flow to your Alert Email below via <span className="font-mono">Reply-To</span>.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">From Sender Name</label>
-                    <input
-                      type="text"
-                      value={config.msg91FromName}
-                      onChange={(e) => setConfig({ ...config, msg91FromName: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
-                    />
-                    <p className="text-[10.5px] text-slate-400 mt-1">The display name appearing in the customer&apos;s email inbox.</p>
-                  </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Default Customer Reply Signature</label>
+                  <textarea
+                    rows={3}
+                    value={config.replySignature}
+                    onChange={(e) => setConfig({ ...config, replySignature: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white font-sans leading-relaxed"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Sending Domain</label>
-                    <input
-                      type="text"
-                      value={config.msg91Domain}
-                      onChange={(e) => setConfig({ ...config, msg91Domain: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
-                    />
-                    <p className="text-[10.5px] text-slate-500 mt-1 leading-snug">
-                      The exact domain registered &amp; verified in your MSG91 dashboard (under <strong>Email &gt; Domains</strong>).
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Admin Notification Alert Email</label>
-                    <input
-                      type="email"
-                      value={config.adminNotificationEmail}
-                      onChange={(e) => setConfig({ ...config, adminNotificationEmail: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
-                    />
-                    <p className="text-[10.5px] text-slate-500 mt-1 leading-snug">
-                      Your personal inbox (<span className="font-mono text-emerald-800">indianflowersorder@gmail.com</span>) where inquiry alerts and customer replies arrive.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Email Signature */}
-              <div className="pt-2 border-t border-slate-100">
-                <label className="text-xs font-bold text-slate-700 block mb-1">Default Customer Reply Signature</label>
-                <textarea
-                  rows={3}
-                  value={config.replySignature}
-                  onChange={(e) => setConfig({ ...config, replySignature: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white font-sans leading-relaxed"
-                />
               </div>
 
               <div className="pt-4 flex items-center justify-end">
@@ -1345,12 +1508,23 @@ export default function MailManagerTab() {
           {/* Right Column: Live Diagnostic Test Panel */}
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-sm font-extrabold text-slate-900">Email Gateway Diagnostics</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-emerald-600" />
+                  <h3 className="text-sm font-extrabold text-slate-900">Email Gateway Diagnostics</h3>
+                </div>
+                <span className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border ${
+                  config.provider === 'brevo'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : config.provider === 'msg91'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}>
+                  Active: {config.provider === 'brevo' ? 'Brevo' : config.provider === 'msg91' ? 'MSG91' : 'SMTP'}
+                </span>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Test your MSG91 connection in real time. Dispatches a diagnostic test email to any recipient.
+                Test your {config.provider === 'brevo' ? 'Brevo (Sendinblue)' : config.provider === 'msg91' ? 'MSG91' : 'SMTP'} connection in real time. Dispatches a diagnostic test email to verify credentials and sender domain delivery.
               </p>
 
               <div className="space-y-3 pt-2">
