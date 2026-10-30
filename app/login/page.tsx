@@ -156,6 +156,12 @@ function LoginFormContent() {
                 <label className="block text-xs sm:text-sm font-semibold text-gray-700">
                   Password
                 </label>
+                <Link
+                  href={redirectTarget ? `/forgot-password?redirect=${encodeURIComponent(redirectTarget)}` : '/forgot-password'}
+                  className="text-xs font-semibold text-[#0B3B24] hover:underline"
+                >
+                  Forgot Password?
+                </Link>
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />

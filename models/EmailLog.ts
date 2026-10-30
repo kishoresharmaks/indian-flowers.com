@@ -14,6 +14,7 @@ export interface IEmailLog extends Document {
     | 'MANUAL_REPLY'
     | 'TEST_EMAIL'
     | 'ORDER_RECEIPT'
+    | 'PASSWORD_RESET'
     | 'OTHER';
   status: 'SENT' | 'FAILED' | 'SIMULATED';
   provider: 'MSG91' | 'SMTP' | 'SIMULATOR';
@@ -42,6 +43,7 @@ const EmailLogSchema: Schema = new Schema(
         'MANUAL_REPLY',
         'TEST_EMAIL',
         'ORDER_RECEIPT',
+        'PASSWORD_RESET',
         'OTHER',
       ],
       default: 'OTHER',
