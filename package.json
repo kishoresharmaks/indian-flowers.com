@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/prebuild.js && next build",
+    "build:clean": "CLEAN_BUILD=1 node scripts/prebuild.js && next build",
     "start": "next start -H 0.0.0.0",
     "lint": "next lint",
     "test": "node scripts/runTests.js",

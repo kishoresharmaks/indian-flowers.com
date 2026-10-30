@@ -2,6 +2,23 @@
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
+  swcMinify: true,
+  eslint: {
+    // Avoid running ESLint on server builds; run `npm run lint` during local dev
+    ignoreDuringBuilds: true,
+  },
+  experimental: {
+    // Tree-shake heavy libraries and eliminate barrel file parsing to accelerate builds
+    optimizePackageImports: [
+      'lucide-react',
+      'bcryptjs',
+      'exceljs',
+      'jspdf',
+      'jspdf-autotable',
+      'xlsx',
+      'google-auth-library',
+    ],
+  },
   images: {
     // Next.js image optimization active with standalone output.
     unoptimized: false,
