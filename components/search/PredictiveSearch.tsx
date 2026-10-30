@@ -183,10 +183,10 @@ export default function PredictiveSearch({
           className={`relative flex-1 flex items-center border rounded-full transition-all duration-200 overflow-hidden ${
             isOpen
               ? 'border-[#0B3B24] ring-2 ring-[#0B3B24]/15 bg-white shadow-md'
-              : 'border-stone-300 hover:border-stone-400 bg-stone-50/80 hover:bg-white shadow-2xs'
+              : 'border-stone-200/90 hover:border-stone-300 bg-stone-50/70 hover:bg-white shadow-2xs'
           }`}
         >
-          <Search className="w-4 h-4 text-stone-400 ml-4 shrink-0 pointer-events-none" />
+          <Search className="w-4 h-4 text-stone-400 ml-3.5 shrink-0 pointer-events-none" />
           <input
             ref={inputRef}
             type="text"
@@ -195,7 +195,7 @@ export default function PredictiveSearch({
             onFocus={() => setIsOpen(true)}
             placeholder={placeholder}
             aria-label="Search flowers and garlands"
-            className="w-full px-3 py-2.5 bg-transparent text-xs sm:text-[13px] text-stone-900 placeholder-stone-400 focus:outline-none font-normal"
+            className="w-full px-3 py-2 bg-transparent text-xs sm:text-[13px] text-stone-900 placeholder-stone-400 focus:outline-none font-normal"
           />
 
           {loading && (
@@ -206,7 +206,7 @@ export default function PredictiveSearch({
             <button
               type="button"
               onClick={handleClear}
-              className="p-1 text-stone-400 hover:text-stone-700 transition-colors mr-2 cursor-pointer"
+              className="p-1 text-stone-400 hover:text-stone-700 transition-colors mr-1.5 cursor-pointer"
               aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5" />
@@ -215,10 +215,10 @@ export default function PredictiveSearch({
 
           <button
             type="submit"
-            className="bg-[#0B3B24] hover:bg-[#134633] active:bg-[#072718] text-white px-4 sm:px-5 py-2.5 flex items-center justify-center transition-colors cursor-pointer shrink-0 font-medium text-xs tracking-wide"
+            className="bg-[#0B3B24] hover:bg-[#134633] active:bg-[#072718] text-white px-4 sm:px-5 py-2 flex items-center justify-center transition-colors cursor-pointer shrink-0 font-semibold text-xs tracking-wide rounded-r-full"
             aria-label="Submit search"
           >
-            <span className="hidden sm:inline mr-1 font-semibold text-xs">Search</span>
+            <span className="hidden sm:inline mr-1 text-xs">Search</span>
             <Search className="w-3.5 h-3.5 text-white" />
           </button>
         </div>

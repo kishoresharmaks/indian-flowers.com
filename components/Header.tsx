@@ -615,31 +615,33 @@ export default function Header({
               </div>
 
               {/* RIGHT ACTION BUTTONS (Sign In, Wishlist with pink count, Cart with pink count) */}
-              <div className="flex items-center gap-2 sm:gap-6 shrink-0">
+              {/* RIGHT ACTION BUTTONS (Sign In / Account, Wishlist, Cart Pill) */}
+              <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
                 {/* Desktop: Customer Account / Sign In */}
                 <div className="hidden sm:block relative" ref={accountDropdownRef}>
                   {activeCustomer ? (
                     <button
                       type="button"
                       onClick={() => setIsAccountDropdownOpen((prev) => !prev)}
-                      className="flex flex-col items-center justify-center text-stone-700 hover:text-[#0B3B24] transition-colors p-1 rounded-lg hover:bg-stone-50 cursor-pointer"
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-full hover:bg-stone-100/80 text-stone-700 hover:text-[#0B3B24] transition-all cursor-pointer border border-transparent hover:border-stone-200/80"
                       aria-label="Customer account menu"
                     >
-                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-[#0B3B24] border border-emerald-300 flex items-center justify-center text-[10px] font-bold">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-[#0B3B24] border border-emerald-300 flex items-center justify-center text-[11px] font-bold shadow-2xs">
                         {activeCustomer.name ? activeCustomer.name.charAt(0).toUpperCase() : 'U'}
                       </div>
-                      <span className="text-[11px] font-medium text-stone-700 mt-1 max-w-[80px] truncate">
+                      <span className="text-[11.5px] font-semibold text-stone-800 max-w-[85px] truncate hidden md:inline">
                         {activeCustomer.name ? activeCustomer.name.split(' ')[0] : 'Account'}
                       </span>
+                      <ChevronDown className="w-3 h-3 text-stone-400" />
                     </button>
                   ) : (
                     <Link
                       href="/login"
-                      className="flex flex-col items-center justify-center text-stone-700 hover:text-[#0B3B24] transition-colors p-1 rounded-lg hover:bg-stone-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-stone-100 text-stone-700 hover:text-[#0B3B24] transition-colors text-[11.5px] font-semibold"
                       title="Sign In"
                     >
-                      <User className="w-5 h-5 text-stone-700 stroke-[1.8]" />
-                      <span className="text-[11px] font-medium text-stone-700 mt-1 whitespace-nowrap">
+                      <User className="w-4 h-4 stroke-[2]" />
+                      <span className="whitespace-nowrap hidden md:inline">
                         Sign In
                       </span>
                     </Link>
@@ -683,39 +685,40 @@ export default function Header({
                   )}
                 </div>
 
-                {/* Desktop: Wishlist with Pink Badge 3 */}
+                {/* Desktop: Wishlist with Pink Badge */}
                 <button
                   type="button"
                   onClick={handleWishlistClick}
-                  className="hidden sm:flex flex-col items-center justify-center text-stone-700 hover:text-[#ed2353] transition-colors relative p-1 rounded-lg hover:bg-stone-50 cursor-pointer"
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full hover:bg-stone-100 text-stone-700 hover:text-[#ed2353] transition-colors relative cursor-pointer"
                   aria-label="Wishlist"
+                  title="Wishlist"
                 >
-                  <div className="relative">
-                    <Heart className="w-5 h-5 text-stone-700 stroke-[1.8]" />
+                  <div className="relative flex items-center justify-center">
+                    <Heart className="w-4.5 h-4.5 stroke-[1.9]" />
                     {activeWishlistCount > 0 && (
-                      <span className="absolute -top-1.5 -right-2.5 bg-[#ed2353] text-white text-[10px] font-bold min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center shadow-xs">
+                      <span className="absolute -top-1.5 -right-2 bg-[#ed2353] text-white text-[9.5px] font-extrabold min-w-[15px] h-[15px] px-0.5 rounded-full flex items-center justify-center shadow-xs">
                         {activeWishlistCount}
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] font-medium text-stone-700 mt-1">Wishlist</span>
+                  <span className="text-[11.5px] font-semibold text-stone-700 hidden lg:inline">Wishlist</span>
                 </button>
 
-                {/* Cart Icon with Signature Pink Badge 1 */}
+                {/* Shopping Bag Pill Button with Signature Pink Badge */}
                 <button
                   type="button"
                   onClick={handleCartClick}
-                  className="flex flex-col items-center justify-center text-stone-800 hover:text-[#0B3B24] transition-colors relative p-1 rounded-lg hover:bg-stone-50 cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50/80 hover:bg-emerald-100/90 border border-emerald-200/70 text-[#0B3B24] transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
                   aria-label="Open Shopping Cart"
                   title="Shopping cart"
                 >
-                  <div className="relative">
-                    <ShoppingBag className="w-5 h-5 stroke-[1.8]" />
-                    <span className="absolute -top-1.5 -right-2.5 bg-[#ed2353] text-white text-[10px] font-bold min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center shadow-xs">
+                  <div className="relative flex items-center justify-center">
+                    <ShoppingBag className="w-4 h-4 text-[#0B3B24] stroke-[2.2]" />
+                    <span className="absolute -top-1.5 -right-2 bg-[#ed2353] text-white text-[9.5px] font-extrabold min-w-[15px] h-[15px] px-0.5 rounded-full flex items-center justify-center shadow-xs">
                       {activeCartCount}
                     </span>
                   </div>
-                  <span className="text-[11px] font-medium text-stone-700 mt-1 hidden sm:inline">
+                  <span className="text-[12px] font-bold text-[#0B3B24]">
                     Cart
                   </span>
                 </button>
@@ -764,11 +767,12 @@ export default function Header({
                   </Link>
                 </li>
 
-                {/* 4. Parent Categories with Subcategories */}
-                {activeCategories.map((cat) => {
+                {/* 4. Parent Categories with Subcategories (Upgraded Visual Mega-Menu) */}
+                {activeCategories.map((cat, catIdx) => {
                   const hasSub = Array.isArray(cat.subcategories) && cat.subcategories.length > 0;
                   const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
                   const isOpen = openDropdownKey === cat.name;
+                  const isAlignRight = catIdx >= 2;
 
                   return (
                     <li
@@ -786,10 +790,12 @@ export default function Header({
                             handleCategorySelect(cat.name);
                           }
                         }}
-                        className={`inline-flex items-center gap-1 px-2 py-1 uppercase tracking-wide transition-colors whitespace-nowrap cursor-pointer group rounded-lg text-[11.5px] lg:text-[12px] xl:text-[12.5px] ${
-                          isSelected || isOpen
-                            ? 'text-[#0B3B24] font-bold'
-                            : 'text-stone-700 hover:text-[#0B3B24] font-semibold'
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 uppercase tracking-wide transition-all duration-150 whitespace-nowrap cursor-pointer group rounded-xl text-[11.5px] lg:text-[12px] xl:text-[12.5px] font-semibold ${
+                          isSelected
+                            ? 'bg-[#0B3B24] text-white shadow-xs font-bold'
+                            : isOpen
+                            ? 'bg-emerald-50 text-[#0B3B24] font-bold'
+                            : 'text-stone-700 hover:text-[#0B3B24] hover:bg-stone-50'
                         }`}
                       >
                         <span>{cat.name}</span>
@@ -797,57 +803,117 @@ export default function Header({
                           <ChevronDown
                             className={`w-3.5 h-3.5 transition-transform duration-200 ${
                               isOpen
-                                ? 'rotate-180 text-[#0B3B24]'
+                                ? 'rotate-180 text-inherit'
                                 : 'text-stone-400 group-hover:text-[#0B3B24]'
                             }`}
                           />
                         )}
                       </button>
 
-                      {/* Direct Dropdown showing the subcategories */}
+                      {/* LUXURY BOTANICAL VISUAL MEGA-MENU */}
                       {hasSub && isOpen && (
                         <div
-                          className="absolute left-0 top-full mt-1.5 min-w-[240px] max-w-[320px] bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2"
-                          style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }}
+                          className={`absolute ${
+                            isAlignRight ? 'right-0' : 'left-0'
+                          } top-full mt-2 w-[580px] lg:w-[680px] max-w-[calc(100vw-32px)] bg-white/98 backdrop-blur-md rounded-2xl shadow-[0_20px_50px_rgba(11,59,36,0.16)] border border-stone-200/90 p-4 lg:p-5 z-50 animate-in fade-in zoom-in-98 duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3`}
+                          style={{ filter: 'drop-shadow(0 14px 32px rgba(0,0,0,0.12))' }}
                         >
-                          <div className="px-4 pb-1.5 mb-1 border-b border-stone-100 flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                              {cat.name}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleCategorySelect(cat.name)}
-                              className="text-[11px] font-semibold text-[#0B3B24] hover:underline cursor-pointer"
-                            >
-                              View All
-                            </button>
-                          </div>
-
-                          <div className="space-y-0.5">
-                            {cat.subcategories.map((sub: any) => {
-                              const isSubSelected =
-                                selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() &&
-                                selectedSubcategory.trim().toLowerCase() === sub.name.trim().toLowerCase();
-                              return (
+                          <div className="flex items-stretch gap-4 lg:gap-5">
+                            {/* Left Side: Subcategories Grid with Product Thumbnails */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-stone-100">
+                                <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#0B3B24]">
+                                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                  <span>{cat.name}</span>
+                                </div>
                                 <button
-                                  key={sub.slug || sub.name}
                                   type="button"
-                                  onClick={() => handleCategorySelect(cat.name, sub.name)}
-                                  className={`w-full text-left px-4 py-2 text-[13px] font-medium transition-colors flex items-center gap-2.5 cursor-pointer ${
-                                    isSubSelected
-                                      ? 'bg-emerald-50 text-[#0B3B24] font-bold'
-                                      : 'text-stone-700 hover:bg-stone-50 hover:text-[#0B3B24]'
-                                  }`}
+                                  onClick={() => handleCategorySelect(cat.name)}
+                                  className="text-[11px] font-bold text-[#0B3B24] hover:text-[#1C563F] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
                                 >
-                                  <span
-                                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                      isSubSelected ? 'bg-emerald-600' : 'bg-stone-300'
-                                    }`}
-                                  />
-                                  <span className="truncate">{sub.name}</span>
+                                  <span>View All ({cat.subcategories.length})</span>
+                                  <ChevronRight className="w-3 h-3" />
                                 </button>
-                              );
-                            })}
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-1.5 lg:gap-2">
+                                {cat.subcategories.map((sub: any) => {
+                                  const isSubSelected =
+                                    selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() &&
+                                    selectedSubcategory.trim().toLowerCase() === sub.name.trim().toLowerCase();
+                                  const thumb = sub.image || cat.image || '/images/categories/cat-wedding-garlands.jpg';
+
+                                  return (
+                                    <button
+                                      key={sub.slug || sub.name}
+                                      type="button"
+                                      onClick={() => handleCategorySelect(cat.name, sub.name)}
+                                      className={`group flex items-center gap-2 p-1.5 rounded-xl text-left transition-all cursor-pointer ${
+                                        isSubSelected
+                                          ? 'bg-emerald-50 text-[#0B3B24] font-bold ring-1 ring-emerald-200 shadow-2xs'
+                                          : 'text-stone-700 hover:text-[#0B3B24] hover:bg-emerald-50/50'
+                                      }`}
+                                    >
+                                      {/* Thumbnail Image */}
+                                      <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-stone-200/80 bg-stone-100 group-hover:scale-105 transition-transform">
+                                        <img
+                                          src={thumb}
+                                          alt={sub.name}
+                                          className="w-full h-full object-cover"
+                                          loading="lazy"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).src = '/images/categories/cat-wedding-garlands.jpg';
+                                          }}
+                                        />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-[11.5px] font-semibold truncate group-hover:text-[#0B3B24] transition-colors">
+                                          {sub.name}
+                                        </p>
+                                        <span className="text-[9.5px] text-stone-400 group-hover:text-emerald-700 transition-colors flex items-center gap-0.5 leading-none">
+                                          <span>Shop now</span>
+                                          <ChevronRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </span>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Right Side: Featured Showcase Card */}
+                            <div className="w-48 lg:w-56 shrink-0 bg-gradient-to-b from-[#FAF8F5] via-[#F4F8F4] to-[#FAF8F5] rounded-xl p-3 border border-emerald-900/10 flex flex-col justify-between shadow-2xs">
+                              <div>
+                                <div className="relative w-full h-24 lg:h-28 rounded-lg overflow-hidden mb-2 shadow-2xs border border-stone-200/80">
+                                  <img
+                                    src={cat.image || '/images/categories/cat-wedding-garlands.jpg'}
+                                    alt={cat.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = '/images/banners/hero-wedding-tif-rose.jpg';
+                                    }}
+                                  />
+                                  <span className="absolute top-1.5 left-1.5 bg-[#0B3B24]/90 backdrop-blur-xs text-white text-[8.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-2xs">
+                                    🌿 100% Fresh
+                                  </span>
+                                </div>
+                                <h4 className="text-[12px] font-bold text-stone-900 leading-snug line-clamp-1">
+                                  {cat.name}
+                                </h4>
+                                <p className="text-[10.5px] text-stone-500 line-clamp-2 mt-0.5 leading-relaxed">
+                                  Handcrafted with fresh flowers, delivered cold-chain across USA.
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleCategorySelect(cat.name)}
+                                className="mt-2.5 w-full py-1.5 px-3 rounded-lg bg-[#0B3B24] hover:bg-[#134633] text-white text-[11px] font-bold text-center transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                              >
+                                <span>Shop {cat.name.split(' ')[0]}</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
