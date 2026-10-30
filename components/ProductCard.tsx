@@ -40,6 +40,7 @@ export interface Product {
   subcategory?: string;
   rating?: number;
   reviewsCount?: number;
+  isActive?: boolean;
   isSeoLanding?: boolean;
   hideFromHome?: boolean;
   variants?: ProductVariant[];

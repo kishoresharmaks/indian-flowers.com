@@ -44,6 +44,7 @@ export interface IProduct extends Document {
   subcategory?: string;
   rating?: number;
   reviewsCount?: number;
+  isActive?: boolean;
   isSeoLanding?: boolean;
   hideFromHome?: boolean;
   variants?: IProductVariant[];
@@ -99,6 +100,7 @@ const ProductSchema: Schema = new Schema(
     subcategory: { type: String, default: '' },
     rating: { type: Number, default: 4.8 },
     reviewsCount: { type: Number, default: 50 },
+    isActive: { type: Boolean, default: true, index: true },
     isSeoLanding: { type: Boolean, default: false, index: true },
     hideFromHome: { type: Boolean, default: false, index: true },
     variants: [VariantSchema],
@@ -122,6 +124,8 @@ ProductSchema.index({ categorySlug: 1, price: -1, _id: -1 });
 ProductSchema.index({ categorySlug: 1, name: 1, _id: 1 });
 ProductSchema.index({ 'categories.slug': 1, createdAt: -1, _id: -1 });
 ProductSchema.index({ subcategory: 1, createdAt: -1, _id: -1 });
+ProductSchema.index({ isActive: 1, createdAt: -1 });
+ProductSchema.index({ isActive: 1, categorySlug: 1, createdAt: -1 });
 ProductSchema.index({ isSeoLanding: 1, hideFromHome: 1, createdAt: -1 });
 ProductSchema.index({ name: 'text', description: 'text' });
 

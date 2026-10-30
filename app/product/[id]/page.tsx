@@ -40,11 +40,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       }).lean();
     }
 
-    if (!product) {
+    if (!product || product.isActive === false) {
       return {
         title: 'Product Not Found',
         description: 'The requested Indian flower product is unavailable or moved.',
-        robots: { index: false, follow: true },
+        robots: { index: false, follow: false },
       };
     }
 
@@ -146,6 +146,10 @@ export default async function ProductPage({ params }: Props) {
       }).lean();
     }
 
+    if (product && product.isActive === false) {
+      product = null;
+    }
+
     if (product) {
       // 301 Permanent Redirect if accessed by Mongo ObjectId or un-slugified ID and slug exists
       if (mongoose.isValidObjectId(cleanId) && product.slug && product.slug !== cleanId) {
@@ -157,6 +161,7 @@ export default async function ProductPage({ params }: Props) {
       try {
         const relatedQuery: any = {
           _id: { $ne: product._id },
+          isActive: { $ne: false },
           isSeoLanding: { $ne: true },
           hideFromHome: { $ne: true },
         };
@@ -168,6 +173,7 @@ export default async function ProductPage({ params }: Props) {
           const excludeIds = [product._id, ...related.map((r: any) => r._id)];
           const additional = await Product.find({
             _id: { $nin: excludeIds },
+            isActive: { $ne: false },
             isSeoLanding: { $ne: true },
             hideFromHome: { $ne: true },
           })

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
-import Settings, { DEFAULT_DELIVERY_MODES } from '@/models/Settings';
+import Settings, { DEFAULT_DELIVERY_MODES, DEFAULT_PICKUP_HUBS } from '@/models/Settings';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 import { STORE_CURRENCY, STORE_LOCALE } from '@/lib/currency';
 
@@ -27,6 +27,10 @@ export async function GET(request: NextRequest) {
     if (!settings.deliveryModes || settings.deliveryModes.length === 0) {
       await Settings.updateOne({ key: 'global' }, { $set: { deliveryModes: DEFAULT_DELIVERY_MODES } });
       settings.deliveryModes = DEFAULT_DELIVERY_MODES;
+    }
+    if (!settings.pickupHubs || settings.pickupHubs.length === 0) {
+      await Settings.updateOne({ key: 'global' }, { $set: { pickupHubs: DEFAULT_PICKUP_HUBS } });
+      settings.pickupHubs = DEFAULT_PICKUP_HUBS;
     }
     return NextResponse.json(
       {
@@ -100,6 +104,18 @@ export async function POST(request: NextRequest) {
         estimatedDays: String(dm.estimatedDays || '').trim().slice(0, 100),
         active: dm.active !== false,
         order: Number(dm.order ?? idx),
+      }));
+    }
+
+    // Pickup Hubs & Footer Locations Configuration
+    if (Array.isArray(body.pickupHubs)) {
+      updateFields.pickupHubs = body.pickupHubs.map((hub: any, idx: number) => ({
+        id: String(hub.id || `hub-${Date.now()}-${idx}`),
+        title: String(hub.title || 'Location Hub').trim().slice(0, 100),
+        address: String(hub.address || '').trim().slice(0, 250),
+        hours: String(hub.hours || '').trim().slice(0, 100),
+        active: hub.active !== false,
+        order: Number(hub.order ?? idx),
       }));
     }
 

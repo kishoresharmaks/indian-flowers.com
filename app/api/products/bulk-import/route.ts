@@ -232,6 +232,30 @@ export async function POST(request: NextRequest) {
         .toString()
         .trim();
 
+      // Extract status / isActive
+      let parsedIsActive: boolean | undefined = undefined;
+      const rawStatus = (
+        row.status ||
+        row.isactive ||
+        row.active ||
+        row.statusactivedisabled ||
+        originalRow['Status'] ||
+        originalRow['Status (Active/Disabled)'] ||
+        originalRow['Is Active'] ||
+        ''
+      )
+        .toString()
+        .trim()
+        .toLowerCase();
+
+      if (rawStatus) {
+        if (['disabled', 'inactive', 'false', '0', 'no', 'hide', 'hidden'].includes(rawStatus)) {
+          parsedIsActive = false;
+        } else if (['active', 'enabled', 'true', '1', 'yes', 'show', 'live'].includes(rawStatus)) {
+          parsedIsActive = true;
+        }
+      }
+
       // Ensure no Base64 is stored in MongoDB: decode and write to disk
       if (image.startsWith('data:image')) {
         try {
@@ -412,6 +436,9 @@ export async function POST(request: NextRequest) {
           existingProduct.discount = discount;
           existingProduct.quantity = quantity;
           existingProduct.gst = gst;
+          if (parsedIsActive !== undefined) {
+            existingProduct.isActive = parsedIsActive;
+          }
 
           // CRITICAL INTEGRITY CHECK:
           // Only overwrite existing image if a real new Base64 or URL was provided.
@@ -459,6 +486,7 @@ export async function POST(request: NextRequest) {
             variants: parsedVariants,
             rating: 4.8,
             reviewsCount: 35,
+            isActive: parsedIsActive !== undefined ? parsedIsActive : true,
           });
 
           createdCount++;

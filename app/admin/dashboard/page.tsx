@@ -58,11 +58,14 @@ import {
   LayoutGrid,
   Copy,
   MessageCircle,
+  MessageSquareQuote,
+  BookOpen,
   Share2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { parseExcelRowsToImportItems, ParsedImportRow } from '@/lib/bulkImportHelpers';
 import { IDeliveryMode, DEFAULT_DELIVERY_MODES } from '@/lib/delivery';
+import { DEFAULT_PICKUP_HUBS } from '@/models/Settings';
 import POSCounter from './components/pos/POSCounter';
 import POSReceipt from './components/pos/POSReceipt';
 import SubscriptionTab from '@/components/licensing/SubscriptionTab';
@@ -72,6 +75,8 @@ import PolicyManagerTab from '@/components/admin/PolicyManagerTab';
 import CustomersTab from '@/components/admin/CustomersTab';
 import ReportsTab from '@/components/admin/ReportsTab';
 import MailManagerTab from '@/components/admin/MailManagerTab';
+import CMSManagerTab from '@/components/admin/CMSManagerTab';
+import BlogManagerTab from '@/components/admin/BlogManagerTab';
 import WordPressImportModal from '@/components/admin/WordPressImportModal';
 import ConsolidatedPackingModal from '@/components/admin/ConsolidatedPackingModal';
 import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
@@ -112,6 +117,7 @@ interface Product {
   category: string;
   subcategory?: string;
   variants?: ProductVariant[];
+  isActive?: boolean;
   createdAt: string;
 }
 
@@ -233,6 +239,8 @@ export default function AdminDashboard() {
     | 'customers'
     | 'reports'
     | 'mail'
+    | 'cms'
+    | 'blogs'
   >('products');
 
   useEffect(() => {
@@ -255,6 +263,8 @@ export default function AdminDashboard() {
           'customers',
           'reports',
           'mail',
+          'cms',
+          'blogs',
         ].includes(tabParam)
       ) {
         setActiveTab(tabParam as any);
@@ -316,6 +326,8 @@ export default function AdminDashboard() {
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('All');
   const [productStockFilter, setProductStockFilter] = useState<'All' | 'inStock' | 'lowStock' | 'outOfStock'>('All');
+  const [productStatusFilter, setProductStatusFilter] = useState<'All' | 'active' | 'disabled'>('All');
+  const [togglingProductId, setTogglingProductId] = useState<string | null>(null);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
 
   // Add/Edit Product Form State
@@ -330,6 +342,7 @@ export default function AdminDashboard() {
     category: '',
     subcategory: '',
     variants: [] as ProductVariant[],
+    isActive: true,
   });
   const [imagePreview, setImagePreview] = useState('');
 
@@ -702,6 +715,7 @@ export default function AdminDashboard() {
     loyaltyMinPointsToRedeem: 10,
     loyaltyMaxRedemptionPercent: 100,
     deliveryModes: DEFAULT_DELIVERY_MODES,
+    pickupHubs: DEFAULT_PICKUP_HUBS,
     // FedEx Web Integration Solutions (WIS) Configuration Defaults
     fedexEnabled: true,
     fedexAccountNumber: '695333510',
@@ -870,7 +884,7 @@ export default function AdminDashboard() {
   const fetchProducts = async () => {
     try {
       setLoadingProducts(true);
-      const res = await fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(`/api/products?includeInactive=true&t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success) {
         setProducts(data.data);
@@ -976,6 +990,9 @@ export default function AdminDashboard() {
           deliveryModes: Array.isArray(data.data.deliveryModes) && data.data.deliveryModes.length > 0
             ? data.data.deliveryModes
             : DEFAULT_DELIVERY_MODES,
+          pickupHubs: Array.isArray(data.data.pickupHubs) && data.data.pickupHubs.length > 0
+            ? data.data.pickupHubs
+            : DEFAULT_PICKUP_HUBS,
           fedexEnabled: data.data.fedexEnabled !== false,
           fedexAccountNumber: data.data.fedexAccountNumber || '695333510',
           fedexProductionMeterNumber: data.data.fedexProductionMeterNumber || '256593981',
@@ -1084,29 +1101,40 @@ export default function AdminDashboard() {
   };
 
   // Save Payment Settings
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveSettingsWithData = async (customSettings?: any): Promise<boolean> => {
     setSettingsSuccess('');
     setSettingsError('');
     try {
       setIsSubmittingSettings(true);
+      const payload = customSettings || paymentSettings;
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paymentSettings),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
+        if (customSettings) {
+          setPaymentSettings(customSettings);
+        }
         setSettingsSuccess('Store settings saved successfully!');
         setTimeout(() => setSettingsSuccess(''), 3500);
+        return true;
       } else {
         setSettingsError(data.message || 'Failed to update payment settings');
+        return false;
       }
     } catch (err: any) {
       setSettingsError(err.message || 'Server error updating payment settings');
+      return false;
     } finally {
       setIsSubmittingSettings(false);
     }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSaveSettingsWithData();
   };
 
   // Fetch Custom Order Inquiries
@@ -1550,6 +1578,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       category: product.category || (categories[0]?.name ?? ''),
       subcategory: product.subcategory || '',
       variants: product.variants ? product.variants.map((v) => ({ ...v })) : [],
+      isActive: product.isActive !== false,
     });
     setImagePreview(product.image);
     setProductFormError('');
@@ -1624,6 +1653,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       category: categories.length > 0 ? categories[0].name : '',
       subcategory: '',
       variants: [],
+      isActive: true,
     });
     setImagePreview('');
     setProductFormError('');
@@ -1667,6 +1697,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           gst: Number(productForm.gst),
           category: productForm.category,
           subcategory: productForm.subcategory || '',
+          isActive: productForm.isActive,
           variants: productForm.variants.map((v) => ({
             name: v.name.trim(),
             mrp: Number(v.mrp),
@@ -1713,6 +1744,39 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     } catch (err) {
       console.error(err);
       fetchProducts();
+    }
+  };
+
+  // Quick One-Click Toggle Product Enable/Disable (Storefront Visibility)
+  const handleToggleProductStatus = async (product: Product) => {
+    const nextVal = !(product.isActive !== false);
+    setTogglingProductId(product._id);
+    // Optimistic UI update
+    setProducts((prev) =>
+      prev.map((p) => (p._id === product._id ? { ...p, isActive: nextVal } : p))
+    );
+    try {
+      const res = await fetch(`/api/products/${product._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: nextVal }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        // Rollback on failure
+        setProducts((prev) =>
+          prev.map((p) => (p._id === product._id ? { ...p, isActive: product.isActive } : p))
+        );
+        alert(data.message || 'Failed to update product visibility status');
+      }
+    } catch (err: any) {
+      // Rollback on error
+      setProducts((prev) =>
+        prev.map((p) => (p._id === product._id ? { ...p, isActive: product.isActive } : p))
+      );
+      alert(err.message || 'Error updating product visibility status');
+    } finally {
+      setTogglingProductId(null);
     }
   };
 
@@ -2144,6 +2208,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     if (productCategoryFilter !== 'All' && p.category?.toLowerCase() !== productCategoryFilter.toLowerCase()) {
       return false;
     }
+    if (productStatusFilter === 'active' && p.isActive === false) return false;
+    if (productStatusFilter === 'disabled' && p.isActive !== false) return false;
     if (productStockFilter === 'inStock' && p.quantity <= 0) return false;
     if (productStockFilter === 'lowStock' && (p.quantity <= 0 || p.quantity > 5)) return false;
     if (productStockFilter === 'outOfStock' && p.quantity > 0) return false;
@@ -2217,6 +2283,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     | 'banners'
     | 'subscribers'
     | 'policies'
+    | 'cms'
+    | 'blogs'
     | 'settings'
     | 'pos'
     | 'subscription'
@@ -2318,6 +2386,22 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           badge: 'US Laws',
           badgeColor: 'bg-emerald-100 text-emerald-800',
           action: () => setActiveTab('policies'),
+        },
+        {
+          id: 'cms',
+          label: 'CMS & Content',
+          icon: MessageSquareQuote,
+          badge: 'Reviews & Hubs',
+          badgeColor: 'bg-emerald-100 text-emerald-800',
+          action: () => setActiveTab('cms'),
+        },
+        {
+          id: 'blogs',
+          label: 'Blog & Care Guides',
+          icon: BookOpen,
+          badge: 'Articles & SEO',
+          badgeColor: 'bg-emerald-100 text-emerald-800',
+          action: () => setActiveTab('blogs'),
         },
       ],
     },
@@ -3212,12 +3296,26 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   <option value="outOfStock">Out of Stock (0)</option>
                 </select>
 
-                {(productSearch || productCategoryFilter !== 'All' || productStockFilter !== 'All') && (
+                <select
+                  value={productStatusFilter}
+                  onChange={(e) => {
+                    setProductStatusFilter(e.target.value as any);
+                    setProductPage(1);
+                  }}
+                  className="px-3 py-2 rounded-xl border border-[#E8EDF2] bg-white text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500] shrink-0"
+                >
+                  <option value="All">All Status ({products.length})</option>
+                  <option value="active">Active Only ({products.filter((p) => p.isActive !== false).length})</option>
+                  <option value="disabled">Disabled Only ({products.filter((p) => p.isActive === false).length})</option>
+                </select>
+
+                {(productSearch || productCategoryFilter !== 'All' || productStockFilter !== 'All' || productStatusFilter !== 'All') && (
                   <button
                     onClick={() => {
                       setProductSearch('');
                       setProductCategoryFilter('All');
                       setProductStockFilter('All');
+                      setProductStatusFilter('All');
                       setProductPage(1);
                     }}
                     className="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 transition-all shrink-0"
@@ -3267,6 +3365,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     setProductSearch('');
                     setProductCategoryFilter('All');
                     setProductStockFilter('All');
+                    setProductStatusFilter('All');
                     setProductPage(1);
                   }}
                   className="px-4 py-2 bg-[#163B5C] text-white rounded-xl text-xs font-bold hover:bg-[#112F4A] transition-colors"
@@ -3287,6 +3386,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         <th className="py-4 px-6">Discount</th>
                         <th className="py-4 px-6">Tax Status</th>
                         <th className="py-4 px-6">Stock Quantity</th>
+                        <th className="py-4 px-6">Storefront Status</th>
                         <th className="py-4 px-6 text-right">Actions</th>
                       </tr>
                     </thead>
@@ -3343,6 +3443,34 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             >
                               {p.quantity > 0 ? `${p.quantity} Units` : 'Out of Stock'}
                             </span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleProductStatus(p)}
+                              disabled={togglingProductId === p._id}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                p.isActive !== false
+                                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs'
+                                  : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                              }`}
+                              title={
+                                p.isActive !== false
+                                  ? 'Active: Visible on public storefront (Click to Disable)'
+                                  : 'Disabled: Hidden from public storefront (Click to Enable)'
+                              }
+                            >
+                              {togglingProductId === p._id ? (
+                                <RefreshCw className="w-3 h-3 animate-spin text-slate-500" />
+                              ) : (
+                                <span
+                                  className={`w-2 h-2 rounded-full ${
+                                    p.isActive !== false ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                                  }`}
+                                />
+                              )}
+                              <span>{p.isActive !== false ? 'Active' : 'Disabled'}</span>
+                            </button>
                           </td>
                           <td className="py-4 px-6 text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -5845,6 +5973,19 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         {/* Tab Content: Reports & Financial Exports */}
         {activeTab === 'reports' && <ReportsTab />}
         {activeTab === 'mail' && <MailManagerTab />}
+
+        {/* Tab Content: CMS & Storefront Dynamic Content (Reviews, Locations & Hubs) */}
+        {activeTab === 'cms' && (
+          <CMSManagerTab
+            paymentSettings={paymentSettings}
+            setPaymentSettings={setPaymentSettings}
+            onSavePaymentSettings={handleSaveSettingsWithData}
+            isSavingSettings={isSubmittingSettings}
+          />
+        )}
+
+        {/* Tab Content: Blog Posts, Care Guides & SEO Content Management */}
+        {activeTab === 'blogs' && <BlogManagerTab />}
       {/* Modal: Add / Edit Delivery Mode */}
       {isDeliveryModeModalOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
@@ -6322,6 +6463,45 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* Storefront Visibility Status */}
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-[#E8EDF2] bg-[#F8FAFC]">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                        Storefront Visibility
+                      </label>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                          productForm.isActive
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-slate-200 text-slate-700 border border-slate-300'
+                        }`}
+                      >
+                        {productForm.isActive ? 'Active' : 'Disabled'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#64748B] mt-0.5">
+                      {productForm.isActive
+                        ? 'Visible to public customers on shop, collections, homepage, and search.'
+                        : 'Hidden from public customers. Will not show in public pages or search results.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setProductForm((prev) => ({ ...prev, isActive: !prev.isActive }))}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                      productForm.isActive ? 'bg-[#0B3B24]' : 'bg-slate-300'
+                    }`}
+                    title={productForm.isActive ? 'Click to Disable Product' : 'Click to Enable Product'}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-xs ${
+                        productForm.isActive ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
 
                 <button

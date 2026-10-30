@@ -31,7 +31,7 @@ export async function GET(
       }).lean();
     }
 
-    if (!product) {
+    if (!product || (product.isActive === false && !isAuthenticatedAdmin(request))) {
       return NextResponse.json(
         { success: false, message: 'Product not found' },
         { status: 404 }

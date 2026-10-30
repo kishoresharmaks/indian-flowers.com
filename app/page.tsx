@@ -24,6 +24,7 @@ import CustomOrderSection from '@/components/CustomOrderSection';
 import FloatingCartBar from '@/components/FloatingCartBar';
 import EventDeliveryChecker from '@/components/home/EventDeliveryChecker';
 import ColdChainStorySection from '@/components/home/ColdChainStorySection';
+import CustomerReviewsSection from '@/components/home/CustomerReviewsSection';
 import {
   ShoppingBag,
   Search,
@@ -1676,6 +1677,9 @@ export default function CustomerStore() {
         </div>
       </section>
 
+      {/* 8. CUSTOMER REVIEWS & DEVOTIONAL TESTIMONIALS */}
+      <CustomerReviewsSection />
+
       {/* 9. BRAND FOOTER (UNIFIED) */}
       <Footer
         categories={categories}
@@ -1687,6 +1691,8 @@ export default function CustomerStore() {
         onTrackOrderClick={() => setIsTrackModalOpen(true)}
         contactPhone={contactPhone}
         contactEmail={contactEmail}
+        deliveryModes={storeSettings?.deliveryModes}
+        pickupHubs={storeSettings?.pickupHubs}
       />
 
       {/* CART DRAWER */}

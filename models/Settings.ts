@@ -112,8 +112,37 @@ export const DEFAULT_DELIVERY_MODES: IDeliveryMode[] = [
   },
 ];
 
+export const DEFAULT_PICKUP_HUBS: IPickupHub[] = [
+  {
+    id: 'hub-main-hq',
+    title: 'Main Location (HQ)',
+    address: '14922 Bobcat lane, Fontana, CA 92336, USA',
+    hours: 'Mon – Sun: 7:00 AM – 8:00 PM PST',
+    active: true,
+    order: 1,
+  },
+  {
+    id: 'hub-branch-midwest',
+    title: 'Branch Location (Midwest)',
+    address: '6893 Alverno ln, Inver Grove Heights, MN 55077',
+    hours: 'By Appointment / Event Scheduled',
+    active: true,
+    order: 2,
+  },
+];
+
+export interface IPickupHub {
+  id: string;
+  title: string;
+  address: string;
+  hours?: string;
+  active: boolean;
+  order?: number;
+}
+
 export interface ISettings extends Document {
   deliveryModes?: IDeliveryMode[];
+  pickupHubs?: IPickupHub[];
   key: string;
   enableRazorpay: boolean;
   razorpayKeyId?: string;
@@ -232,6 +261,19 @@ const SettingsSchema: Schema = new Schema(
         },
       ],
       default: () => DEFAULT_DELIVERY_MODES,
+    },
+    pickupHubs: {
+      type: [
+        {
+          id: { type: String, required: true },
+          title: { type: String, required: true },
+          address: { type: String, required: true },
+          hours: { type: String, default: '' },
+          active: { type: Boolean, default: true },
+          order: { type: Number, default: 0 },
+        },
+      ],
+      default: () => DEFAULT_PICKUP_HUBS,
     },
   },
   { timestamps: true }

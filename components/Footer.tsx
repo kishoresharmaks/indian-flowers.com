@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import BrandLogo, { LotusIcon } from './BrandLogo';
+import { IDeliveryMode, DEFAULT_DELIVERY_MODES, IPickupHub, DEFAULT_PICKUP_HUBS } from '@/models/Settings';
 import {
   Phone,
   Mail,
@@ -28,6 +29,8 @@ interface FooterProps {
   onTrackOrderClick?: () => void;
   contactPhone?: string;
   contactEmail?: string;
+  deliveryModes?: IDeliveryMode[];
+  pickupHubs?: IPickupHub[];
 }
 
 export const PICKUP_LOCATIONS = [
@@ -39,6 +42,33 @@ export const PICKUP_LOCATIONS = [
   { city: 'Greenwood Village', state: 'CO', label: 'Greenwood Village, CO' },
   { city: 'Denver', state: 'CO', label: 'Denver, CO' },
 ];
+
+/**
+ * Extracts active pickup location labels dynamically from Store Settings delivery options.
+ */
+export function extractPickupLocationLabels(modes?: IDeliveryMode[]): string[] {
+  if (!modes || modes.length === 0) {
+    return PICKUP_LOCATIONS.map((l) => l.label);
+  }
+  const pickupModes = modes.filter((m) => m.type === 'pickup' && m.active !== false);
+  if (pickupModes.length === 0) {
+    return PICKUP_LOCATIONS.map((l) => l.label);
+  }
+  const labels: string[] = [];
+  for (const mode of pickupModes) {
+    if (mode.pickupLocation && mode.pickupLocation.trim()) {
+      labels.push(mode.pickupLocation.trim());
+    } else {
+      const cleaned = mode.name
+        .replace(/Local\s*pickup/i, '')
+        .replace(/[()]/g, '')
+        .replace(/^[\s-]+|[\s-]+$/g, '')
+        .trim();
+      labels.push(cleaned || mode.name);
+    }
+  }
+  return Array.from(new Set(labels));
+}
 
 export function PinterestIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -101,8 +131,51 @@ export default function Footer({
   onTrackOrderClick,
   contactPhone = '+1 (909) 379-3678',
   contactEmail = 'indianflowersorder@gmail.com',
+  deliveryModes,
+  pickupHubs,
 }: FooterProps) {
   const displayCategories = categories && categories.length > 0 ? categories : DEFAULT_FOOTER_CATEGORIES;
+
+  // Dynamic Settings / Locations state (populated via props or background fetch)
+  const [dynamicDeliveryModes, setDynamicDeliveryModes] = useState<IDeliveryMode[] | undefined>(deliveryModes);
+  const [dynamicPickupHubs, setDynamicPickupHubs] = useState<IPickupHub[] | undefined>(pickupHubs);
+
+  useEffect(() => {
+    if (deliveryModes && deliveryModes.length > 0) {
+      setDynamicDeliveryModes(deliveryModes);
+    }
+  }, [deliveryModes]);
+
+  useEffect(() => {
+    if (pickupHubs && pickupHubs.length > 0) {
+      setDynamicPickupHubs(pickupHubs);
+    }
+  }, [pickupHubs]);
+
+  // If not passed directly as props, fetch live from /api/settings
+  useEffect(() => {
+    if (!deliveryModes || !pickupHubs) {
+      fetch('/api/settings')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.data) {
+            if (!deliveryModes && Array.isArray(data.data.deliveryModes)) {
+              setDynamicDeliveryModes(data.data.deliveryModes);
+            }
+            if (!pickupHubs && Array.isArray(data.data.pickupHubs)) {
+              setDynamicPickupHubs(data.data.pickupHubs);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  const effectiveHubs = (dynamicPickupHubs && dynamicPickupHubs.length > 0 ? dynamicPickupHubs : DEFAULT_PICKUP_HUBS)
+    .filter((h) => h.active !== false)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const effectivePickupLocations = extractPickupLocationLabels(dynamicDeliveryModes);
 
   // Mobile accordion state (collapsed by default on initial load)
   const [openSections, setOpenSections] = useState<{
@@ -257,6 +330,9 @@ export default function Footer({
                   <Link href="/contact" className="block py-1 text-emerald-200 font-medium hover:text-white transition-colors">
                     &rsaquo; Contact Us
                   </Link>
+                  <Link href="/blog" className="block py-1 text-emerald-200 font-medium hover:text-white transition-colors">
+                    &rsaquo; Floral Blog &amp; Care Guides
+                  </Link>
                   <Link href="/#products-section" onClick={() => handleCategoryClick('All')} className="block py-1 hover:text-white transition-colors">
                     &rsaquo; All Fresh Indian Flowers
                   </Link>
@@ -373,31 +449,29 @@ export default function Footer({
                   aria-labelledby="mobile-locations-header"
                   className="px-4 pb-3 pt-2 border-t border-white/5 space-y-2.5 text-xs"
                 >
-                  {/* Combined Hub Card */}
+                  {/* Dynamic Hub Cards */}
                   <div className="bg-emerald-950/80 border border-emerald-800/70 rounded-xl p-3 space-y-2.5">
-                    <div>
-                      <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
-                        <span>Main Location (HQ)</span>
-                      </span>
-                      <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
-                        14922 Bobcat lane, Fontana, CA 92336, USA
-                      </p>
-                      <p className="text-[11px] text-emerald-100 pt-1 flex items-center gap-1.5 pl-5">
-                        <Clock className="w-3 h-3 text-[#F5C542] shrink-0" />
-                        <span>Mon &ndash; Sun: 7:00 AM &ndash; 8:00 PM PST</span>
-                      </p>
-                    </div>
-
-                    <div className="border-t border-emerald-800/50 pt-2">
-                      <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
-                        <span>Branch Location (Midwest)</span>
-                      </span>
-                      <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
-                        6893 Alverno ln, Inver Grove Heights, MN 55077
-                      </p>
-                    </div>
+                    {effectiveHubs.map((hub, idx) => (
+                      <div key={hub.id || idx} className={idx > 0 ? 'border-t border-emerald-800/50 pt-2' : ''}>
+                        <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
+                          {idx === 0 ? (
+                            <MapPin className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
+                          ) : (
+                            <Building2 className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
+                          )}
+                          <span>{hub.title}</span>
+                        </span>
+                        <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
+                          {hub.address}
+                        </p>
+                        {hub.hours && (
+                          <p className="text-[11px] text-emerald-100 pt-1 flex items-center gap-1.5 pl-5">
+                            <Clock className="w-3 h-3 text-[#F5C542] shrink-0" />
+                            <span>{hub.hours}</span>
+                          </p>
+                        )}
+                      </div>
+                    ))}
                   </div>
 
                   {/* Local Pickup Locations */}
@@ -406,13 +480,13 @@ export default function Footer({
                       Local Pickup Locations:
                     </span>
                     <div className="flex flex-wrap gap-1">
-                      {PICKUP_LOCATIONS.map((loc) => (
+                      {effectivePickupLocations.map((locLabel) => (
                         <span
-                          key={loc.label}
+                          key={locLabel}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/10 border border-white/15 text-[10px] text-white/90 font-medium"
                         >
                           <Navigation className="w-2 h-2 text-[#8FE7B8]" />
-                          <span>{loc.label}</span>
+                          <span>{locLabel}</span>
                         </span>
                       ))}
                     </div>
@@ -507,6 +581,12 @@ export default function Footer({
                   <Link href="/contact" className="hover:text-white transition-colors flex items-center gap-1.5 font-medium text-emerald-200">
                     <ArrowRight className="w-3 h-3 text-[#8FE7B8]" />
                     <span>Contact Us</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/blog" className="hover:text-white transition-colors flex items-center gap-1.5 font-medium text-emerald-200">
+                    <ArrowRight className="w-3 h-3 text-[#8FE7B8]" />
+                    <span>Floral Blog &amp; Guides</span>
                   </Link>
                 </li>
                 <li>
@@ -611,29 +691,27 @@ export default function Footer({
 
               {/* Combined Sleek Hubs Card */}
               <div className="bg-emerald-950/80 border border-emerald-800/70 rounded-xl p-3.5 space-y-2 text-xs">
-                <div>
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
-                    <span>Main Location (HQ)</span>
-                  </span>
-                  <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
-                    14922 Bobcat lane, Fontana, CA 92336, USA
-                  </p>
-                  <p className="text-[11px] text-emerald-100 pl-5 mt-1 flex items-center gap-1.5">
-                    <Clock className="w-3 h-3 text-[#F5C542] shrink-0" />
-                    <span>Mon &ndash; Sun: 7:00 AM &ndash; 8:00 PM PST</span>
-                  </p>
-                </div>
-
-                <div className="border-t border-emerald-800/50 pt-2">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
-                    <span>Branch Location (Midwest)</span>
-                  </span>
-                  <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
-                    6893 Alverno ln, Inver Grove Heights, MN 55077
-                  </p>
-                </div>
+                {effectiveHubs.map((hub, idx) => (
+                  <div key={hub.id || idx} className={idx > 0 ? 'border-t border-emerald-800/50 pt-2' : ''}>
+                    <span className="text-[11px] uppercase tracking-wider font-bold text-[#F5C542] flex items-center gap-1.5">
+                      {idx === 0 ? (
+                        <MapPin className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
+                      ) : (
+                        <Building2 className="w-3.5 h-3.5 text-[#F5C542] shrink-0" />
+                      )}
+                      <span>{hub.title}</span>
+                    </span>
+                    <p className="text-white font-semibold text-xs leading-snug pl-5 mt-1 select-text">
+                      {hub.address}
+                    </p>
+                    {hub.hours && (
+                      <p className="text-[11px] text-emerald-100 pl-5 mt-1 flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 text-[#F5C542] shrink-0" />
+                        <span>{hub.hours}</span>
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -646,12 +724,12 @@ export default function Footer({
                 <span>Local Pickup Locations:</span>
               </span>
               <div className="flex flex-wrap items-center gap-1.5">
-                {PICKUP_LOCATIONS.map((loc) => (
+                {effectivePickupLocations.map((locLabel) => (
                   <span
-                    key={loc.label}
+                    key={locLabel}
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/10 hover:bg-white/15 border border-white/15 text-[11px] text-white/95 font-medium transition-colors"
                   >
-                    <span>{loc.label}</span>
+                    <span>{locLabel}</span>
                   </span>
                 ))}
               </div>

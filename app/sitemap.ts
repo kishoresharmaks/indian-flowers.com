@@ -3,7 +3,9 @@ import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import Category from '@/models/Category';
 import Policy from '@/models/Policy';
+import Blog from '@/models/Blog';
 import { DEFAULT_POLICIES } from '@/lib/defaultPolicies';
+import { DEFAULT_BLOGS } from '@/lib/defaultBlogs';
 import { getSiteUrl } from '@/lib/siteUrl';
 
 export const dynamic = 'force-dynamic';
@@ -44,13 +46,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.7,
     },
-    // /blog is listed at low priority — no individual post URLs yet.
-    // Raise priority and add /blog/[slug] entries when real posts exist.
+    // 1.5. Dynamic Editorial & Guides Index (/blog)
     {
       url: `${baseUrl}/blog`,
-      lastModified: SITE_LAUNCH_DATE,
-      changeFrequency: 'monthly',
-      priority: 0.5,
+      lastModified: LAST_LAYOUT_UPDATE,
+      changeFrequency: 'weekly',
+      priority: 0.85,
     },
   ];
 
@@ -127,17 +128,45 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 4. Product Slugs (/product/[slug])
   try {
-    const products = await Product.find({}, 'slug _id updatedAt').lean();
-    const productUrls: MetadataRoute.Sitemap = products.map((item: any) => ({
-      url: `${baseUrl}/product/${item.slug || item._id}`,
-      lastModified: item.updatedAt ? new Date(item.updatedAt) : new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.85,
-    }));
-
-    return [...routes, ...productUrls];
+    const products = await Product.find({ isActive: { $ne: false } }, 'slug _id updatedAt').lean();
+    products.forEach((item: any) => {
+      routes.push({
+        url: `${baseUrl}/product/${item.slug || item._id}`,
+        lastModified: item.updatedAt ? new Date(item.updatedAt) : new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.85,
+      });
+    });
   } catch (error) {
     console.error('Error fetching products for sitemap:', error);
-    return routes;
   }
+
+  // 5. Dynamic Blog & Floral Care Guides (/blog/[slug])
+  try {
+    const dbBlogs = await Blog.find({ isPublished: true, 'seo.noIndex': { $ne: true } }, 'slug updatedAt publishedAt').lean();
+    const blogList =
+      dbBlogs && dbBlogs.length > 0
+        ? dbBlogs
+        : DEFAULT_BLOGS.filter((b) => b.isPublished && !b.seo?.noIndex);
+
+    blogList.forEach((b: any) => {
+      routes.push({
+        url: `${baseUrl}/blog/${b.slug}`,
+        lastModified: b.updatedAt ? new Date(b.updatedAt) : b.publishedAt ? new Date(b.publishedAt) : new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.8,
+      });
+    });
+  } catch (error) {
+    DEFAULT_BLOGS.filter((b) => b.isPublished && !b.seo?.noIndex).forEach((b) => {
+      routes.push({
+        url: `${baseUrl}/blog/${b.slug}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.8,
+      });
+    });
+  }
+
+  return routes;
 }

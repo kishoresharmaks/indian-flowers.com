@@ -23,10 +23,15 @@ export async function GET(request: Request) {
     const excludeSeo = searchParams.get('includeSeo') !== 'true';
     const forHome = searchParams.get('forHome') === 'true';
     const isPaginated = searchParams.has('cursor') || searchParams.has('limit') || searchParams.has('paginate') || searchParams.has('sortBy');
+    const includeInactive = searchParams.get('includeInactive') === 'true' && isAuthenticatedAdmin(request as any);
 
     // 1. Single product slug lookup
     if (slug) {
-      const product = await Product.findOne({ slug: slug.toLowerCase().trim() }).lean();
+      const queryCond: any = { slug: slug.toLowerCase().trim() };
+      if (!includeInactive) {
+        queryCond.isActive = { $ne: false };
+      }
+      const product = await Product.findOne(queryCond).lean();
       if (!product) {
         return NextResponse.json({ success: false, message: 'Product not found' }, { status: 404 });
       }
@@ -43,6 +48,7 @@ export async function GET(request: Request) {
         cursor,
         limit: limitParam ? parseInt(limitParam, 10) : 16,
         excludeSeo,
+        includeInactive,
       });
 
       return NextResponse.json(
@@ -64,6 +70,9 @@ export async function GET(request: Request) {
 
     // 3. Unpaginated fallback (for Homepage showcases or Admin inventory)
     const conditions: any[] = [];
+    if (!includeInactive) {
+      conditions.push({ isActive: { $ne: false } });
+    }
     if (forHome || excludeSeo) {
       conditions.push({
         isSeoLanding: { $ne: true },
@@ -150,6 +159,7 @@ export async function POST(request: NextRequest) {
       subcategory,
       variants,
       attributes,
+      isActive,
     } = body;
 
     // Validation
@@ -202,6 +212,7 @@ export async function POST(request: NextRequest) {
       subcategory: subcategory || '',
       variants: formattedVariants,
       attributes: Array.isArray(attributes) ? attributes : [],
+      isActive: isActive !== undefined ? Boolean(isActive) : true,
     });
 
     await captureServerEvent(request, 'product_created', {

@@ -310,6 +310,7 @@ export async function POST(request: NextRequest) {
           tags,
           variants: variants.length > 0 ? variants : existing?.variants || [],
           attributes,
+          isActive: item.status ? item.status === 'publish' : true,
         };
 
         if (existing) {
