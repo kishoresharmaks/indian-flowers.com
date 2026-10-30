@@ -22,16 +22,16 @@ html, body {
   overflow-x: clip;
 }
 
-/* Balanced default desktop zoom scale: provides an airy, refined, zoomed-out appearance on desktop/laptop viewports */
+/* Balanced default desktop scale: provides an airy, refined, zoomed-out appearance on desktop/laptop viewports via root rem scale */
 @media (min-width: 1024px) {
-  :root {
-    zoom: 0.92;
+  html {
+    font-size: 14.75px;
   }
 }
 
 @media (min-width: 1440px) {
-  :root {
-    zoom: 0.90;
+  html {
+    font-size: 14.5px;
   }
 }
 
