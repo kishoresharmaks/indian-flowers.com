@@ -101,12 +101,20 @@ export default function HeroSection({
     onShopClick();
   };
 
+  // Determine whether any active slide has a dedicated vertical mobile banner
+  const hasMobileBanner = activeSlides.some((s) => Boolean(s.mobileImage));
+
+  // Dynamic aspect ratio: Use portrait 750:850 on mobile if mobile banner exists, else 16:9 fallback
+  const sliderAspectClass = hasMobileBanner
+    ? 'aspect-[750/850] sm:aspect-[2.4/1] md:aspect-[2.9/1] lg:aspect-[3.4/1] xl:aspect-[3.6/1] max-h-[440px] sm:max-h-[360px] lg:max-h-[380px] xl:max-h-[400px]'
+    : 'aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.9/1] lg:aspect-[3.4/1] xl:aspect-[3.6/1] max-h-[340px] sm:max-h-[360px] lg:max-h-[380px] xl:max-h-[400px]';
+
   // Sized placeholder during initial loading with matching rounded border corners
   if (loading && (!slides || slides.length === 0)) {
     return (
       <section className="w-full bg-[#FAF6F0] py-1.5 sm:py-2 md:py-3">
         <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="w-full aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.9/1] lg:aspect-[3.4/1] xl:aspect-[3.6/1] max-h-[340px] sm:max-h-[360px] lg:max-h-[380px] xl:max-h-[400px] rounded-2xl sm:rounded-3xl lg:rounded-[26px] bg-stone-200/60 animate-pulse border border-stone-200/80" />
+          <div className={`w-full ${sliderAspectClass} rounded-2xl sm:rounded-3xl lg:rounded-[26px] bg-stone-200/60 animate-pulse border border-stone-200/80`} />
         </div>
       </section>
     );
@@ -137,7 +145,7 @@ export default function HeroSection({
               return (
                 <div
                   key={slide._id || slide.id || idx}
-                  className="w-full shrink-0 relative cursor-pointer aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.9/1] lg:aspect-[3.4/1] xl:aspect-[3.6/1] max-h-[340px] sm:max-h-[360px] lg:max-h-[380px] xl:max-h-[400px]"
+                  className={`w-full shrink-0 relative cursor-pointer ${sliderAspectClass}`}
                   onClick={() => handleSlideClick(slide)}
                 >
                   <picture className="w-full h-full block">
