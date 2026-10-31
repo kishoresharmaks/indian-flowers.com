@@ -15,6 +15,7 @@ import {
   Clock,
   X,
   Upload,
+  Smartphone,
   RefreshCw,
   DollarSign,
   Phone,
@@ -87,6 +88,7 @@ interface BannerItem {
   description?: string;
   ctaText?: string;
   image: string;
+  mobileImage?: string;
   link?: string;
   badgeText?: string;
   order?: number;
@@ -664,8 +666,12 @@ export default function AdminDashboard() {
   const [newBannerCta, setNewBannerCta] = useState('');
   const [newBannerLink, setNewBannerLink] = useState('');
   const [newBannerImage, setNewBannerImage] = useState('');
+  const [newBannerMobileImage, setNewBannerMobileImage] = useState('');
   const [newBannerOrder, setNewBannerOrder] = useState<number | string>(1);
   const [bannerImagePreview, setBannerImagePreview] = useState('');
+  const [bannerMobileImagePreview, setBannerMobileImagePreview] = useState('');
+  const [newBannerResolution, setNewBannerResolution] = useState<{ width: number; height: number; ratio: number; warning?: string; isOptimal: boolean } | null>(null);
+  const [newBannerMobileResolution, setNewBannerMobileResolution] = useState<{ width: number; height: number; ratio: number; warning?: string; isOptimal: boolean } | null>(null);
   const [isSubmittingBanner, setIsSubmittingBanner] = useState(false);
   const [bannerError, setBannerError] = useState('');
 
@@ -677,7 +683,11 @@ export default function AdminDashboard() {
   const [editBannerCta, setEditBannerCta] = useState('');
   const [editBannerLink, setEditBannerLink] = useState('');
   const [editBannerImage, setEditBannerImage] = useState('');
+  const [editBannerMobileImage, setEditBannerMobileImage] = useState('');
   const [editBannerImagePreview, setEditBannerImagePreview] = useState('');
+  const [editBannerMobileImagePreview, setEditBannerMobileImagePreview] = useState('');
+  const [editBannerResolution, setEditBannerResolution] = useState<{ width: number; height: number; ratio: number; warning?: string; isOptimal: boolean } | null>(null);
+  const [editBannerMobileResolution, setEditBannerMobileResolution] = useState<{ width: number; height: number; ratio: number; warning?: string; isOptimal: boolean } | null>(null);
   const [editBannerOrder, setEditBannerOrder] = useState<number | string>(1);
   const [isEditBannerModalOpen, setIsEditBannerModalOpen] = useState(false);
 
@@ -1237,18 +1247,142 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     return data.url;
   };
 
-  // Handle Banner Image File Selection with Pure Path Upload (No Base64 in DB)
+  // Helper to check and evaluate banner image resolution and aspect ratio
+  const checkBannerResolution = (
+    url: string,
+    type: 'desktop' | 'mobile',
+    callback: (info: { width: number; height: number; ratio: number; warning?: string; isOptimal: boolean } | null) => void
+  ) => {
+    if (!url || typeof window === 'undefined') {
+      callback(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const width = img.naturalWidth;
+      const height = img.naturalHeight;
+      const ratio = Number((width / height).toFixed(2));
+
+      if (type === 'desktop') {
+        let warning: string | undefined;
+        let isOptimal = false;
+
+        if (width < 1400) {
+          warning = `Resolution is lower than recommended (${width}×${height}px). Desktop banners should be at least 1400px wide (1920×650px recommended) to avoid blurriness on Retina/HD displays.`;
+        } else if (ratio < 2.0) {
+          const cropPct = Math.round((1 - ratio / 2.95) * 100);
+          warning = `Aspect ratio is tall (${ratio}:1, ${width}×${height}px). The storefront hero uses a panoramic wide ratio (~2.95:1), so approximately ${cropPct}% of the top and bottom will be cropped off.`;
+        } else if (ratio > 3.6) {
+          warning = `Aspect ratio is very narrow (${ratio}:1, ${width}×${height}px). Recommended panoramic ratio is ~2.95:1 (1920×650px).`;
+        } else {
+          isOptimal = true;
+        }
+
+        callback({ width, height, ratio, warning, isOptimal });
+      } else {
+        let warning: string | undefined;
+        let isOptimal = false;
+
+        if (ratio > 1.3) {
+          warning = `Image is landscape (${ratio}:1, ${width}×${height}px). On mobile phones, a portrait/vertical image (~750×850px, 0.88:1) displays much better without shrinking text or leaving empty borders.`;
+        } else if (width < 600) {
+          warning = `Resolution is low (${width}×${height}px). Recommended mobile banner width is at least 750px for sharp display on mobile phones.`;
+        } else {
+          isOptimal = true;
+        }
+
+        callback({ width, height, ratio, warning, isOptimal });
+      }
+    };
+    img.onerror = () => {
+      callback(null);
+    };
+    img.src = url;
+  };
+
+  const renderResolutionBadge = (
+    resolution: { width: number; height: number; ratio: number; warning?: string; isOptimal: boolean } | null,
+    type: 'desktop' | 'mobile'
+  ) => {
+    if (!resolution) return null;
+    return (
+      <div
+        className={`mt-2.5 p-3 rounded-xl text-xs flex items-start gap-2.5 border transition-all ${
+          resolution.isOptimal
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+            : 'bg-amber-50/90 border-amber-300 text-amber-950 shadow-2xs'
+        }`}
+      >
+        {resolution.isOptimal ? (
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+        ) : (
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-bold text-[12px]">
+              Detected: {resolution.width} × {resolution.height} px
+            </span>
+            <span className="text-[11px] font-semibold text-stone-600">
+              ({resolution.ratio}:1 aspect ratio)
+            </span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                resolution.isOptimal
+                  ? 'bg-emerald-200 text-emerald-900'
+                  : 'bg-amber-200 text-amber-900 border border-amber-300'
+              }`}
+            >
+              {resolution.isOptimal ? 'Optimal Resolution' : 'Resolution Warning'}
+            </span>
+          </div>
+          {resolution.warning && (
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-900 font-medium">
+              ⚠️ {resolution.warning}
+            </p>
+          )}
+          {resolution.isOptimal && (
+            <p className="mt-0.5 text-[11px] text-emerald-800">
+              {type === 'desktop'
+                ? '✅ Perfect wide panoramic format for the desktop hero slider (1920 × 650 standard).'
+                : '✅ Perfect vertical portrait format for mobile screens (750 × 850 standard).'}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Handle Desktop Banner Image File Selection with Pure Path Upload (No Base64 in DB)
   const handleBannerImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
         const previewUrl = URL.createObjectURL(file);
         setBannerImagePreview(previewUrl);
+        checkBannerResolution(previewUrl, 'desktop', setNewBannerResolution);
         const uploadedUrl = await uploadAdminImage(file, 'banners');
         setNewBannerImage(uploadedUrl);
       } catch (err: any) {
         console.error('Banner image upload failed', err);
         alert(err.message || 'Banner upload failed');
+      }
+    }
+  };
+
+  // Handle Mobile Banner Image File Selection
+  const handleBannerMobileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const previewUrl = URL.createObjectURL(file);
+        setBannerMobileImagePreview(previewUrl);
+        checkBannerResolution(previewUrl, 'mobile', setNewBannerMobileResolution);
+        const uploadedUrl = await uploadAdminImage(file, 'banners');
+        setNewBannerMobileImage(uploadedUrl);
+      } catch (err: any) {
+        console.error('Banner mobile image upload failed', err);
+        alert(err.message || 'Mobile banner upload failed');
       }
     }
   };
@@ -1259,11 +1393,28 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       try {
         const previewUrl = URL.createObjectURL(file);
         setEditBannerImagePreview(previewUrl);
+        checkBannerResolution(previewUrl, 'desktop', setEditBannerResolution);
         const uploadedUrl = await uploadAdminImage(file, 'banners');
         setEditBannerImage(uploadedUrl);
       } catch (err: any) {
         console.error('Edit banner image upload failed', err);
         alert(err.message || 'Banner upload failed');
+      }
+    }
+  };
+
+  const handleEditBannerMobileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const previewUrl = URL.createObjectURL(file);
+        setEditBannerMobileImagePreview(previewUrl);
+        checkBannerResolution(previewUrl, 'mobile', setEditBannerMobileResolution);
+        const uploadedUrl = await uploadAdminImage(file, 'banners');
+        setEditBannerMobileImage(uploadedUrl);
+      } catch (err: any) {
+        console.error('Edit mobile banner image upload failed', err);
+        alert(err.message || 'Mobile banner upload failed');
       }
     }
   };
@@ -1277,8 +1428,21 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     setEditBannerLink(b.link || '');
     setEditBannerImage(b.image || '');
     setEditBannerImagePreview(b.image || '');
+    setEditBannerMobileImage(b.mobileImage || '');
+    setEditBannerMobileImagePreview(b.mobileImage || '');
     setEditBannerOrder(b.order ?? 1);
     setIsEditBannerModalOpen(true);
+
+    if (b.image) {
+      checkBannerResolution(b.image, 'desktop', setEditBannerResolution);
+    } else {
+      setEditBannerResolution(null);
+    }
+    if (b.mobileImage) {
+      checkBannerResolution(b.mobileImage, 'mobile', setEditBannerMobileResolution);
+    } else {
+      setEditBannerMobileResolution(null);
+    }
   };
 
   // Add New Hero Banner
@@ -1286,7 +1450,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     e.preventDefault();
     setBannerError('');
     if (!newBannerTitle.trim() || !newBannerImage) {
-      setBannerError('Please enter a banner title and provide an image.');
+      setBannerError('Please enter a banner title and provide a desktop image.');
       return;
     }
 
@@ -1301,6 +1465,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           description: newBannerDesc.trim(),
           ctaText: newBannerCta.trim() || 'Shop Now',
           image: newBannerImage,
+          mobileImage: newBannerMobileImage,
           link: newBannerLink.trim(),
           order: Number(newBannerOrder) || (banners.length + 1),
         }),
@@ -1313,9 +1478,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         setNewBannerDesc('');
         setNewBannerCta('');
         setNewBannerImage('');
+        setNewBannerMobileImage('');
         setNewBannerLink('');
         setNewBannerOrder(banners.length + 2);
         setBannerImagePreview('');
+        setBannerMobileImagePreview('');
+        setNewBannerResolution(null);
+        setNewBannerMobileResolution(null);
         fetchBanners();
       } else {
         setBannerError(data.message || 'Failed to add banner');
@@ -1331,7 +1500,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   const handleSaveEditedBanner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingBanner || !editBannerTitle.trim() || !editBannerImage) {
-      alert('Banner title and image are required.');
+      alert('Banner title and desktop image are required.');
       return;
     }
 
@@ -1347,6 +1516,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           ctaText: editBannerCta.trim() || 'Shop Now',
           link: editBannerLink.trim(),
           image: editBannerImage,
+          mobileImage: editBannerMobileImage,
           order: Number(editBannerOrder) || 1,
         }),
       });
@@ -4465,14 +4635,29 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   </div>
                 </div>
 
-                {/* Banner Image */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
-                    Banner Background Image *
-                  </label>
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                {/* Desktop Banner Image */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Desktop Banner Image (1920 × 650 px recommended) *
+                    </label>
+                    {newBannerImage && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewBannerImage('');
+                          setBannerImagePreview('');
+                          setNewBannerResolution(null);
+                        }}
+                        className="text-[11px] text-rose-600 hover:underline font-semibold"
+                      >
+                        Clear Desktop Image
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
                     <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#FFF8F5] hover:bg-[#ED3500]/10 text-[#ED3500] border border-[#ED3500]/20 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-all shrink-0">
-                      <Upload className="w-4 h-4" /> Select Banner Image File
+                      <Upload className="w-4 h-4" /> Select Desktop Image File
                       <input
                         type="file"
                         accept="image/*"
@@ -4484,45 +4669,106 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     <div className="flex-1 w-full">
                       <input
                         type="text"
-                        placeholder="Or image URL / Base64 string"
+                        placeholder="Or desktop image URL / path (e.g. /images/banners/hero-wedding-1920x650.jpg)"
                         value={newBannerImage}
                         onChange={(e) => {
-                          setNewBannerImage(e.target.value);
-                          setBannerImagePreview(e.target.value);
+                          const val = e.target.value;
+                          setNewBannerImage(val);
+                          setBannerImagePreview(val);
+                          checkBannerResolution(val, 'desktop', setNewBannerResolution);
                         }}
                         className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#ED3500]"
                       />
                     </div>
                   </div>
+
+                  {bannerImagePreview && (
+                    <div className="p-3 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] max-w-xl mt-2">
+                      <span className="text-[11px] font-bold text-[#64748B] block mb-2 uppercase">Desktop Slide Preview:</span>
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-[#E8EDF2] bg-slate-100 max-h-48">
+                        <img
+                          src={bannerImagePreview}
+                          alt="Desktop Banner Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/images/banners/hero-wedding-1920x650.jpg';
+                          }}
+                        />
+                      </div>
+                      {renderResolutionBadge(newBannerResolution, 'desktop')}
+                    </div>
+                  )}
                 </div>
 
-                {bannerImagePreview && (
-                  <div className="p-3 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] max-w-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-bold text-[#64748B] uppercase">Slide Image Preview:</span>
+                {/* Mobile Banner Image (Optional) */}
+                <div className="space-y-1.5 pt-2 border-t border-stone-200/70">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider flex items-center gap-1.5">
+                      <Smartphone className="w-3.5 h-3.5 text-stone-600" />
+                      <span>Mobile Banner Image (750 × 850 px recommended)</span>
+                      <span className="text-[11px] font-normal text-stone-400 capitalize">(Optional)</span>
+                    </label>
+                    {newBannerMobileImage && (
                       <button
                         type="button"
                         onClick={() => {
-                          setNewBannerImage('');
-                          setBannerImagePreview('');
+                          setNewBannerMobileImage('');
+                          setBannerMobileImagePreview('');
+                          setNewBannerMobileResolution(null);
                         }}
-                        className="text-xs text-rose-600 hover:underline"
+                        className="text-[11px] text-rose-600 hover:underline font-semibold"
                       >
-                        Remove
+                        Clear Mobile Image
                       </button>
-                    </div>
-                    <div className="relative aspect-video rounded-xl overflow-hidden border border-[#E8EDF2] bg-slate-100">
-                      <img
-                        src={bannerImagePreview}
-                        alt="Banner Preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = '/images/banners/hero-wedding-1920x650.jpg';
+                    )}
+                  </div>
+                  <p className="text-[11px] text-stone-500">
+                    Provide a vertical/portrait crop optimized for phone screens (750 × 850 px). If not uploaded, the desktop banner will scale down automatically.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-all shrink-0">
+                      <Upload className="w-4 h-4 text-stone-600" /> Select Mobile Image File
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerMobileImageChange}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <div className="flex-1 w-full">
+                      <input
+                        type="text"
+                        placeholder="Or mobile image URL / path (e.g. /images/banners/hero-wedding-750x850.jpg)"
+                        value={newBannerMobileImage}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setNewBannerMobileImage(val);
+                          setBannerMobileImagePreview(val);
+                          checkBannerResolution(val, 'mobile', setNewBannerMobileResolution);
                         }}
+                        className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#ED3500]"
                       />
                     </div>
                   </div>
-                )}
+
+                  {bannerMobileImagePreview && (
+                    <div className="p-3 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] max-w-xl mt-2">
+                      <span className="text-[11px] font-bold text-[#64748B] block mb-2 uppercase">Mobile Portrait Preview:</span>
+                      <div className="relative aspect-[750/850] w-32 rounded-xl overflow-hidden border border-[#E8EDF2] bg-slate-100 shadow-xs">
+                        <img
+                          src={bannerMobileImagePreview}
+                          alt="Mobile Banner Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/images/banners/hero-wedding-750x850.jpg';
+                          }}
+                        />
+                      </div>
+                      {renderResolutionBadge(newBannerMobileResolution, 'mobile')}
+                    </div>
+                  )}
+                </div>
 
                 <button
                   type="submit"
@@ -4564,13 +4810,22 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
-                        <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                        <div className="absolute top-2 left-2 flex flex-wrap items-center gap-1.5">
                           <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold">
                             Slide #{idx + 1}
                           </span>
                           <span className="px-2 py-0.5 rounded-md bg-white/90 text-gray-800 text-[10px] font-bold shadow-xs">
                             Order {b.order ?? idx + 1}
                           </span>
+                          {b.mobileImage ? (
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-600/90 text-white text-[10px] font-bold shadow-xs flex items-center gap-1">
+                              <Smartphone className="w-2.5 h-2.5" /> Mobile
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-md bg-stone-700/80 text-white text-[10px] font-medium shadow-xs">
+                              Auto Mobile
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -6781,14 +7036,29 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   </div>
                 </div>
 
-                {/* Banner Image */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
-                    Banner Background Image *
-                  </label>
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                {/* Desktop Banner Image */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Desktop Banner Image (1920 × 650 px recommended) *
+                    </label>
+                    {editBannerImage && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditBannerImage('');
+                          setEditBannerImagePreview('');
+                          setEditBannerResolution(null);
+                        }}
+                        className="text-[11px] text-rose-600 hover:underline font-semibold"
+                      >
+                        Clear Desktop Image
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
                     <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#FFF8F5] hover:bg-[#ED3500]/10 text-[#ED3500] border border-[#ED3500]/20 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-all shrink-0">
-                      <Upload className="w-4 h-4" /> Change Image File
+                      <Upload className="w-4 h-4" /> Change Desktop File
                       <input
                         type="file"
                         accept="image/*"
@@ -6800,33 +7070,106 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     <div className="flex-1 w-full">
                       <input
                         type="text"
-                        placeholder="Or image URL / Base64 string"
+                        placeholder="Or desktop image URL / path (e.g. /images/banners/hero-wedding-1920x650.jpg)"
                         value={editBannerImage}
                         onChange={(e) => {
-                          setEditBannerImage(e.target.value);
-                          setEditBannerImagePreview(e.target.value);
+                          const val = e.target.value;
+                          setEditBannerImage(val);
+                          setEditBannerImagePreview(val);
+                          checkBannerResolution(val, 'desktop', setEditBannerResolution);
                         }}
                         className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#ED3500]"
                       />
                     </div>
                   </div>
+
+                  {editBannerImagePreview && (
+                    <div className="p-3 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] mt-2">
+                      <span className="text-[11px] font-bold text-[#64748B] block mb-2 uppercase">Desktop Image Preview:</span>
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-[#E8EDF2] bg-slate-100 max-h-48">
+                        <img
+                          src={editBannerImagePreview}
+                          alt="Desktop Banner Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/images/banners/hero-wedding-1920x650.jpg';
+                          }}
+                        />
+                      </div>
+                      {renderResolutionBadge(editBannerResolution, 'desktop')}
+                    </div>
+                  )}
                 </div>
 
-                {editBannerImagePreview && (
-                  <div className="p-3 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2]">
-                    <span className="text-[11px] font-bold text-[#64748B] block mb-2 uppercase">Image Preview:</span>
-                    <div className="relative aspect-video rounded-xl overflow-hidden border border-[#E8EDF2] bg-slate-100 max-h-48">
-                      <img
-                        src={editBannerImagePreview}
-                        alt="Banner Preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = '/images/banners/hero-wedding-1920x650.jpg';
+                {/* Mobile Banner Image (Optional) */}
+                <div className="space-y-1.5 pt-2 border-t border-stone-200/70">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider flex items-center gap-1.5">
+                      <Smartphone className="w-3.5 h-3.5 text-stone-600" />
+                      <span>Mobile Banner Image (750 × 850 px recommended)</span>
+                      <span className="text-[11px] font-normal text-stone-400 capitalize">(Optional)</span>
+                    </label>
+                    {editBannerMobileImage && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditBannerMobileImage('');
+                          setEditBannerMobileImagePreview('');
+                          setEditBannerMobileResolution(null);
                         }}
+                        className="text-[11px] text-rose-600 hover:underline font-semibold"
+                      >
+                        Remove Mobile Image
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-stone-500">
+                    Provide a vertical/portrait crop optimized for mobile devices (750 × 850 px). If omitted, the desktop image will be shown on phones automatically.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <label className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 transition-all shrink-0">
+                      <Upload className="w-4 h-4 text-stone-600" /> Select Mobile Image File
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEditBannerMobileImageChange}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <div className="flex-1 w-full">
+                      <input
+                        type="text"
+                        placeholder="Or mobile image URL / path (e.g. /images/banners/hero-wedding-750x850.jpg)"
+                        value={editBannerMobileImage}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setEditBannerMobileImage(val);
+                          setEditBannerMobileImagePreview(val);
+                          checkBannerResolution(val, 'mobile', setEditBannerMobileResolution);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-xs focus:outline-none focus:border-[#ED3500]"
                       />
                     </div>
                   </div>
-                )}
+
+                  {editBannerMobileImagePreview && (
+                    <div className="p-3 rounded-2xl bg-[#FFFCFB] border border-[#E8EDF2] mt-2">
+                      <span className="text-[11px] font-bold text-[#64748B] block mb-2 uppercase">Mobile Portrait Preview:</span>
+                      <div className="relative aspect-[750/850] w-32 rounded-xl overflow-hidden border border-[#E8EDF2] bg-slate-100 shadow-xs">
+                        <img
+                          src={editBannerMobileImagePreview}
+                          alt="Mobile Banner Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/images/banners/hero-wedding-750x850.jpg';
+                          }}
+                        />
+                      </div>
+                      {renderResolutionBadge(editBannerMobileResolution, 'mobile')}
+                    </div>
+                  )}
+                </div>
 
                 <div className="pt-3 flex items-center gap-3 border-t border-[#E8EDF2]">
                   <button
