@@ -2006,7 +2006,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     try {
       const data = await file.arrayBuffer();
       const wb = XLSX.read(data, { type: 'array' });
-      const sheetName = wb.SheetNames.includes('Products') ? 'Products' : wb.SheetNames[0];
+      const candidateSheetNames = ['core catalog products', 'products', 'core catalog', 'core products', 'catalog'];
+      const matchedSheetName = wb.SheetNames.find((s) =>
+        candidateSheetNames.includes(s.toLowerCase().trim())
+      );
+      const sheetName = matchedSheetName || wb.SheetNames[0];
       if (sheetName && wb.Sheets[sheetName]) {
         const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName], { defval: '' });
         setImportRawRows(rows);
@@ -2084,6 +2088,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           mrp: item.mrp,
           quantity: item.quantity,
           gst: item.gst,
+          isTaxable: item.isTaxable,
+          isActive: item.isActive,
           image: finalImageBase64 || item.imageFilename,
           variants: item.variants,
         });
@@ -7885,7 +7891,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     <span>Bulk Product Import (.xlsx)</span>
                   </h3>
                   <p className="text-xs text-[#64748B] mt-1">
-                    Upload an Excel workbook with dedicated variant columns + drop product photos. Matches images automatically by filename, compresses to Base64 on device, and shows an instant preview of new products vs existing updates.
+                    Upload an Excel workbook (.xlsx) matching the core catalog format + drop product photos. Matches images automatically by filename, compresses to Base64 on device, and shows an instant preview of new products vs existing updates.
                   </p>
                 </div>
 
@@ -7897,7 +7903,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       Download the Official Store Excel Template
                     </span>
                     <p className="text-[11px] text-emerald-800/90">
-                      Pre-formatted with color-coded headers, separate non-technical Variant columns (Variant 1, 2, 3, 4), and categories reference.
+                      Pre-formatted with the exact 11 core columns (Product Title, Description, Image Filename, MRP, Selling Price, Stock, Category, Tax Status, Subcategory, Variants & Pricing, Visibility) and categories reference.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">

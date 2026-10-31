@@ -17,58 +17,45 @@ export async function GET(request: NextRequest) {
     // ==========================================
     // SHEET 1: PRODUCTS IMPORT TEMPLATE
     // ==========================================
-    const wsProducts = wb.addWorksheet('Products', {
+    const wsProducts = wb.addWorksheet('Core Catalog Products', {
       views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
     });
 
     const columns = [
-      { header: 'Product Name *', key: 'name', width: 38 },
-      { header: 'Description *', key: 'description', width: 55 },
-      { header: 'Category *', key: 'category', width: 26 },
-      { header: 'Subcategory', key: 'subcategory', width: 24 },
-      { header: 'Base Price ($) *', key: 'price', width: 16 },
-      { header: 'Base MRP ($) *', key: 'mrp', width: 16 },
-      { header: 'Stock Quantity', key: 'quantity', width: 16 },
-      { header: 'Image Filename', key: 'image', width: 26 },
-      { header: 'GST Tax %', key: 'gst', width: 14 },
-      // Variant 1
-      { header: 'Variant 1 - Name', key: 'v1_name', width: 24 },
-      { header: 'Variant 1 - Price ($)', key: 'v1_price', width: 20 },
-      { header: 'Variant 1 - MRP ($)', key: 'v1_mrp', width: 20 },
-      { header: 'Variant 1 - Stock Qty', key: 'v1_qty', width: 20 },
-      // Variant 2
-      { header: 'Variant 2 - Name', key: 'v2_name', width: 24 },
-      { header: 'Variant 2 - Price ($)', key: 'v2_price', width: 20 },
-      { header: 'Variant 2 - MRP ($)', key: 'v2_mrp', width: 20 },
-      { header: 'Variant 2 - Stock Qty', key: 'v2_qty', width: 20 },
-      // Variant 3
-      { header: 'Variant 3 - Name', key: 'v3_name', width: 24 },
-      { header: 'Variant 3 - Price ($)', key: 'v3_price', width: 20 },
-      { header: 'Variant 3 - MRP ($)', key: 'v3_mrp', width: 20 },
-      { header: 'Variant 3 - Stock Qty', key: 'v3_qty', width: 20 },
-      // Variant 4
-      { header: 'Variant 4 - Name', key: 'v4_name', width: 24 },
-      { header: 'Variant 4 - Price ($)', key: 'v4_price', width: 20 },
-      { header: 'Variant 4 - MRP ($)', key: 'v4_mrp', width: 20 },
-      { header: 'Variant 4 - Stock Qty', key: 'v4_qty', width: 20 },
+      { header: 'Product Title', key: 'title', width: 42 },
+      { header: 'Product Description', key: 'description', width: 55 },
+      { header: 'Product Image name of the image file to import', key: 'imageFilename', width: 44 },
+      { header: 'MRP (Original $) *', key: 'mrp', width: 20 },
+      { header: 'Selling Price ($) *', key: 'price', width: 20 },
+      { header: 'Stock Quantity *', key: 'quantity', width: 18 },
+      { header: 'Category *', key: 'category', width: 28 },
+      { header: 'Sales Tax Status', key: 'salesTaxStatus', width: 20 },
+      { header: 'Subcategory (Optional)', key: 'subcategory', width: 26 },
+      { header: 'Product Variants & Pricing', key: 'variants', width: 48 },
+      { header: 'Storefront Visibility', key: 'visibility', width: 22 },
     ];
 
     wsProducts.columns = columns;
 
     // Style Header Row 1
     const headerRow = wsProducts.getRow(1);
-    headerRow.height = 34;
+    headerRow.height = 36;
 
     for (let colIdx = 1; colIdx <= columns.length; colIdx++) {
       const cell = headerRow.getCell(colIdx);
-      let fillArgb = 'FF0B3B24'; // Brand Deep Forest Green (Columns 1-4)
-      if (colIdx >= 5 && colIdx <= 7) fillArgb = 'FF134633'; // Base Price & Stock
-      else if (colIdx === 8) fillArgb = 'FF164E63'; // Image Filename
-      else if (colIdx === 9) fillArgb = 'FF1E3A5F'; // Tax
-      else if (colIdx >= 10 && colIdx <= 13) fillArgb = 'FF9F1239'; // Variant 1 (Deep Rose)
-      else if (colIdx >= 14 && colIdx <= 17) fillArgb = 'FF4338CA'; // Variant 2 (Deep Indigo)
-      else if (colIdx >= 18 && colIdx <= 21) fillArgb = 'FFB45309'; // Variant 3 (Warm Amber)
-      else if (colIdx >= 22 && colIdx <= 25) fillArgb = 'FF475569'; // Variant 4 (Slate)
+      let fillArgb = 'FF0B3B24'; // Default Brand Forest Green (Cols 1-2: Title, Description)
+
+      if (colIdx === 3) {
+        fillArgb = 'FF0E7490'; // Standout Cyan/Teal (Image Filename)
+      } else if (colIdx >= 4 && colIdx <= 6) {
+        fillArgb = 'FF134633'; // Pricing & Stock (MRP, Selling Price, Quantity)
+      } else if (colIdx >= 7 && colIdx <= 9) {
+        fillArgb = 'FF1C563F'; // Category, Sales Tax Status, Subcategory
+      } else if (colIdx === 10) {
+        fillArgb = 'FF9F1239'; // Product Variants & Pricing (Rose Accent)
+      } else if (colIdx === 11) {
+        fillArgb = 'FF1E3A8A'; // Storefront Visibility
+      }
 
       cell.fill = {
         type: 'pattern',
@@ -97,178 +84,87 @@ export async function GET(request: NextRequest) {
     // Sample Products demonstrating all combinations (with variants & without variants)
     const sampleRows = [
       {
-        name: 'Crimson Rose Petal & Peach Carnation Grand Varmala',
+        title: 'Crimson Rose Petal & Peach Carnation Grand Varmala',
         description: 'Authentic handcrafted fresh red rose petal and carnation wedding garland pair for bride and groom. Flown fresh priority across the USA.',
-        category: 'Indian Wedding Garlands',
-        subcategory: 'Rose Petal Garlands',
-        price: 75.0,
+        imageFilename: 'rose-petal-varmala.jpg',
         mrp: 95.0,
+        price: 75.0,
         quantity: 25,
-        image: 'rose-petal-varmala.jpg',
-        gst: 0,
-        v1_name: 'Standard Length (4 ft)',
-        v1_price: 75.0,
-        v1_mrp: 95.0,
-        v1_qty: 15,
-        v2_name: 'Grand Length (5 ft)',
-        v2_price: 95.0,
-        v2_mrp: 120.0,
-        v2_qty: 10,
-        v3_name: '',
-        v3_price: '',
-        v3_mrp: '',
-        v3_qty: '',
-        v4_name: '',
-        v4_price: '',
-        v4_mrp: '',
-        v4_qty: '',
-      },
-      {
-        name: 'White Carnation & Red Rose Wedding Varmala with Golden Tassels',
-        description: 'Premium white carnations intertwined with fresh red rosebuds and auspicious golden tassels. Ideal for wedding muhurtham rituals.',
         category: 'Indian Wedding Garlands',
-        subcategory: 'Carnation Garlands',
-        price: 89.0,
+        salesTaxStatus: 'Taxable',
+        subcategory: 'Rose Petal Garlands',
+        variants: 'Standard Length (4 ft): 75: 95: 15; Grand Length (5 ft): 95: 120: 10',
+        visibility: 'Visible',
+      },
+      {
+        title: 'White Carnation & Red Rose Wedding Varmala with Golden Tassels',
+        description: 'Premium white carnations intertwined with fresh red rosebuds and auspicious golden tassels. Ideal for wedding muhurtham rituals.',
+        imageFilename: 'carnation-rose-garland.jpg',
         mrp: 110.0,
+        price: 89.0,
         quantity: 20,
-        image: 'carnation-rose-garland.jpg',
-        gst: 0,
-        v1_name: 'Single Garland (4 ft)',
-        v1_price: 89.0,
-        v1_mrp: 110.0,
-        v1_qty: 10,
-        v2_name: 'Matching Pair (Set of 2)',
-        v2_price: 170.0,
-        v2_mrp: 210.0,
-        v2_qty: 10,
-        v3_name: '',
-        v3_price: '',
-        v3_mrp: '',
-        v3_qty: '',
-        v4_name: '',
-        v4_price: '',
-        v4_mrp: '',
-        v4_qty: '',
+        category: 'Indian Wedding Garlands',
+        salesTaxStatus: 'Taxable',
+        subcategory: 'Carnation Garlands',
+        variants: 'Single Garland (4 ft): 89: 110: 10; Matching Pair (Set of 2): 170: 210: 10',
+        visibility: 'Visible',
       },
       {
-        name: 'Fresh Fragrant Madurai Jasmine (Mallipoo) String',
+        title: 'Fresh Fragrant Madurai Jasmine (Mallipoo) String',
         description: 'Authentic South Indian Sambac Jasmine (Madurai Mallipoo) strung on auspicious cotton thread. Shipped overnight in insulated cold-chain boxes.',
-        category: 'strings',
-        subcategory: 'Jasmine Strings',
-        price: 24.0,
+        imageFilename: 'madurai-mallipoo.jpg',
         mrp: 30.0,
+        price: 24.0,
         quantity: 50,
-        image: 'madurai-mallipoo.jpg',
-        gst: 0,
-        v1_name: '1 Yard',
-        v1_price: 24.0,
-        v1_mrp: 30.0,
-        v1_qty: 25,
-        v2_name: '2 Yards',
-        v2_price: 44.0,
-        v2_mrp: 55.0,
-        v2_qty: 15,
-        v3_name: '5 Yards (Grand Puja Pack)',
-        v3_price: 99.0,
-        v3_mrp: 125.0,
-        v3_qty: 10,
-        v4_name: '',
-        v4_price: '',
-        v4_mrp: '',
-        v4_qty: '',
+        category: 'strings',
+        salesTaxStatus: 'Taxable',
+        subcategory: 'Jasmine Strings',
+        variants: '1 Yard: 24: 30: 25; 2 Yards: 44: 55: 15; 5 Yards (Grand Puja Pack): 99: 125: 10',
+        visibility: 'Visible',
       },
       {
-        name: 'Fresh Orange & Yellow Marigold Loose Flowers (Genda)',
+        title: 'Fresh Orange & Yellow Marigold Loose Flowers (Genda)',
         description: 'Freshly harvested loose marigold blooms and petals for daily puja, Diwali archana, and festive entrance rangoli decor.',
-        category: 'Pooja flowers',
-        subcategory: 'Loose Flowers',
-        price: 18.0,
+        imageFilename: 'marigold-loose.jpg',
         mrp: 25.0,
+        price: 18.0,
         quantity: 40,
-        image: 'marigold-loose.jpg',
-        gst: 0,
-        v1_name: '250 Grams',
-        v1_price: 18.0,
-        v1_mrp: 25.0,
-        v1_qty: 20,
-        v2_name: '500 Grams',
-        v2_price: 32.0,
-        v2_mrp: 45.0,
-        v2_qty: 15,
-        v3_name: '1 Kilogram Box',
-        v3_price: 60.0,
-        v3_mrp: 85.0,
-        v3_qty: 5,
-        v4_name: '',
-        v4_price: '',
-        v4_mrp: '',
-        v4_qty: '',
+        category: 'Pooja flowers',
+        salesTaxStatus: 'Taxable',
+        subcategory: 'Loose Flowers',
+        variants: '250 Grams: 18: 25: 20; 500 Grams: 32: 45: 15; 1 Kilogram Box: 60: 85: 5',
+        visibility: 'Visible',
       },
       {
-        name: 'Fresh Indian Mango Leaves Bunch (Mavilai for Kalasam & Toran)',
+        title: 'Fresh Indian Mango Leaves Bunch (Mavilai for Kalasam & Toran)',
         description: 'Auspicious fresh green mango leaves bunch for kalasam sthapanam, festival toran, and home gruhapravesam rituals.',
-        category: 'Pooja leaves',
-        subcategory: 'Pooja Leaves',
-        price: 12.0,
+        imageFilename: 'mango-leaves.jpg',
         mrp: 15.0,
+        price: 12.0,
         quantity: 35,
-        image: 'mango-leaves.jpg',
-        gst: 0,
-        // No variants - leaves blank to illustrate simple product
-        v1_name: '',
-        v1_price: '',
-        v1_mrp: '',
-        v1_qty: '',
-        v2_name: '',
-        v2_price: '',
-        v2_mrp: '',
-        v2_qty: '',
-        v3_name: '',
-        v3_price: '',
-        v3_mrp: '',
-        v3_qty: '',
-        v4_name: '',
-        v4_price: '',
-        v4_mrp: '',
-        v4_qty: '',
-      },
-      {
-        name: 'Sacred Pooja Whole Coconut with Kalasam Husk',
-        description: 'Naturally matured auspicious coconut with intact husk tuft, ideal for kalasam offering, temple archana, and havan ceremonies.',
-        category: 'Coconut',
-        subcategory: 'Whole Coconuts',
-        price: 7.5,
-        mrp: 10.0,
-        quantity: 60,
-        image: 'pooja-coconut.jpg',
-        gst: 0,
-        v1_name: 'Single Coconut (Pack of 1)',
-        v1_price: 7.5,
-        v1_mrp: 10.0,
-        v1_qty: 30,
-        v2_name: 'Pack of 3',
-        v2_price: 20.0,
-        v2_mrp: 28.0,
-        v2_qty: 20,
-        v3_name: 'Pack of 5 (Bulk Puja)',
-        v3_price: 32.0,
-        v3_mrp: 45.0,
-        v3_qty: 10,
-        v4_name: '',
-        v4_price: '',
-        v4_mrp: '',
-        v4_qty: '',
+        category: 'Pooja leaves',
+        salesTaxStatus: 'Taxable',
+        subcategory: 'Pooja Leaves',
+        variants: '', // Simple product without variants
+        visibility: 'Visible',
       },
     ];
 
-    sampleRows.forEach((row) => {
+    sampleRows.forEach((row, idx) => {
       const addedRow = wsProducts.addRow(row);
       addedRow.height = 24;
 
-      // Style cells
+      const isEven = idx % 2 === 0;
+      const rowBgColor = isEven ? 'FFFFFFFF' : 'FFF8FAFC';
+
       for (let c = 1; c <= columns.length; c++) {
         const cell = addedRow.getCell(c);
         cell.font = { name: 'Segoe UI', size: 10 };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: rowBgColor },
+        };
         cell.border = {
           top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
           bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
@@ -276,30 +172,45 @@ export async function GET(request: NextRequest) {
           right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
         };
 
-        // Subtle background tint for variant groupings to make the sheet visually intuitive
-        if (c >= 10 && c <= 13) {
-          // Variant 1: Soft Rose tint
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF1F2' } };
-        } else if (c >= 14 && c <= 17) {
-          // Variant 2: Soft Indigo tint
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } };
-        } else if (c >= 18 && c <= 21) {
-          // Variant 3: Soft Amber tint
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
-        } else if (c >= 22 && c <= 25) {
-          // Variant 4: Soft Slate tint
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+        // Col 3: Image Filename - Monospace & Teal highlight
+        if (c === 3) {
+          cell.font = { name: 'Consolas', size: 10, bold: true, color: { argb: 'FF0E7490' } };
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: isEven ? 'FFF0FDFA' : 'FFE6FFFA' },
+          };
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
         }
-
-        // Currency formatting for price/mrp
-        if ([5, 6, 11, 12, 15, 16, 19, 20, 23, 24].includes(c) && typeof cell.value === 'number') {
-          cell.numFmt = '"$"#,##0.00';
+        // Col 4 & 5: MRP & Selling Price - Currency formatting
+        else if (c === 4 || c === 5) {
           cell.alignment = { vertical: 'middle', horizontal: 'right' };
-        } else if ([7, 13, 17, 21, 25].includes(c) && typeof cell.value === 'number') {
-          cell.numFmt = '#,##0';
-          cell.alignment = { vertical: 'middle', horizontal: 'right' };
-        } else if (c === 8 || c === 9) {
+          if (typeof cell.value === 'number') {
+            cell.numFmt = '$#,##0.00';
+          }
+          if (c === 5) {
+            cell.font = { name: 'Segoe UI', size: 10, bold: true };
+          }
+        }
+        // Col 6: Stock Quantity - Number center
+        else if (c === 6) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          if (typeof cell.value === 'number') {
+            cell.numFmt = '#,##0';
+          }
+        }
+        // Col 8: Sales Tax Status - Center
+        else if (c === 8) {
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+        // Col 11: Storefront Visibility - Center with color
+        else if (c === 11) {
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          if (cell.value === 'Visible') {
+            cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF15803D' } };
+          } else {
+            cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF64748B' } };
+          }
         } else {
           cell.alignment = { vertical: 'middle', horizontal: 'left' };
         }
@@ -393,10 +304,10 @@ export async function GET(request: NextRequest) {
         example: 'Photo named "Madurai Mallipoo.jpg"',
       },
       {
-        topic: '3. Separate Variant Columns',
+        topic: '3. Product Variants & Pricing',
         details:
-          'No technical syntax or coding needed! We provide separate columns for each variant (Variant 1, Variant 2, Variant 3, Variant 4). Simply fill in the Variant Name, Price ($), MRP ($), and Stock Quantity. If your product does not have variants (like Mango Leaves), just leave the variant columns completely blank.',
-        example: 'Variant 1: "1 Yard" / $24.00 / 25 Qty',
+          'To add variants, enter them in the format "Variant Name: Selling Price: MRP: Stock Quantity", separated by semicolons (;) for multiple variants. If a product does not have variants (like Mango Leaves), simply leave this column blank.',
+        example: 'Standard Length (4 ft): 75: 95: 15; Grand Length (5 ft): 95: 120: 10',
       },
       {
         topic: '4. US Dollar Pricing ($)',

@@ -1318,7 +1318,6 @@ export default function CustomerStore() {
         categories={categories}
         selectedCategory={selectedCategory}
         selectedSubcategory={selectedSubcategory}
-        onSelectCategory={handleSelectCategory}
         onMenuToggle={setIsMobileNavOpen}
         storeName={storeSettings?.siteName || 'The Indian Flowers'}
         storeTagline={storeSettings?.tagline || 'Fresh Indian Flowers for Every Occasion'}

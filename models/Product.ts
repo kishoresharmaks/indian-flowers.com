@@ -140,12 +140,19 @@ ProductSchema.pre('save', function (this: IProduct, next) {
       .replace(/^-+|-+$/g, '');
   }
   if (this.category && !this.categorySlug) {
-    this.categorySlug = this.category
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    if (this.category.toUpperCase().includes('STRINGS') && this.category.toUpperCase().includes('LEAVES')) {
+      this.categorySlug = 'strings-and-leaves';
+      if (!this.parentCategorySlug) {
+        this.parentCategorySlug = 'strings-and-leaves';
+      }
+    } else {
+      this.categorySlug = this.category
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
   }
   if (this.mrp && this.price && this.mrp > this.price) {
     this.discount = Math.round(((this.mrp - this.price) / this.mrp) * 100);

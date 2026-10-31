@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 import mongoose from 'mongoose';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
@@ -150,6 +150,10 @@ export default async function ProductPage({ params }: Props) {
       product = null;
     }
 
+    if (!product) {
+      notFound();
+    }
+
     if (product) {
       // 301 Permanent Redirect if accessed by Mongo ObjectId or un-slugified ID and slug exists
       if (mongoose.isValidObjectId(cleanId) && product.slug && product.slug !== cleanId) {
@@ -298,6 +302,9 @@ export default async function ProductPage({ params }: Props) {
       };
     }
   } catch (err) {
+    if ((err as any)?.digest?.includes('NEXT_NOT_FOUND') || (err as any)?.digest?.includes('NEXT_REDIRECT')) {
+      throw err;
+    }
     console.warn('Could not generate server schema for product:', err);
   }
 

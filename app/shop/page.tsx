@@ -50,7 +50,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function ShopPage() {
+interface ShopPageProps {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default async function ShopPage({ searchParams }: ShopPageProps) {
   const siteUrl = getSiteUrl();
   let initialProducts: any[] = [];
   let initialNextCursor: string | null = null;
@@ -58,11 +62,46 @@ export default async function ShopPage() {
   let totalCount = 0;
   let mainCategories: any[] = [];
 
+  const rawCat =
+    typeof searchParams?.category === 'string'
+      ? searchParams.category
+      : typeof searchParams?.categorySlug === 'string'
+      ? searchParams.categorySlug
+      : undefined;
+  const rawSub =
+    typeof searchParams?.subcategory === 'string'
+      ? searchParams.subcategory
+      : typeof searchParams?.subcat === 'string'
+      ? searchParams.subcat
+      : undefined;
+  const rawSearch =
+    typeof searchParams?.search === 'string'
+      ? searchParams.search
+      : typeof searchParams?.q === 'string'
+      ? searchParams.q
+      : undefined;
+  const rawSort =
+    typeof searchParams?.sortBy === 'string'
+      ? searchParams.sortBy
+      : typeof searchParams?.sort === 'string'
+      ? searchParams.sort
+      : undefined;
+
+  let initialCategory = 'all';
+  let initialSubcategory = 'all';
+
   try {
     await connectToDatabase();
 
     const [paginated, rawCategories, productsCol] = await Promise.all([
-      fetchCursorPaginatedProducts({ limit: 16, sortBy: 'featured', excludeSeo: true }),
+      fetchCursorPaginatedProducts({
+        categorySlug: rawCat,
+        subcategory: rawSub,
+        search: rawSearch,
+        sortBy: (rawSort as any) || 'featured',
+        limit: 16,
+        excludeSeo: true,
+      }),
       Category.find({}).sort({ order: 1, name: 1 }).lean(),
       Product.collection,
     ]);
@@ -123,6 +162,66 @@ export default async function ShopPage() {
         };
       })
     );
+
+    // Resolve initial category and subcategory from raw parameters
+    if (rawCat && rawCat.toLowerCase() !== 'all') {
+      const cleanCat = rawCat.trim().toLowerCase();
+      const matchedCat = mainCategories.find(
+        (c: any) =>
+          c.slug.toLowerCase() === cleanCat ||
+          c.name.trim().toLowerCase() === cleanCat ||
+          c.slug.toLowerCase() === cleanCat.replace(/[^a-z0-9]+/g, '-')
+      );
+      initialCategory = matchedCat ? matchedCat.slug : cleanCat.replace(/[^a-z0-9]+/g, '-');
+    }
+
+    if (rawSub && rawSub.toLowerCase() !== 'all') {
+      const cleanSub = rawSub.trim().toLowerCase();
+      const slugSub = cleanSub.replace(/[^a-z0-9]+/g, '-');
+      let matchedSub: any;
+      let parentCat: any;
+
+      if (initialCategory !== 'all') {
+        parentCat = mainCategories.find((c: any) => c.slug === initialCategory);
+        if (parentCat?.subcategories) {
+          matchedSub = parentCat.subcategories.find(
+            (s: any) =>
+              s.name.trim().toLowerCase() === cleanSub ||
+              s.slug?.toLowerCase() === cleanSub ||
+              s.slug?.toLowerCase() === slugSub ||
+              s.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') === slugSub
+          );
+        }
+      }
+
+      if (!matchedSub) {
+        for (const cat of mainCategories) {
+          if (cat.subcategories) {
+            const m = cat.subcategories.find(
+              (s: any) =>
+                s.name.trim().toLowerCase() === cleanSub ||
+                s.slug?.toLowerCase() === cleanSub ||
+                s.slug?.toLowerCase() === slugSub ||
+                s.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') === slugSub
+            );
+            if (m) {
+              matchedSub = m;
+              parentCat = cat;
+              break;
+            }
+          }
+        }
+      }
+
+      if (matchedSub) {
+        initialSubcategory = matchedSub.name;
+        if (initialCategory === 'all' && parentCat) {
+          initialCategory = parentCat.slug;
+        }
+      } else {
+        initialSubcategory = rawSub.trim();
+      }
+    }
   } catch (err) {
     console.error('Error fetching shop data:', err);
   }
@@ -159,6 +258,10 @@ export default async function ShopPage() {
           initialHasMore={initialHasMore}
           initialTotalCount={totalCount}
           mainCategories={mainCategories}
+          initialCategory={initialCategory}
+          initialSubcategory={initialSubcategory}
+          initialSearch={rawSearch || ''}
+          initialSort={(rawSort as any) || 'featured'}
         />
       </Suspense>
     </>

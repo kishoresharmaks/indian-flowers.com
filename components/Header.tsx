@@ -471,34 +471,49 @@ export default function Header({
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (activeSearchQuery.trim()) {
-      router.push(`/?search=${encodeURIComponent(activeSearchQuery.trim())}#products-section`);
+      router.push(`/shop?search=${encodeURIComponent(activeSearchQuery.trim())}`);
       toggleMobileMenu(false);
     }
   };
 
-  // Universal selection handler
-  const handleCategorySelect = (categoryName: string, subcategoryName?: string) => {
+  // Universal selection handler — always navigates to /shop with category & subcategory
+  const handleCategorySelect = (categoryInput: string, subcategoryInput?: string) => {
     setOpenDropdownKey(null);
     toggleMobileMenu(false);
 
-    if (onSelectCategory) {
-      onSelectCategory(categoryName, subcategoryName);
-      if (categoryName === 'All') {
-        const el = document.getElementById('products-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        const slug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const el = document.getElementById(`category-${slug}`) || document.getElementById('products-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    } else {
-      const query = subcategoryName
-        ? `/?category=${encodeURIComponent(categoryName)}&subcategory=${encodeURIComponent(subcategoryName)}#products-section`
-        : categoryName === 'All'
-        ? '/#products-section'
-        : `/?category=${encodeURIComponent(categoryName)}#products-section`;
-      router.push(query);
+    if (!categoryInput || categoryInput.toLowerCase() === 'all') {
+      router.push('/shop');
+      return;
     }
+
+    // Resolve category to canonical slug
+    const cleanCat = categoryInput.trim().toLowerCase();
+    const matchedCat = activeCategories.find(
+      (c) =>
+        c.slug?.toLowerCase() === cleanCat ||
+        c.name.trim().toLowerCase() === cleanCat ||
+        c.slug?.toLowerCase() === cleanCat.replace(/[^a-z0-9]+/g, '-')
+    );
+
+    const targetCatSlug = matchedCat?.slug || categoryInput.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+    const params = new URLSearchParams();
+    params.set('category', targetCatSlug);
+
+    if (subcategoryInput && subcategoryInput.toLowerCase() !== 'all') {
+      const cleanSub = subcategoryInput.trim().toLowerCase();
+      const matchedSub = matchedCat?.subcategories?.find(
+        (s) =>
+          s.name.trim().toLowerCase() === cleanSub ||
+          s.slug?.toLowerCase() === cleanSub ||
+          s.slug?.toLowerCase() === cleanSub.replace(/[^a-z0-9]+/g, '-')
+      );
+      // Pass the canonical subcategory name so the /shop sidebar highlights accurately
+      const targetSubName = matchedSub?.name || subcategoryInput.trim();
+      params.set('subcategory', targetSubName);
+    }
+
+    router.push(`/shop?${params.toString()}`);
   };
 
   // Debounced mouse enter/leave for navigation dropdowns
@@ -770,7 +785,9 @@ export default function Header({
                 {/* 4. Parent Categories with Subcategories (Upgraded Visual Mega-Menu) */}
                 {activeCategories.map((cat, catIdx) => {
                   const hasSub = Array.isArray(cat.subcategories) && cat.subcategories.length > 0;
-                  const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
+                  const isSelected =
+                    selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() ||
+                    Boolean(cat.slug && selectedCategory.trim().toLowerCase() === cat.slug.trim().toLowerCase());
                   const isOpen = openDropdownKey === cat.name;
                   const isAlignRight = catIdx >= 2;
 
@@ -784,11 +801,7 @@ export default function Header({
                       <button
                         type="button"
                         onClick={() => {
-                          if (hasSub) {
-                            setOpenDropdownKey(isOpen ? null : cat.name);
-                          } else {
-                            handleCategorySelect(cat.name);
-                          }
+                          handleCategorySelect(cat.slug || cat.name);
                         }}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 uppercase tracking-wide transition-all duration-150 whitespace-nowrap cursor-pointer group rounded-xl text-[11.5px] lg:text-[12px] xl:text-[12.5px] font-semibold ${
                           isSelected
@@ -833,7 +846,7 @@ export default function Header({
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => handleCategorySelect(cat.name)}
+                                  onClick={() => handleCategorySelect(cat.slug || cat.name)}
                                   className="text-[11.5px] font-bold text-[#0B3B24] hover:text-[#1C563F] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
                                 >
                                   <span>View All ({cat.subcategories.length})</span>
@@ -844,15 +857,17 @@ export default function Header({
                               <div className="grid grid-cols-2 gap-2">
                                 {cat.subcategories.map((sub: any) => {
                                   const isSubSelected =
-                                    selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() &&
-                                    selectedSubcategory.trim().toLowerCase() === sub.name.trim().toLowerCase();
+                                    (selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() ||
+                                      Boolean(cat.slug && selectedCategory.trim().toLowerCase() === cat.slug.trim().toLowerCase())) &&
+                                    (selectedSubcategory.trim().toLowerCase() === sub.name.trim().toLowerCase() ||
+                                      Boolean(sub.slug && selectedSubcategory.trim().toLowerCase() === sub.slug.trim().toLowerCase()));
                                   const thumb = sub.image || cat.image || '/images/categories/cat-wedding-garlands.jpg';
 
                                   return (
                                     <button
                                       key={sub.slug || sub.name}
                                       type="button"
-                                      onClick={() => handleCategorySelect(cat.name, sub.name)}
+                                      onClick={() => handleCategorySelect(cat.slug || cat.name, sub.name)}
                                       className={`group flex items-center gap-2.5 p-2 rounded-xl text-left transition-all cursor-pointer border ${
                                         isSubSelected
                                           ? 'bg-emerald-50 text-[#0B3B24] border-emerald-300 ring-1 ring-emerald-200 shadow-2xs'
@@ -912,7 +927,7 @@ export default function Header({
 
                               <button
                                 type="button"
-                                onClick={() => handleCategorySelect(cat.name)}
+                                onClick={() => handleCategorySelect(cat.slug || cat.name)}
                                 className="mt-3 w-full py-2 px-3 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white text-xs font-bold text-center transition-all flex items-center justify-center gap-1.5 shadow-xs hover:shadow-md cursor-pointer active:scale-95"
                               >
                                 <span>Shop {cat.name.split(' ')[0]}</span>
@@ -1098,7 +1113,7 @@ export default function Header({
                       <div className="p-2 space-y-1 bg-white">
                         <button
                           type="button"
-                          onClick={() => handleCategorySelect(cat.name)}
+                          onClick={() => handleCategorySelect(cat.slug || cat.name)}
                           className="w-full text-left py-1.5 px-2.5 text-xs font-semibold text-[#0B3B24] hover:underline"
                         >
                           &bull; View All {cat.name}
@@ -1107,7 +1122,7 @@ export default function Header({
                           <button
                             key={sub.slug || sub.name}
                             type="button"
-                            onClick={() => handleCategorySelect(cat.name, sub.name)}
+                            onClick={() => handleCategorySelect(cat.slug || cat.name, sub.name)}
                             className="w-full text-left py-1.5 px-2.5 text-xs font-medium text-stone-700 hover:text-[#0B3B24] hover:bg-stone-50 rounded"
                           >
                             &bull; {sub.name}
@@ -1123,7 +1138,7 @@ export default function Header({
                 <button
                   key={cat.slug || cat.name}
                   type="button"
-                  onClick={() => handleCategorySelect(cat.name)}
+                  onClick={() => handleCategorySelect(cat.slug || cat.name)}
                   className="w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-semibold text-stone-800 hover:bg-stone-50 hover:text-[#0B3B24] text-left"
                 >
                   <span>{cat.name}</span>

@@ -92,12 +92,35 @@ export async function GET(request: Request) {
       });
     }
     if (categorySlug && categorySlug !== 'All') {
+      const cleanCat = categorySlug.toLowerCase().trim();
+      const slugVariants = new Set<string>([cleanCat]);
+      if (cleanCat === 'strings-and-leaves' || cleanCat === 'strings-leaves') {
+        slugVariants.add('strings-and-leaves');
+        slugVariants.add('strings-leaves');
+      } else if (cleanCat.includes('-and-')) {
+        slugVariants.add(cleanCat.replace(/-and-/g, '-'));
+      }
+      const catSlugList = Array.from(slugVariants);
+      const escapedCat = cleanCat.replace(/-/g, ' ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      const catConditions: any[] = [
+        { categorySlug: { $in: catSlugList } },
+        { parentCategorySlug: { $in: catSlugList } },
+        { 'categories.slug': { $in: catSlugList } },
+        { category: new RegExp(`^${escapedCat}$`, 'i') },
+      ];
+
+      if (escapedCat.includes(' and ')) {
+        catConditions.push({ category: new RegExp(`^${escapedCat.replace(/ and /gi, ' & ')}$`, 'i') });
+        catConditions.push({ category: new RegExp(`^${escapedCat.replace(/ and /gi, '\\s*(&|and)\\s*')}$`, 'i') });
+      }
+
+      if (cleanCat === 'strings-and-leaves' || cleanCat === 'strings-leaves') {
+        catConditions.push({ category: /^STRINGS\s*(&|and|-)\s*LEAVES$/i });
+      }
+
       conditions.push({
-        $or: [
-          { categorySlug: categorySlug.toLowerCase() },
-          { parentCategorySlug: categorySlug.toLowerCase() },
-          { 'categories.slug': categorySlug.toLowerCase() },
-        ],
+        $or: catConditions,
       });
     } else if (category && category !== 'All') {
       const sanitizedCat = category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

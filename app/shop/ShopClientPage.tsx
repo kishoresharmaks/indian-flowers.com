@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -44,6 +44,10 @@ interface Props {
   initialHasMore?: boolean;
   initialTotalCount?: number;
   mainCategories: MainCategoryItem[];
+  initialCategory?: string;
+  initialSubcategory?: string;
+  initialSearch?: string;
+  initialSort?: 'featured' | 'price-asc' | 'price-desc' | 'name';
 }
 
 export default function ShopClientPage({
@@ -52,6 +56,10 @@ export default function ShopClientPage({
   initialHasMore = false,
   initialTotalCount = 0,
   mainCategories = [],
+  initialCategory = 'all',
+  initialSubcategory = 'all',
+  initialSearch = '',
+  initialSort = 'featured',
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -63,10 +71,13 @@ export default function ShopClientPage({
   const [totalCount, setTotalCount] = useState<number>(initialTotalCount || initialProducts.length);
 
   // Filters & Sorting State
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'name'>('featured');
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>(initialSubcategory);
+  const [searchQuery, setSearchQuery] = useState<string>(initialSearch);
+  const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'name'>(initialSort);
+
+  // Reference to track last loaded query params to avoid redundant refetches
+  const lastLoadedParamsRef = useRef<string>(searchParams ? searchParams.toString() : '');
 
   // Loading States
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -264,39 +275,169 @@ export default function ShopClientPage({
     }
   };
 
-  // Synchronize URL query parameters (e.g. /shop?search=varmala)
+  // Synchronize URL query parameters (e.g. /shop?category=wedding-garlands&subcategory=Rose+Petal+Garlands)
   useEffect(() => {
-    const searchParam = searchParams.get('search');
-    const catParam = searchParams.get('category');
-    if (searchParam && searchParam.trim()) {
-      const trimmed = searchParam.trim();
-      setSearchQuery(trimmed);
+    const currentParamString = searchParams ? searchParams.toString() : '';
+    // Skip if parameters match what is already loaded
+    if (currentParamString === lastLoadedParamsRef.current) {
+      return;
+    }
+    lastLoadedParamsRef.current = currentParamString;
+
+    const rawSearch = searchParams.get('search') || searchParams.get('q') || '';
+    const rawCat = searchParams.get('category') || searchParams.get('categorySlug') || '';
+    const rawSub = searchParams.get('subcategory') || searchParams.get('subcat') || '';
+    const rawSort = searchParams.get('sortBy') || searchParams.get('sort') || '';
+
+    const hasParams = Boolean(
+      rawSearch.trim() ||
+      (rawCat && rawCat.toLowerCase() !== 'all') ||
+      (rawSub && rawSub.toLowerCase() !== 'all') ||
+      rawSort
+    );
+
+    if (!hasParams) {
+      setSelectedCategory('all');
+      setSelectedSubcategory('all');
+      setSearchQuery('');
+      setSortBy('featured');
       fetchFilteredProducts({
-        search: trimmed,
-        category: catParam || 'all',
+        category: 'all',
+        subcategory: 'all',
+        search: '',
+        sort: 'featured',
         cursor: null,
         append: false,
       });
+      return;
     }
-  }, [searchParams]);
+
+    // Resolve Category
+    let resolvedCatSlug = 'all';
+    let matchedCat: MainCategoryItem | undefined;
+
+    if (rawCat && rawCat.toLowerCase() !== 'all') {
+      const cleanCat = rawCat.trim().toLowerCase();
+      matchedCat = mainCategories.find(
+        (c) =>
+          c.slug.toLowerCase() === cleanCat ||
+          c.name.trim().toLowerCase() === cleanCat ||
+          c.slug.toLowerCase() === cleanCat.replace(/[^a-z0-9]+/g, '-') ||
+          (cleanCat === 'strings-leaves' && c.slug === 'strings-and-leaves') ||
+          (cleanCat === 'strings-and-leaves' && c.slug === 'strings-leaves')
+      );
+      resolvedCatSlug = matchedCat ? matchedCat.slug : cleanCat.replace(/[^a-z0-9]+/g, '-');
+    }
+
+    // Resolve Subcategory
+    let resolvedSubName = 'all';
+    if (rawSub && rawSub.toLowerCase() !== 'all') {
+      const cleanSub = rawSub.trim().toLowerCase();
+      const slugSub = cleanSub.replace(/[^a-z0-9]+/g, '-');
+      let matchedSub: SubcategoryItem | undefined;
+      let parentCat: MainCategoryItem | undefined;
+
+      if (matchedCat && matchedCat.subcategories) {
+        matchedSub = matchedCat.subcategories.find(
+          (s) =>
+            s.name.trim().toLowerCase() === cleanSub ||
+            s.slug.toLowerCase() === cleanSub ||
+            s.slug.toLowerCase() === slugSub ||
+            s.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') === slugSub
+        );
+        if (matchedSub) parentCat = matchedCat;
+      }
+
+      if (!matchedSub) {
+        for (const cat of mainCategories) {
+          if (cat.subcategories) {
+            const m = cat.subcategories.find(
+              (s) =>
+                s.name.trim().toLowerCase() === cleanSub ||
+                s.slug.toLowerCase() === cleanSub ||
+                s.slug.toLowerCase() === slugSub ||
+                s.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') === slugSub
+            );
+            if (m) {
+              matchedSub = m;
+              parentCat = cat;
+              break;
+            }
+          }
+        }
+      }
+
+      if (matchedSub) {
+        resolvedSubName = matchedSub.name;
+        if (resolvedCatSlug === 'all' && parentCat) {
+          resolvedCatSlug = parentCat.slug;
+        }
+      } else {
+        resolvedSubName = rawSub.trim();
+      }
+    }
+
+    const nextSort = (['featured', 'price-asc', 'price-desc', 'name'].includes(rawSort)
+      ? rawSort
+      : sortBy) as 'featured' | 'price-asc' | 'price-desc' | 'name';
+
+    setSelectedCategory(resolvedCatSlug);
+    setSelectedSubcategory(resolvedSubName);
+    setSearchQuery(rawSearch.trim());
+    if (rawSort) setSortBy(nextSort);
+
+    fetchFilteredProducts({
+      category: resolvedCatSlug,
+      subcategory: resolvedSubName,
+      search: rawSearch.trim(),
+      sort: nextSort,
+      cursor: null,
+      append: false,
+    });
+  }, [searchParams, mainCategories, sortBy]);
 
   // Handlers for Filters
   const handleSelectMainCategory = (slug: string) => {
     setSelectedCategory(slug);
     setSelectedSubcategory('all');
+
+    const params = new URLSearchParams();
+    if (slug !== 'all') params.set('category', slug);
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    if (sortBy !== 'featured') params.set('sortBy', sortBy);
+    const queryStr = params.toString();
+    lastLoadedParamsRef.current = queryStr;
+    window.history.replaceState(null, '', queryStr ? `/shop?${queryStr}` : '/shop');
+
     fetchFilteredProducts({
       category: slug,
       subcategory: 'all',
+      search: searchQuery.trim(),
+      sort: sortBy,
       cursor: null,
       append: false,
     });
   };
 
   const handleSelectSubcategory = (subName: string) => {
-    const nextSub = selectedSubcategory === subName ? 'all' : subName;
+    const nextSub =
+      selectedSubcategory.toLowerCase() === subName.toLowerCase() ? 'all' : subName;
     setSelectedSubcategory(nextSub);
+
+    const params = new URLSearchParams();
+    if (selectedCategory !== 'all') params.set('category', selectedCategory);
+    if (nextSub !== 'all') params.set('subcategory', nextSub);
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    if (sortBy !== 'featured') params.set('sortBy', sortBy);
+    const queryStr = params.toString();
+    lastLoadedParamsRef.current = queryStr;
+    window.history.replaceState(null, '', queryStr ? `/shop?${queryStr}` : '/shop');
+
     fetchFilteredProducts({
+      category: selectedCategory,
       subcategory: nextSub,
+      search: searchQuery.trim(),
+      sort: sortBy,
       cursor: null,
       append: false,
     });
@@ -304,6 +445,16 @@ export default function ShopClientPage({
 
   const handleSortChange = (newSort: 'featured' | 'price-asc' | 'price-desc' | 'name') => {
     setSortBy(newSort);
+
+    const params = new URLSearchParams();
+    if (selectedCategory !== 'all') params.set('category', selectedCategory);
+    if (selectedSubcategory !== 'all') params.set('subcategory', selectedSubcategory);
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    if (newSort !== 'featured') params.set('sortBy', newSort);
+    const queryStr = params.toString();
+    lastLoadedParamsRef.current = queryStr;
+    window.history.replaceState(null, '', queryStr ? `/shop?${queryStr}` : '/shop');
+
     fetchFilteredProducts({
       sort: newSort,
       cursor: null,
@@ -313,6 +464,16 @@ export default function ShopClientPage({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const params = new URLSearchParams();
+    if (selectedCategory !== 'all') params.set('category', selectedCategory);
+    if (selectedSubcategory !== 'all') params.set('subcategory', selectedSubcategory);
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    if (sortBy !== 'featured') params.set('sortBy', sortBy);
+    const queryStr = params.toString();
+    lastLoadedParamsRef.current = queryStr;
+    window.history.replaceState(null, '', queryStr ? `/shop?${queryStr}` : '/shop');
+
     fetchFilteredProducts({
       search: searchQuery,
       cursor: null,
@@ -325,6 +486,9 @@ export default function ShopClientPage({
     setSelectedSubcategory('all');
     setSearchQuery('');
     setSortBy('featured');
+    lastLoadedParamsRef.current = '';
+    window.history.replaceState(null, '', '/shop');
+
     fetchFilteredProducts({
       category: 'all',
       subcategory: 'all',
@@ -357,7 +521,9 @@ export default function ShopClientPage({
   );
 
   // Active Main Category Object
-  const activeMainCategory = mainCategories.find((c) => c.slug === selectedCategory);
+  const activeMainCategory = mainCategories.find(
+    (c) => c.slug.toLowerCase() === selectedCategory.toLowerCase()
+  );
 
   // Subcategories to display on left sidebar
   const visibleSubcategories = activeMainCategory
@@ -374,6 +540,9 @@ export default function ShopClientPage({
         onCartClick={() => window.dispatchEvent(new Event('open-cart'))}
         onWishlistClick={() => window.dispatchEvent(new Event('open-wishlist'))}
         onTrackClick={() => router.push('/?action=track')}
+        selectedCategory={selectedCategory}
+        selectedSubcategory={selectedSubcategory}
+        categories={mainCategories as any}
       />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -505,7 +674,7 @@ export default function ShopClientPage({
 
             {/* Main Category Pills */}
             {mainCategories.map((cat) => {
-              const isActive = selectedCategory === cat.slug;
+              const isActive = selectedCategory.toLowerCase() === cat.slug.toLowerCase();
               return (
                 <button
                   key={cat.slug}
@@ -620,7 +789,9 @@ export default function ShopClientPage({
 
                 {/* Subcategory Cards */}
                 {visibleSubcategories.map((sub) => {
-                  const isSubActive = selectedSubcategory === sub.name;
+                  const isSubActive =
+                    selectedSubcategory.toLowerCase() === sub.name.toLowerCase() ||
+                    Boolean(sub.slug && selectedSubcategory.toLowerCase() === sub.slug.toLowerCase());
                   return (
                     <button
                       key={sub.slug || sub.name}

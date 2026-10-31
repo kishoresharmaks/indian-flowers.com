@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import Category from '@/models/Category';
@@ -26,7 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     await connectToDatabase();
-    const cat = await Category.findOne({ slug: cleanSlug }).lean();
+    let cat = await Category.findOne({ slug: cleanSlug }).lean();
+    if (!cat && cleanSlug === 'strings-leaves') {
+      cat = await Category.findOne({ slug: 'strings-and-leaves' }).lean();
+    }
     if (cat && cat.name) {
       categoryName = cat.name;
     }
@@ -95,7 +99,10 @@ export default async function CategoryPage({ params }: Props) {
   try {
     await connectToDatabase();
 
-    const cat = await Category.findOne({ slug: cleanSlug }).lean();
+    let cat = await Category.findOne({ slug: cleanSlug }).lean();
+    if (!cat && cleanSlug === 'strings-leaves') {
+      cat = await Category.findOne({ slug: 'strings-and-leaves' }).lean();
+    }
     if (cat && cat.name) {
       categoryName = cat.name;
     }
@@ -111,7 +118,14 @@ export default async function CategoryPage({ params }: Props) {
     initialNextCursor = paginated.nextCursor;
     initialHasMore = paginated.hasMore;
     totalCount = paginated.totalCount;
+
+    if (!cat && initialProducts.length === 0) {
+      notFound();
+    }
   } catch (err) {
+    if ((err as any)?.digest?.includes('NEXT_NOT_FOUND')) {
+      throw err;
+    }
     console.error(`Error loading category ${cleanSlug}:`, err);
   }
 

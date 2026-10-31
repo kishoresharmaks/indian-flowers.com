@@ -147,6 +147,111 @@ const nextConfig = {
         destination: '/product-category/pooja-flowers',
         permanent: true,
       },
+      {
+        source: '/shop/',
+        destination: '/shop',
+        permanent: true,
+      },
+      {
+        source: '/cart',
+        destination: '/?action=cart',
+        permanent: true,
+      },
+      {
+        source: '/cart/',
+        destination: '/?action=cart',
+        permanent: true,
+      },
+      {
+        source: '/checkout',
+        destination: '/?action=checkout',
+        permanent: true,
+      },
+      {
+        source: '/checkout/',
+        destination: '/?action=checkout',
+        permanent: true,
+      },
+      {
+        source: '/products',
+        destination: '/shop',
+        permanent: true,
+      },
+      {
+        source: '/products/',
+        destination: '/shop',
+        permanent: true,
+      },
+      {
+        source: '/catalog',
+        destination: '/shop',
+        permanent: true,
+      },
+      {
+        source: '/catalog/',
+        destination: '/shop',
+        permanent: true,
+      },
+      {
+        source: '/all-products',
+        destination: '/shop',
+        permanent: true,
+      },
+      {
+        source: '/all-products/',
+        destination: '/shop',
+        permanent: true,
+      },
+      {
+        source: '/terms',
+        destination: '/policy/terms-and-conditions',
+        permanent: true,
+      },
+      {
+        source: '/terms/',
+        destination: '/policy/terms-and-conditions',
+        permanent: true,
+      },
+      {
+        source: '/terms-and-conditions/',
+        destination: '/policy/terms-and-conditions',
+        permanent: true,
+      },
+      {
+        source: '/shipping',
+        destination: '/policy/shipping-policy',
+        permanent: true,
+      },
+      {
+        source: '/shipping/',
+        destination: '/policy/shipping-policy',
+        permanent: true,
+      },
+      {
+        source: '/shipping-policy/',
+        destination: '/policy/shipping-policy',
+        permanent: true,
+      },
+      {
+        source: '/refunds',
+        destination: '/policy/refund-policy',
+        permanent: true,
+      },
+      {
+        source: '/refunds/',
+        destination: '/policy/refund-policy',
+        permanent: true,
+      },
+      {
+        source: '/refund-policy/',
+        destination: '/policy/refund-policy',
+        permanent: true,
+      },
+      {
+        source: '/cancellation-policy/',
+        destination: '/policy/cancellation-policy',
+        permanent: true,
+      },
     ];
   },
   async headers() {

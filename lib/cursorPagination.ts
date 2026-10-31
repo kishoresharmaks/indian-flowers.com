@@ -135,24 +135,50 @@ export async function fetchCursorPaginatedProducts({
   // Category filter
   if (categorySlug && categorySlug.toLowerCase() !== 'all') {
     const cleanCat = categorySlug.toLowerCase().trim();
+    const slugVariants = new Set<string>([cleanCat]);
+
+    if (cleanCat === 'strings-and-leaves' || cleanCat === 'strings-leaves') {
+      slugVariants.add('strings-and-leaves');
+      slugVariants.add('strings-leaves');
+    } else if (cleanCat.includes('-and-')) {
+      slugVariants.add(cleanCat.replace(/-and-/g, '-'));
+    }
+
+    const catSlugList = Array.from(slugVariants);
+    const escapedCat = cleanCat.replace(/-/g, ' ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const catConditions: any[] = [
+      { categorySlug: { $in: catSlugList } },
+      { parentCategorySlug: { $in: catSlugList } },
+      { 'categories.slug': { $in: catSlugList } },
+      { category: new RegExp(`^${escapedCat}$`, 'i') },
+    ];
+
+    if (escapedCat.includes(' and ')) {
+      catConditions.push({ category: new RegExp(`^${escapedCat.replace(/ and /gi, ' & ')}$`, 'i') });
+      catConditions.push({ category: new RegExp(`^${escapedCat.replace(/ and /gi, '\\s*(&|and)\\s*')}$`, 'i') });
+    }
+
+    if (cleanCat === 'strings-and-leaves' || cleanCat === 'strings-leaves') {
+      catConditions.push({ category: /^STRINGS\s*(&|and|-)\s*LEAVES$/i });
+    }
+
     baseConditions.push({
-      $or: [
-        { categorySlug: cleanCat },
-        { parentCategorySlug: cleanCat },
-        { 'categories.slug': cleanCat },
-        { category: new RegExp(`^${cleanCat.replace(/-/g, ' ')}$`, 'i') },
-      ],
+      $or: catConditions,
     });
   }
 
   // Subcategory filter
   if (subcategory && subcategory.toLowerCase() !== 'all') {
     const cleanSub = subcategory.trim();
+    const escapedSub = cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const slugSub = cleanSub.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     baseConditions.push({
       $or: [
-        { subcategory: new RegExp(`^${cleanSub}$`, 'i') },
-        { categorySlug: cleanSub.toLowerCase().replace(/[^a-z0-9]+/g, '-') },
-        { category: new RegExp(`^${cleanSub}$`, 'i') },
+        { subcategory: new RegExp(`^${escapedSub}$`, 'i') },
+        { categorySlug: slugSub },
+        { 'categories.slug': slugSub },
+        { category: new RegExp(`^${escapedSub}$`, 'i') },
       ],
     });
   }
