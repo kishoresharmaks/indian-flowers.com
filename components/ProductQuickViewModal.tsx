@@ -228,9 +228,17 @@ export default function ProductQuickViewModal({
           )}
 
           {/* 10-Day Delivery Notice Callout */}
-          <div className="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-lg flex items-center gap-2 text-[11px] text-amber-900">
-            <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-            <span>Notice: 10-day advance preparation required for fresh cold-chain delivery.</span>
+          <div className="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-lg flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-amber-900">
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+              <span>Notice: 10-day cooling &amp; advance preparation required for fresh delivery.</span>
+            </div>
+            <span className="text-[10.5px] text-amber-800">
+              Urgent order? Call{' '}
+              <a href="tel:+19093793678" className="font-bold underline text-[#0B3B24] hover:text-emerald-900">
+                +1 (909) 379-3678
+              </a>
+            </span>
           </div>
 
           {/* Size / Variant Options */}
