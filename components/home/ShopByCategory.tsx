@@ -11,7 +11,7 @@ interface ShopByCategoryProps {
   loading?: boolean;
   selectedCategory?: string;
   selectedSubcategory?: string;
-  onSelectCategory?: (name: string, subcategory?: string) => void;
+  onSelectCategory?: (name: string, subcategoryOrSlug?: string) => void;
 }
 
 export default function ShopByCategory({

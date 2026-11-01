@@ -1367,7 +1367,16 @@ export default function CustomerStore() {
             loading={loadingCategories}
             selectedCategory={selectedCategory}
             selectedSubcategory={selectedSubcategory}
-            onSelectCategory={handleSelectCategory}
+            onSelectCategory={(catName, slug) => {
+              const targetSlug =
+                slug ||
+                catName
+                  .toLowerCase()
+                  .trim()
+                  .replace(/[^\w\s-]/g, '')
+                  .replace(/[\s_-]+/g, '-');
+              router.push(`/shop?category=${encodeURIComponent(targetSlug)}`);
+            }}
           />
 
           {searchQuery.trim() ? (

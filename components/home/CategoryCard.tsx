@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 
@@ -14,6 +15,7 @@ export interface CategoryCardProps {
   onClick?: () => void;
   index?: number;
   isGrid?: boolean;
+  href?: string;
 }
 
 interface ThemeStyle {
@@ -153,16 +155,28 @@ function getCategoryTheme(name: string, index: number): ThemeStyle {
 
 export default function CategoryCard({
   name,
+  slug,
   image,
   subcategories = [],
   isSelected = false,
   onClick,
   index = 0,
   isGrid = false,
+  href,
 }: CategoryCardProps) {
   const [imgSrc, setImgSrc] = useState(image || DEFAULT_FLORAL_PLACEHOLDER);
   const theme = getCategoryTheme(name, index);
   const subCount = Array.isArray(subcategories) ? subcategories.length : 0;
+
+  const targetSlug =
+    slug ||
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-');
+
+  const categoryHref = href || `/shop?category=${encodeURIComponent(targetSlug)}`;
 
   useEffect(() => {
     if (image) {
@@ -171,17 +185,10 @@ export default function CategoryCard({
   }, [image]);
 
   return (
-    <div
+    <Link
+      href={categoryHref}
       data-category-card
-      role="button"
-      tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
       aria-label={`Browse ${name} category`}
       className={`group/card relative flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border transition-all duration-300 text-left cursor-pointer select-none snap-center sm:snap-start bg-gradient-to-b ${
         theme.bgGradient
@@ -193,7 +200,7 @@ export default function CategoryCard({
         isGrid
           ? 'w-[75vw] min-w-[240px] max-w-[280px] shrink-0 md:w-full md:min-w-0 md:max-w-none md:shrink'
           : 'w-[75vw] min-w-[240px] max-w-[280px] sm:w-[250px] sm:min-w-[250px] md:w-[270px] md:min-w-[270px] lg:w-[280px] lg:min-w-[280px] shrink-0'
-      } h-[310px] sm:h-[330px] md:h-[350px] p-3.5 sm:p-4`}
+      } h-[310px] sm:h-[330px] md:h-[350px] p-3.5 sm:p-4 block`}
     >
       {/* Top Header: Badge Eyebrow & Subcategory Count */}
       <div className="flex items-center justify-between gap-2 mb-2 sm:mb-2.5">
@@ -241,6 +248,6 @@ export default function CategoryCard({
           <ArrowRight className="w-4 h-4 text-white stroke-[2.2] transition-transform duration-300 group-hover/card:translate-x-0.5" />
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

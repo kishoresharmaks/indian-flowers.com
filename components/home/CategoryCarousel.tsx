@@ -18,7 +18,7 @@ interface CategoryCarouselProps {
   categories: CategoryItem[];
   selectedCategory?: string;
   selectedSubcategory?: string;
-  onSelectCategory?: (name: string, subcategory?: string) => void;
+  onSelectCategory?: (name: string, subcategoryOrSlug?: string) => void;
 }
 
 export default function CategoryCarousel({
@@ -44,67 +44,100 @@ export default function CategoryCarousel({
     setCanScrollLeft(scrollLeft > 10);
     setCanScrollRight(maxScroll > 10 && scrollLeft < maxScroll - 10);
 
-    // Identify which card is currently closest to the left/start in view
-    const cardElements = el.querySelectorAll<HTMLElement>('[data-category-card]');
-    if (cardElements.length > 0) {
-      const containerLeft = scrollLeft + 30;
-      let closestIdx = 0;
-      let minDiff = Infinity;
-
-      cardElements.forEach((card, idx) => {
-        const cardLeft = card.offsetLeft;
-        const diff = Math.abs(containerLeft - cardLeft);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closestIdx = idx;
-        }
-      });
-
-      setActiveIndex(closestIdx);
+    if (categories.length <= 1 || maxScroll <= 0) {
+      setActiveIndex(0);
+      return;
     }
-  }, []);
+
+    // Start boundary
+    if (scrollLeft <= 12) {
+      setActiveIndex(0);
+      return;
+    }
+
+    // End boundary: ensure the very last dot is active when scrolled to the end
+    if (scrollLeft >= maxScroll - 15) {
+      setActiveIndex(categories.length - 1);
+      return;
+    }
+
+    // Calculate proportional active dot index across total categories
+    const progress = Math.min(1, Math.max(0, scrollLeft / maxScroll));
+    const computedIndex = Math.min(
+      categories.length - 1,
+      Math.max(0, Math.round(progress * (categories.length - 1)))
+    );
+    setActiveIndex(computedIndex);
+  }, [categories.length]);
 
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
 
+    checkScrollState();
     const timer = setTimeout(checkScrollState, 150);
     el.addEventListener('scroll', checkScrollState, { passive: true });
     window.addEventListener('resize', checkScrollState);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        checkScrollState();
+      });
+      resizeObserver.observe(el);
+    }
 
     return () => {
       clearTimeout(timer);
       el.removeEventListener('scroll', checkScrollState);
       window.removeEventListener('resize', checkScrollState);
+      if (resizeObserver) resizeObserver.disconnect();
     };
   }, [checkScrollState, categories]);
 
-  // Scroll by card stride
+  // Scroll by card stride (approx 1 card + gap or 75% client width)
   const handleScroll = (direction: 'left' | 'right') => {
     const el = scrollContainerRef.current;
     if (!el) return;
 
-    const stride = Math.max(260, Math.floor(el.clientWidth * 0.75));
+    const stride = Math.max(280, Math.floor(el.clientWidth * 0.75));
     el.scrollBy({
       left: direction === 'left' ? -stride : stride,
       behavior: 'smooth',
     });
   };
 
-  // Scroll directly to a specific card index
+  // Scroll directly to a specific card or proportional scroll position
   const handleDotClick = (index: number) => {
     const el = scrollContainerRef.current;
     if (!el) return;
 
-    const cardElements = el.querySelectorAll<HTMLElement>('[data-category-card]');
-    if (cardElements[index]) {
-      cardElements[index].scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'start',
-      });
-      setActiveIndex(index);
+    const { scrollWidth, clientWidth } = el;
+    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+    if (maxScroll <= 0) return;
+
+    let targetScroll = 0;
+    if (index === 0) {
+      targetScroll = 0;
+    } else if (index === categories.length - 1) {
+      targetScroll = maxScroll;
+    } else {
+      const cardElements = el.querySelectorAll<HTMLElement>('[data-category-card]');
+      if (cardElements[index]) {
+        const card = cardElements[index];
+        // Center the selected category card in the container's visible area
+        const desiredLeft = card.offsetLeft - (clientWidth - card.offsetWidth) / 2;
+        targetScroll = Math.min(maxScroll, Math.max(0, desiredLeft));
+      } else {
+        targetScroll = (index / (categories.length - 1)) * maxScroll;
+      }
     }
+
+    el.scrollTo({
+      left: targetScroll,
+      behavior: 'smooth',
+    });
+    setActiveIndex(index);
   };
 
   return (
@@ -156,18 +189,26 @@ export default function CategoryCarousel({
           {categories.map((category, index) => {
             const isSelected =
               selectedCategory.trim().toLowerCase() === category.name.trim().toLowerCase();
+            const targetSlug =
+              category.slug ||
+              category.name
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_-]+/g, '-');
 
             return (
               <CategoryCard
                 key={category._id || category.name}
                 name={category.name}
-                slug={category.slug}
+                slug={targetSlug}
+                href={`/shop?category=${encodeURIComponent(targetSlug)}`}
                 image={category.image}
                 subcategories={category.subcategories}
                 isSelected={isSelected}
                 index={index}
                 isGrid={isSmallCatalog}
-                onClick={() => onSelectCategory && onSelectCategory(category.name)}
+                onClick={() => onSelectCategory && onSelectCategory(category.name, targetSlug)}
               />
             );
           })}
@@ -181,7 +222,7 @@ export default function CategoryCarousel({
       */}
       {categories.length > 1 && (
         <div
-          className={`items-center justify-center gap-3 mt-4 sm:mt-5 ${
+          className={`items-center justify-center gap-2.5 mt-4 sm:mt-5 ${
             isSmallCatalog ? 'flex md:hidden' : 'flex'
           }`}
           aria-hidden="true"
@@ -197,8 +238,8 @@ export default function CategoryCarousel({
                   aria-label={`Go to ${cat.name}`}
                   className={`transition-all duration-300 rounded-full cursor-pointer ${
                     isActive
-                      ? 'w-7 h-2 bg-[#0B3B24] shadow-xs'
-                      : 'w-2 h-2 bg-stone-300 hover:bg-stone-400'
+                      ? 'w-7 h-2.5 bg-[#0B3B24] shadow-xs'
+                      : 'w-2.5 h-2.5 bg-stone-300 hover:bg-stone-400'
                   }`}
                 />
               );
