@@ -168,8 +168,7 @@ const DEFAULT_HEADER_CATEGORIES: HeaderCategoryItem[] = [
       { name: 'Pooja Leaves', slug: 'pooja-leaves', image: '/images/products/prod-mango-leaves-mavilai.jpg', order: 2 },
       { name: 'Pooja Flowers', slug: 'pooja-flowers', image: '/images/products/prod-orange-marigold-loose.jpg', order: 3 },
       { name: 'Banana Leaves', slug: 'banana-leaves', image: '/images/products/prod-banana-leaves-cuts.jpg', order: 4 },
-      { name: 'Coconut', slug: 'coconut', image: '/images/products/prod-durva-bilva-combo.jpg', order: 5 },
-      { name: 'Decor Items', slug: 'decor-items', image: '/images/categories/cat-pooja-kits.jpg', order: 6 },
+      { name: 'Decor Items', slug: 'decor-items', image: '/images/categories/cat-pooja-kits.jpg', order: 5 },
     ],
   },
   {
@@ -186,6 +185,7 @@ const DEFAULT_HEADER_CATEGORIES: HeaderCategoryItem[] = [
       { name: 'Exchange Garlands', slug: 'exchange-garlands', image: '/images/banners/hero-wedding-tif-exch.jpg', order: 6 },
       { name: 'North Indian Garlands', slug: 'north-indian-garlands', image: '/images/banners/hero-wedding-tif-rose.jpg', order: 7 },
       { name: 'Veni, Jadai', slug: 'veni-jadai', image: '/images/products/prod-jasmine-rose-veni.jpg', order: 8 },
+      { name: 'Coconut', slug: 'coconut', image: '/wp-content/uploads/2024/11/Untitled-design-46.webp', order: 9 },
     ],
   },
   {

@@ -378,6 +378,22 @@ export default function AdminDashboard() {
   const [inlineSubcatName, setInlineSubcatName] = useState('');
   const [isSubmittingInlineSubcat, setIsSubmittingInlineSubcat] = useState(false);
 
+  // Edit & Move Subcategory modal state
+  const [isEditSubcatModalOpen, setIsEditSubcatModalOpen] = useState(false);
+  const [editingSubcat, setEditingSubcat] = useState<{
+    catId: string;
+    subId?: string;
+    name: string;
+    image?: string;
+    order?: number;
+  } | null>(null);
+  const [editSubcatName, setEditSubcatName] = useState('');
+  const [editSubcatTargetCatId, setEditSubcatTargetCatId] = useState('');
+  const [editSubcatImage, setEditSubcatImage] = useState('');
+  const [editSubcatImagePreview, setEditSubcatImagePreview] = useState('');
+  const [isSubmittingEditSubcat, setIsSubmittingEditSubcat] = useState(false);
+  const [isUploadingSubcatImage, setIsUploadingSubcatImage] = useState(false);
+
   // Bulk Import state (Solution 1: Excel + Multi-Image Dropzone + Separate Variants)
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -2166,6 +2182,76 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     }
   };
 
+  const handleOpenEditSubcatModal = (catId: string, sub: SubcategoryItem) => {
+    setEditingSubcat({
+      catId,
+      subId: sub._id,
+      name: sub.name,
+      image: sub.image,
+      order: sub.order,
+    });
+    setEditSubcatName(sub.name);
+    setEditSubcatTargetCatId(catId);
+    setEditSubcatImage(sub.image || '');
+    setEditSubcatImagePreview(sub.image || '');
+    setIsEditSubcatModalOpen(true);
+  };
+
+  const handleSubcatImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingSubcatImage(true);
+      const url = await uploadAdminImage(file, 'categories');
+      setEditSubcatImage(url);
+      setEditSubcatImagePreview(url);
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload subcategory image');
+    } finally {
+      setIsUploadingSubcatImage(false);
+    }
+  };
+
+  const handleSaveEditSubcat = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editingSubcat || !editSubcatName.trim()) {
+      alert('Subcategory name is required');
+      return;
+    }
+
+    try {
+      setIsSubmittingEditSubcat(true);
+      const res = await fetch(`/api/categories/${editingSubcat.catId}/subcategories`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subId: editingSubcat.subId,
+          oldName: editingSubcat.name,
+          name: editSubcatName.trim(),
+          image: editSubcatImage.trim(),
+          targetCategoryId: editSubcatTargetCatId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setIsEditSubcatModalOpen(false);
+        setEditingSubcat(null);
+        setEditSubcatName('');
+        setEditSubcatImage('');
+        setEditSubcatImagePreview('');
+        await fetchCategories();
+        await fetchProducts();
+      } else {
+        alert(data.message || 'Failed to update subcategory');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Error updating subcategory');
+    } finally {
+      setIsSubmittingEditSubcat(false);
+    }
+  };
+
   // Bulk Import Handlers (Solution 1: Excel + Multi-Image Dropzone + Separate Variants)
   const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -3947,13 +4033,54 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             cat.subcategories.map((sub) => (
                               <span
                                 key={sub._id || sub.name}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200 shadow-2xs"
+                                className="inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200 shadow-2xs hover:border-emerald-300 transition-all group"
                               >
-                                <span>{sub.name}</span>
+                                {/* Subcategory Thumbnail or Add Image Icon */}
+                                {sub.image ? (
+                                  <img
+                                    src={sub.image}
+                                    alt={sub.name}
+                                    className="w-4.5 h-4.5 rounded-full object-cover border border-emerald-300 shrink-0 cursor-pointer"
+                                    onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
+                                    title="Click to view/change image"
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
+                                    className="w-4.5 h-4.5 rounded-full bg-emerald-200/60 border border-emerald-300 flex items-center justify-center text-[9px] text-emerald-800 shrink-0 hover:bg-emerald-300 transition-colors"
+                                    title="Add subcategory image"
+                                  >
+                                    <ImageIcon className="w-2.5 h-2.5" />
+                                  </button>
+                                )}
+
+                                <span
+                                  className="cursor-pointer hover:underline"
+                                  onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
+                                  title="Click to edit or move"
+                                >
+                                  {sub.name}
+                                </span>
+
+                                {/* Edit & Move Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
+                                  className="w-3.5 h-3.5 rounded-full hover:bg-emerald-200 flex items-center justify-center text-emerald-700 hover:text-emerald-950 transition-colors ml-0.5"
+                                  title="Edit subcategory, add image, or move to another category"
+                                >
+                                  <Edit className="w-2.5 h-2.5" />
+                                </button>
+
+                                {/* Remove Button */}
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteSubcategory(cat._id, sub._id, sub.name)}
-                                  className="w-3.5 h-3.5 rounded-full hover:bg-emerald-200 flex items-center justify-center text-emerald-800 hover:text-rose-700 transition-colors"
+                                  className="w-3.5 h-3.5 rounded-full hover:bg-rose-100 flex items-center justify-center text-emerald-800 hover:text-rose-700 transition-colors"
                                   title="Remove subcategory"
                                 >
                                   <X className="w-2.5 h-2.5" />
@@ -6917,6 +7044,168 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit & Move Subcategory Modal */}
+      {isEditSubcatModalOpen && editingSubcat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-hidden">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto border border-[#E8EDF2] shadow-2xl p-6 sm:p-8 relative">
+            <button
+              onClick={() => {
+                setIsEditSubcatModalOpen(false);
+                setEditingSubcat(null);
+                setEditSubcatName('');
+                setEditSubcatImage('');
+                setEditSubcatImagePreview('');
+              }}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-200 shadow-2xs">
+                <Tag className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-lg">Edit Subcategory</h3>
+                <p className="text-xs text-gray-500">Update details, add image, or move to another category</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveEditSubcat} className="space-y-4">
+              {/* Subcategory Name */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Subcategory Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editSubcatName}
+                  onChange={(e) => setEditSubcatName(e.target.value)}
+                  placeholder="e.g. Coconut"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-[#0B3B24] focus:ring-1 focus:ring-[#0B3B24]"
+                />
+              </div>
+
+              {/* Move to Category Selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Parent Category (Move Option)
+                </label>
+                <select
+                  value={editSubcatTargetCatId}
+                  onChange={(e) => setEditSubcatTargetCatId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-[#0B3B24] focus:ring-1 focus:ring-[#0B3B24] bg-white cursor-pointer"
+                >
+                  {categories.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name} {c._id === editingSubcat.catId ? '(Current)' : ''}
+                    </option>
+                  ))}
+                </select>
+                {editSubcatTargetCatId !== editingSubcat.catId && (
+                  <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2.5 mt-2 leading-relaxed">
+                    ⚡ <strong>Moving Category:</strong> All products currently in &ldquo;{editingSubcat.name}&rdquo; will be automatically re-assigned to &ldquo;{categories.find((c) => c._id === editSubcatTargetCatId)?.name}&rdquo;.
+                  </p>
+                )}
+              </div>
+
+              {/* Subcategory Image */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Subcategory Image (Thumbnail)
+                </label>
+
+                {/* Image Preview */}
+                {editSubcatImagePreview && (
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-stone-200 mb-2.5 bg-stone-50 group shadow-xs">
+                    <img
+                      src={editSubcatImagePreview}
+                      alt={editSubcatName}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditSubcatImage('');
+                        setEditSubcatImagePreview('');
+                      }}
+                      className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-black text-white rounded-full transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 hover:bg-emerald-50 text-[#0B3B24] text-xs font-bold cursor-pointer transition-colors">
+                    {isUploadingSubcatImage ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#0B3B24]" />
+                        <span>Uploading Image...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 text-[#0B3B24]" />
+                        <span>{editSubcatImagePreview ? 'Change Image File' : 'Upload Image File'}</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploadingSubcatImage}
+                      onChange={handleSubcatImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="Or enter image URL (e.g. /images/...)"
+                    value={editSubcatImage}
+                    onChange={(e) => {
+                      setEditSubcatImage(e.target.value);
+                      setEditSubcatImagePreview(e.target.value);
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs text-stone-700 placeholder:text-stone-400 focus:outline-none focus:border-[#0B3B24]"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditSubcatModalOpen(false);
+                    setEditingSubcat(null);
+                    setEditSubcatName('');
+                    setEditSubcatImage('');
+                    setEditSubcatImagePreview('');
+                  }}
+                  className="flex-1 py-2.5 rounded-xl border border-[#E8EDF2] text-xs font-bold text-[#64748B] hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingEditSubcat || !editSubcatName.trim() || isUploadingSubcatImage}
+                  className="flex-1 py-2.5 rounded-xl bg-[#0B3B24] hover:bg-[#1C563F] text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-[#0B3B24]/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {isSubmittingEditSubcat ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
