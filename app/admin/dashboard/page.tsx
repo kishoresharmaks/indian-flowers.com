@@ -431,7 +431,7 @@ export default function AdminDashboard() {
   const [importEnrichedRows, setImportEnrichedRows] = useState<ParsedImportRow[]>([]);
   const [importImageFiles, setImportImageFiles] = useState<File[]>([]);
   const [importProgressStatus, setImportProgressStatus] = useState<string>('');
-  const [importFilterTab, setImportFilterTab] = useState<'all' | 'new' | 'update' | 'matched' | 'unmatched'>('all');
+  const [importFilterTab, setImportFilterTab] = useState<'all' | 'new' | 'update' | 'unchanged' | 'matched' | 'unmatched' | 'invalid'>('all');
   const [isUploadingImport, setIsUploadingImport] = useState(false);
   const [importResult, setImportResult] = useState<{
     success: boolean;
@@ -2347,7 +2347,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       if (sheetName && wb.Sheets[sheetName]) {
         const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName], { defval: '' });
         setImportRawRows(rows);
-        const parsed = parseExcelRowsToImportItems(rows, products, importImageFiles);
+        const parsed = parseExcelRowsToImportItems(rows, products, importImageFiles, categories);
         setImportEnrichedRows(parsed);
       }
     } catch (err) {
@@ -2370,7 +2370,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
     setImportImageFiles(newFiles);
     if (importRawRows.length > 0) {
-      const parsed = parseExcelRowsToImportItems(importRawRows, products, newFiles);
+      const parsed = parseExcelRowsToImportItems(importRawRows, products, newFiles, categories);
       setImportEnrichedRows(parsed);
     }
   };
@@ -2378,7 +2378,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   const handleClearImportImages = () => {
     setImportImageFiles([]);
     if (importRawRows.length > 0) {
-      const parsed = parseExcelRowsToImportItems(importRawRows, products, []);
+      const parsed = parseExcelRowsToImportItems(importRawRows, products, [], categories);
       setImportEnrichedRows(parsed);
     }
   };
@@ -2390,7 +2390,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       setImportResult(null);
       setImportProgressStatus('Preparing product data...');
 
-      const rowsToProcess = importEnrichedRows;
+      const rowsToProcess = importEnrichedRows.filter((row) => row.isValid && !row.isUnchanged);
+      if (rowsToProcess.length === 0) {
+        setImportResult({ success: false, message: 'No valid rows to import. Open “Fix required” and correct the highlighted rows.' });
+        return;
+      }
       const imagesToCompress = rowsToProcess.filter((r) => r.matchedImageFile);
       let compressedCount = 0;
 
@@ -8854,16 +8858,20 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         };
 
         const totalCount = importEnrichedRows.length;
-        const newCount = importEnrichedRows.filter((r) => !r.isUpdate).length;
+        const newCount = importEnrichedRows.filter((r) => !r.isUpdate && !r.isUnchanged).length;
         const updateCount = importEnrichedRows.filter((r) => r.isUpdate).length;
+        const unchangedCount = importEnrichedRows.filter((r) => r.isUnchanged).length;
+        const invalidCount = importEnrichedRows.filter((r) => !r.isValid).length;
         const matchedCount = importEnrichedRows.filter((r) => Boolean(r.matchedImageFile)).length;
         const unmatchedCount = totalCount - matchedCount;
 
         const filteredImportRows = importEnrichedRows.filter((r) => {
-          if (importFilterTab === 'new') return !r.isUpdate;
+          if (importFilterTab === 'new') return !r.isUpdate && !r.isUnchanged;
           if (importFilterTab === 'update') return r.isUpdate;
+          if (importFilterTab === 'unchanged') return r.isUnchanged;
           if (importFilterTab === 'matched') return Boolean(r.matchedImageFile);
           if (importFilterTab === 'unmatched') return !r.matchedImageFile;
+          if (importFilterTab === 'invalid') return !r.isValid;
           return true;
         });
 
@@ -9054,6 +9062,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         </span>
                         <span className="text-lg font-black text-blue-800">{updateCount}</span>
                       </div>
+                      {unchangedCount > 0 && <div className="bg-stone-50 border border-stone-200 rounded-xl p-2.5 text-center"><span className="text-[10px] text-stone-600 font-bold uppercase tracking-wider block">No changes</span><span className="text-lg font-black text-stone-700">{unchangedCount}</span></div>}
                       <div className="bg-teal-50 border border-teal-200 rounded-xl p-2.5 text-center">
                         <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider block">
                           📷 Photos Matched
@@ -9062,6 +9071,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           {matchedCount} / {totalCount}
                         </span>
                       </div>
+                      {invalidCount > 0 && <div className="bg-rose-50 border border-rose-200 rounded-xl p-2.5 text-center"><span className="text-[10px] text-rose-700 font-bold uppercase tracking-wider block">Skipped</span><span className="text-lg font-black text-rose-800">{invalidCount}</span></div>}
                     </div>
 
                     {/* Filter Tabs */}
@@ -9077,6 +9087,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       >
                         All ({totalCount})
                       </button>
+                      {unchangedCount > 0 && <button type="button" onClick={() => setImportFilterTab('unchanged')} className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${importFilterTab === 'unchanged' ? 'bg-stone-700 text-white' : 'text-stone-700 hover:bg-stone-100'}`}>✓ No changes ({unchangedCount})</button>}
                       <button
                         type="button"
                         onClick={() => setImportFilterTab('new')}
@@ -9123,6 +9134,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           ⚠ Missing Photos ({unmatchedCount})
                         </button>
                       )}
+                      {invalidCount > 0 && <button type="button" onClick={() => setImportFilterTab('invalid')} className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${importFilterTab === 'invalid' ? 'bg-rose-700 text-white' : 'text-rose-800 hover:bg-rose-50'}`}>⚠ Fix required ({invalidCount})</button>}
                     </div>
 
                     {/* Verification Table */}
@@ -9142,7 +9154,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             <tr key={i} className="hover:bg-slate-50/80 transition-colors">
                               {/* Status Badge */}
                               <td className="py-2 px-3 align-top">
-                                {r.isUpdate ? (
+                                {!r.isValid ? (
+                                  <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200">SKIP</span>
+                                ) : r.isUnchanged ? (
+                                  <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-stone-100 text-stone-700 border border-stone-200">NO CHANGES</span>
+                                ) : r.isUpdate ? (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
                                     ↻ UPDATE
                                   </span>
@@ -9165,6 +9181,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                                   {r.category}
                                   {r.subcategory ? ` • ${r.subcategory}` : ''}
                                 </div>
+                                {!r.isValid && <div className="text-[9px] text-rose-700 font-semibold mt-1">{r.issues.join(' · ')}</div>}
+                                {r.isUpdate && <div className="text-[9px] text-blue-700 font-semibold mt-1">Changes: {r.changedFields.join(', ')}</div>}
                               </td>
 
                               {/* Pricing & MRP */}
@@ -9296,7 +9314,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   {!importResult?.success && (
                     <button
                       type="button"
-                      disabled={isUploadingImport || totalCount === 0}
+                      disabled={isUploadingImport || totalCount === 0 || totalCount === invalidCount + unchangedCount}
                       onClick={handleExecuteBulkImport}
                       className="px-6 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 flex items-center gap-2 disabled:opacity-50 transition-all active:scale-95"
                     >
@@ -9308,7 +9326,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       ) : (
                         <>
                           <Upload className="w-4 h-4" />
-                          <span>Import {totalCount > 0 ? `${totalCount} Products` : 'Now'}</span>
+                          <span>Import {totalCount - invalidCount - unchangedCount} Changes</span>
                         </>
                       )}
                     </button>

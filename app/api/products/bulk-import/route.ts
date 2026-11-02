@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
     const categoryMap = new Map<string, any>();
     allCategories.forEach((cat) => {
       categoryMap.set(cat.name.toLowerCase().trim(), cat);
+      if (cat.slug) categoryMap.set(cat.slug.toLowerCase().trim(), cat);
     });
 
     const DEFAULT_PLACEHOLDER = '/images/products/prod-rose-petal-varmala.jpg';
@@ -468,48 +469,18 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 7. Sync Category and Subcategory in Category Model
-      let matchedCategory = categoryMap.get(categoryName.toLowerCase());
-      if (!matchedCategory) {
-        try {
-          matchedCategory = await Category.create({
-            name: categoryName,
-            slug: slugify(categoryName),
-            order: categoryMap.size,
-            subcategories: subcategoryName
-              ? [{ name: subcategoryName, slug: slugify(subcategoryName), order: 0 }]
-              : [],
-          });
-          categoryMap.set(categoryName.toLowerCase(), matchedCategory);
-        } catch (catErr: any) {
-          matchedCategory = await Category.findOne({
-            name: { $regex: new RegExp(`^${categoryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
-          });
-          if (matchedCategory) {
-            categoryMap.set(categoryName.toLowerCase(), matchedCategory);
-          }
-        }
-      }
-
-      if (matchedCategory && subcategoryName) {
-        if (!Array.isArray(matchedCategory.subcategories)) {
-          matchedCategory.subcategories = [];
-        }
-        const hasSub = matchedCategory.subcategories.some(
-          (s: any) => s.name.toLowerCase() === subcategoryName.toLowerCase()
-        );
-        if (!hasSub) {
-          matchedCategory.subcategories.push({
-            name: subcategoryName,
-            slug: slugify(subcategoryName),
-            order: matchedCategory.subcategories.length,
-          });
-          try {
-            await matchedCategory.save();
-          } catch (saveErr) {
-            console.error('Failed to save category subcategory during import', saveErr);
-          }
-        }
+      // 7. Categories are catalog-controlled: never create or move them from an Excel upload.
+      const matchedCategory = categoryMap.get(categoryName.toLowerCase()) || categoryMap.get(slugify(categoryName));
+      const validSubcategory = !subcategoryName || matchedCategory?.subcategories?.some(
+        (sub: any) => sub.name.toLowerCase() === subcategoryName.toLowerCase()
+      );
+      if (!matchedCategory || !validSubcategory) {
+        const reason = !matchedCategory
+          ? `Row ${rowNum} ("${name}"): category "${categoryName}" does not exist; skipped.`
+          : `Row ${rowNum} ("${name}"): subcategory "${subcategoryName}" does not belong to "${matchedCategory.name}"; skipped.`;
+        errors.push(reason);
+        itemSummaries.push({ name, action: 'skipped', category: categoryName, price: 0, variantsCount: 0, hasImage: false, reason });
+        continue;
       }
 
       // 8. Find existing product by exact/trimmed case-insensitive name
@@ -642,12 +613,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const appliedCount = createdCount + updatedCount;
     return NextResponse.json({
-      success: true,
-      message: `Bulk import completed! ${createdCount} created, ${updatedCount} updated.`,
-      count: createdCount + updatedCount,
+      success: appliedCount > 0,
+      message: appliedCount > 0
+        ? `Bulk import applied: ${createdCount} created, ${updatedCount} updated, ${errors.length} skipped.`
+        : `No products were changed. ${errors.length} row(s) were skipped; fix the listed errors and retry.`,
+      count: appliedCount,
       created: createdCount,
       updated: updatedCount,
+      skipped: errors.length,
       errors: errors.length > 0 ? errors : undefined,
       items: itemSummaries,
     });

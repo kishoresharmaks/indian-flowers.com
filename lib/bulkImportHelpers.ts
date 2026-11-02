@@ -38,6 +38,8 @@ export interface ParsedImportRow {
   imageFilename: string;
   variants: ParsedVariant[];
   isUpdate: boolean;
+  isUnchanged: boolean;
+  changedFields: string[];
   existingProduct?: {
     _id: string;
     name: string;
@@ -45,10 +47,19 @@ export interface ParsedImportRow {
     mrp: number;
     image: string;
     category?: string;
+    subcategory?: string;
+    quantity?: number;
+    gst?: number;
+    isActive?: boolean;
+    isTaxable?: boolean;
+    description?: string;
+    variants?: ParsedVariant[];
   };
   matchedImageFile?: File | null;
   matchedPreviewUrl?: string | null;
   matchReason?: string;
+  issues: string[];
+  isValid: boolean;
 }
 
 export function cleanStringForMatch(str: string): string {
@@ -106,11 +117,13 @@ function safeCreateObjectURL(file: any): string | null {
 export function parseExcelRowsToImportItems(
   rawRows: any[],
   existingProducts: any[] = [],
-  imageFiles: File[] = []
+  imageFiles: File[] = [],
+  categories: Array<{ name: string; slug?: string; subcategories?: Array<{ name: string; slug?: string }> }> = []
 ): ParsedImportRow[] {
   if (!Array.isArray(rawRows)) return [];
 
   const results: ParsedImportRow[] = [];
+  const names = new Set<string>();
 
   // Helper to safely parse numeric currencies / quantities
   const parseNum = (val: any, fallback = 0): number => {
@@ -456,6 +469,37 @@ export function parseExcelRowsToImportItems(
       imageFiles
     );
 
+    const issues: string[] = [];
+    const normalizedName = name.toLowerCase();
+    if (names.has(normalizedName)) issues.push('Duplicate product name in this Excel file');
+    names.add(normalizedName);
+    if (!description) issues.push('Product description is required');
+    if (price <= 0) issues.push('Selling price must be greater than $0');
+    const matchedCategory = categories.find(
+      (item) => item.name.trim().toLowerCase() === category.toLowerCase() || item.slug?.toLowerCase() === slugify(category)
+    );
+    if (!matchedCategory) issues.push(`Category "${category}" does not exist in the catalog`);
+    else if (subcategory && !matchedCategory.subcategories?.some(
+      (item) => item.name.trim().toLowerCase() === subcategory.toLowerCase() || item.slug?.toLowerCase() === slugify(subcategory)
+    )) issues.push(`Subcategory "${subcategory}" does not belong to "${matchedCategory.name}"`);
+
+    const changedFields = existing ? [
+      ['Description', existing.description, description],
+      ['Category', existing.category, category],
+      ['Subcategory', existing.subcategory || '', subcategory],
+      ['Price', existing.price, price],
+      ['MRP', existing.mrp, mrp],
+      ['Stock', existing.quantity, quantity],
+      ['Tax', existing.gst || 0, gst],
+      ['Storefront status', existing.isActive !== false, isActive],
+      ['Taxable', existing.isTaxable !== false, isTaxable],
+      ['Variants', JSON.stringify(existing.variants || []), JSON.stringify(variants)],
+    ].filter(([, current, incoming]) =>
+      typeof current === 'string' || typeof incoming === 'string'
+        ? String(current || '').trim() !== String(incoming || '').trim()
+        : current !== incoming
+    ).map(([label]) => label as string) : [];
+
     results.push({
       index: idx,
       raw: rawRow,
@@ -472,7 +516,9 @@ export function parseExcelRowsToImportItems(
       isActive,
       imageFilename,
       variants,
-      isUpdate: Boolean(existing),
+      isUpdate: Boolean(existing && changedFields.length > 0),
+      isUnchanged: Boolean(existing && changedFields.length === 0),
+      changedFields,
       existingProduct: existing
         ? {
             _id: existing._id,
@@ -481,11 +527,20 @@ export function parseExcelRowsToImportItems(
             mrp: existing.mrp,
             image: existing.image,
             category: existing.category,
+            subcategory: existing.subcategory,
+            quantity: existing.quantity,
+            gst: existing.gst,
+            isActive: existing.isActive,
+            isTaxable: existing.isTaxable,
+            description: existing.description,
+            variants: existing.variants,
           }
         : undefined,
       matchedImageFile: matchedFile,
       matchedPreviewUrl: safeCreateObjectURL(matchedFile),
       matchReason,
+      issues,
+      isValid: issues.length === 0,
     });
   }
 
