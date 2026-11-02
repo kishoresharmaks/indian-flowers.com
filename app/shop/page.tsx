@@ -5,7 +5,7 @@ import Product from '@/models/Product';
 import Category from '@/models/Category';
 import ShopClientPage from './ShopClientPage';
 import { getSiteUrl } from '@/lib/siteUrl';
-import { fetchCursorPaginatedProducts } from '@/lib/cursorPagination';
+import { buildProductFilter, fetchCursorPaginatedProducts } from '@/lib/cursorPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,6 +60,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   let initialNextCursor: string | null = null;
   let initialHasMore = false;
   let totalCount = 0;
+  let initialAllCount = 0;
   let mainCategories: any[] = [];
 
   const rawCat =
@@ -93,7 +94,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   try {
     await connectToDatabase();
 
-    const [paginated, rawCategories, productsCol] = await Promise.all([
+    const [paginated, rawCategories, catalogCount] = await Promise.all([
       fetchCursorPaginatedProducts({
         categorySlug: rawCat,
         subcategory: rawSub,
@@ -103,13 +104,14 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         excludeSeo: true,
       }),
       Category.find({}).sort({ order: 1, name: 1 }).lean(),
-      Product.collection,
+      Product.countDocuments(buildProductFilter({ excludeSeo: true })),
     ]);
 
     initialProducts = paginated.data;
     initialNextCursor = paginated.nextCursor;
     initialHasMore = paginated.hasMore;
     totalCount = paginated.totalCount;
+    initialAllCount = catalogCount;
 
     // Fetch counts for each main category and each subcategory (excluding SEO landing pages)
     mainCategories = await Promise.all(
@@ -117,17 +119,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         const catSlug = cat.slug || cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         
         // Count products for this main category (including all child subcategory terms)
-        const mainCatCount = await productsCol.countDocuments({
-          isActive: { $ne: false },
-          isSeoLanding: { $ne: true },
-          hideFromHome: { $ne: true },
-          $or: [
-            { categorySlug: catSlug },
-            { parentCategorySlug: catSlug },
-            { 'categories.slug': catSlug },
-            { category: new RegExp(`^${cat.name}$`, 'i') },
-          ],
-        });
+        const mainCatCount = await Product.countDocuments(
+          buildProductFilter({ categorySlug: catSlug, excludeSeo: true })
+        );
 
         // Count products for each subcategory — strictly match the `subcategory`
         // field only. Using categorySlug or categories.slug here would inflate
@@ -135,12 +129,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         const subcategoriesWithCounts = await Promise.all(
           (cat.subcategories || []).map(async (sub: any) => {
             const subSlug = sub.slug || sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            const subCount = await productsCol.countDocuments({
-              isActive: { $ne: false },
-              isSeoLanding: { $ne: true },
-              hideFromHome: { $ne: true },
-              subcategory: new RegExp(`^${sub.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
-            });
+            const subCount = await Product.countDocuments(
+              buildProductFilter({ categorySlug: catSlug, subcategory: sub.name, excludeSeo: true })
+            );
             return {
               _id: sub._id ? sub._id.toString() : subSlug,
               name: sub.name,
@@ -255,6 +246,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           initialNextCursor={initialNextCursor}
           initialHasMore={initialHasMore}
           initialTotalCount={totalCount}
+          initialAllCount={initialAllCount}
           mainCategories={mainCategories}
           initialCategory={initialCategory}
           initialSubcategory={initialSubcategory}

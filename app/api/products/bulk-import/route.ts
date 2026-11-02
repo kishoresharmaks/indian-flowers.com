@@ -531,8 +531,11 @@ export async function POST(request: NextRequest) {
           if (!existingProduct.slug) {
             existingProduct.slug = finalSlug;
           }
+          const catSlug = matchedCategory?.slug || slugify(categoryName);
           existingProduct.description = description;
           existingProduct.category = categoryName;
+          existingProduct.categorySlug = catSlug;
+          existingProduct.parentCategorySlug = catSlug;
           existingProduct.subcategory = subcategoryName;
           existingProduct.price = price;
           existingProduct.mrp = mrp;

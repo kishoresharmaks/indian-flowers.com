@@ -208,9 +208,24 @@ export async function POST(request: NextRequest) {
       discount: Number(v.mrp) > Number(v.price) ? Math.round(((Number(v.mrp) - Number(v.price)) / Number(v.mrp)) * 100) : 0,
     })) : [];
 
-    const generatedSlug = slug
-      ? slug.toLowerCase().trim()
-      : name.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+    const generatedSlug = (slug || name)
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    const slugConflict = await Product.findOne({ slug: generatedSlug });
+    if (slugConflict) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Product slug "${generatedSlug}" is already in use by "${slugConflict.name}"`,
+        },
+        { status: 400 }
+      );
+    }
 
     const generatedCatSlug = categorySlug
       ? categorySlug.toLowerCase().trim()

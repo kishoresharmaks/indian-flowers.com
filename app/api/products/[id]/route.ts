@@ -90,11 +90,58 @@ export async function PUT(
       body.discount = Math.round(((body.mrp - body.price) / body.mrp) * 100);
     }
 
+    if (body.slug !== undefined) {
+      const sanitizedSlug = body.slug
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      if (!sanitizedSlug) {
+        return NextResponse.json(
+          { success: false, message: 'Product slug cannot be empty' },
+          { status: 400 }
+        );
+      }
+
+      const conflict = await Product.findOne({
+        slug: sanitizedSlug,
+        _id: { $ne: id },
+      });
+      if (conflict) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Product slug "${sanitizedSlug}" is already in use by "${conflict.name}"`,
+          },
+          { status: 400 }
+        );
+      }
+      body.slug = sanitizedSlug;
+    }
+
     if (body.image) {
       if (!Array.isArray(body.images) || body.images.length === 0) {
         body.images = [body.image];
       } else if (body.images[0] !== body.image) {
         body.images = [body.image, ...body.images.filter((img: string) => img !== body.image)];
+      }
+    }
+
+    if (body.category && typeof body.category === 'string') {
+      const generatedSlug = body.category
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      if (!body.categorySlug) {
+        body.categorySlug = generatedSlug;
+      }
+      if (!body.parentCategorySlug) {
+        body.parentCategorySlug = body.categorySlug;
       }
     }
 

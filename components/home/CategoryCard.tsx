@@ -176,7 +176,7 @@ export default function CategoryCard({
       .replace(/[^\w\s-]/g, '')
       .replace(/[\s_-]+/g, '-');
 
-  const categoryHref = href || `/shop?category=${encodeURIComponent(targetSlug)}`;
+  const categoryHref = href || `/product-category/${encodeURIComponent(targetSlug)}`;
 
   useEffect(() => {
     if (image) {

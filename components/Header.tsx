@@ -476,12 +476,13 @@ export default function Header({
     }
   };
 
-  // Universal selection handler — always navigates to /shop with category & subcategory
+  // Universal selection handler — navigates to dedicated /product-category/[slug]
   const handleCategorySelect = (categoryInput: string, subcategoryInput?: string) => {
     setOpenDropdownKey(null);
     toggleMobileMenu(false);
 
     if (!categoryInput || categoryInput.toLowerCase() === 'all') {
+      if (onSelectCategory) onSelectCategory('all');
       router.push('/shop');
       return;
     }
@@ -495,11 +496,7 @@ export default function Header({
         c.slug?.toLowerCase() === cleanCat.replace(/[^a-z0-9]+/g, '-')
     );
 
-    const targetCatSlug = matchedCat?.slug || categoryInput.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    const params = new URLSearchParams();
-    params.set('category', targetCatSlug);
-
+    // If subcategory is requested, route directly to /product-category/[subSlug]
     if (subcategoryInput && subcategoryInput.toLowerCase() !== 'all') {
       const cleanSub = subcategoryInput.trim().toLowerCase();
       const matchedSub = matchedCat?.subcategories?.find(
@@ -508,12 +505,23 @@ export default function Header({
           s.slug?.toLowerCase() === cleanSub ||
           s.slug?.toLowerCase() === cleanSub.replace(/[^a-z0-9]+/g, '-')
       );
-      // Pass the canonical subcategory name so the /shop sidebar highlights accurately
-      const targetSubName = matchedSub?.name || subcategoryInput.trim();
-      params.set('subcategory', targetSubName);
+
+      const targetSubSlug =
+        matchedSub?.slug ||
+        cleanSub.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+      if (onSelectCategory) onSelectCategory(categoryInput, subcategoryInput);
+      router.push(`/product-category/${encodeURIComponent(targetSubSlug)}`);
+      return;
     }
 
-    router.push(`/shop?${params.toString()}`);
+    // Otherwise, route to parent category page /product-category/[catSlug]
+    const targetCatSlug =
+      matchedCat?.slug ||
+      cleanCat.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+    if (onSelectCategory) onSelectCategory(categoryInput);
+    router.push(`/product-category/${encodeURIComponent(targetCatSlug)}`);
   };
 
   // Debounced mouse enter/leave for navigation dropdowns

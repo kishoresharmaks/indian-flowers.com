@@ -43,6 +43,7 @@ interface Props {
   initialNextCursor?: string | null;
   initialHasMore?: boolean;
   initialTotalCount?: number;
+  initialAllCount?: number;
   mainCategories: MainCategoryItem[];
   initialCategory?: string;
   initialSubcategory?: string;
@@ -55,6 +56,7 @@ export default function ShopClientPage({
   initialNextCursor = null,
   initialHasMore = false,
   initialTotalCount = 0,
+  initialAllCount = 0,
   mainCategories = [],
   initialCategory = 'all',
   initialSubcategory = 'all',
@@ -481,6 +483,18 @@ export default function ShopClientPage({
     });
   };
 
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    const params = new URLSearchParams();
+    if (selectedCategory !== 'all') params.set('category', selectedCategory);
+    if (selectedSubcategory !== 'all') params.set('subcategory', selectedSubcategory);
+    if (sortBy !== 'featured') params.set('sortBy', sortBy);
+    const queryStr = params.toString();
+    lastLoadedParamsRef.current = queryStr;
+    window.history.replaceState(null, '', queryStr ? `/shop?${queryStr}` : '/shop');
+    fetchFilteredProducts({ search: '', cursor: null, append: false });
+  };
+
   const handleResetFilters = () => {
     setSelectedCategory('all');
     setSelectedSubcategory('all');
@@ -615,10 +629,7 @@ export default function ShopClientPage({
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  fetchFilteredProducts({ search: '', cursor: null, append: false });
-                }}
+                onClick={handleClearSearch}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
               >
                 <X className="w-4 h-4" />
@@ -668,7 +679,7 @@ export default function ShopClientPage({
                   selectedCategory === 'all' ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-500'
                 }`}
               >
-                {initialTotalCount}
+                {initialAllCount}
               </span>
             </button>
 
@@ -905,10 +916,7 @@ export default function ShopClientPage({
                     <span>&quot;{searchQuery}&quot;</span>
                     <button
                       type="button"
-                      onClick={() => {
-                        setSearchQuery('');
-                        fetchFilteredProducts({ search: '', cursor: null, append: false });
-                      }}
+                      onClick={handleClearSearch}
                       className="hover:text-rose-700 ml-0.5"
                     >
                       <X className="w-3 h-3" />

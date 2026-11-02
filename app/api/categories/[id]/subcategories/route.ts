@@ -11,9 +11,9 @@ function slugify(text: string): string {
     .toString()
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-');
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export async function POST(
@@ -26,7 +26,7 @@ export async function POST(
     const { id } = params;
 
     const body = await request.json();
-    const { name, image, order } = body;
+    const { name, slug, image, order } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -48,21 +48,37 @@ export async function POST(
     }
 
     const trimmedName = name.trim();
+    const targetSlug = slugify(slug || trimmedName);
+
     const existingIndex = category.subcategories.findIndex(
       (sub: any) => sub.name.toLowerCase() === trimmedName.toLowerCase()
     );
 
+    // Validate that no other subcategory has this slug
+    const slugConflictIndex = category.subcategories.findIndex(
+      (sub: any, idx: number) => idx !== existingIndex && sub.slug?.toLowerCase() === targetSlug.toLowerCase()
+    );
+    if (slugConflictIndex >= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Subcategory slug "${targetSlug}" is already in use by "${category.subcategories[slugConflictIndex].name}"`,
+        },
+        { status: 400 }
+      );
+    }
+
     if (existingIndex >= 0) {
       // Update existing subcategory
       category.subcategories[existingIndex].name = trimmedName;
+      category.subcategories[existingIndex].slug = targetSlug;
       if (image !== undefined) category.subcategories[existingIndex].image = image;
       if (order !== undefined) category.subcategories[existingIndex].order = order;
-      category.subcategories[existingIndex].slug = slugify(trimmedName);
     } else {
       // Add new subcategory
       category.subcategories.push({
         name: trimmedName,
-        slug: slugify(trimmedName),
+        slug: targetSlug,
         image: image || '',
         order: order !== undefined ? Number(order) : category.subcategories.length,
       });
@@ -93,7 +109,7 @@ export async function PUT(
     const { id } = params;
 
     const body = await request.json();
-    const { subId, oldName, name, image, order, targetCategoryId } = body;
+    const { subId, oldName, name, slug, image, order, targetCategoryId } = body;
 
     const sourceCategory = await Category.findById(id);
     if (!sourceCategory) {
@@ -124,10 +140,11 @@ export async function PUT(
 
     const currentSub = sourceCategory.subcategories[subIndex];
     const previousName = currentSub.name;
+    const previousSlug = currentSub.slug;
     const newName = (name && name.trim()) || previousName;
     const newImage = image !== undefined ? image : currentSub.image || '';
     const newOrder = order !== undefined ? Number(order) : currentSub.order;
-    const newSlug = slugify(newName);
+    const newSlug = slugify(slug || newName);
 
     // Case 1: Moving to another category
     if (targetCategoryId && String(targetCategoryId) !== String(id)) {
@@ -141,6 +158,22 @@ export async function PUT(
 
       if (!Array.isArray(targetCategory.subcategories)) {
         targetCategory.subcategories = [];
+      }
+
+      // Check conflict in target category
+      const targetConflict = targetCategory.subcategories.find(
+        (sub: any) =>
+          sub.name.toLowerCase() !== newName.toLowerCase() &&
+          sub.slug?.toLowerCase() === newSlug.toLowerCase()
+      );
+      if (targetConflict) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Subcategory slug "${newSlug}" is already in use by "${targetConflict.name}" in ${targetCategory.name}`,
+          },
+          { status: 400 }
+        );
       }
 
       // Remove from sourceCategory
@@ -205,6 +238,21 @@ export async function PUT(
     }
 
     // Case 2: Update in-place in current category
+    // Check if newSlug conflicts with any OTHER subcategory in current category
+    const localConflict = sourceCategory.subcategories.find(
+      (sub: any, idx: number) =>
+        idx !== subIndex && sub.slug?.toLowerCase() === newSlug.toLowerCase()
+    );
+    if (localConflict) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Subcategory slug "${newSlug}" is already in use by "${localConflict.name}"`,
+        },
+        { status: 400 }
+      );
+    }
+
     currentSub.name = newName;
     currentSub.slug = newSlug;
     currentSub.image = newImage;
@@ -213,15 +261,20 @@ export async function PUT(
     sourceCategory.markModified('subcategories');
     await sourceCategory.save();
 
-    // If name changed, update product subcategories
-    if (previousName.toLowerCase() !== newName.toLowerCase()) {
+    // If name or slug changed, update products referencing this subcategory
+    const isNameChanged = previousName.toLowerCase() !== newName.toLowerCase();
+    const isSlugChanged = previousSlug && previousSlug.toLowerCase() !== newSlug.toLowerCase();
+
+    if (isNameChanged || isSlugChanged) {
       await Product.updateMany(
         {
           category: sourceCategory.name,
           subcategory: new RegExp(`^${previousName}$`, 'i'),
         },
         {
-          $set: { subcategory: newName },
+          $set: {
+            subcategory: newName,
+          },
         }
       );
     }

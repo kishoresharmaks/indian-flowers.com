@@ -1375,7 +1375,7 @@ export default function CustomerStore() {
                   .trim()
                   .replace(/[^\w\s-]/g, '')
                   .replace(/[\s_-]+/g, '-');
-              router.push(`/shop?category=${encodeURIComponent(targetSlug)}`);
+              router.push(`/product-category/${encodeURIComponent(targetSlug)}`);
             }}
           />
 

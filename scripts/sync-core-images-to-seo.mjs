@@ -192,17 +192,63 @@ async function run() {
       if (matchedCore) strategy = 'General Catalog Fallback';
     }
 
-    if (matchedCore && matchedCore.image) {
+    if (matchedCore) {
       const targetImage = matchedCore.image;
       const targetImages =
         Array.isArray(matchedCore.images) && matchedCore.images.length > 0
           ? matchedCore.images
-          : [matchedCore.image];
+          : matchedCore.image ? [matchedCore.image] : [];
 
-      if (sp.image === targetImage) {
-        alreadyUpToDateCount++;
-      } else {
+      const updateFields = {};
+
+      // 1. Image cascade
+      if (targetImage && sp.image !== targetImage) {
+        updateFields.image = targetImage;
+        updateFields.images = targetImages;
+      }
+
+      // 2. Pricing cascade (Selling Price $)
+      if (typeof matchedCore.price === 'number' && sp.price !== matchedCore.price) {
+        updateFields.price = matchedCore.price;
+      }
+
+      // 3. MRP cascade (Original Price $)
+      if (typeof matchedCore.mrp === 'number' && sp.mrp !== matchedCore.mrp) {
+        updateFields.mrp = matchedCore.mrp;
+      }
+
+      // 4. Discount calculation
+      if (typeof matchedCore.discount === 'number' && sp.discount !== matchedCore.discount) {
+        updateFields.discount = matchedCore.discount;
+      }
+
+      // 5. Stock Quantity cascade
+      if (typeof matchedCore.quantity === 'number' && sp.quantity !== matchedCore.quantity) {
+        updateFields.quantity = matchedCore.quantity;
+      }
+
+      // 6. Sales Tax Status cascade
+      if (typeof matchedCore.isTaxable === 'boolean' && sp.isTaxable !== matchedCore.isTaxable) {
+        updateFields.isTaxable = matchedCore.isTaxable;
+      }
+      if (typeof matchedCore.gst === 'number' && sp.gst !== matchedCore.gst) {
+        updateFields.gst = matchedCore.gst;
+      }
+
+      // 7. Product Variants & Pricing cascade
+      if (Array.isArray(matchedCore.variants) && matchedCore.variants.length > 0) {
+        updateFields.variants = matchedCore.variants;
+      }
+
+      // 8. Subcategory cascade
+      if (matchedCore.subcategory && sp.subcategory !== matchedCore.subcategory) {
+        updateFields.subcategory = matchedCore.subcategory;
+      }
+
+      if (Object.keys(updateFields).length > 0) {
         updatedCount++;
+        updateFields.updatedAt = new Date();
+
         if (samples.length < 8) {
           samples.push({
             seoName: sp.name,
@@ -211,21 +257,20 @@ async function run() {
             strategy,
             oldImage: sp.image,
             newImage: targetImage,
+            oldPrice: sp.price,
+            newPrice: matchedCore.price,
+            variantsCount: Array.isArray(matchedCore.variants) ? matchedCore.variants.length : 0,
           });
         }
 
         bulkOps.push({
           updateOne: {
             filter: { _id: sp._id },
-            update: {
-              $set: {
-                image: targetImage,
-                images: targetImages,
-                updatedAt: new Date(),
-              },
-            },
+            update: { $set: updateFields },
           },
         });
+      } else {
+        alreadyUpToDateCount++;
       }
     } else {
       unmatchedCount++;
@@ -236,13 +281,13 @@ async function run() {
   }
 
   console.log('--- CASCADE MATCHING SUMMARY ---');
-  console.log(`• Ready to Update with New Core Photos : ${updatedCount} products`);
-  console.log(`• Already in Sync with Core Photos    : ${alreadyUpToDateCount} products`);
-  console.log(`• Unmatched Pages                      : ${unmatchedCount} products`);
+  console.log(`• Ready to Update with Core Data (Photos, Prices, Variants) : ${updatedCount} products`);
+  console.log(`• Already 100% in Sync with Core Data                      : ${alreadyUpToDateCount} products`);
+  console.log(`• Unmatched Pages                                          : ${unmatchedCount} products`);
   if (unmatchedSamples.length > 0) {
     console.log('  Unmatched items:', JSON.stringify(unmatchedSamples, null, 2));
   }
-  console.log(`• Total SEO Pages Covered              : ${updatedCount + alreadyUpToDateCount} / ${seoProducts.length} (${(((updatedCount + alreadyUpToDateCount) / seoProducts.length) * 100).toFixed(1)}%)\n`);
+  console.log(`• Total SEO Pages Covered                                  : ${updatedCount + alreadyUpToDateCount} / ${seoProducts.length} (${(((updatedCount + alreadyUpToDateCount) / seoProducts.length) * 100).toFixed(1)}%)\n`);
 
   if (samples.length > 0) {
     console.log('--- SAMPLE CASCADE UPDATES ---');
@@ -250,8 +295,8 @@ async function run() {
       console.log(`[${idx + 1}] Strategy: ${s.strategy}`);
       console.log(`    State Page : ${s.seoName} (${s.seoSlug})`);
       console.log(`    Core Match : ${s.matchedCoreName}`);
-      console.log(`    Old Image  : ${s.oldImage}`);
-      console.log(`    New Image  : ${s.newImage}\n`);
+      console.log(`    Image      : ${s.oldImage} -> ${s.newImage}`);
+      console.log(`    Price      : $${s.oldPrice} -> $${s.newPrice} (${s.variantsCount} variants synced)\n`);
     });
   }
 

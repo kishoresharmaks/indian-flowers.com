@@ -26,6 +26,75 @@ export interface PaginatedResult<T = any> {
   totalCount: number;
 }
 
+type ProductFilterOptions = Pick<
+  PaginateOptions,
+  'categorySlug' | 'subcategory' | 'search' | 'excludeSeo' | 'includeInactive'
+>;
+
+export function buildProductBaseConditions({
+  categorySlug,
+  subcategory,
+  search,
+  excludeSeo = true,
+  includeInactive = false,
+}: ProductFilterOptions): any[] {
+  const baseConditions: any[] = [];
+
+  if (!includeInactive) baseConditions.push({ isActive: { $ne: false } });
+  if (excludeSeo) baseConditions.push({ isSeoLanding: { $ne: true }, hideFromHome: { $ne: true } });
+
+  if (categorySlug && categorySlug.toLowerCase() !== 'all') {
+    const cleanCat = categorySlug.toLowerCase().trim();
+    const slugVariants = new Set<string>([cleanCat]);
+    if (cleanCat === 'strings-and-leaves' || cleanCat === 'strings-leaves') {
+      slugVariants.add('strings-and-leaves');
+      slugVariants.add('strings-leaves');
+    } else if (cleanCat.includes('-and-')) {
+      slugVariants.add(cleanCat.replace(/-and-/g, '-'));
+    }
+
+    const escapedCat = cleanCat.replace(/-/g, ' ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const catConditions: any[] = [
+      { categorySlug: { $in: Array.from(slugVariants) } },
+      { parentCategorySlug: { $in: Array.from(slugVariants) } },
+      { category: new RegExp(`^${escapedCat}$`, 'i') },
+    ];
+    if (escapedCat.includes(' and ')) {
+      catConditions.push({ category: new RegExp(`^${escapedCat.replace(/ and /gi, ' & ')}$`, 'i') });
+      catConditions.push({ category: new RegExp(`^${escapedCat.replace(/ and /gi, '\\s*(&|and)\\s*')}$`, 'i') });
+    }
+    if (cleanCat === 'strings-and-leaves' || cleanCat === 'strings-leaves') {
+      catConditions.push({ category: /^STRINGS\s*(&|and|-)\s*LEAVES$/i });
+    }
+    baseConditions.push({ $or: catConditions });
+  }
+
+  if (subcategory && subcategory.toLowerCase() !== 'all') {
+    const escapedSub = subcategory.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    baseConditions.push({ subcategory: new RegExp(`^${escapedSub}$`, 'i') });
+  }
+
+  if (search && search.trim()) {
+    const sanitizedQuery = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    baseConditions.push({
+      $or: [
+        { name: { $regex: sanitizedQuery, $options: 'i' } },
+        { description: { $regex: sanitizedQuery, $options: 'i' } },
+        { category: { $regex: sanitizedQuery, $options: 'i' } },
+        { subcategory: { $regex: sanitizedQuery, $options: 'i' } },
+        { tags: { $regex: sanitizedQuery, $options: 'i' } },
+      ],
+    });
+  }
+
+  return baseConditions;
+}
+
+export function buildProductFilter(options: ProductFilterOptions): any {
+  const conditions = buildProductBaseConditions(options);
+  return conditions.length > 0 ? { $and: conditions } : {};
+}
+
 /**
  * Encode an item's cursor token into a URL-safe Base64 string
  */
@@ -196,7 +265,13 @@ export async function fetchCursorPaginatedProducts({
   }
 
   // Base filter for counting and query
-  const countFilter = baseConditions.length > 0 ? { $and: baseConditions } : {};
+  const countFilter = buildProductFilter({
+    categorySlug,
+    subcategory,
+    search,
+    excludeSeo,
+    includeInactive,
+  });
 
   // 2. Decode and Apply Cursor Condition
   const decodedCursor = decodeCursor(cursor);

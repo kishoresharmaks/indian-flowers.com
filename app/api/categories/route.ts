@@ -5,6 +5,16 @@ import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
 export const dynamic = 'force-dynamic';
 
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
@@ -32,11 +42,25 @@ export async function POST(request: NextRequest) {
   try {
     if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
-    const { name, image, order, showOnHome, subcategories } = await request.json();
+    const { name, slug, image, order, showOnHome, subcategories } = await request.json();
 
     if (!name || !name.trim()) {
       return NextResponse.json(
         { success: false, message: 'Category name is required' },
+        { status: 400 }
+      );
+    }
+
+    const targetSlug = slugify(slug || name);
+
+    // Validate slug uniqueness
+    const conflict = await Category.findOne({ slug: targetSlug });
+    if (conflict) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Category slug "${targetSlug}" is already in use by "${conflict.name}"`,
+        },
         { status: 400 }
       );
     }
@@ -47,6 +71,7 @@ export async function POST(request: NextRequest) {
       if (order !== undefined) existing.order = order;
       if (showOnHome !== undefined) existing.showOnHome = Boolean(showOnHome);
       if (subcategories !== undefined) existing.subcategories = subcategories;
+      if (slug) existing.slug = targetSlug;
       await existing.save();
       return NextResponse.json(
         { success: true, message: 'Category updated', data: existing },
@@ -56,6 +81,7 @@ export async function POST(request: NextRequest) {
 
     const category = await Category.create({
       name: name.trim(),
+      slug: targetSlug,
       image: image || '',
       order: order || 0,
       showOnHome: showOnHome !== undefined ? Boolean(showOnHome) : false,

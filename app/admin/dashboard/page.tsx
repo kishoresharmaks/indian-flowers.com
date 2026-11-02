@@ -35,6 +35,7 @@ import {
   Menu,
   FileText,
   Lock,
+  Unlock,
   ShieldCheck,
   Flower2,
   Calendar,
@@ -62,6 +63,7 @@ import {
   MessageSquareQuote,
   BookOpen,
   Share2,
+  Globe,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { parseExcelRowsToImportItems, ParsedImportRow } from '@/lib/bulkImportHelpers';
@@ -79,6 +81,7 @@ import CMSManagerTab from '@/components/admin/CMSManagerTab';
 import BlogManagerTab from '@/components/admin/BlogManagerTab';
 import WordPressImportModal from '@/components/admin/WordPressImportModal';
 import ConsolidatedPackingModal from '@/components/admin/ConsolidatedPackingModal';
+import ProductSeoPagesModal from '@/components/admin/ProductSeoPagesModal';
 import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
 
 interface BannerItem {
@@ -105,9 +108,21 @@ interface ProductVariant {
   discount?: number;
 }
 
+function slugify(text: string): string {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 interface Product {
   _id: string;
   name: string;
+  slug?: string;
   description: string;
   image: string;
   mrp: number;
@@ -116,6 +131,8 @@ interface Product {
   quantity: number;
   gst: number;
   category: string;
+  categorySlug?: string;
+  parentCategorySlug?: string;
   subcategory?: string;
   variants?: ProductVariant[];
   isActive?: boolean;
@@ -331,9 +348,15 @@ export default function AdminDashboard() {
   const [togglingProductId, setTogglingProductId] = useState<string | null>(null);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
 
+  // Product SEO State & City Pages Modal State
+  const [seoCountsMap, setSeoCountsMap] = useState<Record<string, number>>({});
+  const [selectedProductForSeo, setSelectedProductForSeo] = useState<Product | null>(null);
+  const [isSeoModalOpen, setIsSeoModalOpen] = useState(false);
+
   // Add/Edit Product Form State
   const [productForm, setProductForm] = useState({
     name: '',
+    slug: '',
     description: '',
     image: '',
     mrp: '',
@@ -345,6 +368,8 @@ export default function AdminDashboard() {
     variants: [] as ProductVariant[],
     isActive: true,
   });
+  const [isProductSlugLocked, setIsProductSlugLocked] = useState(true);
+  const [isProductSlugManuallyEdited, setIsProductSlugManuallyEdited] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
 
   // Categories State
@@ -361,6 +386,8 @@ export default function AdminDashboard() {
   const [editSubcatInput, setEditSubcatInput] = useState('');
   const [editingCategory, setEditingCategory] = useState<CategoryItem | null>(null);
   const [editCatName, setEditCatName] = useState('');
+  const [editCatSlug, setEditCatSlug] = useState('');
+  const [isCatSlugLocked, setIsCatSlugLocked] = useState(true);
   const [editCatImage, setEditCatImage] = useState('');
   const [editCatImagePreview, setEditCatImagePreview] = useState('');
   const [newCatShowOnHome, setNewCatShowOnHome] = useState(true);
@@ -384,10 +411,13 @@ export default function AdminDashboard() {
     catId: string;
     subId?: string;
     name: string;
+    slug?: string;
     image?: string;
     order?: number;
   } | null>(null);
   const [editSubcatName, setEditSubcatName] = useState('');
+  const [editSubcatSlug, setEditSubcatSlug] = useState('');
+  const [isSubcatSlugLocked, setIsSubcatSlugLocked] = useState(true);
   const [editSubcatTargetCatId, setEditSubcatTargetCatId] = useState('');
   const [editSubcatImage, setEditSubcatImage] = useState('');
   const [editSubcatImagePreview, setEditSubcatImagePreview] = useState('');
@@ -897,11 +927,25 @@ export default function AdminDashboard() {
         fetchSubscribers(),
         fetchInboxStats(),
         fetchLicenseStatus(),
+        fetchSeoCounts(),
       ]);
     } catch (e) {
       console.error(e);
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  // Fetch SEO Page Counts
+  const fetchSeoCounts = async () => {
+    try {
+      const res = await fetch('/api/admin/products/seo-counts');
+      const data = await res.json();
+      if (data.success && data.counts) {
+        setSeoCountsMap(data.counts);
+      }
+    } catch (err) {
+      console.error('Failed to fetch SEO page counts', err);
     }
   };
 
@@ -914,6 +958,7 @@ export default function AdminDashboard() {
       if (data.success) {
         setProducts(data.data);
       }
+      fetchSeoCounts();
     } catch (err) {
       console.error(err);
     } finally {
@@ -1754,6 +1799,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     setEditingProduct(product);
     setProductForm({
       name: product.name,
+      slug: product.slug || slugify(product.name),
       description: product.description,
       image: product.image,
       mrp: String(product.mrp),
@@ -1765,6 +1811,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       variants: product.variants ? product.variants.map((v) => ({ ...v })) : [],
       isActive: product.isActive !== false,
     });
+    setIsProductSlugLocked(true);
+    setIsProductSlugManuallyEdited(false);
     setImagePreview(product.image);
     setProductFormError('');
     setIsAddModalOpen(true);
@@ -1829,6 +1877,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     setEditingProduct(null);
     setProductForm({
       name: '',
+      slug: '',
       description: '',
       image: '',
       mrp: '',
@@ -1840,6 +1889,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       variants: [],
       isActive: true,
     });
+    setIsProductSlugLocked(false);
+    setIsProductSlugManuallyEdited(false);
     setImagePreview('');
     setProductFormError('');
     setIsAddModalOpen(true);
@@ -1868,11 +1919,24 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       const url = isEdit ? `/api/products/${editingProduct._id}` : '/api/products';
       const method = isEdit ? 'PUT' : 'POST';
 
+      const matchedCatObj = categories.find(
+        (c) => c.name.toLowerCase() === productForm.category.toLowerCase()
+      );
+      const computedCatSlug =
+        matchedCatObj?.slug ||
+        productForm.category
+          .toLowerCase()
+          .trim()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/[\s_-]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: productForm.name,
+          slug: productForm.slug.trim() ? slugify(productForm.slug) : undefined,
           description: productForm.description,
           image: productForm.image,
           images: [productForm.image],
@@ -1881,6 +1945,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           quantity: Number(productForm.quantity),
           gst: Number(productForm.gst),
           category: productForm.category,
+          categorySlug: computedCatSlug,
+          parentCategorySlug: computedCatSlug,
           subcategory: productForm.subcategory || '',
           isActive: productForm.isActive,
           variants: productForm.variants.map((v) => ({
@@ -1999,6 +2065,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   const handleOpenEditCategory = (cat: CategoryItem) => {
     setEditingCategory(cat);
     setEditCatName(cat.name);
+    setEditCatSlug(cat.slug || slugify(cat.name));
+    setIsCatSlugLocked(true);
     setEditCatImage(cat.image || '');
     setEditCatImagePreview(cat.image || '');
     setEditCatShowOnHome(cat.showOnHome !== false);
@@ -2082,6 +2150,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: editCatName.trim(),
+          slug: editCatSlug.trim() ? slugify(editCatSlug) : undefined,
           image: editCatImage,
           showOnHome: editCatShowOnHome,
         }),
@@ -2091,6 +2160,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         setIsEditCatModalOpen(false);
         setEditingCategory(null);
         setEditCatName('');
+        setEditCatSlug('');
+        setIsCatSlugLocked(true);
         setEditCatImage('');
         setEditCatImagePreview('');
         fetchCategories();
@@ -2187,10 +2258,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       catId,
       subId: sub._id,
       name: sub.name,
+      slug: sub.slug,
       image: sub.image,
       order: sub.order,
     });
     setEditSubcatName(sub.name);
+    setEditSubcatSlug(sub.slug || slugify(sub.name));
+    setIsSubcatSlugLocked(true);
     setEditSubcatTargetCatId(catId);
     setEditSubcatImage(sub.image || '');
     setEditSubcatImagePreview(sub.image || '');
@@ -2228,6 +2302,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           subId: editingSubcat.subId,
           oldName: editingSubcat.name,
           name: editSubcatName.trim(),
+          slug: editSubcatSlug.trim() ? slugify(editSubcatSlug) : undefined,
           image: editSubcatImage.trim(),
           targetCategoryId: editSubcatTargetCatId,
         }),
@@ -2238,6 +2313,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         setIsEditSubcatModalOpen(false);
         setEditingSubcat(null);
         setEditSubcatName('');
+        setEditSubcatSlug('');
+        setIsSubcatSlugLocked(true);
         setEditSubcatImage('');
         setEditSubcatImagePreview('');
         await fetchCategories();
@@ -2467,8 +2544,33 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
   // Filter & Pagination for Products
   const filteredProducts = products.filter((p) => {
-    if (productCategoryFilter !== 'All' && p.category?.toLowerCase() !== productCategoryFilter.toLowerCase()) {
-      return false;
+    if (productCategoryFilter !== 'All') {
+      if (productCategoryFilter === '__legacy_brass__') {
+        const isFloral = categories.some((c) => {
+          const cSlug = c.slug?.toLowerCase().trim();
+          const cName = c.name?.toLowerCase().trim();
+          return (
+            (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug)) ||
+            (cName && p.category?.toLowerCase() === cName)
+          );
+        });
+        if (isFloral) return false;
+      } else {
+        const target = productCategoryFilter.toLowerCase().trim();
+        const matchedCat = categories.find(
+          (c) => c.slug?.toLowerCase() === target || c.name?.toLowerCase() === target
+        );
+        if (matchedCat) {
+          const cSlug = matchedCat.slug?.toLowerCase().trim();
+          const cName = matchedCat.name?.toLowerCase().trim();
+          const matches =
+            (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug)) ||
+            (cName && p.category?.toLowerCase() === cName);
+          if (!matches) return false;
+        } else {
+          if (p.category?.toLowerCase() !== target) return false;
+        }
+      }
     }
     if (productStatusFilter === 'active' && p.isActive === false) return false;
     if (productStatusFilter === 'disabled' && p.isActive !== false) return false;
@@ -3536,11 +3638,46 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     className="px-3 py-2 rounded-xl border border-[#E8EDF2] bg-white text-xs font-bold text-[#163B5C] focus:outline-none focus:border-[#ED3500]"
                   >
                     <option value="All">All Categories ({products.length})</option>
-                    {Array.from(new Set(products.map((p) => p.category).filter(Boolean))).map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat} ({products.filter((p) => p.category === cat).length})
-                      </option>
-                    ))}
+                    {categories.map((cat) => {
+                      const cSlug = cat.slug?.toLowerCase().trim();
+                      const cName = cat.name.toLowerCase().trim();
+                      const matched = products.filter((p) => {
+                        return (
+                          (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug)) ||
+                          (cName && p.category?.toLowerCase() === cName)
+                        );
+                      });
+                      const totalCount = matched.length;
+                      const activeCount = matched.filter((p) => p.isActive !== false).length;
+                      const label = activeCount === totalCount
+                        ? `${cat.name} (${totalCount})`
+                        : `${cat.name} (${activeCount} live / ${totalCount} total)`;
+                      return (
+                        <option key={cat._id || cat.slug || cat.name} value={cat.slug || cat.name}>
+                          {label}
+                        </option>
+                      );
+                    })}
+                    {(() => {
+                      const legacyCount = products.filter((p) => {
+                        return !categories.some((c) => {
+                          const cSlug = c.slug?.toLowerCase().trim();
+                          const cName = c.name?.toLowerCase().trim();
+                          return (
+                            (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug)) ||
+                            (cName && p.category?.toLowerCase() === cName)
+                          );
+                        });
+                      }).length;
+                      if (legacyCount > 0) {
+                        return (
+                          <option value="__legacy_brass__">
+                            Other / Legacy Brass Collections ({legacyCount})
+                          </option>
+                        );
+                      }
+                      return null;
+                    })()}
                   </select>
                 </div>
 
@@ -3665,11 +3802,34 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                               <div>
                                 <h4 className="font-bold text-[#163B5C] line-clamp-1">{p.name}</h4>
                                 <p className="text-xs text-[#64748B] line-clamp-1">{p.description}</p>
-                                {p.variants && p.variants.length > 0 && (
-                                  <span className="inline-block mt-1 px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px] border border-purple-200">
-                                    {p.variants.length} Variants ({p.variants.map((v) => v.name).join(', ')})
-                                  </span>
-                                )}
+                                <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                  {p.variants && p.variants.length > 0 && (
+                                    <span className="inline-block px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px] border border-purple-200">
+                                      {p.variants.length} Variants ({p.variants.map((v) => v.name).join(', ')})
+                                    </span>
+                                  )}
+                                  {(() => {
+                                    const cleanImg = (p.image || '').toLowerCase().trim();
+                                    const count = seoCountsMap[cleanImg] || 0;
+                                    if (count > 0) {
+                                      return (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedProductForSeo(p);
+                                            setIsSeoModalOpen(true);
+                                          }}
+                                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-[10px] border border-indigo-200 transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                                          title={`View all ${count} localized US city and state landing pages for this product`}
+                                        >
+                                          <Globe className="w-3 h-3 text-indigo-600" />
+                                          <span>{count} State Pages</span>
+                                        </button>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -3736,6 +3896,27 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           </td>
                           <td className="py-4 px-6 text-right">
                             <div className="flex items-center justify-end gap-1">
+                              {/* SEO State Pages Button */}
+                              {(() => {
+                                const cleanImg = (p.image || '').toLowerCase().trim();
+                                const count = seoCountsMap[cleanImg] || 0;
+                                if (count > 0) {
+                                  return (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedProductForSeo(p);
+                                        setIsSeoModalOpen(true);
+                                      }}
+                                      className="p-2 rounded-lg text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 border border-transparent hover:border-indigo-200 transition-colors cursor-pointer"
+                                      title={`View all ${count} SEO state and city pages for this design`}
+                                    >
+                                      <Globe className="w-4 h-4 text-indigo-600" />
+                                    </button>
+                                  );
+                                }
+                                return null;
+                              })()}
                               {/* Edit Product Button */}
                               <button
                                 onClick={() => openEditProductModal(p)}
@@ -3991,201 +4172,216 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-[#E8EDF2] overflow-hidden shadow-sm">
-                <div className="p-4 bg-[#FFFCFB] border-b border-[#E8EDF2] font-bold text-xs text-[#64748B] uppercase tracking-wider grid grid-cols-12 gap-3 items-center">
-                  <span className="col-span-2 sm:col-span-1">Icon</span>
-                  <span className="col-span-4 sm:col-span-3">Category Name</span>
-                  <span className="col-span-3 sm:col-span-4">Subcategories</span>
-                  <span className="col-span-2 sm:col-span-2 text-center">Home Showcase</span>
-                  <span className="col-span-1 sm:col-span-2 text-right">Actions</span>
-                </div>
-                <div className="divide-y divide-[#E8EDF2]">
-                  {categories.map((cat) => (
-                    <div key={cat._id} className="p-4 grid grid-cols-12 gap-3 items-center text-sm font-semibold text-[#163B5C] hover:bg-slate-50/50 transition-colors">
-                      {/* Image Thumbnail */}
-                      <div className="col-span-2 sm:col-span-1">
-                        <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden bg-emerald-50 flex items-center justify-center shrink-0 shadow-2xs">
-                          {cat.image ? (
-                            <img
-                              src={cat.image}
-                              alt={cat.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <Flower2 className="w-5 h-5 text-emerald-600" />
-                          )}
-                        </div>
-                      </div>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[760px]">
+                    <div className="p-4 bg-[#FFFCFB] border-b border-[#E8EDF2] font-bold text-xs text-[#64748B] uppercase tracking-wider grid grid-cols-12 gap-3 items-center">
+                      <span className="col-span-2 sm:col-span-1">Icon</span>
+                      <span className="col-span-3 sm:col-span-3">Category Name</span>
+                      <span className="col-span-4 sm:col-span-5">Subcategories</span>
+                      <span className="col-span-2 sm:col-span-2 text-center">Home Showcase</span>
+                      <span className="col-span-1 sm:col-span-1 text-right">Actions</span>
+                    </div>
+                    <div className="divide-y divide-[#E8EDF2]">
+                      {categories.map((cat) => (
+                        <div key={cat._id} className="p-4 grid grid-cols-12 gap-3 items-center text-sm font-semibold text-[#163B5C] hover:bg-slate-50/50 transition-colors">
+                          {/* Image Thumbnail */}
+                          <div className="col-span-2 sm:col-span-1">
+                            <div
+                              className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden bg-emerald-50 flex items-center justify-center shrink-0 shadow-2xs"
+                              style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px' }}
+                            >
+                              {cat.image ? (
+                                <img
+                                  src={cat.image}
+                                  alt={cat.name}
+                                  className="w-full h-full object-cover"
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <Flower2 className="w-5 h-5 text-emerald-600" />
+                              )}
+                            </div>
+                          </div>
 
-                      {/* Category Name */}
-                      <div className="col-span-4 sm:col-span-3 flex flex-col justify-center">
-                        <span className="font-bold text-gray-900 text-xs sm:text-sm">{cat.name}</span>
-                        <span className="text-[10px] text-gray-400 font-normal">
-                          Added {new Date(cat.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                          {/* Category Name */}
+                          <div className="col-span-3 sm:col-span-3 flex flex-col justify-center min-w-0 pr-2">
+                            <span className="font-bold text-gray-900 text-xs sm:text-sm truncate block">{cat.name}</span>
+                            <span className="text-[10px] text-gray-400 font-normal">
+                              Added {new Date(cat.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
 
-                      {/* Subcategories Badges */}
-                      <div className="col-span-3 sm:col-span-4">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {cat.subcategories && cat.subcategories.length > 0 ? (
-                            cat.subcategories.map((sub) => (
-                              <span
-                                key={sub._id || sub.name}
-                                className="inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200 shadow-2xs hover:border-emerald-300 transition-all group"
-                              >
-                                {/* Subcategory Thumbnail or Add Image Icon */}
-                                {sub.image ? (
-                                  <img
-                                    src={sub.image}
-                                    alt={sub.name}
-                                    className="w-4.5 h-4.5 rounded-full object-cover border border-emerald-300 shrink-0 cursor-pointer"
-                                    onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
-                                    title="Click to view/change image"
-                                    onError={(e) => {
-                                      (e.target as HTMLElement).style.display = 'none';
+                          {/* Subcategories Badges */}
+                          <div className="col-span-4 sm:col-span-5">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {cat.subcategories && cat.subcategories.length > 0 ? (
+                                cat.subcategories.map((sub) => (
+                                  <span
+                                    key={sub._id || sub.name}
+                                    className="inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200 shadow-2xs hover:border-emerald-300 transition-all group shrink-0"
+                                  >
+                                    {/* Subcategory Thumbnail or Add Image Icon */}
+                                    {sub.image ? (
+                                      <span
+                                        className="w-5 h-5 rounded-full overflow-hidden border border-emerald-300/80 shrink-0 cursor-pointer shadow-2xs inline-flex items-center justify-center bg-white"
+                                        style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px', maxWidth: '20px', maxHeight: '20px' }}
+                                        onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
+                                        title="Click to view/change image"
+                                      >
+                                        <img
+                                          src={sub.image}
+                                          alt={sub.name}
+                                          className="w-full h-full object-cover block"
+                                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                          onError={(e) => {
+                                            (e.target as HTMLElement).style.display = 'none';
+                                          }}
+                                        />
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
+                                        className="w-5 h-5 rounded-full bg-emerald-200/60 border border-emerald-300 flex items-center justify-center text-[9px] text-emerald-800 shrink-0 hover:bg-emerald-300 transition-colors cursor-pointer"
+                                        style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                        title="Add subcategory image"
+                                      >
+                                        <ImageIcon className="w-2.5 h-2.5" />
+                                      </button>
+                                    )}
+
+                                    <span
+                                      className="cursor-pointer hover:underline"
+                                      onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
+                                      title="Click to edit or move"
+                                    >
+                                      {sub.name}
+                                    </span>
+
+                                    {/* Edit & Move Button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
+                                      className="w-3.5 h-3.5 rounded-full hover:bg-emerald-200 flex items-center justify-center text-emerald-700 hover:text-emerald-950 transition-colors ml-0.5 cursor-pointer"
+                                      title="Edit subcategory, add image, or move to another category"
+                                    >
+                                      <Edit className="w-2.5 h-2.5" />
+                                    </button>
+
+                                    {/* Remove Button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteSubcategory(cat._id, sub._id, sub.name)}
+                                      className="w-3.5 h-3.5 rounded-full hover:bg-rose-100 flex items-center justify-center text-emerald-800 hover:text-rose-700 transition-colors cursor-pointer"
+                                      title="Remove subcategory"
+                                    >
+                                      <X className="w-2.5 h-2.5" />
+                                    </button>
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-xs text-[#94A3B8] italic">No subcategories</span>
+                              )}
+
+                              {/* Inline Subcategory Quick Add */}
+                              {inlineSubcatCatId === cat._id ? (
+                                <div className="inline-flex items-center gap-1 bg-white border border-emerald-400 rounded-full pl-2 pr-1 py-0.5 shadow-xs">
+                                  <input
+                                    type="text"
+                                    autoFocus
+                                    placeholder="Subcategory..."
+                                    value={inlineSubcatName}
+                                    onChange={(e) => setInlineSubcatName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleAddInlineSubcategory(cat._id);
+                                      } else if (e.key === 'Escape') {
+                                        setInlineSubcatCatId(null);
+                                        setInlineSubcatName('');
+                                      }
                                     }}
+                                    className="w-28 text-xs font-medium text-emerald-950 focus:outline-none"
                                   />
-                                ) : (
                                   <button
                                     type="button"
-                                    onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
-                                    className="w-4.5 h-4.5 rounded-full bg-emerald-200/60 border border-emerald-300 flex items-center justify-center text-[9px] text-emerald-800 shrink-0 hover:bg-emerald-300 transition-colors"
-                                    title="Add subcategory image"
+                                    disabled={isSubmittingInlineSubcat || !inlineSubcatName.trim()}
+                                    onClick={() => handleAddInlineSubcategory(cat._id)}
+                                    className="p-1 rounded-full bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-40"
                                   >
-                                    <ImageIcon className="w-2.5 h-2.5" />
+                                    <Check className="w-3 h-3" />
                                   </button>
-                                )}
-
-                                <span
-                                  className="cursor-pointer hover:underline"
-                                  onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
-                                  title="Click to edit or move"
-                                >
-                                  {sub.name}
-                                </span>
-
-                                {/* Edit & Move Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setInlineSubcatCatId(null);
+                                      setInlineSubcatName('');
+                                    }}
+                                    className="p-1 rounded-full text-slate-400 hover:text-slate-600"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenEditSubcatModal(cat._id, sub)}
-                                  className="w-3.5 h-3.5 rounded-full hover:bg-emerald-200 flex items-center justify-center text-emerald-700 hover:text-emerald-950 transition-colors ml-0.5"
-                                  title="Edit subcategory, add image, or move to another category"
-                                >
-                                  <Edit className="w-2.5 h-2.5" />
-                                </button>
-
-                                {/* Remove Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteSubcategory(cat._id, sub._id, sub.name)}
-                                  className="w-3.5 h-3.5 rounded-full hover:bg-rose-100 flex items-center justify-center text-emerald-800 hover:text-rose-700 transition-colors"
-                                  title="Remove subcategory"
-                                >
-                                  <X className="w-2.5 h-2.5" />
-                                </button>
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-[#94A3B8] italic">No subcategories</span>
-                          )}
-
-                          {/* Inline Subcategory Quick Add */}
-                          {inlineSubcatCatId === cat._id ? (
-                            <div className="inline-flex items-center gap-1 bg-white border border-emerald-400 rounded-full pl-2 pr-1 py-0.5 shadow-xs">
-                              <input
-                                type="text"
-                                autoFocus
-                                placeholder="Subcategory..."
-                                value={inlineSubcatName}
-                                onChange={(e) => setInlineSubcatName(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleAddInlineSubcategory(cat._id);
-                                  } else if (e.key === 'Escape') {
-                                    setInlineSubcatCatId(null);
+                                  onClick={() => {
+                                    setInlineSubcatCatId(cat._id);
                                     setInlineSubcatName('');
-                                  }
-                                }}
-                                className="w-28 text-xs font-medium text-emerald-950 focus:outline-none"
-                              />
-                              <button
-                                type="button"
-                                disabled={isSubmittingInlineSubcat || !inlineSubcatName.trim()}
-                                onClick={() => handleAddInlineSubcategory(cat._id)}
-                                className="p-1 rounded-full bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-40"
-                              >
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setInlineSubcatCatId(null);
-                                  setInlineSubcatName('');
-                                }}
-                                className="p-1 rounded-full text-slate-400 hover:text-slate-600"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50/60 hover:bg-emerald-100 border border-dashed border-emerald-300 px-2.5 py-0.5 rounded-full transition-colors"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  <span>Subcategory</span>
+                                </button>
+                              )}
                             </div>
-                          ) : (
+                          </div>
+
+                          {/* Home Showcase Toggle */}
+                          <div className="col-span-2 sm:col-span-2 flex items-center justify-center">
                             <button
                               type="button"
-                              onClick={() => {
-                                setInlineSubcatCatId(cat._id);
-                                setInlineSubcatName('');
-                              }}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50/60 hover:bg-emerald-100 border border-dashed border-emerald-300 px-2.5 py-0.5 rounded-full transition-colors"
+                              onClick={() => handleToggleCategoryHome(cat)}
+                              disabled={togglingHomeCatId === cat._id}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                cat.showOnHome !== false
+                                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs'
+                                  : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                              }`}
+                              title={cat.showOnHome !== false ? 'Featured on Homepage (Click to Hide)' : 'Hidden from Homepage (Click to Show)'}
                             >
-                              <Plus className="w-3 h-3" />
-                              <span>Subcategory</span>
+                              <span className={`w-2 h-2 rounded-full ${cat.showOnHome !== false ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                              <span className="hidden sm:inline">
+                                {cat.showOnHome !== false ? 'On Home' : 'Hidden'}
+                              </span>
                             </button>
-                          )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="col-span-1 sm:col-span-1 flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleOpenEditCategory(cat)}
+                              className="p-2 rounded-xl text-purple-600 hover:bg-purple-50 transition-colors"
+                              title="Edit Category Name & Image"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory(cat._id)}
+                              className="p-2 rounded-xl text-[#64748B] hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                              title="Delete Category"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Home Showcase Toggle */}
-                      <div className="col-span-2 sm:col-span-2 flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleCategoryHome(cat)}
-                          disabled={togglingHomeCatId === cat._id}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                            cat.showOnHome !== false
-                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs'
-                              : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
-                          }`}
-                          title={cat.showOnHome !== false ? 'Featured on Homepage (Click to Hide)' : 'Hidden from Homepage (Click to Show)'}
-                        >
-                          <span className={`w-2 h-2 rounded-full ${cat.showOnHome !== false ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                          <span className="hidden sm:inline">
-                            {cat.showOnHome !== false ? 'On Home' : 'Hidden'}
-                          </span>
-                        </button>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="col-span-1 sm:col-span-2 flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleOpenEditCategory(cat)}
-                          className="p-2 rounded-xl text-purple-600 hover:bg-purple-50 transition-colors"
-                          title="Edit Category Name & Image"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCategory(cat._id)}
-                          className="p-2 rounded-xl text-[#64748B] hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                          title="Delete Category"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -6527,6 +6723,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
               onClick={() => {
                 setIsAddModalOpen(false);
                 setEditingProduct(null);
+                setIsProductSlugLocked(true);
+                setIsProductSlugManuallyEdited(false);
               }}
               className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E8EDF2] text-[#64748B]"
             >
@@ -6559,9 +6757,71 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     required
                     placeholder="e.g. Fresh Jasmine Strings (Mallipoo) 5ft"
                     value={productForm.name}
-                    onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      setProductForm((prev) => ({
+                        ...prev,
+                        name: newName,
+                        slug: !editingProduct && !isProductSlugManuallyEdited ? slugify(newName) : prev.slug,
+                      }));
+                    }}
                     className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#2F6B4F]"
                   />
+                </div>
+
+                {/* Product Slug Field */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Product Slug (URL) *
+                    </label>
+                    {editingProduct && (
+                      <button
+                        type="button"
+                        onClick={() => setIsProductSlugLocked(!isProductSlugLocked)}
+                        className="text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200 transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        {isProductSlugLocked ? (
+                          <>
+                            <Lock className="w-3 h-3 text-amber-700" />
+                            <span>Edit Slug</span>
+                          </>
+                        ) : (
+                          <>
+                            <Unlock className="w-3 h-3 text-emerald-700" />
+                            <span className="text-emerald-700">Lock Slug</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    disabled={editingProduct ? isProductSlugLocked : false}
+                    placeholder="e.g. fresh-jasmine-strings-mallipoo-5ft"
+                    value={productForm.slug}
+                    onChange={(e) => {
+                      setIsProductSlugManuallyEdited(true);
+                      setProductForm({ ...productForm, slug: slugify(e.target.value) });
+                    }}
+                    className={`w-full px-4 py-2 rounded-xl border text-xs font-mono transition-all ${
+                      editingProduct && isProductSlugLocked
+                        ? 'bg-stone-100 text-stone-500 border-stone-200 cursor-not-allowed select-none'
+                        : 'bg-white text-stone-800 border-amber-300 ring-2 ring-amber-100 focus:outline-none focus:border-[#2F6B4F]'
+                    }`}
+                  />
+                  <p className="text-[10.5px] text-stone-500 flex items-center gap-1">
+                    <span>Storefront URL:</span>
+                    <span className="font-mono text-emerald-700 font-semibold">
+                      /product/{productForm.slug || 'slug'}
+                    </span>
+                  </p>
+                  {editingProduct && !isProductSlugLocked && (
+                    <p className="text-[10px] text-amber-700 bg-amber-50/80 p-1.5 rounded-lg border border-amber-200/60 leading-tight">
+                      ⚠️ Changing this slug will alter the live storefront URL for this product.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -6920,6 +7180,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 setIsEditCatModalOpen(false);
                 setEditingCategory(null);
                 setEditCatName('');
+                setEditCatSlug('');
+                setIsCatSlugLocked(true);
                 setEditCatImage('');
                 setEditCatImagePreview('');
               }}
@@ -6952,6 +7214,56 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     placeholder="Category Name"
                     className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
                   />
+                </div>
+
+                {/* Category Slug Field (Locked by Default) */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider block">
+                      Category Slug (URL) *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCatSlugLocked(!isCatSlugLocked)}
+                      className="text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      {isCatSlugLocked ? (
+                        <>
+                          <Lock className="w-3 h-3 text-amber-700" />
+                          <span>Edit Slug</span>
+                        </>
+                      ) : (
+                        <>
+                          <Unlock className="w-3 h-3 text-emerald-700" />
+                          <span className="text-emerald-700">Lock Slug</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    disabled={isCatSlugLocked}
+                    value={editCatSlug}
+                    onChange={(e) => setEditCatSlug(slugify(e.target.value))}
+                    placeholder="e.g. wedding-garlands"
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono transition-all ${
+                      isCatSlugLocked
+                        ? 'bg-stone-100 text-stone-500 border-stone-200 cursor-not-allowed select-none'
+                        : 'bg-white text-stone-800 border-amber-300 ring-2 ring-amber-100 focus:outline-none focus:border-[#ED3500]'
+                    }`}
+                  />
+                  <p className="text-[10.5px] text-stone-500 flex items-center gap-1">
+                    <span>Storefront URL:</span>
+                    <span className="font-mono text-emerald-700 font-semibold">
+                      /product-category/{editCatSlug || 'slug'}
+                    </span>
+                  </p>
+                  {!isCatSlugLocked && (
+                    <p className="text-[10px] text-amber-700 bg-amber-50/80 p-1.5 rounded-lg border border-amber-200/60 leading-tight">
+                      ⚠️ Changing this slug will automatically update all existing products in this category.
+                    </p>
+                  )}
                 </div>
 
                 {/* Category Image Upload */}
@@ -7027,6 +7339,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       setIsEditCatModalOpen(false);
                       setEditingCategory(null);
                       setEditCatName('');
+                      setEditCatSlug('');
+                      setIsCatSlugLocked(true);
                       setEditCatImage('');
                       setEditCatImagePreview('');
                     }}
@@ -7058,6 +7372,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                 setIsEditSubcatModalOpen(false);
                 setEditingSubcat(null);
                 setEditSubcatName('');
+                setEditSubcatSlug('');
+                setIsSubcatSlugLocked(true);
                 setEditSubcatImage('');
                 setEditSubcatImagePreview('');
               }}
@@ -7090,6 +7406,51 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   placeholder="e.g. Coconut"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-[#0B3B24] focus:ring-1 focus:ring-[#0B3B24]"
                 />
+              </div>
+
+              {/* Subcategory Slug Field (Locked by Default) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Subcategory Slug (URL)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsSubcatSlugLocked(!isSubcatSlugLocked)}
+                    className="text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    {isSubcatSlugLocked ? (
+                      <>
+                        <Lock className="w-3 h-3 text-amber-700" />
+                        <span>Edit Slug</span>
+                      </>
+                    ) : (
+                      <>
+                        <Unlock className="w-3 h-3 text-emerald-700" />
+                        <span className="text-emerald-700">Lock Slug</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  required
+                  disabled={isSubcatSlugLocked}
+                  value={editSubcatSlug}
+                  onChange={(e) => setEditSubcatSlug(slugify(e.target.value))}
+                  placeholder="e.g. coconut"
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-mono transition-all ${
+                    isSubcatSlugLocked
+                      ? 'bg-stone-100 text-stone-500 border-stone-200 cursor-not-allowed select-none'
+                      : 'bg-white text-stone-800 border-amber-300 ring-2 ring-amber-100 focus:outline-none focus:border-[#0B3B24]'
+                  }`}
+                />
+                <p className="text-[10.5px] text-stone-500 flex items-center gap-1 mt-1">
+                  <span>Storefront URL:</span>
+                  <span className="font-mono text-emerald-700 font-semibold">
+                    /product-category/{editSubcatSlug || 'slug'}
+                  </span>
+                </p>
               </div>
 
               {/* Move to Category Selection */}
@@ -7186,6 +7547,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     setIsEditSubcatModalOpen(false);
                     setEditingSubcat(null);
                     setEditSubcatName('');
+                    setEditSubcatSlug('');
+                    setIsSubcatSlugLocked(true);
                     setEditSubcatImage('');
                     setEditSubcatImagePreview('');
                   }}
@@ -8978,6 +9341,20 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         onClose={() => setIsBatchPackingModalOpen(false)}
         orders={orders}
         products={products}
+      />
+
+      {/* Product SEO State & City Landing Pages Modal */}
+      <ProductSeoPagesModal
+        isOpen={isSeoModalOpen}
+        onClose={() => {
+          setIsSeoModalOpen(false);
+          setSelectedProductForSeo(null);
+        }}
+        productId={selectedProductForSeo?._id || null}
+        productName={selectedProductForSeo?.name || ''}
+        productImage={selectedProductForSeo?.image}
+        productPrice={selectedProductForSeo?.price}
+        productSlug={selectedProductForSeo?.slug}
       />
 
       {/* Footer */}

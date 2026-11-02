@@ -202,7 +202,7 @@ export default function CategoryCarousel({
                 key={category._id || category.name}
                 name={category.name}
                 slug={targetSlug}
-                href={`/shop?category=${encodeURIComponent(targetSlug)}`}
+                href={`/product-category/${encodeURIComponent(targetSlug)}`}
                 image={category.image}
                 subcategories={category.subcategories}
                 isSelected={isSelected}

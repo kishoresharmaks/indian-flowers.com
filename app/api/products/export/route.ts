@@ -411,7 +411,16 @@ export async function GET(request: NextRequest) {
 
     if (scope === 'filtered') {
       if (category && category !== 'All') {
-        userFilter.category = category;
+        if (category === '__legacy_brass__') {
+          userFilter.category = { $regex: '^brass', $options: 'i' };
+        } else {
+          const catTrimmed = category.trim();
+          userFilter.$or = [
+            { category: { $regex: new RegExp(`^${catTrimmed}$`, 'i') } },
+            { categorySlug: catTrimmed.toLowerCase() },
+            { parentCategorySlug: catTrimmed.toLowerCase() },
+          ];
+        }
       }
 
       if (stock === 'inStock') {

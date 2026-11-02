@@ -8,7 +8,14 @@ import Footer from '@/components/Footer';
 import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
 import FloatingCartBar from '@/components/FloatingCartBar';
 import { dispatchItemAdded } from '@/components/ItemAddedNotification';
-import { ChevronRight, ArrowUpDown, Filter, Sparkles, ShoppingBag } from 'lucide-react';
+import { ChevronRight, ArrowUpDown, Sparkles, ShoppingBag } from 'lucide-react';
+
+export interface SubcategoryItemWithCount {
+  name: string;
+  slug: string;
+  image?: string;
+  count: number;
+}
 
 interface Props {
   categorySlug: string;
@@ -18,6 +25,15 @@ interface Props {
   initialNextCursor?: string | null;
   initialHasMore?: boolean;
   initialTotalCount?: number;
+  isSubcategory?: boolean;
+  subcategoryName?: string;
+  currentSlug?: string;
+  parentCategory?: {
+    name: string;
+    slug: string;
+    totalCount?: number;
+  };
+  subcategories?: SubcategoryItemWithCount[];
 }
 
 export default function CategoryClientPage({
@@ -28,6 +44,11 @@ export default function CategoryClientPage({
   initialNextCursor = null,
   initialHasMore = false,
   initialTotalCount = 0,
+  isSubcategory = false,
+  subcategoryName,
+  currentSlug,
+  parentCategory,
+  subcategories = [],
 }: Props) {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -176,9 +197,17 @@ export default function CategoryClientPage({
     setSortBy(newSort);
     setIsChangingSort(true);
     try {
-      const res = await fetch(
-        `/api/products?categorySlug=${encodeURIComponent(categorySlug)}&sortBy=${newSort}&limit=16&paginate=true`
-      );
+      const targetCatSlug = parentCategory ? parentCategory.slug : categorySlug;
+      const params = new URLSearchParams();
+      params.set('categorySlug', targetCatSlug);
+      if (isSubcategory && subcategoryName) {
+        params.set('subcategory', subcategoryName);
+      }
+      params.set('sortBy', newSort);
+      params.set('limit', '16');
+      params.set('paginate', 'true');
+
+      const res = await fetch(`/api/products?${params.toString()}`);
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setProducts(data.data);
@@ -200,9 +229,18 @@ export default function CategoryClientPage({
     if (!nextCursor || isLoadingMore) return;
     setIsLoadingMore(true);
     try {
-      const res = await fetch(
-        `/api/products?categorySlug=${encodeURIComponent(categorySlug)}&sortBy=${sortBy}&cursor=${encodeURIComponent(nextCursor)}&limit=16&paginate=true`
-      );
+      const targetCatSlug = parentCategory ? parentCategory.slug : categorySlug;
+      const params = new URLSearchParams();
+      params.set('categorySlug', targetCatSlug);
+      if (isSubcategory && subcategoryName) {
+        params.set('subcategory', subcategoryName);
+      }
+      params.set('sortBy', sortBy);
+      params.set('cursor', nextCursor);
+      params.set('limit', '16');
+      params.set('paginate', 'true');
+
+      const res = await fetch(`/api/products?${params.toString()}`);
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setProducts((prev) => [...prev, ...data.data]);
@@ -225,20 +263,24 @@ export default function CategoryClientPage({
   );
 
   const cartGrandTotal = cartItems.reduce(
-    (sum, item) => sum + (Number(item.product?.price || item.selectedVariant?.price || 0) * (Number(item.quantity) || 1)),
+    (sum, item) =>
+      sum +
+      Number(item.product?.price || item.selectedVariant?.price || 0) * (Number(item.quantity) || 1),
     0
   );
 
   const progressPercent = Math.min(100, Math.round((products.length / Math.max(1, totalCount)) * 100));
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] flex flex-col justify-between selection:bg-[#0B3B24] selection:text-white">
+    <div className="min-h-screen bg-[#FAF9F6] flex flex-col justify-between selection:bg-[#0B3B24] selection:text-white font-[family-name:var(--font-plus-jakarta)]">
       <Header
         cartItemCount={cartItemCount}
         wishlistCount={wishlist.length}
         onCartClick={() => window.dispatchEvent(new Event('open-cart'))}
         onWishlistClick={() => window.dispatchEvent(new Event('open-wishlist'))}
         onTrackClick={() => router.push('/?action=track')}
+        selectedCategory={parentCategory ? parentCategory.slug : categorySlug}
+        selectedSubcategory={subcategoryName}
       />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
@@ -258,6 +300,21 @@ export default function CategoryClientPage({
                 Collections
               </Link>
             </li>
+            {isSubcategory && parentCategory && (
+              <>
+                <li>
+                  <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
+                </li>
+                <li>
+                  <Link
+                    href={`/product-category/${parentCategory.slug}`}
+                    className="hover:text-[#0B3B24] transition-colors"
+                  >
+                    {parentCategory.name}
+                  </Link>
+                </li>
+              </>
+            )}
             <li>
               <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
             </li>
@@ -268,21 +325,25 @@ export default function CategoryClientPage({
         </nav>
 
         {/* Hero Header */}
-        <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B3B24] via-[#134633] to-[#1C563F] text-white p-6 sm:p-10 lg:p-12 mb-8 sm:mb-12 overflow-hidden shadow-xl">
+        <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B3B24] via-[#134633] to-[#1C563F] text-white p-6 sm:p-10 lg:p-12 mb-6 sm:mb-8 overflow-hidden shadow-xl">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(200,90,120,0.15),transparent_50%)] pointer-events-none" />
           <div className="relative z-10 max-w-3xl">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-white/10 text-emerald-200 border border-white/10 mb-3">
               <Sparkles className="w-3.5 h-3.5" />
-              Fresh Indian Floral Collection
+              {isSubcategory && parentCategory
+                ? `${parentCategory.name} • Handcrafted Floral`
+                : 'Fresh Indian Floral Collection'}
             </span>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-3">
               {categoryName}
             </h1>
             <p className="text-sm sm:text-base text-emerald-100/90 leading-relaxed font-normal">
               {categoryDescription ||
-                `Explore our handcrafted collection of authentic ${categoryName.toLowerCase()}. Shipped fresh via priority cold-chain delivery nationwide across the United States.`}
+                (isSubcategory && parentCategory
+                  ? `Explore our handcrafted collection of authentic ${categoryName.toLowerCase()} from our ${parentCategory.name.toLowerCase()} selection. Shipped fresh via priority cold-chain delivery nationwide across the United States.`
+                  : `Explore our handcrafted collection of authentic ${categoryName.toLowerCase()}. Shipped fresh via priority cold-chain delivery nationwide across the United States.`)}
             </p>
-            <div className="mt-4 flex items-center gap-4 text-xs sm:text-sm text-emerald-200/80">
+            <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-emerald-200/80">
               <span>{totalCount} {totalCount === 1 ? 'Product Available' : 'Products Available'}</span>
               <span>•</span>
               <span>100% Guaranteed Freshness</span>
@@ -292,11 +353,94 @@ export default function CategoryClientPage({
           </div>
         </div>
 
+        {/* Interactive Subcategory Pills */}
+        {subcategories && subcategories.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#0B3B24]" />
+                Browse {parentCategory?.name || categoryName} Subcategories
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-2 scrollbar-none snap-x -mx-1 px-1">
+              {/* "All" Pill */}
+              {parentCategory && (
+                <Link
+                  href={`/product-category/${parentCategory.slug}`}
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all snap-start shrink-0 cursor-pointer ${
+                    !isSubcategory
+                      ? 'bg-[#0B3B24] text-white shadow-sm ring-2 ring-[#0B3B24]/20'
+                      : 'bg-white hover:bg-stone-50 text-stone-700 hover:text-[#0B3B24] border border-stone-200/90 shadow-2xs'
+                  }`}
+                >
+                  <span>All {parentCategory.name}</span>
+                  {typeof parentCategory.totalCount === 'number' && (
+                    <span
+                      className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+                        !isSubcategory
+                          ? 'bg-white/20 text-white'
+                          : 'bg-stone-100 text-stone-600'
+                      }`}
+                    >
+                      {parentCategory.totalCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+
+              {/* Individual Subcategory Pills */}
+              {subcategories.map((sub) => {
+                const isActive =
+                  isSubcategory &&
+                  (currentSlug?.toLowerCase() === sub.slug?.toLowerCase() ||
+                    subcategoryName?.toLowerCase() === sub.name?.toLowerCase());
+
+                return (
+                  <Link
+                    key={sub.slug || sub.name}
+                    href={`/product-category/${sub.slug}`}
+                    className={`group inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all snap-start shrink-0 cursor-pointer ${
+                      isActive
+                        ? 'bg-[#0B3B24] text-white shadow-sm ring-2 ring-[#0B3B24]/20'
+                        : 'bg-white hover:bg-emerald-50/70 text-stone-700 hover:text-[#0B3B24] border border-stone-200/90 shadow-2xs hover:border-emerald-300'
+                    }`}
+                  >
+                    {sub.image && (
+                      <div className="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-stone-200/80 bg-stone-100">
+                        <img
+                          src={sub.image}
+                          alt={sub.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <span>{sub.name}</span>
+                    {typeof sub.count === 'number' && (
+                      <span
+                        className={`text-[10.5px] px-1.5 py-0.5 rounded-full font-bold ${
+                          isActive
+                            ? 'bg-white/20 text-white'
+                            : 'bg-stone-100 text-stone-600 group-hover:bg-emerald-100/70 group-hover:text-[#0B3B24]'
+                        }`}
+                      >
+                        {sub.count}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Controls Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-6 border-b border-stone-200">
           <div>
             <div className="text-sm text-stone-600 font-medium">
-              Showing <span className="font-semibold text-stone-900">{products.length}</span> of <span className="font-semibold text-stone-900">{totalCount}</span> handcrafted designs
+              Showing <span className="font-semibold text-stone-900">{products.length}</span> of{' '}
+              <span className="font-semibold text-stone-900">{totalCount}</span> handcrafted designs
             </div>
             <div className="w-48 sm:w-64 bg-stone-200 h-1.5 rounded-full overflow-hidden mt-1.5">
               <div
@@ -307,7 +451,10 @@ export default function CategoryClientPage({
           </div>
 
           <div className="flex items-center gap-3">
-            <label htmlFor="sort-select" className="text-xs font-semibold text-stone-500 uppercase tracking-wider flex items-center gap-1">
+            <label
+              htmlFor="sort-select"
+              className="text-xs font-semibold text-stone-500 uppercase tracking-wider flex items-center gap-1"
+            >
               <ArrowUpDown className="w-3.5 h-3.5" />
               Sort:
             </label>
@@ -329,7 +476,11 @@ export default function CategoryClientPage({
         {/* Product Grid */}
         {products.length > 0 ? (
           <>
-            <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 transition-opacity duration-200 ${isChangingSort ? 'opacity-50' : 'opacity-100'}`}>
+            <div
+              className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 transition-opacity duration-200 ${
+                isChangingSort ? 'opacity-50' : 'opacity-100'
+              }`}
+            >
               {products.map((prod) => (
                 <ProductCard
                   key={prod._id}
