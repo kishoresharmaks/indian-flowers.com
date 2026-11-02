@@ -129,7 +129,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           ],
         });
 
-        // Count products for each subcategory
+        // Count products for each subcategory — strictly match the `subcategory`
+        // field only. Using categorySlug or categories.slug here would inflate
+        // counts by matching the entire parent category's product pool.
         const subcategoriesWithCounts = await Promise.all(
           (cat.subcategories || []).map(async (sub: any) => {
             const subSlug = sub.slug || sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -137,11 +139,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               isActive: { $ne: false },
               isSeoLanding: { $ne: true },
               hideFromHome: { $ne: true },
-              $or: [
-                { subcategory: new RegExp(`^${sub.name}$`, 'i') },
-                { categorySlug: subSlug },
-                { 'categories.slug': subSlug },
-              ],
+              subcategory: new RegExp(`^${sub.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
             });
             return {
               _id: sub._id ? sub._id.toString() : subSlug,

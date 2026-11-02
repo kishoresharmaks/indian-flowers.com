@@ -168,18 +168,16 @@ export async function fetchCursorPaginatedProducts({
     });
   }
 
-  // Subcategory filter
+  // Subcategory filter — strictly match the `subcategory` field only.
+  // Do NOT include categorySlug / categories.slug here; those are category-level
+  // fields and would cause over-broad matching (e.g. "Wedding Garlands" sub would
+  // return ALL 130 wedding-garlands category products instead of only those
+  // explicitly tagged with subcategory === "Wedding Garlands").
   if (subcategory && subcategory.toLowerCase() !== 'all') {
     const cleanSub = subcategory.trim();
     const escapedSub = cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const slugSub = cleanSub.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     baseConditions.push({
-      $or: [
-        { subcategory: new RegExp(`^${escapedSub}$`, 'i') },
-        { categorySlug: slugSub },
-        { 'categories.slug': slugSub },
-        { category: new RegExp(`^${escapedSub}$`, 'i') },
-      ],
+      subcategory: new RegExp(`^${escapedSub}$`, 'i'),
     });
   }
 
