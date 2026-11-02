@@ -92,7 +92,7 @@ async function run() {
     'pooja-flowers': { parentSlug: 'strings-and-leaves', subName: 'Pooja Flowers' },
     'pooja-flowers-pooja-flowers': { parentSlug: 'strings-and-leaves', subName: 'Pooja Flowers' },
     'banana-leaves': { parentSlug: 'strings-and-leaves', subName: 'Banana Leaves' },
-    'coconut': { parentSlug: 'strings-and-leaves', subName: 'Coconut' },
+    'coconut': { parentSlug: 'wedding-garlands', subName: 'Coconut' },
     'decor-items': { parentSlug: 'strings-and-leaves', subName: 'Decor Items' },
 
     'wedding-garlands': { parentSlug: 'wedding-garlands', subName: 'Wedding Garlands' },

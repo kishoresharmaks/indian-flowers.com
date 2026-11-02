@@ -169,18 +169,26 @@ export async function PUT(
       await targetCategory.save();
 
       // Automatically re-assign products in MongoDB
+      const targetSlug = targetCategory.slug || slugify(targetCategory.name);
       const updateResult = await Product.updateMany(
         {
           $or: [
             { category: sourceCategory.name, subcategory: new RegExp(`^${previousName}$`, 'i') },
             { category: new RegExp(`^${previousName}$`, 'i'), subcategory: new RegExp(`^${previousName}$`, 'i') },
             { subcategory: new RegExp(`^${previousName}$`, 'i'), category: sourceCategory.name },
+            { subcategory: new RegExp(`^${previousName}$`, 'i') },
           ],
         },
         {
           $set: {
             category: targetCategory.name,
+            categorySlug: targetSlug,
+            parentCategorySlug: targetSlug,
             subcategory: newName,
+            categories: [
+              { name: targetCategory.name, slug: targetSlug },
+              { name: newName, slug: newSlug },
+            ],
           },
         }
       );
