@@ -72,7 +72,23 @@ VariantSchema.pre('save', function (this: any, next) {
 const ProductSchema: Schema = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, trim: true, lowercase: true },
+    slug: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      default: function (this: any) {
+        if (this && this.name) {
+          return this.name
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        }
+        return '';
+      },
+    },
     wpId: { type: Number, index: true, sparse: true },
     description: { type: String, required: true },
     descriptionHtml: { type: String, default: '' },

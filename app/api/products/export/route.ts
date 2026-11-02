@@ -66,23 +66,35 @@ function formatVariantsString(variants: any[] | undefined): string {
     .join('; ');
 }
 
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
+}
+
 /**
  * Clean Single-Source Core Catalog Columns Definition
  * Matches exact format requested by admin for 1:1 roundtrip export and bulk-import:
  * 1. Product Title
- * 2. Product Description
- * 3. Product Image name of the image file to import
- * 4. MRP (Original $) *
- * 5. Selling Price ($) *
- * 6. Stock Quantity *
- * 7. Category *
- * 8. Sales Tax Status
- * 9. Subcategory (Optional)
- * 10. Product Variants & Pricing
- * 11. Storefront Visibility
+ * 2. Product Slug
+ * 3. Product Description
+ * 4. Product Image name of the image file to import
+ * 5. MRP (Original $) *
+ * 6. Selling Price ($) *
+ * 7. Stock Quantity *
+ * 8. Category *
+ * 9. Sales Tax Status
+ * 10. Subcategory (Optional)
+ * 11. Product Variants & Pricing
+ * 12. Storefront Visibility
  */
 const CORE_CATALOG_COLUMNS = [
   { header: 'Product Title', key: 'title', width: 42 },
+  { header: 'Product Slug', key: 'slug', width: 36 },
   { header: 'Product Description', key: 'description', width: 55 },
   { header: 'Product Image name of the image file to import', key: 'imageFilename', width: 44 },
   { header: 'MRP (Original $) *', key: 'mrp', width: 20 },
@@ -117,17 +129,19 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
 
   for (let colIdx = 1; colIdx <= CORE_CATALOG_COLUMNS.length; colIdx++) {
     const cell = headerRow.getCell(colIdx);
-    let fillArgb = 'FF0B3B24'; // Default Brand Forest Green (Cols 1-2: Title, Description)
+    let fillArgb = 'FF0B3B24'; // Default Brand Forest Green (Cols 1, 3: Title, Description)
 
-    if (colIdx === 3) {
+    if (colIdx === 2) {
+      fillArgb = 'FF134633'; // Brand 900 (Product Slug)
+    } else if (colIdx === 4) {
       fillArgb = 'FF0E7490'; // Standout Cyan/Teal (Image Filename)
-    } else if (colIdx >= 4 && colIdx <= 6) {
+    } else if (colIdx >= 5 && colIdx <= 7) {
       fillArgb = 'FF134633'; // Pricing & Stock (MRP, Selling Price, Quantity)
-    } else if (colIdx >= 7 && colIdx <= 9) {
+    } else if (colIdx >= 8 && colIdx <= 10) {
       fillArgb = 'FF1C563F'; // Category, Sales Tax Status, Subcategory
-    } else if (colIdx === 10) {
-      fillArgb = 'FF9F1239'; // Product Variants & Pricing (Rose Accent)
     } else if (colIdx === 11) {
+      fillArgb = 'FF9F1239'; // Product Variants & Pricing (Rose Accent)
+    } else if (colIdx === 12) {
       fillArgb = 'FF1E3A8A'; // Storefront Visibility
     }
 
@@ -168,9 +182,11 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
     const priceVal = Number(p.price ?? 0);
     const taxStatus = p.isTaxable === false ? 'Non-Taxable' : 'Taxable';
     const visibility = p.isActive !== false ? 'Visible' : 'Hidden';
+    const productSlug = p.slug || (p.name ? slugify(p.name) : '');
 
     const rowData: Record<string, any> = {
       title: p.name || '',
+      slug: productSlug,
       description: cleanDesc,
       imageFilename: imageFilename,
       mrp: mrpVal,
@@ -204,8 +220,13 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
         right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
       };
 
-      // Col 3: Image Filename - Monospace & Teal highlight
-      if (c === 3) {
+      // Col 2: Product Slug - Clean Monospace
+      if (c === 2) {
+        cell.font = { name: 'Consolas', size: 9.5, color: { argb: 'FF334155' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      }
+      // Col 4: Image Filename - Monospace & Teal highlight
+      else if (c === 4) {
         cell.font = { name: 'Consolas', size: 10, bold: true, color: { argb: 'FF0E7490' } };
         cell.fill = {
           type: 'pattern',
@@ -214,29 +235,29 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
         };
         cell.alignment = { vertical: 'middle', horizontal: 'left' };
       }
-      // Col 4 & 5: MRP & Selling Price - Currency formatting
-      else if (c === 4 || c === 5) {
+      // Col 5 & 6: MRP & Selling Price - Currency formatting
+      else if (c === 5 || c === 6) {
         cell.alignment = { vertical: 'middle', horizontal: 'right' };
         if (typeof cell.value === 'number') {
           cell.numFmt = '$#,##0.00';
         }
-        if (c === 5) {
+        if (c === 6) {
           cell.font = { name: 'Segoe UI', size: 10, bold: true };
         }
       }
-      // Col 6: Stock Quantity - Number center
-      else if (c === 6) {
+      // Col 7: Stock Quantity - Number center
+      else if (c === 7) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
         if (typeof cell.value === 'number') {
           cell.numFmt = '#,##0';
         }
       }
-      // Col 8: Sales Tax Status - Center
-      else if (c === 8) {
+      // Col 9: Sales Tax Status - Center
+      else if (c === 9) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
       }
-      // Col 11: Storefront Visibility - Center with color
-      else if (c === 11) {
+      // Col 12: Storefront Visibility - Center with color
+      else if (c === 12) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
         if (cell.value === 'Visible') {
           cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF15803D' } };

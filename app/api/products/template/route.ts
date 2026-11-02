@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
 
     const columns = [
       { header: 'Product Title', key: 'title', width: 42 },
+      { header: 'Product Slug', key: 'slug', width: 36 },
       { header: 'Product Description', key: 'description', width: 55 },
       { header: 'Product Image name of the image file to import', key: 'imageFilename', width: 44 },
       { header: 'MRP (Original $) *', key: 'mrp', width: 20 },
@@ -43,17 +44,19 @@ export async function GET(request: NextRequest) {
 
     for (let colIdx = 1; colIdx <= columns.length; colIdx++) {
       const cell = headerRow.getCell(colIdx);
-      let fillArgb = 'FF0B3B24'; // Default Brand Forest Green (Cols 1-2: Title, Description)
+      let fillArgb = 'FF0B3B24'; // Default Brand Forest Green (Cols 1, 3: Title, Description)
 
-      if (colIdx === 3) {
+      if (colIdx === 2) {
+        fillArgb = 'FF134633'; // Brand 900 (Product Slug)
+      } else if (colIdx === 4) {
         fillArgb = 'FF0E7490'; // Standout Cyan/Teal (Image Filename)
-      } else if (colIdx >= 4 && colIdx <= 6) {
+      } else if (colIdx >= 5 && colIdx <= 7) {
         fillArgb = 'FF134633'; // Pricing & Stock (MRP, Selling Price, Quantity)
-      } else if (colIdx >= 7 && colIdx <= 9) {
+      } else if (colIdx >= 8 && colIdx <= 10) {
         fillArgb = 'FF1C563F'; // Category, Sales Tax Status, Subcategory
-      } else if (colIdx === 10) {
-        fillArgb = 'FF9F1239'; // Product Variants & Pricing (Rose Accent)
       } else if (colIdx === 11) {
+        fillArgb = 'FF9F1239'; // Product Variants & Pricing (Rose Accent)
+      } else if (colIdx === 12) {
         fillArgb = 'FF1E3A8A'; // Storefront Visibility
       }
 
@@ -85,6 +88,7 @@ export async function GET(request: NextRequest) {
     const sampleRows = [
       {
         title: 'Crimson Rose Petal & Peach Carnation Grand Varmala',
+        slug: 'crimson-rose-petal-peach-carnation-grand-varmala',
         description: 'Authentic handcrafted fresh red rose petal and carnation wedding garland pair for bride and groom. Flown fresh priority across the USA.',
         imageFilename: 'rose-petal-varmala.jpg',
         mrp: 95.0,
@@ -98,6 +102,7 @@ export async function GET(request: NextRequest) {
       },
       {
         title: 'White Carnation & Red Rose Wedding Varmala with Golden Tassels',
+        slug: 'white-carnation-red-rose-wedding-varmala-golden-tassels',
         description: 'Premium white carnations intertwined with fresh red rosebuds and auspicious golden tassels. Ideal for wedding muhurtham rituals.',
         imageFilename: 'carnation-rose-garland.jpg',
         mrp: 110.0,
@@ -111,6 +116,7 @@ export async function GET(request: NextRequest) {
       },
       {
         title: 'Fresh Fragrant Madurai Jasmine (Mallipoo) String',
+        slug: 'fresh-fragrant-madurai-jasmine-mallipoo-string',
         description: 'Authentic South Indian Sambac Jasmine (Madurai Mallipoo) strung on auspicious cotton thread. Shipped overnight in insulated cold-chain boxes.',
         imageFilename: 'madurai-mallipoo.jpg',
         mrp: 30.0,
@@ -124,6 +130,7 @@ export async function GET(request: NextRequest) {
       },
       {
         title: 'Fresh Orange & Yellow Marigold Loose Flowers (Genda)',
+        slug: 'fresh-orange-yellow-marigold-loose-flowers-genda',
         description: 'Freshly harvested loose marigold blooms and petals for daily puja, Diwali archana, and festive entrance rangoli decor.',
         imageFilename: 'marigold-loose.jpg',
         mrp: 25.0,
@@ -137,6 +144,7 @@ export async function GET(request: NextRequest) {
       },
       {
         title: 'Fresh Indian Mango Leaves Bunch (Mavilai for Kalasam & Toran)',
+        slug: 'fresh-indian-mango-leaves-bunch-mavilai',
         description: 'Auspicious fresh green mango leaves bunch for kalasam sthapanam, festival toran, and home gruhapravesam rituals.',
         imageFilename: 'mango-leaves.jpg',
         mrp: 15.0,
@@ -172,8 +180,13 @@ export async function GET(request: NextRequest) {
           right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
         };
 
-        // Col 3: Image Filename - Monospace & Teal highlight
-        if (c === 3) {
+        // Col 2: Product Slug - Clean Monospace
+        if (c === 2) {
+          cell.font = { name: 'Consolas', size: 9.5, color: { argb: 'FF334155' } };
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        }
+        // Col 4: Image Filename - Monospace & Teal highlight
+        else if (c === 4) {
           cell.font = { name: 'Consolas', size: 10, bold: true, color: { argb: 'FF0E7490' } };
           cell.fill = {
             type: 'pattern',
@@ -182,29 +195,29 @@ export async function GET(request: NextRequest) {
           };
           cell.alignment = { vertical: 'middle', horizontal: 'left' };
         }
-        // Col 4 & 5: MRP & Selling Price - Currency formatting
-        else if (c === 4 || c === 5) {
+        // Col 5 & 6: MRP & Selling Price - Currency formatting
+        else if (c === 5 || c === 6) {
           cell.alignment = { vertical: 'middle', horizontal: 'right' };
           if (typeof cell.value === 'number') {
             cell.numFmt = '$#,##0.00';
           }
-          if (c === 5) {
+          if (c === 6) {
             cell.font = { name: 'Segoe UI', size: 10, bold: true };
           }
         }
-        // Col 6: Stock Quantity - Number center
-        else if (c === 6) {
+        // Col 7: Stock Quantity - Number center
+        else if (c === 7) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
           if (typeof cell.value === 'number') {
             cell.numFmt = '#,##0';
           }
         }
-        // Col 8: Sales Tax Status - Center
-        else if (c === 8) {
+        // Col 9: Sales Tax Status - Center
+        else if (c === 9) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
         }
-        // Col 11: Storefront Visibility - Center with color
-        else if (c === 11) {
+        // Col 12: Storefront Visibility - Center with color
+        else if (c === 12) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
           if (cell.value === 'Visible') {
             cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF15803D' } };

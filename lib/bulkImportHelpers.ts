@@ -11,10 +11,21 @@ export interface ParsedVariant {
   discount: number;
 }
 
+export function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
+}
+
 export interface ParsedImportRow {
   index: number;
   raw: Record<string, any>;
   name: string;
+  slug?: string;
   description: string;
   category: string;
   subcategory: string;
@@ -140,6 +151,23 @@ export function parseExcelRowsToImportItems(
 
     // Skip empty rows without a product name
     if (!name) continue;
+
+    // 1b. Extract Product Slug
+    const rawSlug = (
+      rawRow['Product Slug'] ||
+      rawRow['Product Slug *'] ||
+      rawRow['Slug'] ||
+      rawRow['Slug *'] ||
+      rawRow['Product slug'] ||
+      rawRow['product_slug'] ||
+      norm.productslug ||
+      norm.slug ||
+      ''
+    )
+      .toString()
+      .trim();
+
+    const slug = rawSlug ? slugify(rawSlug) : slugify(name);
 
     // 2. Extract Product Description
     const description = (
@@ -432,6 +460,7 @@ export function parseExcelRowsToImportItems(
       index: idx,
       raw: rawRow,
       name,
+      slug,
       description,
       category,
       subcategory,

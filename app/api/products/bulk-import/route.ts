@@ -149,6 +149,24 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      // 1b. Extract Product Slug
+      const rawSlug = (
+        originalRow['Product Slug'] ||
+        originalRow['Product Slug *'] ||
+        originalRow['Slug'] ||
+        originalRow['Slug *'] ||
+        originalRow['Product slug'] ||
+        originalRow['product_slug'] ||
+        row.productslug ||
+        row.slug ||
+        originalRow.slug ||
+        ''
+      )
+        .toString()
+        .trim();
+
+      const finalSlug = rawSlug ? slugify(rawSlug) : slugify(name);
+
       // 2. Extract Product Description
       const description = (
         originalRow['Product Description'] ||
@@ -510,6 +528,9 @@ export async function POST(request: NextRequest) {
 
         if (existingProduct) {
           // UPDATE EXISTING PRODUCT
+          if (!existingProduct.slug) {
+            existingProduct.slug = finalSlug;
+          }
           existingProduct.description = description;
           existingProduct.category = categoryName;
           existingProduct.subcategory = subcategoryName;
@@ -556,12 +577,29 @@ export async function POST(request: NextRequest) {
         } else {
           // CREATE NEW PRODUCT
           const finalImage = isNewImageProvided ? image : DEFAULT_PLACEHOLDER;
+          const catSlug = matchedCategory?.slug || slugify(categoryName);
+          const subSlug = subcategoryName ? slugify(subcategoryName) : '';
+
+          // Ensure unique slug
+          let uniqueSlug = finalSlug || `prod-${Date.now()}`;
+          let counter = 1;
+          while (await Product.findOne({ slug: uniqueSlug })) {
+            uniqueSlug = `${finalSlug}-${counter}`;
+            counter++;
+          }
 
           await Product.create({
             name,
+            slug: uniqueSlug,
             description,
             category: categoryName,
+            categorySlug: catSlug,
+            parentCategorySlug: catSlug,
             subcategory: subcategoryName,
+            categories: [
+              { name: categoryName, slug: catSlug },
+              ...(subcategoryName ? [{ name: subcategoryName, slug: subSlug }] : []),
+            ],
             price,
             mrp,
             discount,
@@ -569,6 +607,7 @@ export async function POST(request: NextRequest) {
             gst,
             isTaxable: parsedIsTaxable !== undefined ? parsedIsTaxable : true,
             image: finalImage,
+            images: [finalImage],
             variants: parsedVariants,
             rating: 4.8,
             reviewsCount: 35,

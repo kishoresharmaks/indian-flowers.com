@@ -2337,6 +2337,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
 
         payloadRows.push({
           name: item.name,
+          slug: item.slug || (item.name ? item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : ''),
           description: item.description,
           category: item.category,
           subcategory: item.subcategory,
@@ -8535,7 +8536,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       Download the Official Store Excel Template
                     </span>
                     <p className="text-[11px] text-emerald-800/90">
-                      Pre-formatted with the exact 11 core columns (Product Title, Description, Image Filename, MRP, Selling Price, Stock, Category, Tax Status, Subcategory, Variants & Pricing, Visibility) and categories reference.
+                      Pre-formatted with the exact 12 core columns (Product Title, Product Slug, Description, Image Filename, MRP, Selling Price, Stock, Category, Tax Status, Subcategory, Variants &amp; Pricing, Visibility) and categories reference.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
@@ -8792,7 +8793,12 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                               {/* Product Name & Category */}
                               <td className="py-2 px-3 align-top max-w-[220px]">
                                 <div className="font-bold text-[#163B5C] truncate">{r.name}</div>
-                                <div className="text-[10px] text-emerald-700 font-medium truncate">
+                                {r.slug && (
+                                  <div className="text-[9.5px] font-mono text-slate-500 truncate mt-0.5">
+                                    /{r.slug}
+                                  </div>
+                                )}
+                                <div className="text-[10px] text-emerald-700 font-medium truncate mt-0.5">
                                   {r.category}
                                   {r.subcategory ? ` • ${r.subcategory}` : ''}
                                 </div>
