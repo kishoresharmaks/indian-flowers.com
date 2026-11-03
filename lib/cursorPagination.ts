@@ -70,8 +70,23 @@ export function buildProductBaseConditions({
   }
 
   if (subcategory && subcategory.toLowerCase() !== 'all') {
-    const escapedSub = subcategory.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    baseConditions.push({ subcategory: new RegExp(`^${escapedSub}$`, 'i') });
+    const cleanSub = subcategory.trim();
+    const escapedSub = cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const spaceSub = cleanSub.replace(/-/g, ' ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const slugSub = cleanSub
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-');
+    const singularSlug = slugSub.endsWith('s') ? slugSub.slice(0, -1) : slugSub;
+    const pluralSlug = slugSub.endsWith('s') ? slugSub : `${slugSub}s`;
+
+    baseConditions.push({
+      $or: [
+        { subcategory: new RegExp(`^${escapedSub}$`, 'i') },
+        { subcategory: new RegExp(`^${spaceSub}$`, 'i') },
+        { subcategorySlug: { $in: [slugSub, singularSlug, pluralSlug] } },
+      ],
+    });
   }
 
   if (search && search.trim()) {
@@ -79,6 +94,7 @@ export function buildProductBaseConditions({
     baseConditions.push({
       $or: [
         { name: { $regex: sanitizedQuery, $options: 'i' } },
+        { slug: { $regex: sanitizedQuery, $options: 'i' } },
         { description: { $regex: sanitizedQuery, $options: 'i' } },
         { category: { $regex: sanitizedQuery, $options: 'i' } },
         { subcategory: { $regex: sanitizedQuery, $options: 'i' } },
@@ -245,8 +261,20 @@ export async function fetchCursorPaginatedProducts({
   if (subcategory && subcategory.toLowerCase() !== 'all') {
     const cleanSub = subcategory.trim();
     const escapedSub = cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const spaceSub = cleanSub.replace(/-/g, ' ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const slugSub = cleanSub
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-');
+    const singularSlug = slugSub.endsWith('s') ? slugSub.slice(0, -1) : slugSub;
+    const pluralSlug = slugSub.endsWith('s') ? slugSub : `${slugSub}s`;
+
     baseConditions.push({
-      subcategory: new RegExp(`^${escapedSub}$`, 'i'),
+      $or: [
+        { subcategory: new RegExp(`^${escapedSub}$`, 'i') },
+        { subcategory: new RegExp(`^${spaceSub}$`, 'i') },
+        { subcategorySlug: { $in: [slugSub, singularSlug, pluralSlug] } },
+      ],
     });
   }
 
@@ -256,6 +284,7 @@ export async function fetchCursorPaginatedProducts({
     baseConditions.push({
       $or: [
         { name: { $regex: sanitizedQuery, $options: 'i' } },
+        { slug: { $regex: sanitizedQuery, $options: 'i' } },
         { description: { $regex: sanitizedQuery, $options: 'i' } },
         { category: { $regex: sanitizedQuery, $options: 'i' } },
         { subcategory: { $regex: sanitizedQuery, $options: 'i' } },

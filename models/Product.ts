@@ -42,6 +42,7 @@ export interface IProduct extends Document {
   categories?: ICategoryRef[];
   tags?: string[];
   subcategory?: string;
+  subcategorySlug?: string;
   rating?: number;
   reviewsCount?: number;
   isActive?: boolean;
@@ -114,6 +115,7 @@ const ProductSchema: Schema = new Schema(
     ],
     tags: { type: [String], default: [] },
     subcategory: { type: String, default: '' },
+    subcategorySlug: { type: String, default: '', index: true },
     rating: { type: Number, default: 4.8 },
     reviewsCount: { type: Number, default: 50 },
     isActive: { type: Boolean, default: true, index: true },
@@ -168,6 +170,42 @@ ProductSchema.pre('save', function (this: IProduct, next) {
         .replace(/[^\w\s-]/g, '')
         .replace(/[\s_-]+/g, '-')
         .replace(/^-+|-+$/g, '');
+    }
+  }
+  if (!this.parentCategorySlug && this.categorySlug) {
+    this.parentCategorySlug = this.categorySlug;
+  }
+  if (this.subcategory && !this.subcategorySlug) {
+    this.subcategorySlug = this.subcategory
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+  // Auto-synchronize categories array to eliminate stale or cross-category taxonomy pollution
+  if (this.category && this.categorySlug) {
+    const primarySlug = this.categorySlug.toLowerCase().trim();
+    const hasPrimary =
+      Array.isArray(this.categories) &&
+      this.categories.some((c) => (c.slug || '').toLowerCase() === primarySlug);
+
+    if (!hasPrimary || !Array.isArray(this.categories) || this.categories.length === 0) {
+      const syncedCats: Array<{ id?: number; name: string; slug: string }> = [
+        { name: this.category, slug: this.categorySlug },
+      ];
+      if (this.subcategory) {
+        const subSlug =
+          this.subcategorySlug ||
+          this.subcategory
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        syncedCats.push({ name: this.subcategory, slug: subSlug });
+      }
+      this.categories = syncedCats;
     }
   }
   if (this.mrp && this.price && this.mrp > this.price) {

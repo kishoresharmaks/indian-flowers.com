@@ -145,6 +145,57 @@ export async function PUT(
       }
     }
 
+    if (body.subcategory !== undefined) {
+      body.subcategorySlug = body.subcategory
+        ? body.subcategory
+            .toString()
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+        : '';
+    }
+
+    // Auto-synchronize categories array to eliminate stale cross-category taxonomy pollution
+    if (body.category || body.categorySlug || body.subcategory !== undefined) {
+      const current = await Product.findOne(
+        mongoose.isValidObjectId(id) ? { _id: id } : { slug: id }
+      ).lean();
+
+      if (current) {
+        const effectiveCat = (body.category || (current as any).category || '').trim();
+        const effectiveCatSlug = (body.categorySlug || (current as any).categorySlug || '').trim();
+        const effectiveSub =
+          body.subcategory !== undefined
+            ? body.subcategory
+            : (current as any).subcategory || '';
+        const effectiveSubSlug =
+          body.subcategorySlug !== undefined
+            ? body.subcategorySlug
+            : (current as any).subcategorySlug || '';
+
+        if (effectiveCat && effectiveCatSlug) {
+          const syncedCategories: Array<{ id?: number; name: string; slug: string }> = [
+            { name: effectiveCat, slug: effectiveCatSlug },
+          ];
+          if (effectiveSub && effectiveSub.trim()) {
+            const subSlug =
+              effectiveSubSlug ||
+              effectiveSub
+                .toString()
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            syncedCategories.push({ name: effectiveSub.trim(), slug: subSlug });
+          }
+          body.categories = syncedCategories;
+        }
+      }
+    }
+
     let updatedProduct = null;
     if (mongoose.isValidObjectId(id)) {
       updatedProduct = await Product.findByIdAndUpdate(id, body, {

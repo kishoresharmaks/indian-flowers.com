@@ -46,50 +46,153 @@ interface ResolvedTarget {
 }
 
 async function resolveSlug(cleanSlug: string): Promise<ResolvedTarget | null> {
-  // 1. Direct parent category match
-  let cat = await Category.findOne({ slug: cleanSlug }).lean();
-  if (!cat && (cleanSlug === 'strings-leaves' || cleanSlug === 'strings-and-leaves')) {
-    cat = await Category.findOne({
-      $or: [{ slug: 'strings-and-leaves' }, { slug: 'strings-leaves' }],
-    }).lean();
+  const normalizedSlug = (cleanSlug || '').toLowerCase().trim();
+  if (!normalizedSlug) return null;
+
+  // Handle spelling and plural variants
+  const slugCandidates = new Set<string>([normalizedSlug]);
+  if (normalizedSlug.endsWith('s')) {
+    slugCandidates.add(normalizedSlug.slice(0, -1));
+  } else {
+    slugCandidates.add(`${normalizedSlug}s`);
   }
-  if (!cat) {
-    const allCategories = await Category.find({}).lean();
-    cat = allCategories.find((c: any) => slugify(c.name) === cleanSlug) || null;
+  if (normalizedSlug.includes('lilly')) {
+    slugCandidates.add(normalizedSlug.replace(/lilly/g, 'lily'));
+    slugCandidates.add(normalizedSlug.replace(/lilly/g, 'lily') + 's');
+  }
+  if (normalizedSlug.includes('lily')) {
+    slugCandidates.add(normalizedSlug.replace(/lily/g, 'lilly'));
+    slugCandidates.add(normalizedSlug.replace(/lily/g, 'lilly') + 's');
   }
 
-  if (cat) {
-    return {
-      type: 'category',
-      category: cat,
-      categoryName: cat.name,
-      categorySlug: cat.slug || cleanSlug,
-    };
-  }
-
-  // 2. Subcategory match across all categories
-  const allCategories = await Category.find({}).lean();
-  for (const c of allCategories) {
-    const sub = (c.subcategories || []).find(
-      (s: any) =>
-        (s.slug && s.slug.toLowerCase() === cleanSlug) ||
-        slugify(s.name) === cleanSlug
-    );
-    if (sub) {
+  // 1. Direct parent category match (exact slug)
+  for (const candidate of Array.from(slugCandidates)) {
+    let cat = await Category.findOne({ slug: candidate }).lean();
+    if (!cat && (candidate === 'strings-leaves' || candidate === 'strings-and-leaves')) {
+      cat = await Category.findOne({
+        $or: [{ slug: 'strings-and-leaves' }, { slug: 'strings-leaves' }],
+      }).lean();
+    }
+    if (cat) {
       return {
-        type: 'subcategory',
-        category: c,
-        subcategory: sub,
-        categoryName: sub.name,
-        categorySlug: cleanSlug,
-        subcategoryName: sub.name,
-        subcategorySlug: sub.slug || cleanSlug,
-        parentCategory: {
-          name: c.name,
-          slug: c.slug || slugify(c.name),
-        },
+        type: 'category',
+        category: cat,
+        categoryName: cat.name,
+        categorySlug: cat.slug || candidate,
       };
     }
+  }
+
+  // Fallback parent category by name
+  const allCategories = await Category.find({}).lean();
+  for (const candidate of Array.from(slugCandidates)) {
+    const cat = allCategories.find((c: any) => slugify(c.name) === candidate);
+    if (cat) {
+      return {
+        type: 'category',
+        category: cat,
+        categoryName: cat.name,
+        categorySlug: cat.slug || candidate,
+      };
+    }
+  }
+
+  // 2. Subcategory Match - PHASE A: EXACT SLUG MATCH FIRST across all categories!
+  // This prevents Temple Garlands from hijacking Wedding Garlands' "lilly-garlands"!
+  for (const candidate of Array.from(slugCandidates)) {
+    for (const c of allCategories) {
+      const sub = (c.subcategories || []).find(
+        (s: any) => s.slug && s.slug.toLowerCase() === candidate
+      );
+      if (sub) {
+        return {
+          type: 'subcategory',
+          category: c,
+          subcategory: sub,
+          categoryName: sub.name,
+          categorySlug: sub.slug || cleanSlug,
+          subcategoryName: sub.name,
+          subcategorySlug: sub.slug || cleanSlug,
+          parentCategory: {
+            name: c.name,
+            slug: c.slug || slugify(c.name),
+          },
+        };
+      }
+    }
+  }
+
+  // PHASE B: Subcategory Match by name slugify
+  // If multiple categories share the same subcategory name (e.g. "Lilly Garlands"),
+  // pick the parent category that actually has core inventory products!
+  const nameMatches: Array<{ c: any; sub: any }> = [];
+  for (const candidate of Array.from(slugCandidates)) {
+    for (const c of allCategories) {
+      const sub = (c.subcategories || []).find(
+        (s: any) => slugify(s.name) === candidate
+      );
+      if (sub) {
+        nameMatches.push({ c, sub });
+      }
+    }
+  }
+
+  if (nameMatches.length === 1) {
+    const { c, sub } = nameMatches[0];
+    return {
+      type: 'subcategory',
+      category: c,
+      subcategory: sub,
+      categoryName: sub.name,
+      categorySlug: sub.slug || cleanSlug,
+      subcategoryName: sub.name,
+      subcategorySlug: sub.slug || cleanSlug,
+      parentCategory: {
+        name: c.name,
+        slug: c.slug || slugify(c.name),
+      },
+    };
+  } else if (nameMatches.length > 1) {
+    // Tie-breaker: Pick the parent category that actually has core inventory products
+    for (const match of nameMatches) {
+      const parentSlug = match.c.slug || slugify(match.c.name);
+      const count = await Product.countDocuments({
+        categorySlug: parentSlug,
+        subcategory: match.sub.name,
+        isActive: { $ne: false },
+        isSeoLanding: { $ne: true },
+        hideFromHome: { $ne: true },
+      });
+      if (count > 0) {
+        return {
+          type: 'subcategory',
+          category: match.c,
+          subcategory: match.sub,
+          categoryName: match.sub.name,
+          categorySlug: match.sub.slug || cleanSlug,
+          subcategoryName: match.sub.name,
+          subcategorySlug: match.sub.slug || cleanSlug,
+          parentCategory: {
+            name: match.c.name,
+            slug: parentSlug,
+          },
+        };
+      }
+    }
+    const { c, sub } = nameMatches[0];
+    return {
+      type: 'subcategory',
+      category: c,
+      subcategory: sub,
+      categoryName: sub.name,
+      categorySlug: sub.slug || cleanSlug,
+      subcategoryName: sub.name,
+      subcategorySlug: sub.slug || cleanSlug,
+      parentCategory: {
+        name: c.name,
+        slug: c.slug || slugify(c.name),
+      },
+    };
   }
 
   return null;

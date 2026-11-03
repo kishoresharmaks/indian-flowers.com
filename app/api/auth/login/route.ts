@@ -49,6 +49,10 @@ export async function POST(request: Request) {
       password === envPass
     );
 
+    const forwardedProto = request.headers.get('x-forwarded-proto');
+    const isHttps = request.url.startsWith('https://') || forwardedProto === 'https';
+    const isSecureCookie = process.env.NODE_ENV === 'production' && isHttps;
+
     if (isEnvMatch) {
       let userId = 'admin-env';
 
@@ -69,22 +73,20 @@ export async function POST(request: Request) {
         console.error('[Admin Auth] Warning: could not synchronize admin user to MongoDB:', dbError);
       }
 
+      const token = jwt.sign({ sub: userId, email: envUser }, secret, { expiresIn: '7d' });
+
       const response = NextResponse.json(
-        { success: true, message: 'Authentication successful' },
+        { success: true, message: 'Authentication successful', token },
         { status: 200 }
       );
 
-      response.cookies.set(
-        'admin_token',
-        jwt.sign({ sub: userId, email: envUser }, secret, { expiresIn: '24h' }),
-        {
-          httpOnly: true,
-          path: '/',
-          maxAge: 60 * 60 * 24, // 1 day
-          sameSite: 'strict',
-          secure: process.env.NODE_ENV === 'production',
-        }
-      );
+      response.cookies.set('admin_token', token, {
+        httpOnly: true,
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        sameSite: 'lax',
+        secure: isSecureCookie,
+      });
 
       await captureServerEvent(
         request,
@@ -102,22 +104,20 @@ export async function POST(request: Request) {
       const user = await AdminUser.findOne({ email: username }).select('+passwordHash');
 
       if (user && user.passwordHash && (await bcrypt.compare(password, user.passwordHash))) {
+        const token = jwt.sign({ sub: String(user._id), email: user.email }, secret, { expiresIn: '7d' });
+
         const response = NextResponse.json(
-          { success: true, message: 'Authentication successful' },
+          { success: true, message: 'Authentication successful', token },
           { status: 200 }
         );
 
-        response.cookies.set(
-          'admin_token',
-          jwt.sign({ sub: String(user._id), email: user.email }, secret, { expiresIn: '24h' }),
-          {
-            httpOnly: true,
-            path: '/',
-            maxAge: 60 * 60 * 24, // 1 day
-            sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'production',
-          }
-        );
+        response.cookies.set('admin_token', token, {
+          httpOnly: true,
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          sameSite: 'lax',
+          secure: isSecureCookie,
+        });
 
         await captureServerEvent(
           request,

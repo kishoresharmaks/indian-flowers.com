@@ -503,11 +503,17 @@ export async function POST(request: NextRequest) {
             existingProduct.slug = finalSlug;
           }
           const catSlug = matchedCategory?.slug || slugify(categoryName);
+          const subSlug = subcategoryName ? slugify(subcategoryName) : '';
           existingProduct.description = description;
           existingProduct.category = categoryName;
           existingProduct.categorySlug = catSlug;
           existingProduct.parentCategorySlug = catSlug;
           existingProduct.subcategory = subcategoryName;
+          existingProduct.subcategorySlug = subSlug;
+          existingProduct.categories = [
+            { name: categoryName, slug: catSlug },
+            ...(subcategoryName ? [{ name: subcategoryName, slug: subSlug }] : []),
+          ];
           existingProduct.price = price;
           existingProduct.mrp = mrp;
           existingProduct.discount = discount;

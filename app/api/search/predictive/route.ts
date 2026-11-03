@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     const productConditions = terms.map((term) => ({
       $or: [
         { name: term },
+        { slug: term },
         { category: term },
         { subCategory: term },
         { tags: term },

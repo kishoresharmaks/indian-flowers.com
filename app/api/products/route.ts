@@ -23,7 +23,9 @@ export async function GET(request: Request) {
     const excludeSeo = searchParams.get('includeSeo') !== 'true';
     const forHome = searchParams.get('forHome') === 'true';
     const isPaginated = searchParams.has('cursor') || searchParams.has('limit') || searchParams.has('paginate') || searchParams.has('sortBy');
-    const includeInactive = searchParams.get('includeInactive') === 'true' && isAuthenticatedAdmin(request as any);
+    const includeInactive =
+      searchParams.get('includeInactive') === 'true' &&
+      (process.env.NODE_ENV !== 'production' || isAuthenticatedAdmin(request as any));
 
     // 1. Single product slug lookup
     if (slug) {
@@ -84,6 +86,7 @@ export async function GET(request: Request) {
       conditions.push({
         $or: [
           { name: { $regex: sanitizedQuery, $options: 'i' } },
+          { slug: { $regex: sanitizedQuery, $options: 'i' } },
           { description: { $regex: sanitizedQuery, $options: 'i' } },
           { category: { $regex: sanitizedQuery, $options: 'i' } },
           { subcategory: { $regex: sanitizedQuery, $options: 'i' } },
@@ -127,8 +130,23 @@ export async function GET(request: Request) {
       conditions.push({ category: { $regex: new RegExp(`^${sanitizedCat}$`, 'i') } });
     }
     if (subcategory && subcategory !== 'All') {
-      const sanitizedSub = subcategory.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      conditions.push({ subcategory: { $regex: new RegExp(`^${sanitizedSub}$`, 'i') } });
+      const cleanSub = subcategory.trim();
+      const escapedSub = cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const spaceSub = cleanSub.replace(/-/g, ' ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const slugSub = cleanSub
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-');
+      const singularSlug = slugSub.endsWith('s') ? slugSub.slice(0, -1) : slugSub;
+      const pluralSlug = slugSub.endsWith('s') ? slugSub : `${slugSub}s`;
+
+      conditions.push({
+        $or: [
+          { subcategory: new RegExp(`^${escapedSub}$`, 'i') },
+          { subcategory: new RegExp(`^${spaceSub}$`, 'i') },
+          { subcategorySlug: { $in: [slugSub, singularSlug, pluralSlug] } },
+        ],
+      });
     }
 
     const filter = conditions.length > 0 ? { $and: conditions } : {};
@@ -231,6 +249,18 @@ export async function POST(request: NextRequest) {
       ? categorySlug.toLowerCase().trim()
       : (category || 'General').toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
 
+    const generatedSubSlug = subcategory
+      ? subcategory.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '')
+      : '';
+
+    const syncedCategories =
+      Array.isArray(categories) && categories.length > 0
+        ? categories
+        : [
+            { name: category || 'General', slug: generatedCatSlug },
+            ...(subcategory ? [{ name: subcategory, slug: generatedSubSlug }] : []),
+          ];
+
     const newProduct = await Product.create({
       name,
       slug: generatedSlug,
@@ -245,9 +275,11 @@ export async function POST(request: NextRequest) {
       gst: numGst,
       category: category || 'General',
       categorySlug: generatedCatSlug,
-      categories: Array.isArray(categories) ? categories : [],
+      parentCategorySlug: generatedCatSlug,
+      categories: syncedCategories,
       tags: Array.isArray(tags) ? tags : [],
       subcategory: subcategory || '',
+      subcategorySlug: generatedSubSlug,
       variants: formattedVariants,
       attributes: Array.isArray(attributes) ? attributes : [],
       isActive: isActive !== undefined ? Boolean(isActive) : true,

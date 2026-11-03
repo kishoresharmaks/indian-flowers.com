@@ -134,6 +134,7 @@ interface Product {
   categorySlug?: string;
   parentCategorySlug?: string;
   subcategory?: string;
+  tags?: string[];
   variants?: ProductVariant[];
   isActive?: boolean;
   createdAt: string;
@@ -339,6 +340,21 @@ export default function AdminDashboard() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
   const [productFormError, setProductFormError] = useState('');
+  const [productFormSuccess, setProductFormSuccess] = useState('');
+
+  const handleAdminUnauthorized = (pendingDraft?: any) => {
+    if (typeof window !== 'undefined') {
+      if (pendingDraft) {
+        try {
+          sessionStorage.setItem('admin_pending_product_form', JSON.stringify(pendingDraft));
+        } catch (e) {
+          console.error('Failed to stash product draft:', e);
+        }
+      }
+      const currentUrl = `${window.location.pathname}${window.location.search || ''}`;
+      window.location.href = `/admin/login?from=${encodeURIComponent(currentUrl)}&unauthorized=true`;
+    }
+  };
   const [productPage, setProductPage] = useState(1);
   const productsPerPage = 8;
   const [productSearch, setProductSearch] = useState('');
@@ -954,6 +970,10 @@ export default function AdminDashboard() {
     try {
       setLoadingProducts(true);
       const res = await fetch(`/api/products?includeInactive=true&t=${Date.now()}`, { cache: 'no-store' });
+      if (res.status === 401) {
+        handleAdminUnauthorized();
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setProducts(data.data);
@@ -971,6 +991,10 @@ export default function AdminDashboard() {
     try {
       setLoadingCategories(true);
       const res = await fetch('/api/categories');
+      if (res.status === 401) {
+        handleAdminUnauthorized();
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setCategories(data.data);
@@ -993,6 +1017,10 @@ export default function AdminDashboard() {
     try {
       setLoadingOrders(true);
       const res = await fetch('/api/orders');
+      if (res.status === 401) {
+        handleAdminUnauthorized();
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setOrders(data.data);
@@ -1724,11 +1752,44 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           fetchSubscribers(true);
           fetchInboxStats();
           fetchCustomerCount();
+
+          // Restore product draft if returning from an auth refresh
+          if (typeof window !== 'undefined') {
+            try {
+              const savedDraft = sessionStorage.getItem('admin_pending_product_form');
+              if (savedDraft) {
+                const parsed = JSON.parse(savedDraft);
+                if (parsed.productForm) {
+                  setProductForm(parsed.productForm);
+                  if (parsed.imagePreview) setImagePreview(parsed.imagePreview);
+                  if (parsed.isEdit && parsed.editingProduct) {
+                    setEditingProduct(parsed.editingProduct);
+                  } else {
+                    setEditingProduct(null);
+                  }
+                  setActiveTab('products');
+                  setIsAddModalOpen(true);
+                  setProductFormSuccess('Your product draft has been restored. You can continue saving.');
+                  sessionStorage.removeItem('admin_pending_product_form');
+                }
+              }
+            } catch (draftErr) {
+              console.warn('Could not restore product draft:', draftErr);
+            }
+          }
         } else {
-          router.replace('/admin/login');
+          const currentUrl =
+            typeof window !== 'undefined'
+              ? `${window.location.pathname}${window.location.search || ''}`
+              : '/admin/dashboard';
+          router.replace(`/admin/login?from=${encodeURIComponent(currentUrl)}&unauthorized=true`);
         }
       } catch (err) {
-        router.replace('/admin/login');
+        const currentUrl =
+          typeof window !== 'undefined'
+            ? `${window.location.pathname}${window.location.search || ''}`
+            : '/admin/dashboard';
+        router.replace(`/admin/login?from=${encodeURIComponent(currentUrl)}&unauthorized=true`);
       } finally {
         setIsAuthChecking(false);
       }
@@ -1931,6 +1992,18 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           .replace(/[\s_-]+/g, '-')
           .replace(/^-+|-+$/g, '');
 
+      const matchedSubObj = (matchedCatObj?.subcategories || []).find(
+        (s: any) => s.name.toLowerCase() === (productForm.subcategory || '').toLowerCase()
+      );
+      const computedSubSlug =
+        matchedSubObj?.slug ||
+        (productForm.subcategory ? slugify(productForm.subcategory) : '');
+
+      const syncedCategories = [
+        { name: productForm.category, slug: computedCatSlug },
+        ...(productForm.subcategory ? [{ name: productForm.subcategory, slug: computedSubSlug }] : []),
+      ];
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -1948,6 +2021,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           categorySlug: computedCatSlug,
           parentCategorySlug: computedCatSlug,
           subcategory: productForm.subcategory || '',
+          subcategorySlug: computedSubSlug,
+          categories: syncedCategories,
           isActive: productForm.isActive,
           variants: productForm.variants.map((v) => ({
             name: v.name.trim(),
@@ -1962,6 +2037,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       if (data.success) {
         setIsAddModalOpen(false);
         setEditingProduct(null);
+        setProductFormSuccess('');
+        setProductFormError('');
         if (data.data) {
           if (isEdit) {
             setProducts((prev) => prev.map((p) => (p._id === data.data._id ? data.data : p)));
@@ -1971,6 +2048,20 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         }
         fetchProducts();
       } else {
+        if (
+          res.status === 401 ||
+          data.message?.toLowerCase().includes('unauthorized') ||
+          data.message?.toLowerCase().includes('admin session required')
+        ) {
+          handleAdminUnauthorized({
+            productForm,
+            imagePreview,
+            isEdit,
+            editingProduct,
+            savedAt: Date.now(),
+          });
+          return;
+        }
         setProductFormError(data.message || 'Failed to save product.');
       }
     } catch (err: any) {
@@ -2586,9 +2677,12 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
     const q = productSearch.toLowerCase().trim();
     return (
       p.name?.toLowerCase().includes(q) ||
+      p.slug?.toLowerCase().includes(q) ||
+      (Array.isArray(p.tags) && p.tags.some((t: any) => typeof t === 'string' && t.toLowerCase().includes(q))) ||
       p.description?.toLowerCase().includes(q) ||
       p.category?.toLowerCase().includes(q) ||
       p.subcategory?.toLowerCase().includes(q) ||
+      p._id?.toString().toLowerCase().includes(q) ||
       p.price?.toString().includes(q) ||
       p.variants?.some((v) => v.name?.toLowerCase().includes(q))
     );
@@ -3804,8 +3898,29 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                                 className="w-12 h-12 object-cover rounded-xl bg-[#FFF8F5] border border-[#E8EDF2]"
                               />
                               <div>
-                                <h4 className="font-bold text-[#163B5C] line-clamp-1">{p.name}</h4>
-                                <p className="text-xs text-[#64748B] line-clamp-1">{p.description}</p>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <h4 className="font-bold text-[#163B5C] line-clamp-1">{p.name}</h4>
+                                  <a
+                                    href={`/product/${p.slug || p._id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-slate-400 hover:text-emerald-700 transition-colors shrink-0"
+                                    title="View product on storefront (opens in new tab)"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                    /{p.slug || p._id}
+                                  </span>
+                                  {p.isActive === false && (
+                                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                                      Disabled
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-[#64748B] line-clamp-1 mt-0.5">{p.description}</p>
                                 <div className="flex items-center gap-1.5 flex-wrap mt-1">
                                   {p.variants && p.variants.length > 0 && (
                                     <span className="inline-block px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px] border border-purple-200">
@@ -6744,6 +6859,13 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                   Enter product details, MRP, price, GST slab & upload 1 image.
                 </p>
               </div>
+
+              {productFormSuccess && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+                  <span>{productFormSuccess}</span>
+                </div>
+              )}
 
               {productFormError && (
                 <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
