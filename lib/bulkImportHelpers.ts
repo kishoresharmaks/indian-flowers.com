@@ -114,16 +114,20 @@ function safeCreateObjectURL(file: any): string | null {
   return null;
 }
 
-export function normalizeDescriptionText(val: any): string {
-  if (!val) return '';
-  return String(val)
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
+export function sanitizeProductDescription(html: any): string {
+  if (!html || typeof html !== 'string') return '';
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
+    .replace(/<br\s*[\/]?>/gi, ' ')
+    .replace(/<\/p>/gi, ' ')
+    .replace(/<\/h[1-6]>/gi, ' ')
+    .replace(/<\/li>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
     .replace(/&#8217;/g, "'")
     .replace(/&#8216;/g, "'")
     .replace(/&#8220;/g, '"')
@@ -133,6 +137,8 @@ export function normalizeDescriptionText(val: any): string {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+export const normalizeDescriptionText = sanitizeProductDescription;
 
 export function areVariantsEqual(v1: any[] = [], v2: any[] = []): boolean {
   const list1 = Array.isArray(v1) ? v1 : [];

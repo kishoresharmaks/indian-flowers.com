@@ -3,6 +3,7 @@ import ExcelJS from 'exceljs';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+import { sanitizeProductDescription } from '@/lib/bulkImportHelpers';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -34,21 +35,7 @@ function extractAllFilenames(images: string[] | undefined | null): string {
  * Strips HTML tags and entities for clean Excel text cell rendering
  */
 function stripHtml(html: string | undefined | null): string {
-  if (!html || typeof html !== 'string') return '';
-  return html
-    .replace(/<br\s*[\/]?>/gi, ' ')
-    .replace(/<\/p>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8216;/g, "'")
-    .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return sanitizeProductDescription(html);
 }
 
 function formatVariantsString(variants: any[] | undefined): string {
