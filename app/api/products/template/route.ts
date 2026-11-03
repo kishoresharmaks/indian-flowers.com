@@ -32,8 +32,26 @@ export async function GET(request: NextRequest) {
       { header: 'Category *', key: 'category', width: 28 },
       { header: 'Sales Tax Status', key: 'salesTaxStatus', width: 20 },
       { header: 'Subcategory (Optional)', key: 'subcategory', width: 26 },
-      { header: 'Product Variants & Pricing', key: 'variants', width: 48 },
       { header: 'Storefront Visibility', key: 'visibility', width: 22 },
+      // Separate Variant Columns (Up to 4 in default template)
+      { header: 'Variant 1 - Name', key: 'v1_name', width: 24 },
+      { header: 'Variant 1 - Price ($)', key: 'v1_price', width: 18 },
+      { header: 'Variant 1 - MRP ($)', key: 'v1_mrp', width: 18 },
+      { header: 'Variant 1 - Stock Qty', key: 'v1_quantity', width: 18 },
+      { header: 'Variant 2 - Name', key: 'v2_name', width: 24 },
+      { header: 'Variant 2 - Price ($)', key: 'v2_price', width: 18 },
+      { header: 'Variant 2 - MRP ($)', key: 'v2_mrp', width: 18 },
+      { header: 'Variant 2 - Stock Qty', key: 'v2_quantity', width: 18 },
+      { header: 'Variant 3 - Name', key: 'v3_name', width: 24 },
+      { header: 'Variant 3 - Price ($)', key: 'v3_price', width: 18 },
+      { header: 'Variant 3 - MRP ($)', key: 'v3_mrp', width: 18 },
+      { header: 'Variant 3 - Stock Qty', key: 'v3_quantity', width: 18 },
+      { header: 'Variant 4 - Name', key: 'v4_name', width: 24 },
+      { header: 'Variant 4 - Price ($)', key: 'v4_price', width: 18 },
+      { header: 'Variant 4 - MRP ($)', key: 'v4_mrp', width: 18 },
+      { header: 'Variant 4 - Stock Qty', key: 'v4_quantity', width: 18 },
+      // Combined legacy column
+      { header: 'Product Variants & Pricing', key: 'variants', width: 48 },
     ];
 
     wsProducts.columns = columns;
@@ -55,9 +73,9 @@ export async function GET(request: NextRequest) {
       } else if (colIdx >= 8 && colIdx <= 10) {
         fillArgb = 'FF1C563F'; // Category, Sales Tax Status, Subcategory
       } else if (colIdx === 11) {
-        fillArgb = 'FF9F1239'; // Product Variants & Pricing (Rose Accent)
-      } else if (colIdx === 12) {
         fillArgb = 'FF1E3A8A'; // Storefront Visibility
+      } else {
+        fillArgb = 'FF9F1239'; // Variant columns (Rose Accent)
       }
 
       cell.fill = {
@@ -97,8 +115,16 @@ export async function GET(request: NextRequest) {
         category: 'Indian Wedding Garlands',
         salesTaxStatus: 'Taxable',
         subcategory: 'Rose Petal Garlands',
-        variants: 'Standard Length (4 ft): 75: 95: 15; Grand Length (5 ft): 95: 120: 10',
         visibility: 'Visible',
+        v1_name: 'Standard Length (4 ft)',
+        v1_price: 75.0,
+        v1_mrp: 95.0,
+        v1_quantity: 15,
+        v2_name: 'Grand Length (5 ft)',
+        v2_price: 95.0,
+        v2_mrp: 120.0,
+        v2_quantity: 10,
+        variants: 'Standard Length (4 ft): 75: 95: 15; Grand Length (5 ft): 95: 120: 10',
       },
       {
         title: 'White Carnation & Red Rose Wedding Varmala with Golden Tassels',
@@ -111,8 +137,16 @@ export async function GET(request: NextRequest) {
         category: 'Indian Wedding Garlands',
         salesTaxStatus: 'Taxable',
         subcategory: 'Carnation Garlands',
-        variants: 'Single Garland (4 ft): 89: 110: 10; Matching Pair (Set of 2): 170: 210: 10',
         visibility: 'Visible',
+        v1_name: 'Single Garland (4 ft)',
+        v1_price: 89.0,
+        v1_mrp: 110.0,
+        v1_quantity: 10,
+        v2_name: 'Matching Pair (Set of 2)',
+        v2_price: 170.0,
+        v2_mrp: 210.0,
+        v2_quantity: 10,
+        variants: 'Single Garland (4 ft): 89: 110: 10; Matching Pair (Set of 2): 170: 210: 10',
       },
       {
         title: 'Fresh Fragrant Madurai Jasmine (Mallipoo) String',
@@ -125,8 +159,20 @@ export async function GET(request: NextRequest) {
         category: 'strings',
         salesTaxStatus: 'Taxable',
         subcategory: 'Jasmine Strings',
-        variants: '1 Yard: 24: 30: 25; 2 Yards: 44: 55: 15; 5 Yards (Grand Puja Pack): 99: 125: 10',
         visibility: 'Visible',
+        v1_name: '1 Yard',
+        v1_price: 24.0,
+        v1_mrp: 30.0,
+        v1_quantity: 25,
+        v2_name: '2 Yards',
+        v2_price: 44.0,
+        v2_mrp: 55.0,
+        v2_quantity: 15,
+        v3_name: '5 Yards (Grand Puja Pack)',
+        v3_price: 99.0,
+        v3_mrp: 125.0,
+        v3_quantity: 10,
+        variants: '1 Yard: 24: 30: 25; 2 Yards: 44: 55: 15; 5 Yards (Grand Puja Pack): 99: 125: 10',
       },
       {
         title: 'Fresh Orange & Yellow Marigold Loose Flowers (Genda)',
@@ -139,8 +185,20 @@ export async function GET(request: NextRequest) {
         category: 'Pooja flowers',
         salesTaxStatus: 'Taxable',
         subcategory: 'Loose Flowers',
-        variants: '250 Grams: 18: 25: 20; 500 Grams: 32: 45: 15; 1 Kilogram Box: 60: 85: 5',
         visibility: 'Visible',
+        v1_name: '250 Grams',
+        v1_price: 18.0,
+        v1_mrp: 25.0,
+        v1_quantity: 20,
+        v2_name: '500 Grams',
+        v2_price: 32.0,
+        v2_mrp: 45.0,
+        v2_quantity: 15,
+        v3_name: '1 Kilogram Box',
+        v3_price: 60.0,
+        v3_mrp: 85.0,
+        v3_quantity: 5,
+        variants: '250 Grams: 18: 25: 20; 500 Grams: 32: 45: 15; 1 Kilogram Box: 60: 85: 5',
       },
       {
         title: 'Fresh Indian Mango Leaves Bunch (Mavilai for Kalasam & Toran)',
@@ -153,8 +211,8 @@ export async function GET(request: NextRequest) {
         category: 'Pooja leaves',
         salesTaxStatus: 'Taxable',
         subcategory: 'Pooja Leaves',
-        variants: '', // Simple product without variants
         visibility: 'Visible',
+        variants: '', // Simple product without variants
       },
     ];
 
@@ -167,6 +225,7 @@ export async function GET(request: NextRequest) {
 
       for (let c = 1; c <= columns.length; c++) {
         const cell = addedRow.getCell(c);
+        const colDef = columns[c - 1];
         cell.font = { name: 'Segoe UI', size: 10 };
         cell.fill = {
           type: 'pattern',
@@ -195,18 +254,18 @@ export async function GET(request: NextRequest) {
           };
           cell.alignment = { vertical: 'middle', horizontal: 'left' };
         }
-        // Col 5 & 6: MRP & Selling Price - Currency formatting
-        else if (c === 5 || c === 6) {
+        // Pricing cells
+        else if (c === 5 || c === 6 || (colDef && (colDef.key.endsWith('_price') || colDef.key.endsWith('_mrp')))) {
           cell.alignment = { vertical: 'middle', horizontal: 'right' };
           if (typeof cell.value === 'number') {
             cell.numFmt = '$#,##0.00';
           }
-          if (c === 6) {
+          if (c === 6 || (colDef && colDef.key.endsWith('_price'))) {
             cell.font = { name: 'Segoe UI', size: 10, bold: true };
           }
         }
-        // Col 7: Stock Quantity - Number center
-        else if (c === 7) {
+        // Quantity cells
+        else if (c === 7 || (colDef && colDef.key.endsWith('_quantity'))) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
           if (typeof cell.value === 'number') {
             cell.numFmt = '#,##0';
@@ -216,8 +275,8 @@ export async function GET(request: NextRequest) {
         else if (c === 9) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
         }
-        // Col 12: Storefront Visibility - Center with color
-        else if (c === 12) {
+        // Col 11: Storefront Visibility - Center with color
+        else if (c === 11) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
           if (cell.value === 'Visible') {
             cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF15803D' } };

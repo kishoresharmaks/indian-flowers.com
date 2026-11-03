@@ -114,6 +114,61 @@ function safeCreateObjectURL(file: any): string | null {
   return null;
 }
 
+export function normalizeDescriptionText(val: any): string {
+  if (!val) return '';
+  return String(val)
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8216;/g, "'")
+    .replace(/&#8220;/g, '"')
+    .replace(/&#8221;/g, '"')
+    .replace(/&quot;/gi, '"')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function areVariantsEqual(v1: any[] = [], v2: any[] = []): boolean {
+  const list1 = Array.isArray(v1) ? v1 : [];
+  const list2 = Array.isArray(v2) ? v2 : [];
+  if (list1.length !== list2.length) return false;
+  if (list1.length === 0 && list2.length === 0) return true;
+
+  const norm1 = [...list1]
+    .map((v) => ({
+      name: String(v.name || '').trim().toLowerCase(),
+      price: Number(v.price || 0),
+      mrp: Number(v.mrp ?? v.price ?? 0),
+      quantity: Number(v.quantity ?? 10),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const norm2 = [...list2]
+    .map((v) => ({
+      name: String(v.name || '').trim().toLowerCase(),
+      price: Number(v.price || 0),
+      mrp: Number(v.mrp ?? v.price ?? 0),
+      quantity: Number(v.quantity ?? 10),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return norm1.every((item, idx) => {
+    const other = norm2[idx];
+    return (
+      item.name === other.name &&
+      Math.abs(item.price - other.price) < 0.01 &&
+      Math.abs(item.mrp - other.mrp) < 0.01 &&
+      item.quantity === other.quantity
+    );
+  });
+}
+
 export function parseExcelRowsToImportItems(
   rawRows: any[],
   existingProducts: any[] = [],
@@ -341,119 +396,123 @@ export function parseExcelRowsToImportItems(
       }
     }
 
-    // 9. Extract Variants (Token String: Name: Price: MRP: Qty or separate columns)
+    // 9. Extract Variants (Separate columns first, fallback to token string)
     const variants: ParsedVariant[] = [];
-    const rawVariantsStr = (
-      rawRow['Product Variants & Pricing'] ||
-      norm.productvariantspricing ||
-      norm.productvariants ||
-      norm.variants ||
-      norm.variant ||
-      rawRow['Variants'] ||
-      ''
-    )
-      .toString()
-      .trim();
 
-    if (rawVariantsStr) {
-      const tokens = rawVariantsStr.split(';').map((s: string) => s.trim()).filter(Boolean);
-      for (const token of tokens) {
-        const segs = token.split(':').map((s: string) => s.trim());
-        if (segs.length === 0 || !segs[0]) continue;
+    // Priority 1: Check distinct separate columns (Variant 1 - Name, Variant 1 - Price, etc.)
+    for (let v = 1; v <= 15; v++) {
+      const vName = (
+        norm[`variant${v}name`] ||
+        norm[`variant${v}`] ||
+        norm[`v${v}name`] ||
+        rawRow[`Variant ${v} - Name`] ||
+        rawRow[`Variant ${v} Name`] ||
+        ''
+      )
+        .toString()
+        .trim();
 
-        const vName = segs[0];
-        let vPrice = price;
-        let vMrp = mrp;
-        let vQty = quantity;
+      if (!vName) continue;
 
-        if (segs.length >= 4) {
-          vPrice = parseNum(segs[1], price);
-          vMrp = parseNum(segs[2], vPrice);
-          vQty = Math.max(0, Math.floor(parseNum(segs[3], quantity)));
-        } else if (segs.length === 3) {
-          vPrice = parseNum(segs[1], price);
-          vMrp = parseNum(segs[2], vPrice);
-        } else if (segs.length === 2) {
-          vPrice = parseNum(segs[1], price);
-          vMrp = vPrice;
-        }
+      const vPrice = parseNum(
+        norm[`variant${v}price`] ||
+          norm[`v${v}price`] ||
+          norm[`variant${v}sellingprice`] ||
+          rawRow[`Variant ${v} - Price ($)`] ||
+          rawRow[`Variant ${v} - Price`] ||
+          rawRow[`Variant ${v} Price`],
+        price
+      );
 
-        const finalVPrice = vPrice < 0 ? 0 : vPrice;
-        const finalVMrp = vMrp < finalVPrice ? finalVPrice : vMrp;
-        const vDiscount =
-          finalVMrp > finalVPrice ? Math.round(((finalVMrp - finalVPrice) / finalVMrp) * 100) : 0;
+      const vMrp = parseNum(
+        norm[`variant${v}mrp`] ||
+          norm[`v${v}mrp`] ||
+          norm[`variant${v}originalprice`] ||
+          rawRow[`Variant ${v} - MRP ($)`] ||
+          rawRow[`Variant ${v} - MRP`] ||
+          rawRow[`Variant ${v} MRP`],
+        vPrice
+      );
 
-        variants.push({
-          name: vName,
-          price: finalVPrice,
-          mrp: finalVMrp,
-          quantity: vQty,
-          discount: vDiscount,
-        });
-      }
+      const vQty = Math.max(
+        0,
+        Math.floor(
+          parseNum(
+            norm[`variant${v}stockqty`] ||
+              norm[`variant${v}quantity`] ||
+              norm[`variant${v}qty`] ||
+              norm[`v${v}qty`] ||
+              rawRow[`Variant ${v} - Stock Qty`] ||
+              rawRow[`Variant ${v} Quantity`],
+            quantity
+          )
+        )
+      );
+
+      const finalVPrice = vPrice < 0 ? 0 : vPrice;
+      const finalVMrp = vMrp < finalVPrice ? finalVPrice : vMrp;
+      const vDiscount =
+        finalVMrp > finalVPrice ? Math.round(((finalVMrp - finalVPrice) / finalVMrp) * 100) : 0;
+
+      variants.push({
+        name: vName,
+        price: finalVPrice,
+        mrp: finalVMrp,
+        quantity: vQty,
+        discount: vDiscount,
+      });
     }
 
-    // Fallback: If no single variants string, check separate columns (Variant 1 - Name, etc.)
+    // Priority 2: Fallback to token string 'Product Variants & Pricing' only if no separate columns found
     if (variants.length === 0) {
-      for (let v = 1; v <= 8; v++) {
-        const vName = (
-          norm[`variant${v}name`] ||
-          norm[`variant${v}`] ||
-          norm[`v${v}name`] ||
-          rawRow[`Variant ${v} - Name`] ||
-          rawRow[`Variant ${v} Name`] ||
-          ''
-        )
-          .toString()
-          .trim();
+      const rawVariantsStr = (
+        rawRow['Product Variants & Pricing'] ||
+        norm.productvariantspricing ||
+        norm.productvariants ||
+        norm.variants ||
+        norm.variant ||
+        rawRow['Variants'] ||
+        ''
+      )
+        .toString()
+        .trim();
 
-        if (!vName) continue;
+      if (rawVariantsStr) {
+        const tokens = rawVariantsStr.split(';').map((s: string) => s.trim()).filter(Boolean);
+        for (const token of tokens) {
+          const segs = token.split(':').map((s: string) => s.trim());
+          if (segs.length === 0 || !segs[0]) continue;
 
-        const vPrice = parseNum(
-          norm[`variant${v}price`] ||
-            norm[`v${v}price`] ||
-            norm[`variant${v}sellingprice`] ||
-            rawRow[`Variant ${v} - Price ($)`] ||
-            rawRow[`Variant ${v} Price`],
-          price
-        );
+          const vName = segs[0];
+          let vPrice = price;
+          let vMrp = mrp;
+          let vQty = quantity;
 
-        const vMrp = parseNum(
-          norm[`variant${v}mrp`] ||
-            norm[`v${v}mrp`] ||
-            norm[`variant${v}originalprice`] ||
-            rawRow[`Variant ${v} - MRP ($)`] ||
-            rawRow[`Variant ${v} MRP`],
-          vPrice
-        );
+          if (segs.length >= 4) {
+            vPrice = parseNum(segs[1], price);
+            vMrp = parseNum(segs[2], vPrice);
+            vQty = Math.max(0, Math.floor(parseNum(segs[3], quantity)));
+          } else if (segs.length === 3) {
+            vPrice = parseNum(segs[1], price);
+            vMrp = parseNum(segs[2], vPrice);
+          } else if (segs.length === 2) {
+            vPrice = parseNum(segs[1], price);
+            vMrp = vPrice;
+          }
 
-        const vQty = Math.max(
-          0,
-          Math.floor(
-            parseNum(
-              norm[`variant${v}stockqty`] ||
-                norm[`variant${v}quantity`] ||
-                norm[`variant${v}qty`] ||
-                norm[`v${v}qty`] ||
-                rawRow[`Variant ${v} - Stock Qty`] ||
-                rawRow[`Variant ${v} Quantity`],
-              quantity
-            )
-          )
-        );
+          const finalVPrice = vPrice < 0 ? 0 : vPrice;
+          const finalVMrp = vMrp < finalVPrice ? finalVPrice : vMrp;
+          const vDiscount =
+            finalVMrp > finalVPrice ? Math.round(((finalVMrp - finalVPrice) / finalVMrp) * 100) : 0;
 
-        const finalVPrice = vPrice < 0 ? 0 : vPrice;
-        const finalVMrp = vMrp < finalVPrice ? finalVPrice : vMrp;
-        const vDiscount =
-          finalVMrp > finalVPrice ? Math.round(((finalVMrp - finalVPrice) / finalVMrp) * 100) : 0;
-
-        variants.push({
-          name: vName,
-          price: finalVPrice,
-          mrp: finalVMrp,
-          quantity: vQty,
-          discount: vDiscount,
-        });
+          variants.push({
+            name: vName,
+            price: finalVPrice,
+            mrp: finalVMrp,
+            quantity: vQty,
+            discount: vDiscount,
+          });
+        }
       }
     }
 
@@ -483,22 +542,41 @@ export function parseExcelRowsToImportItems(
       (item) => item.name.trim().toLowerCase() === subcategory.toLowerCase() || item.slug?.toLowerCase() === slugify(subcategory)
     )) issues.push(`Subcategory "${subcategory}" does not belong to "${matchedCategory.name}"`);
 
-    const changedFields = existing ? [
-      ['Description', existing.description, description],
-      ['Category', existing.category, category],
-      ['Subcategory', existing.subcategory || '', subcategory],
-      ['Price', existing.price, price],
-      ['MRP', existing.mrp, mrp],
-      ['Stock', existing.quantity, quantity],
-      ['Tax', existing.gst || 0, gst],
-      ['Storefront status', existing.isActive !== false, isActive],
-      ['Taxable', existing.isTaxable !== false, isTaxable],
-      ['Variants', JSON.stringify(existing.variants || []), JSON.stringify(variants)],
-    ].filter(([, current, incoming]) =>
-      typeof current === 'string' || typeof incoming === 'string'
-        ? String(current || '').trim() !== String(incoming || '').trim()
-        : current !== incoming
-    ).map(([label]) => label as string) : [];
+    const changedFields: string[] = [];
+    if (existing) {
+      if (normalizeDescriptionText(existing.description) !== normalizeDescriptionText(description)) {
+        changedFields.push('Description');
+      }
+      if (normalizeDescriptionText(existing.category).toLowerCase() !== normalizeDescriptionText(category).toLowerCase()) {
+        changedFields.push('Category');
+      }
+      if (normalizeDescriptionText(existing.subcategory || '').toLowerCase() !== normalizeDescriptionText(subcategory || '').toLowerCase()) {
+        changedFields.push('Subcategory');
+      }
+      if (Math.abs(Number(existing.price || 0) - Number(price || 0)) >= 0.01) {
+        changedFields.push('Price');
+      }
+      const existingMrp = Number(existing.mrp ?? existing.price ?? 0);
+      const incomingMrp = Number(mrp ?? price ?? 0);
+      if (Math.abs(existingMrp - incomingMrp) >= 0.01) {
+        changedFields.push('MRP');
+      }
+      if (Number(existing.quantity ?? 0) !== Number(quantity ?? 0)) {
+        changedFields.push('Stock');
+      }
+      if (Number(existing.gst ?? 0) !== Number(gst ?? 0)) {
+        changedFields.push('Tax');
+      }
+      if (Boolean(existing.isActive !== false) !== Boolean(isActive !== false)) {
+        changedFields.push('Storefront status');
+      }
+      if (Boolean(existing.isTaxable !== false) !== Boolean(isTaxable !== false)) {
+        changedFields.push('Taxable');
+      }
+      if (!areVariantsEqual(existing.variants || [], variants)) {
+        changedFields.push('Variants');
+      }
+    }
 
     results.push({
       index: idx,

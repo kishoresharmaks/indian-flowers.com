@@ -51,9 +51,6 @@ function stripHtml(html: string | undefined | null): string {
     .trim();
 }
 
-/**
- * Formats variants as a semicolon-delimited token string for easy bulk re-import
- */
 function formatVariantsString(variants: any[] | undefined): string {
   if (!Array.isArray(variants) || variants.length === 0) return '';
   return variants
@@ -77,35 +74,40 @@ function slugify(text: string): string {
 }
 
 /**
- * Clean Single-Source Core Catalog Columns Definition
- * Matches exact format requested by admin for 1:1 roundtrip export and bulk-import:
- * 1. Product Title
- * 2. Product Slug
- * 3. Product Description
- * 4. Product Image name of the image file to import
- * 5. MRP (Original $) *
- * 6. Selling Price ($) *
- * 7. Stock Quantity *
- * 8. Category *
- * 9. Sales Tax Status
- * 10. Subcategory (Optional)
- * 11. Product Variants & Pricing
- * 12. Storefront Visibility
+ * Builds catalog columns dynamically:
+ * Base catalog columns followed by distinct columns for each variant (up to maxVariants, min 4),
+ * and finally the combined 'Product Variants & Pricing' column for backward compatibility.
  */
-const CORE_CATALOG_COLUMNS = [
-  { header: 'Product Title', key: 'title', width: 42 },
-  { header: 'Product Slug', key: 'slug', width: 36 },
-  { header: 'Product Description', key: 'description', width: 55 },
-  { header: 'Product Image name of the image file to import', key: 'imageFilename', width: 44 },
-  { header: 'MRP (Original $) *', key: 'mrp', width: 20 },
-  { header: 'Selling Price ($) *', key: 'price', width: 20 },
-  { header: 'Stock Quantity *', key: 'quantity', width: 18 },
-  { header: 'Category *', key: 'category', width: 28 },
-  { header: 'Sales Tax Status', key: 'salesTaxStatus', width: 20 },
-  { header: 'Subcategory (Optional)', key: 'subcategory', width: 26 },
-  { header: 'Product Variants & Pricing', key: 'variants', width: 48 },
-  { header: 'Storefront Visibility', key: 'visibility', width: 22 },
-];
+function getCatalogColumns(maxVariants: number) {
+  const baseCols = [
+    { header: 'Product Title', key: 'title', width: 42 },
+    { header: 'Product Slug', key: 'slug', width: 36 },
+    { header: 'Product Description', key: 'description', width: 55 },
+    { header: 'Product Image name of the image file to import', key: 'imageFilename', width: 44 },
+    { header: 'MRP (Original $) *', key: 'mrp', width: 20 },
+    { header: 'Selling Price ($) *', key: 'price', width: 20 },
+    { header: 'Stock Quantity *', key: 'quantity', width: 18 },
+    { header: 'Category *', key: 'category', width: 28 },
+    { header: 'Sales Tax Status', key: 'salesTaxStatus', width: 20 },
+    { header: 'Subcategory (Optional)', key: 'subcategory', width: 26 },
+    { header: 'Storefront Visibility', key: 'visibility', width: 22 },
+  ];
+
+  const variantCols = [];
+  for (let i = 1; i <= maxVariants; i++) {
+    variantCols.push(
+      { header: `Variant ${i} - Name`, key: `v${i}_name`, width: 24 },
+      { header: `Variant ${i} - Price ($)`, key: `v${i}_price`, width: 18 },
+      { header: `Variant ${i} - MRP ($)`, key: `v${i}_mrp`, width: 18 },
+      { header: `Variant ${i} - Stock Qty`, key: `v${i}_quantity`, width: 18 }
+    );
+  }
+
+  // Combined convenience column
+  variantCols.push({ header: 'Product Variants & Pricing', key: 'variants', width: 48 });
+
+  return [...baseCols, ...variantCols];
+}
 
 /**
  * Builds and formats a products worksheet with custom styling, auto-filter, and highlighted image filename
@@ -115,19 +117,25 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
     views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
   });
 
-  ws.columns = CORE_CATALOG_COLUMNS;
+  const maxBatchVariants = products.reduce((max, p) => {
+    return Math.max(max, Array.isArray(p.variants) ? p.variants.length : 0);
+  }, 0);
+  const maxVariants = Math.max(4, Math.min(15, maxBatchVariants));
+  const columns = getCatalogColumns(maxVariants);
+
+  ws.columns = columns;
 
   // Auto-filter
   ws.autoFilter = {
     from: { row: 1, column: 1 },
-    to: { row: 1, column: CORE_CATALOG_COLUMNS.length },
+    to: { row: 1, column: columns.length },
   };
 
   // Style Header Row 1
   const headerRow = ws.getRow(1);
   headerRow.height = 36;
 
-  for (let colIdx = 1; colIdx <= CORE_CATALOG_COLUMNS.length; colIdx++) {
+  for (let colIdx = 1; colIdx <= columns.length; colIdx++) {
     const cell = headerRow.getCell(colIdx);
     let fillArgb = 'FF0B3B24'; // Default Brand Forest Green (Cols 1, 3: Title, Description)
 
@@ -140,9 +148,9 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
     } else if (colIdx >= 8 && colIdx <= 10) {
       fillArgb = 'FF1C563F'; // Category, Sales Tax Status, Subcategory
     } else if (colIdx === 11) {
-      fillArgb = 'FF9F1239'; // Product Variants & Pricing (Rose Accent)
-    } else if (colIdx === 12) {
       fillArgb = 'FF1E3A8A'; // Storefront Visibility
+    } else {
+      fillArgb = 'FF9F1239'; // Variant columns (Rose Accent)
     }
 
     cell.fill = {
@@ -195,9 +203,19 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
       category: p.category || 'Indian Wedding Garlands',
       salesTaxStatus: taxStatus,
       subcategory: p.subcategory || '',
-      variants: formatVariantsString(variants),
       visibility: visibility,
     };
+
+    // Populate separate variant columns
+    for (let i = 1; i <= maxVariants; i++) {
+      const v = variants[i - 1];
+      rowData[`v${i}_name`] = v ? v.name || '' : '';
+      rowData[`v${i}_price`] = v && v.price !== undefined && v.price !== null ? Number(v.price) : '';
+      rowData[`v${i}_mrp`] = v && (v.mrp !== undefined || v.price !== undefined) ? Number(v.mrp ?? v.price) : '';
+      rowData[`v${i}_quantity`] = v && v.quantity !== undefined ? Number(v.quantity) : '';
+    }
+
+    rowData['variants'] = formatVariantsString(variants);
 
     const row = ws.addRow(rowData);
     row.height = 24;
@@ -205,8 +223,9 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
     const isEven = idx % 2 === 0;
     const rowBgColor = isEven ? 'FFFFFFFF' : 'FFF8FAFC';
 
-    for (let c = 1; c <= CORE_CATALOG_COLUMNS.length; c++) {
+    for (let c = 1; c <= columns.length; c++) {
       const cell = row.getCell(c);
+      const colDef = columns[c - 1];
       cell.font = { name: 'Segoe UI', size: 10 };
       cell.fill = {
         type: 'pattern',
@@ -235,18 +254,18 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
         };
         cell.alignment = { vertical: 'middle', horizontal: 'left' };
       }
-      // Col 5 & 6: MRP & Selling Price - Currency formatting
-      else if (c === 5 || c === 6) {
+      // Pricing cells (Base MRP, Base Price, or Variant Price / MRP)
+      else if (c === 5 || c === 6 || (colDef && (colDef.key.endsWith('_price') || colDef.key.endsWith('_mrp')))) {
         cell.alignment = { vertical: 'middle', horizontal: 'right' };
         if (typeof cell.value === 'number') {
           cell.numFmt = '$#,##0.00';
         }
-        if (c === 6) {
+        if (c === 6 || (colDef && colDef.key.endsWith('_price'))) {
           cell.font = { name: 'Segoe UI', size: 10, bold: true };
         }
       }
-      // Col 7: Stock Quantity - Number center
-      else if (c === 7) {
+      // Quantity cells (Base Stock or Variant Quantity)
+      else if (c === 7 || (colDef && colDef.key.endsWith('_quantity'))) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
         if (typeof cell.value === 'number') {
           cell.numFmt = '#,##0';
@@ -256,8 +275,8 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
       else if (c === 9) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
       }
-      // Col 12: Storefront Visibility - Center with color
-      else if (c === 12) {
+      // Col 11: Storefront Visibility - Center with color
+      else if (c === 11) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
         if (cell.value === 'Visible') {
           cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF15803D' } };

@@ -4,6 +4,7 @@ import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
 import Category from '@/models/Category';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
+import { normalizeDescriptionText, areVariantsEqual } from '@/lib/bulkImportHelpers';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -354,118 +355,122 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 8. Extract Variants (Single token string 'Product Variants & Pricing' or separate columns)
+      // 8. Extract Variants (Separate columns first, fallback to token string)
       let parsedVariants: any[] = [];
-      const rawVariantsStr = (
-        originalRow['Product Variants & Pricing'] ||
-        row.productvariantspricing ||
-        row.productvariants ||
-        row.variants ||
-        row.variant ||
-        originalRow['Variants'] ||
-        ''
-      )
-        .toString()
-        .trim();
 
-      if (rawVariantsStr) {
-        const tokens = rawVariantsStr.split(';').map((v: string) => v.trim()).filter(Boolean);
-        for (const token of tokens) {
-          const parts = token.split(':').map((p: string) => p.trim());
-          if (parts.length === 0 || !parts[0]) continue;
+      // Priority 1: Check distinct separate columns (Variant 1 - Name, Variant 1 - Price, etc.)
+      for (let vIdx = 1; vIdx <= 15; vIdx++) {
+        const vName = (
+          row[`variant${vIdx}name`] ||
+          row[`variant${vIdx}`] ||
+          row[`v${vIdx}name`] ||
+          originalRow[`Variant ${vIdx} - Name`] ||
+          originalRow[`Variant ${vIdx} Name`] ||
+          ''
+        )
+          .toString()
+          .trim();
 
-          const vName = parts[0] || 'Standard';
-          let vPrice = price;
-          let vMrp = mrp;
-          let vQty = quantity;
+        if (!vName) continue;
 
-          if (parts.length >= 4) {
-            vPrice = parseNum(parts[1], price);
-            vMrp = parseNum(parts[2], vPrice);
-            vQty = Math.max(0, Math.floor(parseNum(parts[3], quantity)));
-          } else if (parts.length === 3) {
-            vPrice = parseNum(parts[1], price);
-            vMrp = parseNum(parts[2], vPrice);
-          } else if (parts.length === 2) {
-            vPrice = parseNum(parts[1], price);
-            vMrp = vPrice;
-          }
+        const rawVPrice = parseNum(
+          row[`variant${vIdx}price`] ||
+            row[`v${vIdx}price`] ||
+            row[`variant${vIdx}sellingprice`] ||
+            originalRow[`Variant ${vIdx} - Price ($)`] ||
+            originalRow[`Variant ${vIdx} - Price`] ||
+            originalRow[`Variant ${vIdx} Price`],
+          price
+        );
 
-          const finalVPrice = vPrice < 0 ? 0 : vPrice;
-          const finalVMrp = vMrp < finalVPrice ? finalVPrice : vMrp;
-          const vDiscount =
-            finalVMrp > finalVPrice ? Math.round(((finalVMrp - finalVPrice) / finalVMrp) * 100) : 0;
+        const rawVMrp = parseNum(
+          row[`variant${vIdx}mrp`] ||
+            row[`v${vIdx}mrp`] ||
+            row[`variant${vIdx}originalprice`] ||
+            originalRow[`Variant ${vIdx} - MRP ($)`] ||
+            originalRow[`Variant ${vIdx} - MRP`] ||
+            originalRow[`Variant ${vIdx} MRP`],
+          rawVPrice || price
+        );
 
-          parsedVariants.push({
-            name: vName,
-            price: finalVPrice,
-            mrp: finalVMrp,
-            quantity: vQty,
-            discount: vDiscount,
-          });
-        }
+        const rawVQty = Math.max(
+          0,
+          Math.floor(
+            parseNum(
+              row[`variant${vIdx}stockqty`] ||
+                row[`variant${vIdx}quantity`] ||
+                row[`variant${vIdx}qty`] ||
+                row[`v${vIdx}qty`] ||
+                originalRow[`Variant ${vIdx} - Stock Qty`] ||
+                originalRow[`Variant ${vIdx} Quantity`],
+              quantity
+            )
+          )
+        );
+
+        const vPrice = rawVPrice < 0 ? 0 : rawVPrice;
+        const vMrp = rawVMrp < vPrice ? vPrice : rawVMrp;
+        const vDiscount = vMrp > vPrice ? Math.round(((vMrp - vPrice) / vMrp) * 100) : 0;
+
+        parsedVariants.push({
+          name: vName,
+          price: vPrice,
+          mrp: vMrp,
+          quantity: rawVQty,
+          discount: vDiscount,
+        });
       }
 
-      // Fallback: If no single variants string, check separate columns (Variant 1 - Name, etc.)
+      // Priority 2: Fallback to token string 'Product Variants & Pricing' only if no separate columns found
       if (parsedVariants.length === 0) {
-        for (let vIdx = 1; vIdx <= 8; vIdx++) {
-          const vName = (
-            row[`variant${vIdx}name`] ||
-            row[`variant${vIdx}`] ||
-            row[`v${vIdx}name`] ||
-            originalRow[`Variant ${vIdx} - Name`] ||
-            originalRow[`Variant ${vIdx} Name`] ||
-            ''
-          )
-            .toString()
-            .trim();
+        const rawVariantsStr = (
+          originalRow['Product Variants & Pricing'] ||
+          row.productvariantspricing ||
+          row.productvariants ||
+          row.variants ||
+          row.variant ||
+          originalRow['Variants'] ||
+          ''
+        )
+          .toString()
+          .trim();
 
-          if (!vName) continue;
+        if (rawVariantsStr) {
+          const tokens = rawVariantsStr.split(';').map((v: string) => v.trim()).filter(Boolean);
+          for (const token of tokens) {
+            const parts = token.split(':').map((p: string) => p.trim());
+            if (parts.length === 0 || !parts[0]) continue;
 
-          const rawVPrice = parseNum(
-            row[`variant${vIdx}price`] ||
-              row[`v${vIdx}price`] ||
-              row[`variant${vIdx}sellingprice`] ||
-              originalRow[`Variant ${vIdx} - Price ($)`] ||
-              originalRow[`Variant ${vIdx} Price`],
-            price
-          );
+            const vName = parts[0] || 'Standard';
+            let vPrice = price;
+            let vMrp = mrp;
+            let vQty = quantity;
 
-          const rawVMrp = parseNum(
-            row[`variant${vIdx}mrp`] ||
-              row[`v${vIdx}mrp`] ||
-              row[`variant${vIdx}originalprice`] ||
-              originalRow[`Variant ${vIdx} - MRP ($)`] ||
-              originalRow[`Variant ${vIdx} MRP`],
-            rawVPrice || price
-          );
+            if (parts.length >= 4) {
+              vPrice = parseNum(parts[1], price);
+              vMrp = parseNum(parts[2], vPrice);
+              vQty = Math.max(0, Math.floor(parseNum(parts[3], quantity)));
+            } else if (parts.length === 3) {
+              vPrice = parseNum(parts[1], price);
+              vMrp = parseNum(parts[2], vPrice);
+            } else if (parts.length === 2) {
+              vPrice = parseNum(parts[1], price);
+              vMrp = vPrice;
+            }
 
-          const rawVQty = Math.max(
-            0,
-            Math.floor(
-              parseNum(
-                row[`variant${vIdx}stockqty`] ||
-                  row[`variant${vIdx}quantity`] ||
-                  row[`variant${vIdx}qty`] ||
-                  row[`v${vIdx}qty`] ||
-                  originalRow[`Variant ${vIdx} - Stock Qty`] ||
-                  originalRow[`Variant ${vIdx} Quantity`],
-                quantity
-              )
-            )
-          );
+            const finalVPrice = vPrice < 0 ? 0 : vPrice;
+            const finalVMrp = vMrp < finalVPrice ? finalVPrice : vMrp;
+            const vDiscount =
+              finalVMrp > finalVPrice ? Math.round(((finalVMrp - finalVPrice) / finalVMrp) * 100) : 0;
 
-          const vPrice = rawVPrice < 0 ? 0 : rawVPrice;
-          const vMrp = rawVMrp < vPrice ? vPrice : rawVMrp;
-          const vDiscount = vMrp > vPrice ? Math.round(((vMrp - vPrice) / vMrp) * 100) : 0;
-
-          parsedVariants.push({
-            name: vName,
-            price: vPrice,
-            mrp: vMrp,
-            quantity: rawVQty,
-            discount: vDiscount,
-          });
+            parsedVariants.push({
+              name: vName,
+              price: finalVPrice,
+              mrp: finalVMrp,
+              quantity: vQty,
+              discount: vDiscount,
+            });
+          }
         }
       }
 
@@ -504,7 +509,12 @@ export async function POST(request: NextRequest) {
           }
           const catSlug = matchedCategory?.slug || slugify(categoryName);
           const subSlug = subcategoryName ? slugify(subcategoryName) : '';
-          existingProduct.description = description;
+
+          // Only overwrite rich description if incoming plain text actually changed
+          if (normalizeDescriptionText(existingProduct.description) !== normalizeDescriptionText(description)) {
+            existingProduct.description = description;
+          }
+
           existingProduct.category = categoryName;
           existingProduct.categorySlug = catSlug;
           existingProduct.parentCategorySlug = catSlug;
@@ -539,7 +549,7 @@ export async function POST(request: NextRequest) {
             ];
           }
 
-          if (parsedVariants.length > 0) {
+          if (!areVariantsEqual(existingProduct.variants || [], parsedVariants)) {
             existingProduct.variants = parsedVariants;
           }
 
