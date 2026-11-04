@@ -14,6 +14,26 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
     const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    const docNumber = searchParams.get('docNumber');
+
+    // Single document lookup for printing or viewing
+    if (id) {
+      const doc = await SaleDocument.findById(id).lean();
+      if (doc) return NextResponse.json({ success: true, data: doc });
+      const ord = await Order.findById(id).lean();
+      if (ord) return NextResponse.json({ success: true, data: ord });
+      return NextResponse.json({ success: false, message: 'Document not found' }, { status: 404 });
+    }
+
+    if (docNumber) {
+      const doc = await SaleDocument.findOne({ docNumber }).lean();
+      if (doc) return NextResponse.json({ success: true, data: doc });
+      const ord = await Order.findOne({ $or: [{ orderId: docNumber }, { invoiceNumber: docNumber }] }).lean();
+      if (ord) return NextResponse.json({ success: true, data: ord });
+      return NextResponse.json({ success: false, message: 'Document not found' }, { status: 404 });
+    }
+
     const docType = searchParams.get('docType');
 
     const filter: any = {};

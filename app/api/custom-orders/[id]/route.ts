@@ -16,6 +16,8 @@ export async function PATCH(
     const allowedUpdates: any = {};
     if (body.status) allowedUpdates.status = body.status;
     if (body.adminNotes !== undefined) allowedUpdates.adminNotes = body.adminNotes;
+    if (body.invoiceId !== undefined) allowedUpdates.invoiceId = body.invoiceId;
+    if (body.invoiceNumber !== undefined) allowedUpdates.invoiceNumber = body.invoiceNumber;
 
     const updated = await CustomOrder.findByIdAndUpdate(
       id,

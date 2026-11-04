@@ -9,7 +9,7 @@ interface SaleInvoiceFormProps {
   docType: 'SALE_INVOICE' | 'QUOTATION' | 'PROFORMA' | 'SALE_ORDER' | 'SALE_RETURN';
   products: any[];
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (savedDoc?: any) => void;
   initialData?: any;
   isEdit?: boolean;
 }
@@ -195,7 +195,7 @@ export default function SaleInvoiceForm({
 
       const data = await res.json();
       if (data.success) {
-        onSuccess();
+        onSuccess(data.data);
         onClose();
       } else {
         setError(data.message || 'Failed to save sales document.');

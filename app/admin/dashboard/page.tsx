@@ -83,6 +83,7 @@ import WordPressImportModal from '@/components/admin/WordPressImportModal';
 import ConsolidatedPackingModal from '@/components/admin/ConsolidatedPackingModal';
 import ProductSeoPagesModal from '@/components/admin/ProductSeoPagesModal';
 import SaleInvoiceForm from '@/components/billing/sales/SaleInvoiceForm';
+import PrintableDocumentModal from '@/components/billing/shared/PrintableDocumentModal';
 import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
 
 interface BannerItem {
@@ -237,6 +238,8 @@ interface CustomOrderInquiry {
   occasion: string;
   requirements: string;
   budget?: string;
+  invoiceId?: string;
+  invoiceNumber?: string;
   status: 'NEW' | 'CONTACTED' | 'QUOTED' | 'CONFIRMED' | 'ARCHIVED';
   internalNotes?: string;
   createdAt: string;
@@ -843,8 +846,12 @@ export default function AdminDashboard() {
   const [customOrderSearch, setCustomOrderSearch] = useState('');
   const [isCustomBillModalOpen, setIsCustomBillModalOpen] = useState(false);
   const [customBillInitialData, setCustomBillInitialData] = useState<any | null>(null);
+  const [activeCustomOrderForBill, setActiveCustomOrderForBill] = useState<CustomOrderInquiry | null>(null);
+  const [selectedDocForPrint, setSelectedDocForPrint] = useState<any | null>(null);
+  const [loadingPrintDocId, setLoadingPrintDocId] = useState<string | null>(null);
 
   const handleOpenCustomBill = (inquiry: CustomOrderInquiry) => {
+    setActiveCustomOrderForBill(inquiry);
     setCustomBillInitialData({
       customerName: inquiry.customerName || 'Customer',
       customerPhone: inquiry.customerPhone || '',
@@ -867,6 +874,110 @@ export default function AdminDashboard() {
       ],
     });
     setIsCustomBillModalOpen(true);
+  };
+
+  const handleCustomBillSuccess = async (savedDoc?: any) => {
+    setIsCustomBillModalOpen(false);
+    setCustomBillInitialData(null);
+
+    if (activeCustomOrderForBill && savedDoc) {
+      const orderId = activeCustomOrderForBill._id;
+      const invId = String(savedDoc._id || '');
+      const invNum = String(savedDoc.docNumber || savedDoc.invoiceNumber || '');
+
+      // 1. Dynamic state refresh: update local custom orders list immediately
+      setCustomOrders((prev) =>
+        prev.map((item) =>
+          item._id === orderId
+            ? { ...item, invoiceId: invId, invoiceNumber: invNum, status: 'CONFIRMED' }
+            : item
+        )
+      );
+
+      // 2. Persist linking to database
+      try {
+        await fetch(`/api/custom-orders/${orderId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            invoiceId: invId,
+            invoiceNumber: invNum,
+            status: 'CONFIRMED',
+          }),
+        });
+      } catch (err) {
+        console.error('Failed to link invoice to custom order:', err);
+      }
+
+      // 3. Immediately launch the Print Dialog with the newly created bill
+      setSelectedDocForPrint(savedDoc);
+    } else {
+      fetchCustomOrders(false);
+    }
+
+    setActiveCustomOrderForBill(null);
+  };
+
+  const handlePrintCustomBill = async (inquiry: CustomOrderInquiry) => {
+    try {
+      setLoadingPrintDocId(inquiry._id);
+      let docToPrint: any = null;
+
+      if (inquiry.invoiceId) {
+        const res = await fetch(`/api/billing/sales?id=${inquiry.invoiceId}`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          docToPrint = data.data;
+        }
+      }
+
+      if (!docToPrint && inquiry.invoiceNumber) {
+        const res = await fetch(`/api/billing/sales?docNumber=${encodeURIComponent(inquiry.invoiceNumber)}`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          docToPrint = data.data;
+        }
+      }
+
+      if (!docToPrint && inquiry.inquiryId) {
+        const res = await fetch(`/api/billing/sales?docType=SALE_INVOICE`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          const matched = data.data.find((d: any) =>
+            d.notes && d.notes.toLowerCase().includes(inquiry.inquiryId.toLowerCase())
+          );
+          if (matched) {
+            docToPrint = matched;
+            fetch(`/api/custom-orders/${inquiry._id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                invoiceId: matched._id,
+                invoiceNumber: matched.docNumber,
+              }),
+            }).catch(() => {});
+            setCustomOrders((prev) =>
+              prev.map((c) =>
+                c._id === inquiry._id
+                  ? { ...c, invoiceId: matched._id, invoiceNumber: matched.docNumber }
+                  : c
+              )
+            );
+          }
+        }
+      }
+
+      if (docToPrint) {
+        setSelectedDocForPrint(docToPrint);
+      } else {
+        alert('Could not load the invoice for printing. You can create a new custom bill if needed.');
+      }
+    } catch (err: any) {
+      console.error('Print custom bill error:', err);
+      alert('Failed to load bill for printing: ' + err.message);
+    } finally {
+      setLoadingPrintDocId(null);
+    }
   };
 
   // Newsletter Subscribers State
@@ -6553,15 +6664,40 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             Quick Actions
                           </span>
                           <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                            {/* Create Custom Bill Action Button */}
-                            <button
-                              onClick={() => handleOpenCustomBill(inquiry)}
-                              className="px-2.5 py-1 rounded-lg bg-[#0B3B24] hover:bg-[#134633] text-white font-bold text-[11px] flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                              title="Create Custom Bill in Billing System"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-amber-300" />
-                              <span>Create Custom Bill</span>
-                            </button>
+                            {/* Dynamic Bill Action: Changes to "Print Bill" once created */}
+                            {inquiry.invoiceNumber || inquiry.invoiceId ? (
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <button
+                                  onClick={() => handlePrintCustomBill(inquiry)}
+                                  disabled={loadingPrintDocId === inquiry._id}
+                                  className="px-2.5 py-1 rounded-lg bg-[#0B3B24] hover:bg-[#134633] text-white font-bold text-[11px] flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:opacity-60"
+                                  title={`Print Bill (${inquiry.invoiceNumber || 'Tax Invoice'})`}
+                                >
+                                  {loadingPrintDocId === inquiry._id ? (
+                                    <RefreshCw className="w-3.5 h-3.5 text-amber-300 animate-spin" />
+                                  ) : (
+                                    <Printer className="w-3.5 h-3.5 text-amber-300" />
+                                  )}
+                                  <span>Print Bill {inquiry.invoiceNumber ? `(${inquiry.invoiceNumber})` : ''}</span>
+                                </button>
+                                <button
+                                  onClick={() => handleOpenCustomBill(inquiry)}
+                                  className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-[10.5px] border border-stone-200 transition-colors cursor-pointer"
+                                  title="Create another or revise custom bill"
+                                >
+                                  Re-bill
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenCustomBill(inquiry)}
+                                className="px-2.5 py-1 rounded-lg bg-[#0B3B24] hover:bg-[#134633] text-white font-bold text-[11px] flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                                title="Create Custom Bill in Billing System"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-amber-300" />
+                                <span>Create Custom Bill</span>
+                              </button>
+                            )}
 
                             {inquiry.status === 'NEW' && (
                               <button
@@ -9606,12 +9742,17 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           onClose={() => {
             setIsCustomBillModalOpen(false);
             setCustomBillInitialData(null);
+            setActiveCustomOrderForBill(null);
           }}
-          onSuccess={() => {
-            setIsCustomBillModalOpen(false);
-            setCustomBillInitialData(null);
-            alert('Custom bill invoice generated successfully in Billing & Invoicing!');
-          }}
+          onSuccess={handleCustomBillSuccess}
+        />
+      )}
+
+      {/* Authoritative Billing Print Document Dialog */}
+      {selectedDocForPrint && (
+        <PrintableDocumentModal
+          document={selectedDocForPrint}
+          onClose={() => setSelectedDocForPrint(null)}
         />
       )}
 

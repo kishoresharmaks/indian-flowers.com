@@ -21,6 +21,8 @@ export interface ICustomOrder extends Document {
   occasion?: string;
   requirements?: string;
   budget?: string;
+  invoiceId?: string;
+  invoiceNumber?: string;
   status: 'NEW' | 'CONTACTED' | 'QUOTED' | 'CONFIRMED' | 'ARCHIVED';
   adminNotes?: string;
   createdAt: Date;
@@ -49,6 +51,8 @@ const CustomOrderSchema: Schema = new Schema(
     occasion: { type: String, default: '', trim: true },
     requirements: { type: String, default: '', trim: true },
     budget: { type: String, default: '' },
+    invoiceId: { type: String, default: '', trim: true },
+    invoiceNumber: { type: String, default: '', trim: true, index: true },
     status: {
       type: String,
       enum: ['NEW', 'CONTACTED', 'QUOTED', 'CONFIRMED', 'ARCHIVED'],

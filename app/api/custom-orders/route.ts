@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import CustomOrder from '@/models/CustomOrder';
+import SaleDocument from '@/models/SaleDocument';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 import { sendFloralInquiryConfirmationEmail } from '@/lib/msg91';
 import { isBeforeMinDeliveryDate, MIN_DELIVERY_LEAD_DAYS } from '@/lib/dateUtils';
@@ -11,7 +12,37 @@ export async function GET(request: NextRequest) {
   try {
     if (!isAuthenticatedAdmin(request)) return unauthenticatedResponse();
     await connectToDatabase();
-    const orders = await CustomOrder.find({}).sort({ createdAt: -1 });
+    const rawOrders = await CustomOrder.find({}).sort({ createdAt: -1 }).lean();
+
+    // Check if any custom order has an unlinked bill in SaleDocument, and auto-sync
+    const orders = await Promise.all(
+      rawOrders.map(async (ord: any) => {
+        if ((!ord.invoiceNumber || !ord.invoiceId) && ord.inquiryId) {
+          try {
+            const matchedSale = await SaleDocument.findOne({
+              notes: new RegExp(ord.inquiryId, 'i'),
+            })
+              .select('_id docNumber')
+              .lean();
+            if (matchedSale) {
+              await CustomOrder.updateOne(
+                { _id: ord._id },
+                { $set: { invoiceId: String(matchedSale._id), invoiceNumber: matchedSale.docNumber } }
+              );
+              return {
+                ...ord,
+                invoiceId: String(matchedSale._id),
+                invoiceNumber: matchedSale.docNumber,
+              };
+            }
+          } catch {
+            // Silent lookup fallback
+          }
+        }
+        return ord;
+      })
+    );
+
     return NextResponse.json({ success: true, count: orders.length, data: orders });
   } catch (error: any) {
     return NextResponse.json(
