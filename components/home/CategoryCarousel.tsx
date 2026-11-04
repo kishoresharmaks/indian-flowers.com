@@ -225,7 +225,6 @@ export default function CategoryCarousel({
           className={`items-center justify-center gap-2.5 mt-4 sm:mt-5 ${
             isSmallCatalog ? 'flex md:hidden' : 'flex'
           }`}
-          aria-hidden="true"
         >
           {categories.length <= 8 ? (
             categories.map((cat, dotIdx) => {
