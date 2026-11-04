@@ -41,12 +41,23 @@ export function formatReadableDate(dateStr: string): string {
 }
 
 /**
- * Checks whether a given YYYY-MM-DD date string is before the minimum required delivery date.
+ * Checks whether a given date string is before the minimum required delivery date.
+ * Validates YYYY-MM-DD format as well as general ISO / parseable date formats.
  */
 export function isBeforeMinDeliveryDate(dateStr: string, leadDays: number = MIN_DELIVERY_LEAD_DAYS): boolean {
   if (!dateStr || typeof dateStr !== 'string') return true;
-  const minDateStr = getMinDeliveryDateString(leadDays);
-  return dateStr.trim() < minDateStr;
+  const trimmed = dateStr.trim();
+  const ymdMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (ymdMatch) {
+    const minDateStr = getMinDeliveryDateString(leadDays);
+    return trimmed < minDateStr;
+  }
+  const parsed = new Date(trimmed);
+  if (isNaN(parsed.getTime())) return true;
+  const minDate = new Date();
+  minDate.setDate(minDate.getDate() + leadDays);
+  minDate.setHours(0, 0, 0, 0);
+  return parsed < minDate;
 }
 
 /**

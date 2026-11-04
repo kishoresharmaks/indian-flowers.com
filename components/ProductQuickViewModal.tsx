@@ -14,12 +14,14 @@ import {
   Clock,
   Share2,
   ZoomIn,
+  Flower2,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 import { stripHtmlTags } from '@/lib/htmlUtils';
 import { Product, ProductVariant } from '@/components/ProductCard';
 import { openProductShareModal } from './ProductShareModal';
+import CustomOrderModal from './custom-orders/CustomOrderModal';
 
 interface ProductQuickViewModalProps {
   isOpen: boolean;
@@ -43,6 +45,7 @@ export default function ProductQuickViewModal({
   const [isAdding, setIsAdding] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
+  const [isCustomOrderModalOpen, setIsCustomOrderModalOpen] = useState(false);
 
   // Initialize or reset selected variant and quantity when product changes
   useEffect(() => {
@@ -86,6 +89,8 @@ export default function ProductQuickViewModal({
 
   const activePrice = activeVariant ? activeVariant.price : product.price;
   const activeMrp = activeVariant ? activeVariant.mrp : product.mrp;
+  // User Rule: If either selling price <= 0 or mrp <= 0, item requires custom order flow
+  const isCustomOrder = !activePrice || activePrice <= 0 || !activeMrp || activeMrp <= 0;
   const activeDiscount =
     activeMrp > activePrice
       ? Math.round(((activeMrp - activePrice) / activeMrp) * 100)
@@ -105,6 +110,10 @@ export default function ProductQuickViewModal({
   };
 
   const handleAdd = () => {
+    if (isCustomOrder) {
+      setIsCustomOrderModalOpen(true);
+      return;
+    }
     if (isOutOfStock) return;
     setIsAdding(true);
     try {
@@ -203,18 +212,26 @@ export default function ProductQuickViewModal({
 
               {/* Price & Savings */}
               <div className="flex items-baseline gap-2 pt-0.5">
-                <span className="text-xl font-extrabold text-gray-900 tabular-nums font-jakarta">
-                  {formatCurrency(activePrice)}
-                </span>
-                {activeMrp > activePrice && (
-                  <span className="text-xs text-gray-400 line-through tabular-nums">
-                    {formatCurrency(activeMrp)}
+                {isCustomOrder ? (
+                  <span className="text-base sm:text-lg font-extrabold text-[#0B3B24] tracking-tight font-jakarta">
+                    Price on Request
                   </span>
-                )}
-                {savingsAmount > 0 && (
-                  <span className="text-[10.5px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
-                    Save {formatCurrency(savingsAmount)}
-                  </span>
+                ) : (
+                  <>
+                    <span className="text-xl font-extrabold text-gray-900 tabular-nums font-jakarta">
+                      {formatCurrency(activePrice)}
+                    </span>
+                    {activeMrp > activePrice && (
+                      <span className="text-xs text-gray-400 line-through tabular-nums">
+                        {formatCurrency(activeMrp)}
+                      </span>
+                    )}
+                    {savingsAmount > 0 && (
+                      <span className="text-[10.5px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                        Save {formatCurrency(savingsAmount)}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -348,15 +365,24 @@ export default function ProductQuickViewModal({
             <button
               type="button"
               onClick={handleAdd}
-              disabled={isAdding || isOutOfStock}
+              disabled={!isCustomOrder && (isAdding || isOutOfStock)}
               className="h-11 flex-1 px-4 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-semibold text-xs tracking-[0.01em] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
-              <ShoppingBag className="w-4 h-4 shrink-0" />
-              <span>
-                {isOutOfStock
-                  ? 'Out of Stock'
-                  : `Add to Bag • ${formatCurrency(activePrice * quantity)}`}
-              </span>
+              {isCustomOrder ? (
+                <>
+                  <Flower2 className="w-4 h-4 shrink-0 text-amber-300" />
+                  <span>Request Custom Order</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-4 h-4 shrink-0" />
+                  <span>
+                    {isOutOfStock
+                      ? 'Out of Stock'
+                      : `Add to Bag • ${formatCurrency(activePrice * quantity)}`}
+                  </span>
+                </>
+              )}
             </button>
 
             {/* Wishlist Button */}
@@ -502,18 +528,31 @@ export default function ProductQuickViewModal({
 
             {/* Price & Savings */}
             <div className="flex flex-wrap items-baseline gap-3 py-2.5 border-y border-gray-100">
-              <span className="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums font-jakarta leading-none">
-                {formatCurrency(activePrice)}
-              </span>
-              {activeMrp > activePrice && (
-                <span className="text-sm sm:text-base text-gray-400 line-through tabular-nums font-normal">
-                  {formatCurrency(activeMrp)}
-                </span>
-              )}
-              {savingsAmount > 0 && (
-                <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
-                  Save {formatCurrency(savingsAmount)}
-                </span>
+              {isCustomOrder ? (
+                <div className="space-y-0.5">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-[#0B3B24] tracking-tight font-jakarta leading-none block">
+                    Price on Request
+                  </span>
+                  <span className="text-xs text-stone-500 font-medium">
+                    Bespoke Handcrafted Order
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <span className="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums font-jakarta leading-none">
+                    {formatCurrency(activePrice)}
+                  </span>
+                  {activeMrp > activePrice && (
+                    <span className="text-sm sm:text-base text-gray-400 line-through tabular-nums font-normal">
+                      {formatCurrency(activeMrp)}
+                    </span>
+                  )}
+                  {savingsAmount > 0 && (
+                    <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
+                      Save {formatCurrency(savingsAmount)}
+                    </span>
+                  )}
+                </>
               )}
             </div>
 
@@ -618,15 +657,24 @@ export default function ProductQuickViewModal({
               <button
                 type="button"
                 onClick={handleAdd}
-                disabled={isAdding || isOutOfStock}
-                className="h-11 flex-1 px-4 sm:px-6 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-semibold text-xs sm:text-sm tracking-[0.01em] flex items-center justify-center gap-2 shadow-[0_2px_10px_rgba(11,59,36,0.18)] hover:shadow-[0_4px_16px_rgba(11,59,36,0.28)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!isCustomOrder && (isAdding || isOutOfStock)}
+                className="h-11 flex-1 px-4 sm:px-6 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-semibold text-xs sm:text-sm tracking-[0.01em] flex items-center justify-center gap-2 shadow-[0_2px_10px_rgba(11,59,36,0.18)] hover:shadow-[0_4px_16px_rgba(11,59,36,0.28)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <ShoppingBag className="w-4 h-4 shrink-0" />
-                <span>
-                  {isOutOfStock
-                    ? 'Out of Stock'
-                    : `Add to Bag • ${formatCurrency(activePrice * quantity)}`}
-                </span>
+                {isCustomOrder ? (
+                  <>
+                    <Flower2 className="w-4 h-4 shrink-0 text-amber-300" />
+                    <span>Request Custom Order</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-4 h-4 shrink-0" />
+                    <span>
+                      {isOutOfStock
+                        ? 'Out of Stock'
+                        : `Add to Bag • ${formatCurrency(activePrice * quantity)}`}
+                    </span>
+                  </>
+                )}
               </button>
 
               {/* Wishlist Button */}
@@ -724,6 +772,17 @@ export default function ProductQuickViewModal({
           </div>
         </div>
       )}
+
+      {/* Bespoke Custom Order Request Modal */}
+      <CustomOrderModal
+        isOpen={isCustomOrderModalOpen}
+        onClose={() => {
+          setIsCustomOrderModalOpen(false);
+          onClose();
+        }}
+        product={product}
+        selectedVariant={activeVariant}
+      />
     </div>
   );
 }

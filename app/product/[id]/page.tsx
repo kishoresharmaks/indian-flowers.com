@@ -48,14 +48,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       };
     }
 
-    const priceText = product.price ? formatCurrency(product.price) : '';
+    const isCustomOrder = !product.price || product.price <= 0 || !product.mrp || product.mrp <= 0;
+    const priceText = !isCustomOrder && product.price ? formatCurrency(product.price) : 'Custom Quote on Request';
     const mrpText =
-      product.mrp && product.mrp > product.price
+      !isCustomOrder && product.mrp && product.mrp > product.price
         ? ` (MRP: ${formatCurrency(product.mrp)})`
         : '';
 
     const title = `${product.name} — Indian-Flowers.com USA`;
-    const description = `Order fresh ${product.name} online for ${priceText}${mrpText}. Authentic Indian flowers and handcrafted garlands delivered fresh across the United States.`;
+    const description = isCustomOrder
+      ? `Order fresh handcrafted ${product.name} online (Price on Request). Bespoke Indian flowers and handcrafted garlands delivered fresh across the United States.`
+      : `Order fresh ${product.name} online for ${priceText}${mrpText}. Authentic Indian flowers and handcrafted garlands delivered fresh across the United States.`;
     const productImageUrl = product.image
       ? product.image.startsWith('http')
         ? product.image

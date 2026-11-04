@@ -5,10 +5,21 @@ export interface ICustomOrder extends Document {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  cityState: string;
-  eventDate: string;
-  occasion: string;
-  requirements: string;
+  // Product-specific custom order fields
+  productId?: string;
+  productCode?: string;
+  productTitle?: string;
+  variantName?: string;
+  quantity?: number;
+  address?: string;
+  size?: string;
+  preferredColor?: string;
+  deliveryDate?: string;
+  // Event & general inquiry fields (backward compatible)
+  cityState?: string;
+  eventDate?: string;
+  occasion?: string;
+  requirements?: string;
   budget?: string;
   status: 'NEW' | 'CONTACTED' | 'QUOTED' | 'CONFIRMED' | 'ARCHIVED';
   adminNotes?: string;
@@ -22,10 +33,21 @@ const CustomOrderSchema: Schema = new Schema(
     customerName: { type: String, required: true, trim: true },
     customerEmail: { type: String, required: true, trim: true },
     customerPhone: { type: String, required: true, trim: true },
-    cityState: { type: String, required: true, trim: true },
-    eventDate: { type: String, required: true, trim: true },
-    occasion: { type: String, required: true, trim: true },
-    requirements: { type: String, required: true, trim: true },
+    // Product-specific fields
+    productId: { type: String, default: '', trim: true },
+    productCode: { type: String, default: '', trim: true, index: true },
+    productTitle: { type: String, default: '', trim: true },
+    variantName: { type: String, default: '', trim: true },
+    quantity: { type: Number, default: 1, min: 1 },
+    address: { type: String, default: '', trim: true },
+    size: { type: String, default: '', trim: true },
+    preferredColor: { type: String, default: '', trim: true },
+    deliveryDate: { type: String, default: '', trim: true },
+    // Event & general inquiry fields
+    cityState: { type: String, default: '', trim: true },
+    eventDate: { type: String, default: '', trim: true },
+    occasion: { type: String, default: '', trim: true },
+    requirements: { type: String, default: '', trim: true },
     budget: { type: String, default: '' },
     status: {
       type: String,

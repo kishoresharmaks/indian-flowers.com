@@ -82,6 +82,7 @@ import BlogManagerTab from '@/components/admin/BlogManagerTab';
 import WordPressImportModal from '@/components/admin/WordPressImportModal';
 import ConsolidatedPackingModal from '@/components/admin/ConsolidatedPackingModal';
 import ProductSeoPagesModal from '@/components/admin/ProductSeoPagesModal';
+import SaleInvoiceForm from '@/components/billing/sales/SaleInvoiceForm';
 import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
 
 interface BannerItem {
@@ -222,6 +223,15 @@ interface CustomOrderInquiry {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  productId?: string;
+  productCode?: string;
+  productTitle?: string;
+  variantName?: string;
+  quantity?: number;
+  address?: string;
+  size?: string;
+  preferredColor?: string;
+  deliveryDate?: string;
   cityState: string;
   eventDate?: string;
   occasion: string;
@@ -831,6 +841,33 @@ export default function AdminDashboard() {
   const [loadingCustomOrders, setLoadingCustomOrders] = useState(true);
   const [customOrderStatusFilter, setCustomOrderStatusFilter] = useState('All');
   const [customOrderSearch, setCustomOrderSearch] = useState('');
+  const [isCustomBillModalOpen, setIsCustomBillModalOpen] = useState(false);
+  const [customBillInitialData, setCustomBillInitialData] = useState<any | null>(null);
+
+  const handleOpenCustomBill = (inquiry: CustomOrderInquiry) => {
+    setCustomBillInitialData({
+      customerName: inquiry.customerName || 'Customer',
+      customerPhone: inquiry.customerPhone || '',
+      customerEmail: inquiry.customerEmail || '',
+      billingAddress: inquiry.address || inquiry.cityState || '',
+      shippingAddress: inquiry.address || inquiry.cityState || '',
+      notes: `Custom Order Ref: ${inquiry.inquiryId}. Item: ${inquiry.productTitle || inquiry.productCode || 'Bespoke Flower'}. Delivery Date: ${inquiry.deliveryDate || inquiry.eventDate || 'N/A'}. Size: ${inquiry.size || 'N/A'}. Preferred Color: ${inquiry.preferredColor || 'N/A'}.`,
+      items: [
+        {
+          productId: inquiry.productId || '',
+          name: inquiry.productTitle || inquiry.productCode || 'Custom Floral Order',
+          variantName: inquiry.variantName || '',
+          quantity: inquiry.quantity || 1,
+          price: 0,
+          gst: 0,
+          lineSubtotal: 0,
+          lineGst: 0,
+          lineTotal: 0,
+        },
+      ],
+    });
+    setIsCustomBillModalOpen(true);
+  };
 
   // Newsletter Subscribers State
   const [subscribers, setSubscribers] = useState<SubscriberItem[]>([]);
@@ -2705,6 +2742,9 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       inquiry.customerName?.toLowerCase().includes(q) ||
       inquiry.customerEmail?.toLowerCase().includes(q) ||
       inquiry.customerPhone?.toLowerCase().includes(q) ||
+      inquiry.productCode?.toLowerCase().includes(q) ||
+      inquiry.productTitle?.toLowerCase().includes(q) ||
+      inquiry.address?.toLowerCase().includes(q) ||
       inquiry.cityState?.toLowerCase().includes(q) ||
       inquiry.occasion?.toLowerCase().includes(q) ||
       inquiry.requirements?.toLowerCase().includes(q)
@@ -6357,7 +6397,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             {inquiry.inquiryId}
                           </span>
                           <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-[#C85A78] border border-rose-100">
-                            {inquiry.occasion}
+                            {inquiry.occasion || (inquiry.productTitle ? 'Product Custom Order' : 'Custom Inquiry')}
                           </span>
                           <span className="text-[11px] text-[#64748B] flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
@@ -6392,17 +6432,61 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         </div>
                       </div>
 
+                      {/* Product-Specific Order Banner */}
+                      {(inquiry.productTitle || inquiry.productCode) && (
+                        <div className="bg-[#F4F8F4] rounded-xl p-3.5 border border-emerald-200/80 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-xl bg-[#0B3B24] text-white flex items-center justify-center shrink-0 shadow-xs">
+                              <Flower2 className="w-5 h-5 text-amber-300" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {inquiry.productCode && (
+                                  <span className="text-[10.5px] font-black uppercase tracking-wider text-[#0B3B24] bg-white px-2 py-0.5 rounded-md border border-emerald-300 font-mono">
+                                    CODE: {inquiry.productCode}
+                                  </span>
+                                )}
+                                {inquiry.variantName && (
+                                  <span className="text-[10.5px] font-bold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-md">
+                                    Option: {inquiry.variantName}
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="text-sm sm:text-base font-bold text-[#163B5C] mt-0.5 truncate">
+                                {inquiry.productTitle}
+                              </h4>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap text-xs">
+                            <span className="px-3 py-1 rounded-lg bg-white border border-emerald-200 font-extrabold text-[#0B3B24]">
+                              Quantity: {inquiry.quantity || 1}
+                            </span>
+                            {inquiry.size && (
+                              <span className="px-2.5 py-1 rounded-lg bg-white border border-emerald-200 font-semibold text-stone-700">
+                                Size: {inquiry.size}
+                              </span>
+                            )}
+                            {inquiry.preferredColor && (
+                              <span className="px-2.5 py-1 rounded-lg bg-white border border-emerald-200 font-semibold text-stone-700">
+                                Color: {inquiry.preferredColor}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Customer Details & Event Info */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                        {/* Customer */}
+                        {/* Customer & Address */}
                         <div className="space-y-1">
                           <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">
-                            Customer
+                            Customer &amp; Delivery Address
                           </span>
                           <p className="font-extrabold text-sm text-[#163B5C]">{inquiry.customerName}</p>
-                          <p className="text-[#64748B] flex items-center gap-1.5">
-                            <MapPin className="w-3 h-3 text-[#ED3500] shrink-0" />
-                            <span>{inquiry.cityState}</span>
+                          <p className="text-[#64748B] flex items-start gap-1.5 leading-relaxed">
+                            <MapPin className="w-3.5 h-3.5 text-[#ED3500] shrink-0 mt-0.5" />
+                            <span>{inquiry.address || inquiry.cityState || 'No address specified'}</span>
                           </p>
                         </div>
 
@@ -6431,40 +6515,54 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                               </a>
                             )}
                           </p>
-                          <p className="flex items-center gap-1.5">
-                            <Mail className="w-3 h-3 text-blue-600 shrink-0" />
-                            <a
-                              href={`mailto:${inquiry.customerEmail}`}
-                              className="text-blue-700 hover:underline truncate max-w-[200px]"
-                            >
-                              {inquiry.customerEmail}
-                            </a>
-                          </p>
+                          {inquiry.customerEmail && (
+                            <p className="flex items-center gap-1.5">
+                              <Mail className="w-3 h-3 text-blue-600 shrink-0" />
+                              <a
+                                href={`mailto:${inquiry.customerEmail}`}
+                                className="text-blue-700 hover:underline truncate max-w-[200px]"
+                              >
+                                {inquiry.customerEmail}
+                              </a>
+                            </p>
+                          )}
                         </div>
 
-                        {/* Event Date & Budget */}
+                        {/* Delivery Date & Specifications */}
                         <div className="space-y-1">
                           <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">
-                            Event &amp; Budget
+                            Date of Delivery
                           </span>
-                          <p className="flex items-center gap-1.5 font-semibold text-gray-800">
-                            <Calendar className="w-3 h-3 text-purple-600 shrink-0" />
-                            <span>{inquiry.eventDate ? inquiry.eventDate : 'Date Flexible'}</span>
+                          <p className="flex items-center gap-1.5 font-bold text-gray-900 text-xs">
+                            <Calendar className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                            <span>{inquiry.deliveryDate || inquiry.eventDate || 'Date Flexible'}</span>
                           </p>
-                          <p className="text-gray-600">
-                            Budget:{' '}
-                            <strong className="text-[#0B3B24]">
-                              {inquiry.budget || 'Not specified'}
-                            </strong>
-                          </p>
+                          {inquiry.budget && (
+                            <p className="text-gray-600">
+                              Budget:{' '}
+                              <strong className="text-[#0B3B24]">
+                                {inquiry.budget}
+                              </strong>
+                            </p>
+                          )}
                         </div>
 
                         {/* Actions */}
-                        <div className="space-y-1 flex flex-col justify-between">
+                        <div className="space-y-1.5 flex flex-col justify-between">
                           <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">
                             Quick Actions
                           </span>
-                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                            {/* Create Custom Bill Action Button */}
+                            <button
+                              onClick={() => handleOpenCustomBill(inquiry)}
+                              className="px-2.5 py-1 rounded-lg bg-[#0B3B24] hover:bg-[#134633] text-white font-bold text-[11px] flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                              title="Create Custom Bill in Billing System"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-amber-300" />
+                              <span>Create Custom Bill</span>
+                            </button>
+
                             {inquiry.status === 'NEW' && (
                               <button
                                 onClick={() => handleUpdateCustomOrderStatus(inquiry._id, 'CONTACTED')}
@@ -6491,7 +6589,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             )}
                             <button
                               onClick={() => handleDeleteCustomOrder(inquiry._id)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors ml-auto"
                               title="Delete inquiry"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -6500,15 +6598,17 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         </div>
                       </div>
 
-                      {/* Requirements Box */}
-                      <div className="bg-[#FAF6F0] rounded-xl p-3.5 border border-[#F3DFD1]/70">
-                        <span className="text-[10px] font-bold text-[#8C6D46] uppercase tracking-wider block mb-1">
-                          Customer Requirements / Bespoke Request:
-                        </span>
-                        <p className="text-xs text-gray-800 leading-relaxed whitespace-pre-wrap font-normal">
-                          {inquiry.requirements}
-                        </p>
-                      </div>
+                      {/* Requirements / Notes Box */}
+                      {inquiry.requirements && (
+                        <div className="bg-[#FAF6F0] rounded-xl p-3.5 border border-[#F3DFD1]/70">
+                          <span className="text-[10px] font-bold text-[#8C6D46] uppercase tracking-wider block mb-1">
+                            Customer Requirements / Specifications:
+                          </span>
+                          <p className="text-xs text-gray-800 leading-relaxed whitespace-pre-wrap font-normal">
+                            {inquiry.requirements}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -9496,6 +9596,24 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         productPrice={selectedProductForSeo?.price}
         productSlug={selectedProductForSeo?.slug}
       />
+
+      {/* Custom Order Pre-filled Sales Invoice / Billing Modal */}
+      {isCustomBillModalOpen && (
+        <SaleInvoiceForm
+          docType="SALE_INVOICE"
+          products={products}
+          initialData={customBillInitialData}
+          onClose={() => {
+            setIsCustomBillModalOpen(false);
+            setCustomBillInitialData(null);
+          }}
+          onSuccess={() => {
+            setIsCustomBillModalOpen(false);
+            setCustomBillInitialData(null);
+            alert('Custom bill invoice generated successfully in Billing & Invoicing!');
+          }}
+        />
+      )}
 
       {/* Footer */}
       <footer className="bg-white border-t border-[#E8EDF2] py-3.5 px-6 text-xs text-[#64748B] flex items-center justify-center">

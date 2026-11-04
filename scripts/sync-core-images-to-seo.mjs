@@ -23,6 +23,8 @@ try {
 } catch {}
 
 const KEYWORD_RULES = [
+  { keywords: ['ala mokku', 'aalam mottu', 'aalamoddu', 'aalam'], pattern: /ala\s*mokku|aalam/i },
+  { keywords: ['thulsi', 'thulasi', 'tulasi', 'tulsi'], pattern: /thulsi|thulasi|tulasi|tulsi/i },
   { keywords: ['rose petal', 'rose petel', 'rose patel'], pattern: /rose petal/i },
   { keywords: ['button rose'], pattern: /button rose/i },
   { keywords: ['carnation'], pattern: /carnation/i },
@@ -37,7 +39,6 @@ const KEYWORD_RULES = [
   { keywords: ['banana leave', 'vazhai'], pattern: /banana/i },
   { keywords: ['neem'], pattern: /neem/i },
   { keywords: ['durva', 'bilva', 'arugampul'], pattern: /durva|bilva/i },
-  { keywords: ['tulasi', 'tulsi'], pattern: /tulasi|tulsi/i },
   { keywords: ['orchid'], pattern: /orchid/i },
   { keywords: ['kanakambaram', 'crossandra'], pattern: /kanakambaram/i },
   { keywords: ['erukkam'], pattern: /erukkam/i },
@@ -52,7 +53,7 @@ const KEYWORD_RULES = [
   { keywords: ['house warming', 'grihapravesam'], pattern: /house warming|grihapravesam/i },
 ];
 
-const CODE_REGEX = /\b([A-Za-z]{2,3}[-\s]?\d{1,3})\b/;
+const CODE_REGEX = /\b([A-Za-z]{2,6}[-\s]?\d{1,3})\b/;
 
 async function loadEnv() {
   for (const envFile of ['.env.local', '.env']) {
@@ -118,7 +119,7 @@ async function run() {
   // Build quick-lookup maps for Core Products
   const coreByCode = new Map();
   coreProducts.forEach((cp) => {
-    const match = cp.name.match(CODE_REGEX);
+    const match = (cp.name || '').match(CODE_REGEX) || (cp.slug || '').match(CODE_REGEX);
     if (match) {
       const code = match[1].toLowerCase().replace(/[-\s]/g, '');
       coreByCode.set(code, cp);
@@ -136,10 +137,11 @@ async function run() {
   for (const sp of seoProducts) {
     let matchedCore = null;
     let strategy = '';
-    const spNameLower = sp.name.toLowerCase();
+    const spNameLower = (sp.name || '').toLowerCase();
+    const spSlugLower = (sp.slug || '').toLowerCase();
 
-    // 1. Match by Product Code (e.g. RP04, CG27, BR06)
-    const spCodeMatch = sp.name.match(CODE_REGEX);
+    // 1. Match by Product Code (e.g. RP04, CG27, BR06, RPEG12, VENI09, JADAI01)
+    const spCodeMatch = (sp.name || '').match(CODE_REGEX) || (sp.slug || '').match(CODE_REGEX);
     if (spCodeMatch) {
       const code = spCodeMatch[1].toLowerCase().replace(/[-\s]/g, '');
       if (coreByCode.has(code)) {
@@ -148,12 +150,39 @@ async function run() {
       }
     }
 
-    // 2. Match by Floral Keyword
+    // 2. Match by Clean Title / Prefix (e.g. "Ala mokku in pack" -> "Ala Mokku", "Fresh Sacred Tulsi" -> "Fresh Sacred Tulsi Sprigs")
+    if (!matchedCore) {
+      const cleanSpName = (sp.name || '')
+        .replace(/^Fresh\s+/i, '')
+        .replace(/\s+in\s+.*$/i, '')
+        .replace(/\s+\(.*\)$/i, '')
+        .trim().toLowerCase();
+
+      if (cleanSpName.length > 3) {
+        const direct = coreProducts.find((cp) => {
+          const cleanCpName = (cp.name || '').toLowerCase().trim();
+          return (
+            cleanCpName === cleanSpName ||
+            cleanCpName.startsWith(cleanSpName) ||
+            cleanSpName.startsWith(cleanCpName)
+          );
+        });
+        if (direct) {
+          matchedCore = direct;
+          strategy = `Title Similarity (${direct.name})`;
+        }
+      }
+    }
+
+    // 3. Match by Floral Keyword
     if (!matchedCore) {
       for (const rule of KEYWORD_RULES) {
-        if (rule.keywords.some((k) => spNameLower.includes(k))) {
+        if (rule.keywords.some((k) => spNameLower.includes(k) || spSlugLower.includes(k))) {
           matchedCore = coreProducts.find(
-            (cp) => rule.pattern.test(cp.name) || rule.pattern.test(cp.category || '')
+            (cp) =>
+              rule.pattern.test(cp.name || '') ||
+              rule.pattern.test(cp.slug || '') ||
+              rule.pattern.test(cp.category || '')
           );
           if (matchedCore) {
             strategy = `Floral Keyword (${rule.keywords[0]})`;
@@ -163,13 +192,13 @@ async function run() {
       }
     }
 
-    // 3. Match by Shared Previous Image
+    // 4. Match by Shared Previous Image
     if (!matchedCore && sp.image) {
       matchedCore = coreProducts.find((cp) => cp.image === sp.image);
       if (matchedCore) strategy = 'Shared Image Path';
     }
 
-    // 4. Match by Category Fallback (Case-insensitive & Partial)
+    // 5. Match by Category Fallback (Case-insensitive & Partial)
     if (!matchedCore && sp.category && sp.category !== 'Future Products') {
       const spCatClean = sp.category.toLowerCase().trim();
       matchedCore = coreProducts.find(
@@ -186,7 +215,7 @@ async function run() {
       if (matchedCore) strategy = `Category Fallback (${sp.category})`;
     }
 
-    // 5. Global Fallback for any remaining unlinked items
+    // 6. Global Fallback for any remaining unlinked items
     if (!matchedCore) {
       matchedCore = coreProducts.find((cp) => (cp.category || '').toLowerCase().includes('garland')) || coreProducts[0];
       if (matchedCore) strategy = 'General Catalog Fallback';
@@ -243,6 +272,11 @@ async function run() {
       // 8. Subcategory cascade
       if (matchedCore.subcategory && sp.subcategory !== matchedCore.subcategory) {
         updateFields.subcategory = matchedCore.subcategory;
+      }
+
+      // 9. Category cascade (if unset or 'Future Products')
+      if (matchedCore.category && (!sp.category || sp.category === 'Future Products') && sp.category !== matchedCore.category) {
+        updateFields.category = matchedCore.category;
       }
 
       if (Object.keys(updateFields).length > 0) {

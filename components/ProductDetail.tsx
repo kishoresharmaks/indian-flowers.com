@@ -20,12 +20,14 @@ import {
   Plus,
   ZoomIn,
   X,
+  Flower2,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 import { openProductShareModal } from '@/components/ProductShareModal';
 import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
 import ProductDescriptionRenderer from './ProductDescriptionRenderer';
+import CustomOrderModal from './custom-orders/CustomOrderModal';
 
 export interface ProductDetailProps {
   product: Product;
@@ -57,6 +59,7 @@ export default function ProductDetail({
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
+  const [isCustomOrderModalOpen, setIsCustomOrderModalOpen] = useState(false);
 
   // Internal wishlist state for self-contained resilience & instant UI response
   const [localWishlisted, setLocalWishlisted] = useState<boolean>(false);
@@ -130,6 +133,8 @@ export default function ProductDetail({
   const activeVariant = selectedVariant || (product.variants?.[0]);
   const displayPrice = activeVariant ? activeVariant.price : product.price;
   const displayMrp = activeVariant ? activeVariant.mrp : product.mrp;
+  // User Rule: If either selling price <= 0 or mrp <= 0, item requires custom order flow
+  const isCustomOrder = !displayPrice || displayPrice <= 0 || !displayMrp || displayMrp <= 0;
   const displayDiscount = activeVariant
     ? activeVariant.mrp > activeVariant.price
       ? Math.round(((activeVariant.mrp - activeVariant.price) / activeVariant.mrp) * 100)
@@ -421,30 +426,50 @@ export default function ProductDetail({
 
             {/* Price Box with Luxury Ivory Texture */}
             <div className="p-5 sm:p-6 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-2.5">
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="text-3xl sm:text-4xl font-extrabold text-[#0B3B24] tabular-nums tracking-tight">
-                  {formatCurrency(displayPrice)}
-                </span>
-                {displayMrp > displayPrice && (
-                  <>
-                    <span className="text-base sm:text-lg text-stone-400 line-through tabular-nums font-normal">
-                      {formatCurrency(displayMrp)}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full bg-rose-50 text-[#ed2353] border border-rose-200/80 text-xs font-bold uppercase tracking-wider">
-                      Save {displayDiscount}% ({formatCurrency(savingsAmount)})
-                    </span>
-                  </>
-                )}
-              </div>
+              {isCustomOrder ? (
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-[#0B3B24] border border-emerald-200/80 text-xs font-bold uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Custom Order Only • Price on Request</span>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#0B3B24] tracking-tight">
+                    Custom Quote on Request
+                  </h3>
+                  <p className="text-xs sm:text-sm text-stone-600 font-medium">
+                    Bespoke artisanal design. Provide your required dimensions and delivery date for an instant tailored quote.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-3 flex-wrap">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-[#0B3B24] tabular-nums tracking-tight">
+                    {formatCurrency(displayPrice)}
+                  </span>
+                  {displayMrp > displayPrice && (
+                    <>
+                      <span className="text-base sm:text-lg text-stone-400 line-through tabular-nums font-normal">
+                        {formatCurrency(displayMrp)}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full bg-rose-50 text-[#ed2353] border border-rose-200/80 text-xs font-bold uppercase tracking-wider">
+                        Save {displayDiscount}% ({formatCurrency(savingsAmount)})
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center justify-between pt-1 border-t border-stone-100 text-xs">
                 <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
                   <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>All US Taxes Included</span>
+                  <span>{isCustomOrder ? 'Custom Crafting & Cold-Chain Delivery' : 'All US Taxes Included'}</span>
                 </div>
 
                 <div>
-                  {isOutOfStock ? (
+                  {isCustomOrder ? (
+                    <span className="font-semibold text-emerald-800 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                      Accepting Custom Requests
+                    </span>
+                  ) : isOutOfStock ? (
                     <span className="font-bold text-rose-600 flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
                       Temporarily Sold Out
@@ -536,10 +561,18 @@ export default function ProductDetail({
                   Quantity:
                 </span>
                 <span className="text-stone-500">
-                  Subtotal:{' '}
-                  <strong className="text-stone-900 font-bold tabular-nums">
-                    {formatCurrency(displayPrice * quantity)}
-                  </strong>
+                  {isCustomOrder ? (
+                    <span className="text-xs font-semibold text-[#0B3B24]">
+                      Custom Quote for {quantity} {quantity > 1 ? 'items' : 'item'}
+                    </span>
+                  ) : (
+                    <>
+                      Subtotal:{' '}
+                      <strong className="text-stone-900 font-bold tabular-nums">
+                        {formatCurrency(displayPrice * quantity)}
+                      </strong>
+                    </>
+                  )}
                 </span>
               </div>
 
@@ -548,7 +581,7 @@ export default function ProductDetail({
                   <button
                     type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1 || isOutOfStock}
+                    disabled={quantity <= 1 || (!isCustomOrder && isOutOfStock)}
                     className="w-10 h-10 flex items-center justify-center hover:bg-stone-50 active:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-stone-700 font-bold cursor-pointer"
                     aria-label="Decrease quantity"
                   >
@@ -563,13 +596,13 @@ export default function ProductDetail({
                       const val = parseInt(e.target.value) || 1;
                       setQuantity(Math.max(1, val));
                     }}
-                    disabled={isOutOfStock}
+                    disabled={!isCustomOrder && isOutOfStock}
                     className="w-14 h-10 text-center font-bold text-sm text-stone-900 border-x border-stone-200 focus:outline-hidden focus:bg-emerald-50/50"
                   />
                   <button
                     type="button"
                     onClick={() => setQuantity(quantity + 1)}
-                    disabled={isOutOfStock || (activeStock > 0 && quantity >= activeStock)}
+                    disabled={!isCustomOrder && (isOutOfStock || (activeStock > 0 && quantity >= activeStock))}
                     className="w-10 h-10 flex items-center justify-center hover:bg-stone-50 active:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-stone-700 font-bold cursor-pointer"
                     aria-label="Increase quantity"
                   >
@@ -578,38 +611,49 @@ export default function ProductDetail({
                 </div>
 
                 <div className="text-xs text-stone-500 font-medium">
-                  {quantity > 1 ? `${quantity} items ready to ship` : 'Single order pack'}
+                  {quantity > 1 ? `${quantity} items requested` : 'Single order pack'}
                 </div>
               </div>
             </div>
 
             {/* ACTION BUTTONS: Add to Cart, Wishlist, Share */}
             <div className="space-y-3 pt-2">
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={isOutOfStock || isAdding || loading}
-                className="w-full py-4 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg cursor-pointer group"
-              >
-                {addedNotice ? (
-                  <>
-                    <CheckCircle2 className="w-5 h-5 text-emerald-300" />
-                    <span>Added to Shopping Bag!</span>
-                  </>
-                ) : isAdding ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Adding to Bag...</span>
-                  </>
-                ) : isOutOfStock ? (
-                  <span>Currently Out of Stock</span>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-5 h-5 transition-transform group-hover:scale-110" />
-                    <span>Add to Shopping Bag • {formatCurrency(displayPrice * quantity)}</span>
-                  </>
-                )}
-              </button>
+              {isCustomOrder ? (
+                <button
+                  type="button"
+                  onClick={() => setIsCustomOrderModalOpen(true)}
+                  className="w-full py-4 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2.5 transition-all duration-200 shadow-md hover:shadow-lg cursor-pointer group"
+                >
+                  <Flower2 className="w-5 h-5 text-amber-300 transition-transform group-hover:scale-110" />
+                  <span>Request Custom Order</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={isOutOfStock || isAdding || loading}
+                  className="w-full py-4 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg cursor-pointer group"
+                >
+                  {addedNotice ? (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+                      <span>Added to Shopping Bag!</span>
+                    </>
+                  ) : isAdding ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Adding to Bag...</span>
+                    </>
+                  ) : isOutOfStock ? (
+                    <span>Currently Out of Stock</span>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-5 h-5 transition-transform group-hover:scale-110" />
+                      <span>Add to Shopping Bag • {formatCurrency(displayPrice * quantity)}</span>
+                    </>
+                  )}
+                </button>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 {/* Wishlist Toggle Button */}
@@ -645,9 +689,11 @@ export default function ProductDetail({
               {/* WhatsApp Florist Concierge CTA */}
               <a
                 href={`https://wa.me/19093793678?text=${encodeURIComponent(
-                  `Namaste! I would like to inquire about ordering ${product.name} (${formatCurrency(
-                    displayPrice
-                  )}) for my upcoming event.`
+                  isCustomOrder
+                    ? `Namaste! I would like to inquire about placing a custom order for ${product.name}${activeVariant ? ` (${activeVariant.name})` : ''} for my upcoming event.`
+                    : `Namaste! I would like to inquire about ordering ${product.name} (${formatCurrency(
+                        displayPrice
+                      )}) for my upcoming event.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -810,7 +856,7 @@ export default function ProductDetail({
               {product.name}
             </p>
             <p className="text-xs font-extrabold text-[#0B3B24] tabular-nums">
-              {formatCurrency(displayPrice)}
+              {isCustomOrder ? 'Price on Request' : formatCurrency(displayPrice)}
             </p>
           </div>
         </div>
@@ -829,17 +875,36 @@ export default function ProductDetail({
             <Heart className={`w-4 h-4 ${localWishlisted ? 'fill-[#ed2353]' : ''}`} />
           </button>
 
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={isOutOfStock || isAdding}
-            className="py-2.5 px-4 rounded-xl bg-[#0B3B24] active:bg-[#134633] text-white font-bold text-xs tracking-wide flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>{isOutOfStock ? 'Sold Out' : 'Add to Bag'}</span>
-          </button>
+          {isCustomOrder ? (
+            <button
+              type="button"
+              onClick={() => setIsCustomOrderModalOpen(true)}
+              className="py-2.5 px-4 rounded-xl bg-[#0B3B24] active:bg-[#134633] text-white font-bold text-xs tracking-wide flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Flower2 className="w-3.5 h-3.5 text-amber-300" />
+              <span>Custom Order</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={isOutOfStock || isAdding}
+              className="py-2.5 px-4 rounded-xl bg-[#0B3B24] active:bg-[#134633] text-white font-bold text-xs tracking-wide flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>{isOutOfStock ? 'Sold Out' : 'Add to Bag'}</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Bespoke Custom Order Request Modal */}
+      <CustomOrderModal
+        isOpen={isCustomOrderModalOpen}
+        onClose={() => setIsCustomOrderModalOpen(false)}
+        product={product}
+        selectedVariant={activeVariant}
+      />
 
       {/* High-Resolution Full-Screen Image Lightbox Modal */}
       {isImageLightboxOpen && (

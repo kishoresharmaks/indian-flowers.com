@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Heart, Share2, Check, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, Check, ChevronDown, Flower2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
 import { openProductShareModal } from './ProductShareModal';
@@ -79,6 +79,8 @@ export default function ProductCard({
   const hasVariants = Boolean(product.variants && product.variants.length > 0);
   const originalPrice = hasVariants ? product.variants![0]?.mrp : product.mrp;
   const currentPrice = hasVariants ? product.variants![0]?.price : product.price;
+  // User Rule: If either selling price <= 0 or mrp <= 0, item requires custom order flow
+  const isCustomOrder = !currentPrice || currentPrice <= 0 || !originalPrice || originalPrice <= 0;
 
   // Calculate Price Range across variants if available
   let minPrice = currentPrice;
@@ -111,6 +113,15 @@ export default function ProductCard({
   const outOfStock = product.quantity <= 0;
 
   const handleAddToCart = async (variant?: ProductVariant) => {
+    if (variant && (!variant.price || variant.price <= 0 || !variant.mrp || variant.mrp <= 0)) {
+      if (onProductClick) {
+        onProductClick(product);
+      } else {
+        window.location.href = `/product/${product.slug || product._id}`;
+      }
+      return;
+    }
+
     setIsAdding(true);
     try {
       onAddToCart(product, variant);
@@ -125,6 +136,14 @@ export default function ProductCard({
   const handleCartButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isCustomOrder) {
+      if (onProductClick) {
+        onProductClick(product);
+      } else {
+        window.location.href = `/product/${product.slug || product._id}`;
+      }
+      return;
+    }
     if (outOfStock || isAdding) return;
 
     if (hasVariants) {
@@ -266,7 +285,11 @@ export default function ProductCard({
         <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between gap-1.5">
           {/* Price Stack */}
           <div className="flex flex-col text-left min-w-0 flex-1">
-            {isPriceRange ? (
+            {isCustomOrder ? (
+              <span className="text-[12px] xs:text-[12.5px] sm:text-[13.5px] font-extrabold text-[#0B3B24] tracking-tight whitespace-nowrap">
+                Price on Request
+              </span>
+            ) : isPriceRange ? (
               <span className="text-[12.5px] xs:text-[13px] sm:text-[15px] font-bold text-[#0B3B24] tabular-nums tracking-tight whitespace-nowrap">
                 {formatCompactPrice(minPrice)} – {formatCompactPrice(maxPrice)}
               </span>
@@ -284,22 +307,26 @@ export default function ProductCard({
             )}
           </div>
 
-          {/* Cart Button: Clean circular pill with ShoppingCart icon, anchored at right */}
+          {/* Cart Button: Clean circular pill with ShoppingCart or Flower2 icon */}
           <button
             type="button"
             onClick={handleCartButtonClick}
-            disabled={outOfStock || isAdding}
+            disabled={!isCustomOrder && (outOfStock || isAdding)}
             className={`flex h-8 w-8 sm:h-8.5 sm:w-8.5 items-center justify-center rounded-full transition-all duration-200 hover:scale-108 active:scale-95 cursor-pointer shrink-0 shadow-xs ${
-              outOfStock
+              isCustomOrder
+                ? 'bg-[#0B3B24] hover:bg-[#1C563F] text-amber-300 shadow-[0_2px_6px_rgba(11,59,36,0.2)] hover:shadow-[0_4px_12px_rgba(11,59,36,0.3)]'
+                : outOfStock
                 ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
                 : justAdded
                 ? 'bg-emerald-600 text-white scale-105 shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
                 : 'bg-[#0B3B24] hover:bg-[#1C563F] text-white shadow-[0_2px_6px_rgba(11,59,36,0.2)] hover:shadow-[0_4px_12px_rgba(11,59,36,0.3)]'
             }`}
-            aria-label={`Add ${product.name} to cart`}
-            title={hasVariants ? 'Choose options' : 'Add to cart'}
+            aria-label={isCustomOrder ? `Request custom order for ${product.name}` : `Add ${product.name} to cart`}
+            title={isCustomOrder ? 'Custom Order on Request' : hasVariants ? 'Choose options' : 'Add to cart'}
           >
-            {justAdded ? (
+            {isCustomOrder ? (
+              <Flower2 className="h-4 w-4 stroke-[2.2] text-amber-300" />
+            ) : justAdded ? (
               <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.8]" />
             ) : (
               <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[2.2]" />
@@ -320,7 +347,7 @@ export default function ProductCard({
               >
                 <span className="truncate pr-1">{v.name}</span>
                 <span className="shrink-0 font-bold tabular-nums text-[#0B3B24]">
-                  {formatCurrency(v.price)}
+                  {!v.price || v.price <= 0 || !v.mrp || v.mrp <= 0 ? 'Custom Quote' : formatCurrency(v.price)}
                 </span>
               </button>
             ))}

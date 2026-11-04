@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/db';
 import CustomOrder from '@/models/CustomOrder';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 import { sendFloralInquiryConfirmationEmail } from '@/lib/msg91';
+import { isBeforeMinDeliveryDate, MIN_DELIVERY_LEAD_DAYS } from '@/lib/dateUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,16 @@ export async function POST(request: Request) {
       customerName,
       customerEmail,
       customerPhone,
+      productId,
+      productCode,
+      productTitle,
+      variantName,
+      quantity,
+      address,
+      size,
+      preferredColor,
+      deliveryDate,
+      // Legacy fields
       cityState,
       eventDate,
       occasion,
@@ -36,6 +47,108 @@ export async function POST(request: Request) {
       budget,
     } = body;
 
+    const isProductCustomOrder = Boolean(productCode || productTitle);
+
+    if (isProductCustomOrder) {
+      // Validate Product Custom Order fields
+      if (!customerPhone || !customerPhone.trim()) {
+        return NextResponse.json(
+          { success: false, message: 'Please provide a valid contact phone number.' },
+          { status: 400 }
+        );
+      }
+
+      if (!address || !address.trim()) {
+        return NextResponse.json(
+          { success: false, message: 'Please provide your full delivery address.' },
+          { status: 400 }
+        );
+      }
+
+      const orderDeliveryDate = (deliveryDate || eventDate || '').trim();
+      if (!orderDeliveryDate) {
+        return NextResponse.json(
+          { success: false, message: 'Please select a preferred date of delivery.' },
+          { status: 400 }
+        );
+      }
+
+      // Check 10-day lock-in period
+      if (isBeforeMinDeliveryDate(orderDeliveryDate, MIN_DELIVERY_LEAD_DAYS)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Delivery date must be at least ${MIN_DELIVERY_LEAD_DAYS} days in advance for custom fresh preparation. For urgent deliveries, please call +1 909-379-3678.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      const count = await CustomOrder.countDocuments();
+      let inquiryId = `CST-${1001 + count}`;
+      const existing = await CustomOrder.exists({ inquiryId });
+      if (existing) {
+        inquiryId = `CST-${1001 + count}-${Math.floor(100 + Math.random() * 900)}`;
+      }
+
+      const finalTitle = (productTitle || productCode || 'Custom Floral Item').trim();
+      const finalQuantity = Math.max(1, Number(quantity) || 1);
+
+      const newCustomOrder = await CustomOrder.create({
+        inquiryId,
+        customerName: (customerName || 'Valued Customer').trim(),
+        customerEmail: (customerEmail || '').trim(),
+        customerPhone: customerPhone.trim(),
+        productId: (productId || '').trim(),
+        productCode: (productCode || '').trim(),
+        productTitle: finalTitle,
+        variantName: (variantName || '').trim(),
+        quantity: finalQuantity,
+        address: address.trim(),
+        size: (size || '').trim(),
+        preferredColor: (preferredColor || '').trim(),
+        deliveryDate: orderDeliveryDate,
+        cityState: (cityState || address).trim(),
+        eventDate: orderDeliveryDate,
+        occasion: (occasion || `Custom Order: ${finalTitle}`).trim(),
+        requirements: (
+          requirements ||
+          `Custom order for ${finalTitle} (Qty: ${finalQuantity}). Size: ${size || 'Standard'}, Color: ${preferredColor || 'As pictured'}`
+        ).trim(),
+        budget: budget ? String(budget).trim() : '',
+        status: 'NEW',
+      });
+
+      // Automated email confirmation if email provided
+      if (newCustomOrder.customerEmail) {
+        try {
+          await sendFloralInquiryConfirmationEmail({
+            customerName: newCustomOrder.customerName,
+            customerEmail: newCustomOrder.customerEmail,
+            customerPhone: newCustomOrder.customerPhone,
+            cityState: newCustomOrder.cityState || newCustomOrder.address,
+            eventDate: newCustomOrder.deliveryDate,
+            occasion: newCustomOrder.occasion,
+            requirements: `Product: ${newCustomOrder.productTitle} (Code: ${newCustomOrder.productCode || 'N/A'})\nQty: ${newCustomOrder.quantity}\nSize: ${newCustomOrder.size || 'Standard'}\nColor: ${newCustomOrder.preferredColor || 'Standard'}\nDelivery Address: ${newCustomOrder.address}`,
+            budget: newCustomOrder.budget,
+            inquiryId: newCustomOrder.inquiryId,
+          });
+        } catch (emailError) {
+          console.warn('[CustomOrder] Email confirmation error:', emailError);
+        }
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Your custom order request has been received! We will contact you shortly with confirmation.',
+          data: newCustomOrder,
+        },
+        { status: 201 }
+      );
+    }
+
+    // Fallback: Legacy event inquiry form validation
     if (
       !customerName ||
       !customerEmail ||
@@ -55,9 +168,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate inquiry ID (e.g., CST-1001)
     const count = await CustomOrder.countDocuments();
-    const inquiryId = `CST-${1001 + count}`;
+    let inquiryId = `CST-${1001 + count}`;
+    const existing = await CustomOrder.exists({ inquiryId });
+    if (existing) {
+      inquiryId = `CST-${1001 + count}-${Math.floor(100 + Math.random() * 900)}`;
+    }
 
     const newCustomOrder = await CustomOrder.create({
       inquiryId,
@@ -65,14 +181,15 @@ export async function POST(request: Request) {
       customerEmail: customerEmail.trim(),
       customerPhone: customerPhone.trim(),
       cityState: cityState.trim(),
+      address: cityState.trim(),
       eventDate: eventDate.trim(),
+      deliveryDate: eventDate.trim(),
       occasion: occasion.trim(),
       requirements: requirements.trim(),
       budget: budget ? String(budget).trim() : '',
       status: 'NEW',
     });
 
-    // Automated email confirmation via MSG91
     try {
       await sendFloralInquiryConfirmationEmail({
         customerName: newCustomOrder.customerName,
@@ -99,7 +216,7 @@ export async function POST(request: Request) {
     );
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to submit custom floral inquiry' },
+      { success: false, message: error.message || 'Failed to submit custom order request' },
       { status: 500 }
     );
   }
