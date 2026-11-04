@@ -140,7 +140,7 @@ export default function EventDeliveryChecker({ onCheckSuccess }: EventDeliveryCh
                   </div>
                 </div>
                 <p className="text-[11px] sm:text-[12.5px] text-stone-500 font-normal leading-relaxed mt-0.5">
-                  Guaranteed arrival before 10:30 AM for your Muhurtham or morning puja
+                  Guaranteed on-time arrival for your Muhurtham or morning puja
                 </p>
               </div>
             </div>

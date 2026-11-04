@@ -29,7 +29,7 @@ const ZONE_DESCRIPTIONS: Record<number, ZoneInfo> = {
     name: 'Zone 2 (Intra-Southern California & Inland Empire)',
     region: 'Southern California Local Region',
     approxDistanceMiles: 80,
-    transitDaysOvernight: 'Next Morning (by 10:30 AM)',
+    transitDaysOvernight: 'Next Morning Priority (On-Time Delivery)',
     transitDaysGround: '1 Business Day',
   },
   3: {
@@ -37,7 +37,7 @@ const ZONE_DESCRIPTIONS: Record<number, ZoneInfo> = {
     name: 'Zone 3 (Northern California, Las Vegas & Phoenix)',
     region: 'Southwest / Pacific Coast Region',
     approxDistanceMiles: 280,
-    transitDaysOvernight: 'Next Day (by 12:00 PM)',
+    transitDaysOvernight: 'Next Day Priority (On-Time Delivery)',
     transitDaysGround: '1-2 Business Days',
   },
   4: {
@@ -45,7 +45,7 @@ const ZONE_DESCRIPTIONS: Record<number, ZoneInfo> = {
     name: 'Zone 4 (Mountain West, Utah & New Mexico)',
     region: 'Mountain West Region',
     approxDistanceMiles: 520,
-    transitDaysOvernight: 'Next Day (by 12:00 PM)',
+    transitDaysOvernight: 'Next Day Priority (On-Time Delivery)',
     transitDaysGround: '2 Business Days',
   },
   5: {

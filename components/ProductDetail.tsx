@@ -383,7 +383,7 @@ export default function ProductDetail({
                   <Truck className="w-4 h-4" />
                 </div>
                 <h4 className="text-[11px] font-bold text-stone-900">FedEx Priority</h4>
-                <p className="text-[10px] text-stone-500 mt-0.5 leading-tight">By 10:30 AM in USA</p>
+                <p className="text-[10px] text-stone-500 mt-0.5 leading-tight">Guaranteed On-Time</p>
               </div>
 
               <div className="p-3 rounded-xl bg-white border border-stone-200/80 shadow-2xs text-center flex flex-col items-center">
@@ -781,7 +781,7 @@ export default function ProductDetail({
                   <div className="space-y-2 bg-stone-50 p-3.5 rounded-xl border border-stone-200">
                     <h5 className="font-bold text-stone-900 text-xs">Nationwide USA Delivery Details:</h5>
                     <p className="text-xs text-stone-600">
-                      We ship across all 50 US States via FedEx Priority Overnight. Flights depart from cold cargo hubs Mon–Thu to arrive fresh Tue–Fri before 10:30 AM local time. Saturday delivery available in select metropolitan zip codes.
+                      We ship across all 50 US States via FedEx Priority Overnight. Flights depart from cold cargo hubs Mon–Thu to arrive fresh Tue–Fri on-time for your ceremony. Saturday delivery available in select metropolitan zip codes.
                     </p>
                   </div>
                 )}

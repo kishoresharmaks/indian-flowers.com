@@ -141,7 +141,7 @@ Fresh Indian flowers—including fragrant Madurai Jasmine strands (*Mallipoo*), 
 ## 3. Shipping Carriers & Express Methods
 
 To minimize transit time and protect freshness, all orders are dispatched via trusted Tier-1 express air carriers:
-* **FedEx Priority Overnight:** Guaranteed arrival by 10:30 AM to 12:00 PM in most metropolitan US zones.
+* **FedEx Priority Overnight:** Guaranteed on-time delivery for morning Muhurtham and ceremonies in US metropolitan zones.
 * **UPS Next Day Air:** Next-morning delivery to commercial and residential destinations nationwide.
 * **Temperature-Controlled Courier Networks:** Dedicated cold-van couriers deployed for high-volume wedding Jai Mala parcels in select metropolitan corridors.
 
