@@ -53,6 +53,13 @@ export async function fulfillStripeCheckoutSession(session: Stripe.Checkout.Sess
     const unitPrice = item.price?.unit_amount ? item.price.unit_amount / 100 : 0;
     const qty = item.quantity || 1;
 
+    let itemImage = productObj?.images?.[0] || '';
+    if (itemImage.includes('/uploads/')) {
+      itemImage = '/uploads/' + itemImage.split('/uploads/')[1];
+    } else if (itemImage.includes('/wp-content/')) {
+      itemImage = '/wp-content/' + itemImage.split('/wp-content/')[1];
+    }
+
     processedItems.push({
       productId,
       name: productObj?.name || item.description || 'Indian Floral Item',
@@ -62,7 +69,7 @@ export async function fulfillStripeCheckoutSession(session: Stripe.Checkout.Sess
       isTaxable: true,
       taxCode: '',
       gst: 0,
-      image: productObj?.images?.[0] || '',
+      image: itemImage,
     });
   }
 

@@ -297,6 +297,7 @@ const nextConfig = {
               // Next.js inline scripts and hydration require 'unsafe-inline'; lock down
               // further with nonces once next.js nonce support is wired in.
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://accounts.google.com",
+              "worker-src 'self' blob:",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: http:",
@@ -305,7 +306,6 @@ const nextConfig = {
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
-              "upgrade-insecure-requests",
             ].join('; '),
           },
         ],

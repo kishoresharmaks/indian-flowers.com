@@ -56,6 +56,22 @@ interface OrderData {
   createdAt: string;
 }
 
+function sanitizeImageUrl(url?: string): string {
+  if (!url) return '';
+  // If the image points to local /uploads/ or /wp-content/, convert to relative path so it loads via the current protocol & host
+  if (url.includes('/uploads/')) {
+    return '/uploads/' + url.split('/uploads/')[1];
+  }
+  if (url.includes('/wp-content/')) {
+    return '/wp-content/' + url.split('/wp-content/')[1];
+  }
+  // If http:// on an https page, upgrade to https
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+    return url.replace(/^http:\/\//, 'https://');
+  }
+  return url;
+}
+
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -322,15 +338,22 @@ function CheckoutSuccessContent() {
                     <div className="flex items-center gap-3.5 min-w-0">
                       {item.image ? (
                         <img
-                          src={item.image}
+                          src={sanitizeImageUrl(item.image)}
                           alt={item.name}
                           className="w-12 h-12 object-cover rounded-xl border border-stone-200 shrink-0"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = 'none';
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-[#FAF6F0] border border-stone-200 flex items-center justify-center shrink-0 text-[#0B3B24] font-bold text-xs">
-                          IF
-                        </div>
-                      )}
+                      ) : null}
+                      <div
+                        style={{ display: item.image ? 'none' : 'flex' }}
+                        className="w-12 h-12 rounded-xl bg-[#FAF6F0] border border-stone-200 items-center justify-center shrink-0 text-[#0B3B24] font-bold text-xs"
+                      >
+                        IF
+                      </div>
                       <div className="min-w-0">
                         <h4 className="text-xs sm:text-sm font-semibold text-stone-900 truncate">
                           {item.name}
