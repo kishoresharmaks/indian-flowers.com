@@ -57,7 +57,9 @@ export interface IOrder extends Document {
   pointsDiscount?: number;
   pointsEarned?: number;
   pointsAwarded?: boolean;
-  paymentMethod: 'CreditCard' | 'COD' | 'ApplePay' | 'PayPal' | 'CASH' | 'Razorpay';
+  paymentMethod: 'CreditCard' | 'COD' | 'ApplePay' | 'PayPal' | 'CASH' | 'Razorpay' | 'Stripe';
+  stripeSessionId?: string;
+  stripePaymentIntentId?: string;
   paymentStatus: 'Pending' | 'Paid' | 'Failed' | 'Refunded' | 'Partially_Refunded';
   transactionId?: string;
   cashReceived?: number;
@@ -158,7 +160,7 @@ const OrderSchema: Schema = new Schema(
     pointsAwarded: { type: Boolean, default: false },
     paymentMethod: {
       type: String,
-      enum: ['CreditCard', 'COD', 'ApplePay', 'PayPal', 'CASH', 'Razorpay'],
+      enum: ['CreditCard', 'COD', 'ApplePay', 'PayPal', 'CASH', 'Razorpay', 'Stripe'],
       default: 'COD',
     },
     paymentStatus: {
@@ -167,6 +169,8 @@ const OrderSchema: Schema = new Schema(
       default: 'Pending',
     },
     transactionId: { type: String, default: '' },
+    stripeSessionId: { type: String },
+    stripePaymentIntentId: { type: String },
     cashReceived: { type: Number },
     changeReturned: { type: Number },
     cashierName: { type: String, default: '' },
@@ -192,6 +196,7 @@ OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ orderType: 1, createdAt: -1 });
 OrderSchema.index({ zipCode: 1 });
 OrderSchema.index({ state: 1 });
+OrderSchema.index({ stripeSessionId: 1 }, { unique: true, sparse: true });
 
 const Order: Model<IOrder> =
   mongoose.models.Order || mongoose.model<IOrder>('Order', OrderSchema);

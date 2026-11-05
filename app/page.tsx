@@ -135,7 +135,7 @@ export default function CustomerStore() {
     country: 'US',
     shippingAddress: '',
     pincode: '',
-    paymentMethod: 'Razorpay',
+    paymentMethod: 'Stripe',
     transactionId: '',
     notes: '',
     deliveryDate: '',
@@ -412,8 +412,10 @@ export default function CustomerStore() {
             : DEFAULT_DELIVERY_MODES;
           setStoreSettings({ ...data.data, deliveryModes: modes });
           setSelectedDeliveryMode((current) => current || modes.find((m: any) => m.active !== false) || modes[0]);
-          if (data.data.enableRazorpay !== false) {
+          if (data.data.activePaymentGateway === 'razorpay') {
             setCheckoutForm((prev) => ({ ...prev, paymentMethod: 'Razorpay' }));
+          } else if (data.data.activePaymentGateway === 'stripe' || data.data.enableRazorpay !== false) {
+            setCheckoutForm((prev) => ({ ...prev, paymentMethod: 'Stripe' }));
           } else if (data.data.enableCOD !== false) {
             setCheckoutForm((prev) => ({ ...prev, paymentMethod: 'COD' }));
           }
@@ -423,6 +425,19 @@ export default function CustomerStore() {
       }
     };
     fetchSettings();
+  }, []);
+
+  // Check for Stripe Checkout cancellation return
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('checkout_cancelled') === '1') {
+        setIsCartOpen(true);
+        setFormError('Your Stripe checkout was cancelled. Your items are still saved in your cart.');
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
   }, []);
 
   // 2. Fetch Categories directly from DB
@@ -924,19 +939,25 @@ export default function CustomerStore() {
     }
 
     const isCodActive = storeSettings ? storeSettings.enableCOD !== false : true;
-    const isRazorpayActive = storeSettings ? storeSettings.enableRazorpay !== false : true;
+    const activeGateway = storeSettings?.activePaymentGateway || 'stripe';
+    const isStripeActive = activeGateway === 'stripe';
+    const isRazorpayActive = activeGateway === 'razorpay' && (storeSettings ? storeSettings.enableRazorpay !== false : true);
 
-    if (!isCodActive && !isRazorpayActive) {
+    if (!isCodActive && !isStripeActive && !isRazorpayActive) {
       setFormError('Online checkout is currently paused by store administration.');
       return;
     }
 
     const currentMethod =
-      checkoutForm.paymentMethod === 'Razorpay' && isRazorpayActive
-        ? 'Razorpay'
-        : isCodActive
-          ? 'COD'
-          : 'Razorpay';
+      checkoutForm.paymentMethod === 'Stripe' && isStripeActive
+        ? 'Stripe'
+        : checkoutForm.paymentMethod === 'Razorpay' && isRazorpayActive
+          ? 'Razorpay'
+          : isCodActive
+            ? 'COD'
+            : isStripeActive
+              ? 'Stripe'
+              : 'Razorpay';
 
     try {
       setSubmittingOrder(true);
@@ -998,6 +1019,47 @@ export default function CustomerStore() {
         setIsApplyingPoints(false);
         setRedeemPoints(0);
       };
+
+      if (currentMethod === 'Stripe') {
+        const stripeRes = await fetch('/api/checkout/stripe/create-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: payload.items,
+            customerName: payload.customerName,
+            streetAddress: payload.streetAddress,
+            aptSuite: payload.aptSuite,
+            city: payload.city,
+            state: payload.state,
+            zipCode: payload.zipCode,
+            customerEmail: payload.customerEmail,
+            customerPhone: payload.customerPhone,
+            customerId: customer?._id || customer?.id || undefined,
+            redeemPoints: isApplyingPoints ? redeemPoints : 0,
+            shippingFee: deliveryFee,
+            deliveryDate: checkoutForm.deliveryDate.trim(),
+            acknowledgedDeliveryTimeframe: checkoutForm.acknowledgedDeliveryTimeframe,
+            deliveryMode: payload.deliveryMode,
+          }),
+        });
+
+        const stripeData = await stripeRes.json();
+        if (!stripeData.success || !stripeData.url) {
+          if (stripeData.errors) {
+            setFieldErrors(stripeData.errors);
+          }
+          setFormError(
+            stripeData.message ||
+            'Unable to initialize secure Stripe checkout. Please try again or select Cash on Delivery.'
+          );
+          setSubmittingOrder(false);
+          return;
+        }
+
+        // Redirect customer to Stripe Hosted Checkout
+        window.location.href = stripeData.url;
+        return;
+      }
 
       if (currentMethod === 'Razorpay') {
         const rzpOrderRes = await fetch('/api/checkout/razorpay/create-order', {
@@ -1244,7 +1306,10 @@ export default function CustomerStore() {
 
   // Dynamic Backend Payment Options (Real Settings from MongoDB)
   const isCodActive = storeSettings ? storeSettings.enableCOD !== false : true;
-  const isRazorpayActive = storeSettings ? storeSettings.enableRazorpay !== false : true;
+  const activeGateway = storeSettings?.activePaymentGateway || 'stripe';
+  const isStripeActive = activeGateway === 'stripe';
+  const isRazorpayActive = activeGateway === 'razorpay' && (storeSettings ? storeSettings.enableRazorpay !== false : true);
+  const isDigitalPaymentActive = isStripeActive || isRazorpayActive;
 
   const weddingCategory = categories.find((c) =>
     c.name.toLowerCase().includes('wedding')
@@ -2591,12 +2656,47 @@ export default function CustomerStore() {
                     </span>
                   </div>
 
-                  {!isCodActive && !isRazorpayActive ? (
+                  {!isCodActive && !isDigitalPaymentActive ? (
                     <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-normal">
                       Online checkout is temporarily paused by the store administration. Please contact support.
                     </div>
                   ) : (
                     <div className="space-y-2.5">
+                      {/* Stripe Hosted Checkout — Credit / Debit Cards, Apple Pay, Google Pay */}
+                      {isStripeActive && (
+                        <label
+                          className={`block p-3.5 rounded-xl border cursor-pointer transition-all ${checkoutForm.paymentMethod === 'Stripe'
+                              ? 'border-[#0B3B24] bg-emerald-50/40 ring-1 ring-[#0B3B24]'
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="Stripe"
+                                checked={checkoutForm.paymentMethod === 'Stripe'}
+                                onChange={() => setCheckoutForm({ ...checkoutForm, paymentMethod: 'Stripe' })}
+                                className="w-4 h-4 text-[#0B3B24] focus:ring-[#0B3B24] accent-[#0B3B24]"
+                              />
+                              <div>
+                                <div className="text-xs sm:text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                                  <CreditCard className="w-4 h-4 text-[#0B3B24]" />
+                                  Credit / Debit Card, Apple Pay & Google Pay
+                                </div>
+                                <p className="text-[11px] text-gray-500 mt-0.5 font-normal">
+                                  Pay securely with Visa, Mastercard, AMEX, Discover, Apple Pay & Google Pay in USD.
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                              Active
+                            </span>
+                          </div>
+                        </label>
+                      )}
+
                       {/* Razorpay Online Payment — US Credit/Debit Cards, NetBanking */}
                       {isRazorpayActive && (
                         <label
@@ -2723,13 +2823,13 @@ export default function CustomerStore() {
 
                 <button
                   type="submit"
-                  disabled={submittingOrder || (!isCodActive && !isRazorpayActive)}
+                  disabled={submittingOrder || (!isCodActive && !isDigitalPaymentActive)}
                   className="w-full py-3 rounded-xl bg-[#0B3B24] hover:bg-[#134633] text-white font-medium text-xs uppercase tracking-wider transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   {submittingOrder
                     ? 'Processing...'
-                    : checkoutForm.paymentMethod === 'Razorpay'
+                    : checkoutForm.paymentMethod === 'Stripe' || checkoutForm.paymentMethod === 'Razorpay'
                       ? `Pay with Card — ${formatCurrency(cartGrandTotal)}`
                       : `Place Order — ${formatCurrency(cartGrandTotal)}`}
                 </button>
@@ -2788,11 +2888,9 @@ export default function CustomerStore() {
                 <span className="text-gray-500">Payment:</span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
                   <Check className="w-3 h-3 text-emerald-600" />
-                  {orderSuccess.paymentMethod === 'Razorpay'
+                  {orderSuccess.paymentMethod === 'Stripe' || orderSuccess.paymentMethod === 'Razorpay' || orderSuccess.paymentMethod === 'CreditCard'
                     ? 'Paid Online (Card Verified)'
-                    : orderSuccess.paymentMethod === 'CreditCard'
-                      ? 'Paid Online (Card Verified)'
-                      : 'Cash on Delivery (COD)'}
+                    : 'Cash on Delivery (COD)'}
                 </span>
               </div>
               {orderSuccess.transactionId && (

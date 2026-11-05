@@ -499,6 +499,7 @@ export default function AdminDashboard() {
   const [selectedOrderForDetails, setSelectedOrderForDetails] = useState<Order | null>(null);
   const [orderItemsViewMode, setOrderItemsViewMode] = useState<'cards' | 'table'>('cards');
   const [copiedOrderItems, setCopiedOrderItems] = useState<boolean>(false);
+  const [copiedStripeWebhook, setCopiedStripeWebhook] = useState<boolean>(false);
   const [groupByCategoryInTable, setGroupByCategoryInTable] = useState<boolean>(false);
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
   const [customerCount, setCustomerCount] = useState<number>(0);
@@ -780,6 +781,7 @@ export default function AdminDashboard() {
 
   // Settings State
   const [paymentSettings, setPaymentSettings] = useState({
+    activePaymentGateway: 'stripe' as 'stripe' | 'razorpay',
     enableRazorpay: true,
     razorpayKeyId: '',
     razorpayKeySecret: '',
@@ -1216,6 +1218,7 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.success && data.data) {
         setPaymentSettings({
+          activePaymentGateway: (data.data.activePaymentGateway as 'stripe' | 'razorpay') || 'stripe',
           enableRazorpay: data.data.enableRazorpay ?? true,
           razorpayKeyId: data.data.razorpayKeyId ?? '',
           razorpayKeySecret: data.data.razorpayKeySecret ?? '',
@@ -5837,73 +5840,187 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                     </div>
                   </div>
                 </div>
-                {/* Razorpay Toggle & Config Card */}
-                <div className="p-5 rounded-2xl border border-[#E8EDF2] bg-[#FFFCFB] space-y-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-[#0B3B24]/10 text-[#0B3B24] flex items-center justify-center font-black">
-                        <CreditCard className="w-6 h-6" />
+                {/* Active Payment Gateway Selector (Mutual Exclusion Gateway Rule) */}
+                <div className="p-5 sm:p-6 rounded-2xl border border-[#E8EDF2] bg-[#FFFCFB] space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E8EDF2] pb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-[#163B5C] text-base">Digital Payment Gateway</h3>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#0B3B24]/10 text-[#0B3B24] border border-[#0B3B24]/20">
+                          Single Active Gateway
+                        </span>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-extrabold text-[#163B5C]">Razorpay Online Payment (USD)</h3>
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                              paymentSettings.enableRazorpay
-                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                                : 'bg-rose-100 text-rose-700 border border-rose-200'
-                            }`}
-                          >
-                            {paymentSettings.enableRazorpay ? 'Active' : 'Disabled'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#64748B] mt-0.5">
-                          Enables customers to pay securely with US credit cards, debit cards, and digital wallets via Razorpay.
-                        </p>
-                      </div>
+                      <p className="text-xs text-[#64748B] mt-0.5">
+                        Select which provider processes card payments on the storefront. Cash on Delivery operates independently below.
+                      </p>
                     </div>
 
-                    <label className="relative inline-flex items-center cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={paymentSettings.enableRazorpay}
-                        onChange={(e) =>
-                          setPaymentSettings({ ...paymentSettings, enableRazorpay: e.target.checked })
-                        }
-                        className="sr-only peer"
-                      />
-                      <div className="w-12 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#0B3B24]"></div>
-                    </label>
+                    <div className="flex items-center gap-2 bg-[#F1F5F9] p-1 rounded-xl text-xs font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentSettings({ ...paymentSettings, activePaymentGateway: 'stripe' })}
+                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                          paymentSettings.activePaymentGateway === 'stripe'
+                            ? 'bg-[#0B3B24] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Stripe (Active)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentSettings({ ...paymentSettings, activePaymentGateway: 'razorpay' })}
+                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                          paymentSettings.activePaymentGateway === 'razorpay'
+                            ? 'bg-[#0B3B24] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Razorpay
+                      </button>
+                    </div>
                   </div>
 
-                  {paymentSettings.enableRazorpay && (
-                    <div className="pt-3 border-t border-[#E8EDF2] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <label className="font-bold text-[#163B5C] block mb-1">Razorpay Key ID:</label>
+                  {/* Gateway Cards Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Stripe Card */}
+                    <div
+                      onClick={() => setPaymentSettings({ ...paymentSettings, activePaymentGateway: 'stripe' })}
+                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer relative ${
+                        paymentSettings.activePaymentGateway === 'stripe'
+                          ? 'border-[#0B3B24] bg-emerald-50/20 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-[#0B3B24] text-white flex items-center justify-center font-black shrink-0">
+                            <CreditCard className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-extrabold text-[#163B5C] text-sm">Stripe Hosted Checkout</h4>
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Recommended for US
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              Apple Pay, Google Pay, Visa, Mastercard, AMEX, Discover
+                            </p>
+                          </div>
+                        </div>
+
                         <input
-                          type="text"
-                          placeholder="rzp_live_... or rzp_test_..."
-                          value={paymentSettings.razorpayKeyId}
-                          onChange={(e) =>
-                            setPaymentSettings({ ...paymentSettings, razorpayKeyId: e.target.value })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#0B3B24] font-mono text-[11px]"
+                          type="radio"
+                          name="activeGateway"
+                          checked={paymentSettings.activePaymentGateway === 'stripe'}
+                          onChange={() => setPaymentSettings({ ...paymentSettings, activePaymentGateway: 'stripe' })}
+                          className="w-4 h-4 text-[#0B3B24] accent-[#0B3B24] cursor-pointer mt-1"
                         />
                       </div>
-                      <div>
-                        <label className="font-bold text-[#163B5C] block mb-1">Razorpay Key Secret:</label>
-                        <input
-                          type="password"
-                          placeholder="••••••••••••••••"
-                          value={paymentSettings.razorpayKeySecret}
-                          onChange={(e) =>
-                            setPaymentSettings({ ...paymentSettings, razorpayKeySecret: e.target.value })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-[#0B3B24] font-mono text-[11px]"
-                        />
+
+                      <div className="mt-4 pt-3 border-t border-slate-100 space-y-2 text-xs">
+                        <div className="flex items-center gap-1.5 text-emerald-800 text-[11px] font-medium">
+                          <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                          <span>Credentials managed securely via server environment (.env)</span>
+                        </div>
+                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                            <span>Webhook Endpoint:</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const url = `${window.location.origin}/api/checkout/stripe/webhook`;
+                                navigator.clipboard.writeText(url);
+                                setCopiedStripeWebhook(true);
+                                setTimeout(() => setCopiedStripeWebhook(false), 2000);
+                              }}
+                              className="text-[#0B3B24] font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                            >
+                              {copiedStripeWebhook ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                              {copiedStripeWebhook ? 'Copied!' : 'Copy URL'}
+                            </button>
+                          </div>
+                          <code className="block text-[11px] font-mono text-slate-700 break-all select-all">
+                            /api/checkout/stripe/webhook
+                          </code>
+                        </div>
                       </div>
                     </div>
-                  )}
+
+                    {/* Razorpay Card */}
+                    <div
+                      onClick={() => setPaymentSettings({ ...paymentSettings, activePaymentGateway: 'razorpay' })}
+                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer relative ${
+                        paymentSettings.activePaymentGateway === 'razorpay'
+                          ? 'border-[#0B3B24] bg-emerald-50/20 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center font-black shrink-0">
+                            <CreditCard className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-extrabold text-[#163B5C] text-sm">Razorpay Gateway</h4>
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                Alternative
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              Standard card modal and NetBanking
+                            </p>
+                          </div>
+                        </div>
+
+                        <input
+                          type="radio"
+                          name="activeGateway"
+                          checked={paymentSettings.activePaymentGateway === 'razorpay'}
+                          onChange={() => setPaymentSettings({ ...paymentSettings, activePaymentGateway: 'razorpay' })}
+                          className="w-4 h-4 text-[#0B3B24] accent-[#0B3B24] cursor-pointer mt-1"
+                        />
+                      </div>
+
+                      {paymentSettings.activePaymentGateway === 'razorpay' ? (
+                        <div className="mt-4 pt-3 border-t border-slate-100 space-y-2 text-xs">
+                          <div>
+                            <label className="font-bold text-[#163B5C] block mb-1">Razorpay Key ID:</label>
+                            <input
+                              type="text"
+                              placeholder="rzp_live_... or rzp_test_..."
+                              value={paymentSettings.razorpayKeyId}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) =>
+                                setPaymentSettings({ ...paymentSettings, razorpayKeyId: e.target.value })
+                              }
+                              className="w-full px-3 py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:border-[#0B3B24] font-mono text-[11px]"
+                            />
+                          </div>
+                          <div>
+                            <label className="font-bold text-[#163B5C] block mb-1">Razorpay Key Secret:</label>
+                            <input
+                              type="password"
+                              placeholder="••••••••••••••••"
+                              value={paymentSettings.razorpayKeySecret}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) =>
+                                setPaymentSettings({ ...paymentSettings, razorpayKeySecret: e.target.value })
+                              }
+                              className="w-full px-3 py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:border-[#0B3B24] font-mono text-[11px]"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400">
+                          <p className="text-[11px]">Click to switch digital card processing from Stripe to Razorpay.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* COD Toggle Card */}

@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     if (!settings) {
       const created = await Settings.create({
         key: 'global',
+        activePaymentGateway: 'stripe',
         enableRazorpay: true,
         enableCOD: true,
         currency: STORE_CURRENCY,
@@ -72,6 +73,9 @@ export async function POST(request: NextRequest) {
     const { enableRazorpay, enableCOD, razorpayKeyId, razorpayKeySecret } = body;
 
     const updateFields: any = {};
+    if (body.activePaymentGateway === 'stripe' || body.activePaymentGateway === 'razorpay') {
+      updateFields.activePaymentGateway = body.activePaymentGateway;
+    }
     if (typeof enableRazorpay === 'boolean') updateFields.enableRazorpay = enableRazorpay;
     if (typeof enableCOD === 'boolean') updateFields.enableCOD = enableCOD;
     if (typeof razorpayKeyId === 'string') updateFields.razorpayKeyId = razorpayKeyId.trim();

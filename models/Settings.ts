@@ -13,6 +13,7 @@ export interface ISettings extends Document {
   deliveryModes?: IDeliveryMode[];
   pickupHubs?: IPickupHub[];
   key: string;
+  activePaymentGateway?: 'stripe' | 'razorpay';
   enableRazorpay: boolean;
   razorpayKeyId?: string;
   razorpayKeySecret?: string;
@@ -67,6 +68,7 @@ export interface ISettings extends Document {
 const SettingsSchema: Schema = new Schema(
   {
     key: { type: String, required: true, unique: true, default: 'global' },
+    activePaymentGateway: { type: String, enum: ['stripe', 'razorpay'], default: 'stripe' },
     enableRazorpay: { type: Boolean, default: true },
     razorpayKeyId: { type: String, default: '' },
     razorpayKeySecret: { type: String, default: '' },
