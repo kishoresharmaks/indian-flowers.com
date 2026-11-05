@@ -13,7 +13,8 @@
     "clean:base64": "node scripts/migrate-base64-images.mjs",
     "sync:categories": "node scripts/sync-category-slugs.mjs",
     "convert:webp": "node scripts/convert-local-images-to-webp.mjs",
-    "convert:webp:db": "node scripts/convert-local-images-to-webp.mjs --update-db"
+    "convert:webp:db": "node scripts/convert-local-images-to-webp.mjs --update-db",
+    "sanitize:images": "node scripts/sanitize-db-image-urls.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ShoppingCart, Heart, Share2, Check, ChevronDown, Flower2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
+import { sanitizeImageUrl } from '@/lib/imageUrl';
 import { openProductShareModal } from './ProductShareModal';
 
 export interface ProductVariant {
@@ -201,7 +202,7 @@ export default function ProductCard({
             src={
               imgError || !product.image
                 ? DEFAULT_FLORAL_PLACEHOLDER
-                : product.image
+                : sanitizeImageUrl(product.image)
             }
             alt={product.name}
             fill

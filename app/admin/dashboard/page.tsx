@@ -86,6 +86,7 @@ import ProductSeoPagesModal from '@/components/admin/ProductSeoPagesModal';
 import SaleInvoiceForm from '@/components/billing/sales/SaleInvoiceForm';
 import PrintableDocumentModal from '@/components/billing/shared/PrintableDocumentModal';
 import { IClientLicenseState } from '@/lib/licensing/licenseTypes';
+import { sanitizeImageUrl } from '@/lib/imageUrl';
 
 interface BannerItem {
   _id: string;
@@ -4188,7 +4189,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
                               <img
-                                src={p.image}
+                                src={sanitizeImageUrl(p.image)}
                                 alt={p.name}
                                 className="w-12 h-12 object-cover rounded-xl bg-[#FFF8F5] border border-[#E8EDF2]"
                               />
@@ -4616,7 +4617,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             >
                               {cat.image ? (
                                 <img
-                                  src={cat.image}
+                                  src={sanitizeImageUrl(cat.image)}
                                   alt={cat.name}
                                   className="w-full h-full object-cover"
                                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -4656,7 +4657,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                                         title="Click to view/change image"
                                       >
                                         <img
-                                          src={sub.image}
+                                          src={sanitizeImageUrl(sub.image)}
                                           alt={sub.name}
                                           className="w-full h-full object-cover block"
                                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -5553,7 +5554,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       {/* Image Preview with Slide Order Pill */}
                       <div className="relative aspect-video bg-[#FFF8F5] overflow-hidden">
                         <img
-                          src={b.image}
+                          src={sanitizeImageUrl(b.image)}
                           alt={b.title}
                           className="w-full h-full object-cover"
                           loading="lazy"
@@ -8966,7 +8967,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             (item.variantName && item.variantName.trim().length > 0)
                               ? item.variantName
                               : matchedProduct?.variants?.find((v) => Number(v.price) === Number(item.price))?.name;
-                          const itemImage = item.image || matchedProduct?.image;
+                          const itemImage = sanitizeImageUrl(item.image || matchedProduct?.image);
                           const lineTotal = item.price * item.quantity;
                           const categoryName = matchedProduct?.category;
 
