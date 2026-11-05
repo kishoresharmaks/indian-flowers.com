@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import sharp from 'sharp';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,14 +42,41 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const safeName = file.name.toLowerCase().replace(/[^a-z0-9.-]/g, '_');
-    const filename = `${Date.now()}-${safeName}`;
+    const baseName = file.name
+      .toLowerCase()
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[^a-z0-9_-]/g, '_');
+
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', folder);
-
     await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, filename), buffer);
 
-    const publicUrl = `/uploads/${folder}/${filename}`;
+    let finalBuffer = buffer;
+    let finalFilename: string;
+
+    const isRasterImage = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type.toLowerCase());
+
+    // Auto-compress and convert raster images to optimized WebP
+    if (isRasterImage) {
+      finalFilename = `${Date.now()}-${baseName}.webp`;
+      try {
+        finalBuffer = await sharp(buffer)
+          .rotate() // Auto-orient based on smartphone EXIF
+          .resize({ width: 1400, height: 1400, fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 82, effort: 4 })
+          .toBuffer();
+      } catch (sharpErr) {
+        console.warn('[Upload] Sharp compression fallback:', sharpErr);
+        finalFilename = `${Date.now()}-${file.name.toLowerCase().replace(/[^a-z0-9.-]/g, '_')}`;
+        finalBuffer = buffer;
+      }
+    } else {
+      // SVGs, GIFs, and other vector/animated assets
+      finalFilename = `${Date.now()}-${file.name.toLowerCase().replace(/[^a-z0-9.-]/g, '_')}`;
+    }
+
+    await writeFile(path.join(uploadDir, finalFilename), finalBuffer);
+
+    const publicUrl = `/uploads/${folder}/${finalFilename}`;
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {
     console.error('File upload error:', error);
