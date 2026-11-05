@@ -47,11 +47,12 @@ export default function BrandLogo({
   const isDark = variant === 'dark';
 
   // Height sizing for the official logo
-  // Mobile heights (h-11 = 44px) ensure crisp visibility and full legibility of the emblem & brand typography
+  // Mobile heights (h-11 = 44px) ensure crisp visibility and full legibility on mobile
+  // Desktop heights (md:h-14 lg:h-16 xl:h-[70px]) provide prominent, prestigious branding
   const logoHeightClasses = {
-    sm: 'h-8 sm:h-9 max-h-[36px]',
-    md: 'h-11 sm:h-12 md:h-12 max-h-[48px]',
-    lg: 'h-12 sm:h-14 md:h-16 max-h-[64px]',
+    sm: 'h-8 sm:h-9 md:h-10 max-h-[40px]',
+    md: 'h-11 sm:h-12 md:h-14 lg:h-16 xl:h-[70px] max-h-[72px]',
+    lg: 'h-14 sm:h-16 md:h-18 lg:h-20 xl:h-[84px] max-h-[88px]',
   }[size];
 
   const content = isDark ? (
