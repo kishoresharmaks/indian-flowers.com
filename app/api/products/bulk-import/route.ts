@@ -7,6 +7,7 @@ import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 import { normalizeDescriptionText, areVariantsEqual } from '@/lib/bulkImportHelpers';
 import fs from 'fs/promises';
 import path from 'path';
+import sharp from 'sharp';
 
 export const dynamic = 'force-dynamic';
 
@@ -336,18 +337,30 @@ export async function POST(request: NextRequest) {
         parsedIsActive = originalRow.isActive;
       }
 
-      // Ensure no Base64 is stored in MongoDB: decode and write to disk
+      // Ensure no Base64 is stored in MongoDB: decode and write to disk in WebP format
       if (image.startsWith('data:image')) {
         try {
           const matches = image.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
           if (matches && matches.length === 3) {
-            let ext = matches[1].toLowerCase();
-            if (ext === 'jpeg') ext = 'jpg';
-            if (ext === 'svg+xml') ext = 'svg';
-            const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+            const rawBuffer = Buffer.from(matches[2], 'base64');
             const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products');
             await fs.mkdir(uploadDir, { recursive: true });
-            await fs.writeFile(path.join(uploadDir, filename), Buffer.from(matches[2], 'base64'));
+
+            let finalBuffer = rawBuffer;
+            let filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.webp`;
+
+            try {
+              finalBuffer = await sharp(rawBuffer)
+                .webp({ quality: 90, effort: 4 })
+                .toBuffer();
+            } catch (sharpErr) {
+              let ext = matches[1].toLowerCase();
+              if (ext === 'jpeg') ext = 'jpg';
+              if (ext === 'svg+xml') ext = 'svg';
+              filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+            }
+
+            await fs.writeFile(path.join(uploadDir, filename), finalBuffer);
             image = `/uploads/products/${filename}`;
           }
         } catch (err) {
