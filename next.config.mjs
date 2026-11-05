@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // output: 'standalone', // Disabled so standard `pm2 / next start` runs cleanly without standalone warning
   reactStrictMode: true,
   swcMinify: true,
   eslint: {
