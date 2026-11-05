@@ -121,7 +121,7 @@ export async function getEffectiveEmailConfig(): Promise<{
   const templateId = dbConfig?.msg91TemplateId || process.env.MSG91_TEMPLATE_ID || '';
 
   return {
-    provider: dbConfig?.provider || 'msg91',
+    provider: (dbConfig?.provider || process.env.EMAIL_PROVIDER || process.env.MAIL_PROVIDER || 'msg91') as any,
     authKey,
     fromEmail,
     fromName,
