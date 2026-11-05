@@ -378,11 +378,16 @@ export async function sendEmailViaSmtp(options: SendEmailOptions): Promise<Msg91
   }
 
   try {
-    const nodemailer = await import('nodemailer');
+    const nodemailerModule: any = await import('nodemailer');
+    const createTransport = nodemailerModule.createTransport || nodemailerModule.default?.createTransport;
+    if (typeof createTransport !== 'function') {
+      throw new Error('Failed to resolve createTransport from nodemailer module');
+    }
+
     const port = Number(config.smtpPort) || 587;
     const isSecure = config.smtpSecure !== undefined ? config.smtpSecure : port === 465;
 
-    const transporter = nodemailer.createTransport({
+    const transporter = createTransport({
       host: config.smtpHost,
       port,
       secure: isSecure,
