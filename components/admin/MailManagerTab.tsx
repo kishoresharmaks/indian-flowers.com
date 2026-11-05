@@ -1340,6 +1340,15 @@ export default function MailManagerTab() {
                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
                       />
                     </div>
+                    {config.brevoApiKey?.trim().startsWith('xsmtpsib-') && (
+                      <div className="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div className="leading-relaxed">
+                          <span className="font-bold">SMTP Key detected: </span>
+                          This key starts with <code className="bg-amber-100 px-1 py-0.5 rounded text-[11px] font-mono">xsmtpsib-</code>, which is an SMTP password. For the Brevo REST API, you need an API key starting with <code className="bg-amber-100 px-1 py-0.5 rounded text-[11px] font-mono">xkeysib-</code> (from <strong>SMTP &amp; API &gt; API Keys</strong> tab). Alternatively, switch to the <strong>Custom SMTP</strong> tab above to use this key with <code className="font-mono text-[11px]">smtp-relay.brevo.com:587</code>.
+                        </div>
+                      </div>
+                    )}
                     <p className="text-[11px] text-slate-500 mt-1">
                       Found in your Brevo dashboard under <strong>Account &gt; SMTP &amp; API &gt; API Keys</strong> (Generate a new API key).
                     </p>

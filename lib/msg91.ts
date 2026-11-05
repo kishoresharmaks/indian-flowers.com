@@ -205,7 +205,16 @@ export async function sendEmailViaBrevo(options: SendEmailOptions): Promise<Msg9
   const recipientEmail = recipient.email;
   const recipientName = recipient.name;
 
-  // If Brevo API Key is missing or placeholder, run in simulation mode & log it
+  // If user provided an SMTP key (xsmtpsib-...) instead of a REST API key (xkeysib-...)
+  if (config.brevoApiKey.trim().startsWith('xsmtpsib-')) {
+    const errMsg = 'Invalid Brevo Key: You entered an SMTP Key (xsmtpsib-...) instead of a REST API Key (xkeysib-...). In Brevo dashboard, navigate to SMTP & API > API Keys tab (NOT the SMTP tab) to generate a REST API key, or switch to the Custom SMTP tab.';
+    console.error(`[Brevo] ${errMsg}`);
+    return {
+      success: false,
+      message: errMsg,
+      data: { code: 'smtp_key_used_as_api_key' },
+    };
+  }
   if (!config.brevoApiKey || config.brevoApiKey.includes('placeholder')) {
     console.warn(
       `[Brevo] BREVO_API_KEY is not configured. Simulating email send to ${options.to.map((r) => r.email).join(', ')} with subject: "${options.subject}"`
