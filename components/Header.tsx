@@ -619,11 +619,11 @@ export default function Header({
               </div>
 
               {/* MOBILE: Center Brand Logo */}
-              <div className="flex md:hidden flex-1 justify-center items-center">
+              <div className="flex md:hidden flex-1 justify-center items-center py-0.5">
                 <BrandLogo
                   storeName={storeName}
                   storeTagline={storeTagline}
-                  size="sm"
+                  size="md"
                   showTagline={false}
                 />
               </div>
@@ -998,7 +998,7 @@ export default function Header({
       >
         {/* Drawer Header with Logo and Close */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 shrink-0 bg-white">
-          <BrandLogo storeName={storeName} storeTagline={storeTagline} size="sm" asLink={false} />
+          <BrandLogo storeName={storeName} storeTagline={storeTagline} size="md" asLink={false} />
           <button
             type="button"
             onClick={() => toggleMobileMenu(false)}

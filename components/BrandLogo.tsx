@@ -28,6 +28,7 @@ export interface BrandLogoProps {
   size?: 'sm' | 'md' | 'lg';
   showTagline?: boolean;
   className?: string;
+  imgClassName?: string;
   asLink?: boolean;
   href?: string;
 }
@@ -39,16 +40,18 @@ export default function BrandLogo({
   size = 'md',
   showTagline = false,
   className = '',
+  imgClassName = '',
   asLink = true,
   href = '/',
 }: BrandLogoProps) {
   const isDark = variant === 'dark';
 
-  // Height sizing for the official logo (strict compact navbar preservation)
+  // Height sizing for the official logo
+  // Mobile heights (h-11 = 44px) ensure crisp visibility and full legibility of the emblem & brand typography
   const logoHeightClasses = {
-    sm: 'h-7 sm:h-8 max-h-[32px]',
-    md: 'h-8 sm:h-10 md:h-11 max-h-[44px]',
-    lg: 'h-10 sm:h-12 md:h-14 max-h-[56px]',
+    sm: 'h-8 sm:h-9 max-h-[36px]',
+    md: 'h-11 sm:h-12 md:h-12 max-h-[48px]',
+    lg: 'h-12 sm:h-14 md:h-16 max-h-[64px]',
   }[size];
 
   const content = isDark ? (
@@ -56,7 +59,7 @@ export default function BrandLogo({
       <img
         src="/the-indian-flowers-logo.webp?v=2"
         alt={storeName}
-        className={`${logoHeightClasses} w-auto object-contain aspect-[692/640]`}
+        className={`${logoHeightClasses} w-auto object-contain aspect-[692/640] ${imgClassName}`}
         onError={(e) => {
           (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.png?v=2';
         }}
@@ -67,7 +70,7 @@ export default function BrandLogo({
       <img
         src="/the-indian-flowers-logo.webp?v=2"
         alt={storeName}
-        className={`${logoHeightClasses} w-auto object-contain aspect-[692/640] transition-transform duration-200 group-hover:scale-102`}
+        className={`${logoHeightClasses} w-auto object-contain aspect-[692/640] transition-transform duration-200 group-hover:scale-102 ${imgClassName}`}
         onError={(e) => {
           (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.png?v=2';
         }}
