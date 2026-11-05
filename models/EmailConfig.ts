@@ -21,6 +21,8 @@ export interface IEmailConfig extends Document {
   smtpUser: string;
   smtpPass: string;
   smtpSecure: boolean;
+  smtpFromEmail?: string;
+  smtpFromName?: string;
   // General Email Content Settings
   replySignature: string;
   createdAt: Date;
@@ -46,6 +48,8 @@ const EmailConfigSchema: Schema = new Schema(
     smtpUser: { type: String, default: '' },
     smtpPass: { type: String, default: '' },
     smtpSecure: { type: Boolean, default: false },
+    smtpFromEmail: { type: String, default: '' },
+    smtpFromName: { type: String, default: 'The Indian Flowers' },
     replySignature: {
       type: String,
       default: 'Warm regards,\nThe Indian Flowers Team\n(909) 379-3678 | theindianflowers.com',

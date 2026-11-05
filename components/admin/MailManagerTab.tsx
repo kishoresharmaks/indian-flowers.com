@@ -81,6 +81,8 @@ interface MailConfig {
   smtpPass: string;
   hasSmtpPass: boolean;
   smtpSecure: boolean;
+  smtpFromEmail?: string;
+  smtpFromName?: string;
   replySignature: string;
 }
 
@@ -131,6 +133,8 @@ export default function MailManagerTab() {
     smtpPass: '',
     hasSmtpPass: false,
     smtpSecure: false,
+    smtpFromEmail: 'indianflowersorder@gmail.com',
+    smtpFromName: 'The Indian Flowers',
     replySignature: 'Warm regards,\nThe Indian Flowers Team\n(909) 379-3678 | theindianflowers.com',
   });
   const [configLoading, setConfigLoading] = useState(false);
@@ -383,13 +387,29 @@ export default function MailManagerTab() {
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Mail &amp; Communications Center
                 </h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  MSG91 Active
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                  config.provider === 'brevo'
+                    ? 'bg-blue-100 text-blue-800 border-blue-200'
+                    : config.provider === 'smtp'
+                    ? 'bg-slate-100 text-slate-800 border-slate-300'
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                    config.provider === 'brevo'
+                      ? 'bg-blue-500'
+                      : config.provider === 'smtp'
+                      ? 'bg-slate-600'
+                      : 'bg-emerald-500'
+                  }`} />
+                  {config.provider === 'brevo'
+                    ? 'Brevo Active'
+                    : config.provider === 'smtp'
+                    ? 'Custom SMTP Active'
+                    : 'MSG91 Active'}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Centralized inbox for floral consultations &amp; contact forms, sent logs, and MSG91 email gateway controls.
+                Centralized inbox for customer consultations, dispatched email logs, and email gateway settings.
               </p>
             </div>
           </div>
@@ -806,7 +826,7 @@ export default function MailManagerTab() {
                   <div className="flex items-center gap-2">
                     <Send className="w-5 h-5 text-emerald-300" />
                     <div>
-                      <h3 className="font-bold text-sm">Send Email Reply via MSG91</h3>
+                      <h3 className="font-bold text-sm">Send Email Reply</h3>
                       <p className="text-[11px] text-emerald-200">
                         Replying to: {selectedInboxItem.customerName} ({selectedInboxItem.customerEmail})
                       </p>
@@ -901,7 +921,7 @@ export default function MailManagerTab() {
                       {isSendingReply ? (
                         <>
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Sending via MSG91...</span>
+                          <span>Sending Email...</span>
                         </>
                       ) : (
                         <>
@@ -1000,7 +1020,7 @@ export default function MailManagerTab() {
               <Send className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <h3 className="text-sm font-bold text-slate-800">No Sent Logs Found</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                All transactional emails dispatched via MSG91 are logged here with delivery confirmation.
+                All transactional emails dispatched via your active mail gateway are logged here with delivery confirmation.
               </p>
             </div>
           ) : (
@@ -1178,14 +1198,46 @@ export default function MailManagerTab() {
             <form onSubmit={handleSaveConfig} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-5">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">MSG91 Gateway Credentials</h3>
+                  <h3 className="text-base font-extrabold text-slate-900">
+                    {config.provider === 'brevo'
+                      ? 'Brevo (Sendinblue) API Credentials'
+                      : config.provider === 'smtp'
+                      ? 'Custom SMTP Relay Credentials'
+                      : 'MSG91 Gateway Credentials'}
+                  </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Configure your MSG91 Email API v5 credentials for high-deliverability transactional emails.
+                    {config.provider === 'brevo'
+                      ? 'Configure your Brevo REST API v3 credentials for high-deliverability transactional emails.'
+                      : config.provider === 'smtp'
+                      ? 'Configure your SMTP relay host (Brevo SMTP relay, Google Workspace, or custom server).'
+                      : 'Configure your MSG91 Email API v5 credentials for high-deliverability transactional emails.'}
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-xl text-xs font-bold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>MSG91 API v5</span>
+                <div
+                  className={`flex items-center gap-1.5 border px-3 py-1 rounded-xl text-xs font-bold ${
+                    config.provider === 'brevo'
+                      ? 'bg-blue-50 text-blue-800 border-blue-200'
+                      : config.provider === 'smtp'
+                      ? 'bg-slate-100 text-slate-800 border-slate-300'
+                      : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      config.provider === 'brevo'
+                        ? 'bg-blue-500'
+                        : config.provider === 'smtp'
+                        ? 'bg-slate-600'
+                        : 'bg-emerald-500'
+                    } animate-pulse`}
+                  />
+                  <span>
+                    {config.provider === 'brevo'
+                      ? 'Brevo REST API'
+                      : config.provider === 'smtp'
+                      ? 'Custom SMTP'
+                      : 'MSG91 API v5'}
+                  </span>
                 </div>
               </div>
 
@@ -1440,7 +1492,7 @@ export default function MailManagerTab() {
                         type="text"
                         value={config.smtpUser}
                         onChange={(e) => setConfig({ ...config, smtpUser: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white font-mono"
                       />
                     </div>
                     <div>
@@ -1450,6 +1502,32 @@ export default function MailManagerTab() {
                         value={config.smtpPass}
                         onChange={(e) => setConfig({ ...config, smtpPass: e.target.value })}
                         placeholder={config.hasSmtpPass ? '••••••••' : 'Enter password'}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">From Sender Email (SMTP)</label>
+                      <input
+                        type="email"
+                        value={config.smtpFromEmail || config.brevoFromEmail || ''}
+                        onChange={(e) => setConfig({ ...config, smtpFromEmail: e.target.value })}
+                        placeholder="indianflowersorder@gmail.com"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
+                      />
+                      <p className="text-[10.5px] text-slate-500 mt-1 leading-snug">
+                        Must be a verified sender in your SMTP provider (e.g. Brevo Senders or Google email).
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">From Sender Name</label>
+                      <input
+                        type="text"
+                        value={config.smtpFromName || config.brevoFromName || 'The Indian Flowers'}
+                        onChange={(e) => setConfig({ ...config, smtpFromName: e.target.value })}
+                        placeholder="The Indian Flowers"
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B24] focus:bg-white"
                       />
                     </div>
@@ -1573,7 +1651,7 @@ export default function MailManagerTab() {
                     <p className="text-[11px] leading-relaxed">{testResult.message}</p>
                     {testResult.simulated && (
                       <p className="text-[10px] text-amber-700 font-semibold mt-1">
-                        Notice: Simulated mode active because MSG91_AUTH_KEY is not configured.
+                        Notice: Simulated mode active because credentials are not configured.
                       </p>
                     )}
                   </div>
@@ -1594,32 +1672,87 @@ export default function MailManagerTab() {
               </div>
             </div>
 
-            {/* MSG91 Step-by-Step Setup Guide */}
+            {/* Step-by-Step Setup Guide based on Active Provider */}
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-700" />
-                <h4 className="font-bold text-xs text-slate-900">How to get MSG91 Credentials in 3 Steps</h4>
+                <h4 className="font-bold text-xs text-slate-900">
+                  {config.provider === 'brevo'
+                    ? 'How to Setup Brevo API in 3 Steps'
+                    : config.provider === 'smtp'
+                    ? 'How to Setup Custom SMTP in 3 Steps'
+                    : 'How to get MSG91 Credentials in 3 Steps'}
+                </h4>
               </div>
-              <div className="space-y-2.5 text-xs text-slate-600">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="font-bold text-slate-900 block mb-0.5">1. Get your Auth Key</span>
-                  <p className="text-[11px] text-slate-500">
-                    Log in to <a href="https://control.msg91.com" target="_blank" rel="noreferrer" className="text-emerald-700 font-semibold underline">control.msg91.com</a>. Navigate to <strong>Developers &gt; Authkey</strong>. Copy your AuthKey and paste it into the field above.
-                  </p>
+
+              {config.provider === 'brevo' && (
+                <div className="space-y-2.5 text-xs text-slate-600">
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="font-bold text-slate-900 block mb-0.5">1. Get your Brevo API Key</span>
+                    <p className="text-[11px] text-slate-500">
+                      Log in to <a href="https://app.brevo.com" target="_blank" rel="noreferrer" className="text-emerald-700 font-semibold underline">app.brevo.com</a>. Navigate to <strong>Account &gt; SMTP &amp; API &gt; API Keys</strong>. Click <strong>Generate a new API key</strong> and paste it into the field above.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="font-bold text-slate-900 block mb-0.5">2. Verify Sender Email</span>
+                    <p className="text-[11px] text-slate-500">
+                      In Brevo, go to <strong>Senders, Domains &amp; Dedicated IPs &gt; Senders &gt; Add a sender</strong>. Enter your sender email (e.g. <span className="font-mono text-slate-700">indianflowersorder@gmail.com</span>) and confirm via the verification email Brevo sends.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="font-bold text-slate-900 block mb-0.5">3. Set From Email</span>
+                    <p className="text-[11px] text-slate-500">
+                      Enter that exact verified sender email into <strong>From Sender Email</strong> above. Click <strong>Save Mail Configuration</strong>.
+                    </p>
+                  </div>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="font-bold text-slate-900 block mb-0.5">2. Register Your Domain in MSG91</span>
-                  <p className="text-[11px] text-slate-500">
-                    In MSG91, go to <strong>Campaign / Email &gt; Domains &gt; Add Domain</strong> (e.g. <span className="font-mono text-slate-700">indian-flowers.com</span> or <span className="font-mono text-slate-700">theindianflowers.com</span>). MSG91 will show 3 DNS records (DKIM, SPF, CNAME). Add them in your DNS provider (Cloudflare / GoDaddy / Namecheap) until MSG91 marks it <strong>Active</strong>.
-                  </p>
+              )}
+
+              {config.provider === 'smtp' && (
+                <div className="space-y-2.5 text-xs text-slate-600">
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="font-bold text-slate-900 block mb-0.5">1. Brevo SMTP Relay Settings</span>
+                    <p className="text-[11px] text-slate-500">
+                      If using Brevo Relay, set <strong>SMTP Host</strong> to <span className="font-mono text-slate-700">smtp-relay.brevo.com</span> and <strong>Port</strong> to <span className="font-mono text-slate-700">587</span>.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="font-bold text-slate-900 block mb-0.5">2. Username &amp; Master Password</span>
+                    <p className="text-[11px] text-slate-500">
+                      In Brevo, go to <strong>SMTP &amp; API &gt; SMTP</strong>. Copy your <strong>Login</strong> (e.g. <span className="font-mono text-slate-700">c1068e001@smtp-brevo.com</span>) and generate/copy your <strong>Master Password</strong>.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="font-bold text-slate-900 block mb-0.5">3. Verified Sender Email</span>
+                    <p className="text-[11px] text-slate-500">
+                      Brevo SMTP relay requires the sender email in <strong>From Sender Email (SMTP)</strong> to match a verified sender in your Brevo account (e.g. <span className="font-mono text-slate-700">indianflowersorder@gmail.com</span>), NOT the login username.
+                    </p>
+                  </div>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="font-bold text-slate-900 block mb-0.5">3. Sender Address &amp; Customer Replies</span>
-                  <p className="text-[11px] text-slate-500">
-                    Set <strong>From Email</strong> to <span className="font-mono text-slate-700">orders@your-registered-domain</span>. MSG91 forbids public webmail (@gmail.com) as the sender. We automatically route all customer replies to your Gmail (<span className="font-mono text-slate-700">indianflowersorder@gmail.com</span>) via Reply-To!
-                  </p>
+              )}
+
+              {config.provider === 'msg91' && (
+                <div className="space-y-2.5 text-xs text-slate-600">
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="font-bold text-slate-900 block mb-0.5">1. Get your Auth Key</span>
+                    <p className="text-[11px] text-slate-500">
+                      Log in to <a href="https://control.msg91.com" target="_blank" rel="noreferrer" className="text-emerald-700 font-semibold underline">control.msg91.com</a>. Navigate to <strong>Developers &gt; Authkey</strong>. Copy your AuthKey and paste it into the field above.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="font-bold text-slate-900 block mb-0.5">2. Register Your Domain in MSG91</span>
+                    <p className="text-[11px] text-slate-500">
+                      In MSG91, go to <strong>Campaign / Email &gt; Domains &gt; Add Domain</strong> (e.g. <span className="font-mono text-slate-700">indian-flowers.com</span> or <span className="font-mono text-slate-700">theindianflowers.com</span>). MSG91 will show 3 DNS records (DKIM, SPF, CNAME). Add them in your DNS provider (Cloudflare / GoDaddy / Namecheap) until MSG91 marks it <strong>Active</strong>.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="font-bold text-slate-900 block mb-0.5">3. Sender Address &amp; Customer Replies</span>
+                    <p className="text-[11px] text-slate-500">
+                      Set <strong>From Email</strong> to <span className="font-mono text-slate-700">orders@your-registered-domain</span>. MSG91 forbids public webmail (@gmail.com) as the sender. We automatically route all customer replies to your Gmail (<span className="font-mono text-slate-700">indianflowersorder@gmail.com</span>) via Reply-To!
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

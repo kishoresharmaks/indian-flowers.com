@@ -36,6 +36,8 @@ export async function GET(req: NextRequest) {
         smtpPass: dbConfig?.smtpPass ? '••••••••' : '',
         hasSmtpPass: Boolean(dbConfig?.smtpPass),
         smtpSecure: dbConfig?.smtpSecure || false,
+        smtpFromEmail: dbConfig?.smtpFromEmail || config.brevoFromEmail || 'indianflowersorder@gmail.com',
+        smtpFromName: dbConfig?.smtpFromName || config.brevoFromName || 'The Indian Flowers',
         replySignature: config.replySignature,
       },
     });
@@ -68,6 +70,8 @@ export async function POST(req: NextRequest) {
       smtpPort: Number(body.smtpPort) || 587,
       smtpUser: body.smtpUser?.trim() || '',
       smtpSecure: Boolean(body.smtpSecure),
+      smtpFromEmail: body.smtpFromEmail?.trim() || body.brevoFromEmail?.trim() || 'indianflowersorder@gmail.com',
+      smtpFromName: body.smtpFromName?.trim() || 'The Indian Flowers',
       replySignature: body.replySignature || 'Warm regards,\nThe Indian Flowers Team\n(909) 379-3678 | theindianflowers.com',
     };
 

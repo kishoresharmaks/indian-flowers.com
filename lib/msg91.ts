@@ -65,6 +65,8 @@ export async function getEffectiveEmailConfig(): Promise<{
   smtpUser?: string;
   smtpPass?: string;
   smtpSecure?: boolean;
+  smtpFromEmail?: string;
+  smtpFromName?: string;
   replySignature?: string;
 }> {
   let dbConfig: any = null;
@@ -134,6 +136,8 @@ export async function getEffectiveEmailConfig(): Promise<{
     smtpUser: dbConfig?.smtpUser,
     smtpPass: dbConfig?.smtpPass,
     smtpSecure: dbConfig?.smtpSecure,
+    smtpFromEmail: dbConfig?.smtpFromEmail,
+    smtpFromName: dbConfig?.smtpFromName,
     replySignature:
       dbConfig?.replySignature ||
       'Warm regards,\nThe Indian Flowers Team\n(909) 379-3678 | theindianflowers.com',
@@ -339,6 +343,131 @@ export async function sendEmailViaBrevo(options: SendEmailOptions): Promise<Msg9
 }
 
 /**
+ * Send email via Custom SMTP (e.g. Brevo SMTP Relay, Google Workspace, AWS SES, or Custom Server)
+ */
+export async function sendEmailViaSmtp(options: SendEmailOptions): Promise<Msg91EmailResult> {
+  const config = await getEffectiveEmailConfig();
+  const recipient = options.to[0] || { email: '', name: '' };
+  const recipientEmail = recipient.email;
+  const recipientName = recipient.name;
+
+  if (!config.smtpHost || !config.smtpUser || !config.smtpPass) {
+    console.warn(
+      `[SMTP] Host, Username, or Password not configured. Simulating email send to ${options.to.map((r) => r.email).join(', ')} with subject: "${options.subject}"`
+    );
+
+    const logId = await recordEmailLog({
+      to: recipientEmail,
+      recipientName,
+      from: `${config.smtpFromName || config.fromName} <${config.smtpFromEmail || config.smtpUser || config.fromEmail}>`,
+      subject: options.subject,
+      type: options.type || 'OTHER',
+      status: 'SIMULATED',
+      provider: 'SMTP',
+      errorMessage: 'Simulated dispatch (SMTP credentials incomplete in Admin/Environment)',
+      htmlBody: options.htmlContent,
+      metadata: options.metadata || {},
+    });
+
+    return {
+      success: true,
+      simulated: true,
+      logId,
+      message: 'Email simulated (SMTP credentials incomplete)',
+    };
+  }
+
+  try {
+    const nodemailer = await import('nodemailer');
+    const port = Number(config.smtpPort) || 587;
+    const isSecure = config.smtpSecure !== undefined ? config.smtpSecure : port === 465;
+
+    const transporter = nodemailer.createTransport({
+      host: config.smtpHost,
+      port,
+      secure: isSecure,
+      auth: {
+        user: config.smtpUser,
+        pass: config.smtpPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    const senderEmail = (
+      options.from?.email ||
+      config.smtpFromEmail ||
+      config.brevoFromEmail ||
+      config.adminEmail ||
+      config.fromEmail ||
+      config.smtpUser
+    ).trim();
+
+    const senderName = (
+      options.from?.name ||
+      config.smtpFromName ||
+      config.brevoFromName ||
+      config.fromName ||
+      'The Indian Flowers'
+    ).trim();
+
+    const info = await transporter.sendMail({
+      from: `"${senderName}" <${senderEmail}>`,
+      to: options.to.map((r) => (r.name ? `"${r.name}" <${r.email}>` : r.email)).join(', '),
+      subject: options.subject,
+      html: options.htmlContent,
+      text: options.textContent,
+      replyTo: config.adminEmail || 'indianflowersorder@gmail.com',
+    });
+
+    const logId = await recordEmailLog({
+      to: recipientEmail,
+      recipientName,
+      from: `${senderName} <${senderEmail}>`,
+      subject: options.subject,
+      type: options.type || 'OTHER',
+      status: 'SENT',
+      provider: 'SMTP',
+      htmlBody: options.htmlContent,
+      metadata: {
+        messageId: info.messageId,
+        response: info.response,
+        ...(options.metadata || {}),
+      },
+    });
+
+    return {
+      success: true,
+      logId,
+      message: `Email dispatched successfully via SMTP (${config.smtpHost})`,
+      data: info,
+    };
+  } catch (error: any) {
+    console.error('[SMTP] Email send failed:', error);
+
+    const logId = await recordEmailLog({
+      to: recipientEmail,
+      recipientName,
+      from: `${config.fromName} <${config.fromEmail}>`,
+      subject: options.subject,
+      type: options.type || 'OTHER',
+      status: 'FAILED',
+      provider: 'SMTP',
+      errorMessage: error.message || 'SMTP dispatch error',
+      htmlBody: options.htmlContent,
+      metadata: options.metadata || {},
+    });
+
+    return {
+      success: false,
+      logId,
+      message: error.message || 'SMTP transmission failure',
+    };
+  }
+}
+
+/**
  * Send email via MSG91 Email API v5 (or active provider) with auto-logging into MongoDB
  */
 export async function sendEmailViaMsg91(options: SendEmailOptions): Promise<Msg91EmailResult> {
@@ -347,6 +476,11 @@ export async function sendEmailViaMsg91(options: SendEmailOptions): Promise<Msg9
   // Route to Brevo if configured
   if (config.provider === 'brevo') {
     return sendEmailViaBrevo(options);
+  }
+
+  // Route to Custom SMTP if configured
+  if (config.provider === 'smtp') {
+    return sendEmailViaSmtp(options);
   }
   const recipient = options.to[0] || { email: '', name: '' };
   const recipientEmail = recipient.email;
@@ -860,9 +994,14 @@ export async function sendManualReplyEmail({
 export async function sendTestEmail(targetEmail: string): Promise<Msg91EmailResult> {
   const config = await getEffectiveEmailConfig();
   const isBrevo = config.provider === 'brevo';
-  const providerLabel = isBrevo ? 'Brevo (Sendinblue)' : config.provider === 'smtp' ? 'Custom SMTP' : 'MSG91';
-  const senderEmail = isBrevo ? (config.brevoFromEmail || config.fromEmail) : config.fromEmail;
-  const senderName = isBrevo ? (config.brevoFromName || config.fromName) : config.fromName;
+  const isSmtp = config.provider === 'smtp';
+  const providerLabel = isBrevo ? 'Brevo (Sendinblue)' : isSmtp ? 'Custom SMTP' : 'MSG91';
+  const senderEmail = isBrevo
+    ? (config.brevoFromEmail || config.fromEmail)
+    : isSmtp
+    ? (config.smtpFromEmail || config.brevoFromEmail || config.smtpUser || config.fromEmail)
+    : config.fromEmail;
+  const senderName = isBrevo ? (config.brevoFromName || config.fromName) : isSmtp ? (config.smtpFromName || config.fromName) : config.fromName;
   const subject = `${providerLabel} Email Integration Test - The Indian Flowers`;
 
   const htmlContent = `
@@ -894,7 +1033,7 @@ export async function sendTestEmail(targetEmail: string): Promise<Msg91EmailResu
       <div class="meta">
         <strong>Gateway:</strong> ${providerLabel}<br>
         <strong>Sender:</strong> ${escapeHtml(senderName)} &lt;${escapeHtml(senderEmail)}&gt;<br>
-        ${isBrevo ? `<strong>Endpoint:</strong> https://api.brevo.com/v3/smtp/email<br>` : `<strong>Domain:</strong> ${escapeHtml(config.domain)}<br>`}
+        ${isBrevo ? `<strong>Endpoint:</strong> https://api.brevo.com/v3/smtp/email<br>` : isSmtp ? `<strong>Host:</strong> ${escapeHtml(config.smtpHost || '')}:${config.smtpPort || 587}<br>` : `<strong>Domain:</strong> ${escapeHtml(config.domain)}<br>`}
         <strong>Timestamp:</strong> ${new Date().toISOString()}<br>
         <strong>Destination:</strong> ${escapeHtml(targetEmail)}
       </div>
