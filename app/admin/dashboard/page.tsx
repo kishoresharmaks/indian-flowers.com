@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
+import { normalizeCategoryAssignments } from '@/lib/categoryHelpers';
 import { calculateVerifiedRevenue, getOrderPaymentDisplayInfo } from '@/lib/revenue';
 import {
   Plus,
@@ -135,7 +136,9 @@ interface Product {
   category: string;
   categorySlug?: string;
   parentCategorySlug?: string;
+  categories?: { id?: number; name: string; slug: string }[];
   subcategory?: string;
+  subcategorySlug?: string;
   tags?: string[];
   variants?: ProductVariant[];
   isActive?: boolean;
@@ -393,6 +396,7 @@ export default function AdminDashboard() {
     quantity: '10',
     gst: '0',
     category: '',
+    secondaryCategories: [] as string[],
     subcategory: '',
     variants: [] as ProductVariant[],
     isActive: true,
@@ -2006,6 +2010,10 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
   // Open Edit Product Modal
   const openEditProductModal = (product: Product) => {
     setEditingProduct(product);
+    const secCats = (product.categories || [])
+      .filter((c) => c.slug !== product.categorySlug && c.slug !== product.subcategorySlug)
+      .map((c) => c.name);
+
     setProductForm({
       name: product.name,
       slug: product.slug || slugify(product.name),
@@ -2016,6 +2024,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       quantity: String(product.quantity),
       gst: String(product.gst !== undefined ? product.gst : 0),
       category: product.category || (categories[0]?.name ?? ''),
+      secondaryCategories: secCats,
       subcategory: product.subcategory || '',
       variants: product.variants ? product.variants.map((v) => ({ ...v })) : [],
       isActive: product.isActive !== false,
@@ -2094,6 +2103,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       quantity: '10',
       gst: '0',
       category: categories.length > 0 ? categories[0].name : '',
+      secondaryCategories: [],
       subcategory: '',
       variants: [],
       isActive: true,
@@ -2147,10 +2157,12 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         matchedSubObj?.slug ||
         (productForm.subcategory ? slugify(productForm.subcategory) : '');
 
-      const syncedCategories = [
-        { name: productForm.category, slug: computedCatSlug },
-        ...(productForm.subcategory ? [{ name: productForm.subcategory, slug: computedSubSlug }] : []),
-      ];
+      const normalized = normalizeCategoryAssignments(
+        productForm.category,
+        productForm.secondaryCategories,
+        computedCatSlug,
+        computedSubSlug
+      );
 
       const res = await fetch(url, {
         method,
@@ -2165,12 +2177,12 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           price: Number(productForm.price),
           quantity: Number(productForm.quantity),
           gst: Number(productForm.gst),
-          category: productForm.category,
-          categorySlug: computedCatSlug,
-          parentCategorySlug: computedCatSlug,
+          category: normalized.primaryCategory,
+          categorySlug: normalized.primarySlug,
+          parentCategorySlug: normalized.primarySlug,
           subcategory: productForm.subcategory || '',
           subcategorySlug: computedSubSlug,
-          categories: syncedCategories,
+          categories: normalized.categories,
           isActive: productForm.isActive,
           variants: productForm.variants.map((v) => ({
             name: v.name.trim(),
@@ -2793,8 +2805,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           const cSlug = c.slug?.toLowerCase().trim();
           const cName = c.name?.toLowerCase().trim();
           return (
-            (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug)) ||
-            (cName && p.category?.toLowerCase() === cName)
+            (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug || p.categories?.some((cat) => cat.slug?.toLowerCase() === cSlug))) ||
+            (cName && (p.category?.toLowerCase() === cName || p.categories?.some((cat) => cat.name?.toLowerCase() === cName)))
           );
         });
         if (isFloral) return false;
@@ -2807,11 +2819,15 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
           const cSlug = matchedCat.slug?.toLowerCase().trim();
           const cName = matchedCat.name?.toLowerCase().trim();
           const matches =
-            (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug)) ||
-            (cName && p.category?.toLowerCase() === cName);
+            (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug || p.categories?.some((cat) => cat.slug?.toLowerCase() === cSlug))) ||
+            (cName && (p.category?.toLowerCase() === cName || p.categories?.some((cat) => cat.name?.toLowerCase() === cName)));
           if (!matches) return false;
         } else {
-          if (p.category?.toLowerCase() !== target) return false;
+          const matches =
+            p.category?.toLowerCase() === target ||
+            p.categorySlug?.toLowerCase() === target ||
+            p.categories?.some((c) => c.name?.toLowerCase() === target || c.slug?.toLowerCase() === target);
+          if (!matches) return false;
         }
       }
     }
@@ -2829,6 +2845,7 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       (Array.isArray(p.tags) && p.tags.some((t: any) => typeof t === 'string' && t.toLowerCase().includes(q))) ||
       p.description?.toLowerCase().includes(q) ||
       p.category?.toLowerCase().includes(q) ||
+      (Array.isArray(p.categories) && p.categories.some((c) => c.name?.toLowerCase().includes(q))) ||
       p.subcategory?.toLowerCase().includes(q) ||
       p._id?.toString().toLowerCase().includes(q) ||
       p.price?.toString().includes(q) ||
@@ -3892,8 +3909,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       const cName = cat.name.toLowerCase().trim();
                       const matched = products.filter((p) => {
                         return (
-                          (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug)) ||
-                          (cName && p.category?.toLowerCase() === cName)
+                          (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug || p.categories?.some((c) => c.slug?.toLowerCase() === cSlug))) ||
+                          (cName && (p.category?.toLowerCase() === cName || p.categories?.some((c) => c.name?.toLowerCase() === cName)))
                         );
                       });
                       const totalCount = matched.length;
@@ -3913,8 +3930,8 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                           const cSlug = c.slug?.toLowerCase().trim();
                           const cName = c.name?.toLowerCase().trim();
                           return (
-                            (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug)) ||
-                            (cName && p.category?.toLowerCase() === cName)
+                            (cSlug && (p.parentCategorySlug?.toLowerCase() === cSlug || p.categorySlug?.toLowerCase() === cSlug || p.categories?.some((cat) => cat.slug?.toLowerCase() === cSlug))) ||
+                            (cName && (p.category?.toLowerCase() === cName || p.categories?.some((cat) => cat.name?.toLowerCase() === cName)))
                           );
                         });
                       }).length;
@@ -4104,7 +4121,17 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             </div>
                           </td>
                           <td className="py-4 px-6 text-xs font-semibold text-[#163B5C]">
-                            <div>{p.category}</div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span>{p.category}</span>
+                              {p.categories && p.categories.length > 1 && (
+                                <span
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 cursor-help"
+                                  title={`Also assigned to: ${p.categories.slice(1).map((c) => c.name).join(', ')}`}
+                                >
+                                  +{p.categories.length - 1} more
+                                </span>
+                              )}
+                            </div>
                             {p.subcategory && (
                               <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200">
                                 {p.subcategory}
@@ -7315,7 +7342,12 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         value={productForm.category}
                         onChange={(e) => {
                           const newCat = e.target.value;
-                          setProductForm({ ...productForm, category: newCat, subcategory: '' });
+                          setProductForm((prev) => ({
+                            ...prev,
+                            category: newCat,
+                            subcategory: '',
+                            secondaryCategories: prev.secondaryCategories.filter((c) => c !== newCat),
+                          }));
                         }}
                         className="w-full px-4 py-2.5 rounded-xl border border-[#E8EDF2] text-sm focus:outline-none focus:border-[#ED3500]"
                       >
@@ -7354,6 +7386,59 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                             <option value={productForm.subcategory}>{productForm.subcategory} (Custom)</option>
                           )}
                         </select>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Secondary Parent Categories (Multi-Select) */}
+                  <div className="sm:col-span-2 space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[#163B5C] uppercase tracking-wider">
+                        Secondary Parent Categories (Optional)
+                      </label>
+                      <span className="text-[11px] text-[#64748B]">
+                        Include this product in additional departments
+                      </span>
+                    </div>
+                    {(() => {
+                      const otherCategories = categories.filter(
+                        (c) => c.name.toLowerCase() !== (productForm.category || '').toLowerCase()
+                      );
+                      if (otherCategories.length === 0) {
+                        return (
+                          <p className="text-xs text-[#64748B] italic pt-1">
+                            No other parent categories available to assign.
+                          </p>
+                        );
+                      }
+                      return (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {otherCategories.map((c) => {
+                            const isSelected = productForm.secondaryCategories.includes(c.name);
+                            return (
+                              <button
+                                key={c._id || c.name}
+                                type="button"
+                                onClick={() => {
+                                  setProductForm((prev) => ({
+                                    ...prev,
+                                    secondaryCategories: isSelected
+                                      ? prev.secondaryCategories.filter((sc) => sc !== c.name)
+                                      : [...prev.secondaryCategories, c.name],
+                                  }));
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border ${
+                                  isSelected
+                                    ? 'bg-[#1C563F] text-white border-[#1C563F] shadow-sm'
+                                    : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400 hover:bg-slate-100'
+                                }`}
+                              >
+                                <span>{c.name}</span>
+                                {isSelected && <span className="text-[11px] font-bold">✓</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
                       );
                     })()}
                   </div>

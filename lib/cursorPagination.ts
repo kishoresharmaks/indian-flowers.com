@@ -59,6 +59,10 @@ export function buildProductBaseConditions({
       { parentCategorySlug: { $in: Array.from(slugVariants) } },
       { category: new RegExp(`^${escapedCat}$`, 'i') },
     ];
+    // Stage 8 Subcategory Isolation Guard: Only query secondary categories for top-level departmental browsing
+    if (!subcategory || subcategory.toLowerCase() === 'all') {
+      catConditions.push({ 'categories.slug': { $in: Array.from(slugVariants) } });
+    }
     if (escapedCat.includes(' and ')) {
       catConditions.push({ category: new RegExp(`^${escapedCat.replace(/ and /gi, ' & ')}$`, 'i') });
       catConditions.push({ category: new RegExp(`^${escapedCat.replace(/ and /gi, '\\s*(&|and)\\s*')}$`, 'i') });

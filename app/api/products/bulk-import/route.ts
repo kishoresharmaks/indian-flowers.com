@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
+import { normalizeCategoryAssignments } from '@/lib/categoryHelpers';
 import Category from '@/models/Category';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 import { normalizeDescriptionText, areVariantsEqual } from '@/lib/bulkImportHelpers';
@@ -528,15 +529,18 @@ export async function POST(request: NextRequest) {
             existingProduct.description = description;
           }
 
-          existingProduct.category = categoryName;
-          existingProduct.categorySlug = catSlug;
-          existingProduct.parentCategorySlug = catSlug;
+          const normExisting = normalizeCategoryAssignments(
+            categoryName,
+            existingProduct.categories || [],
+            catSlug,
+            subSlug
+          );
+          existingProduct.category = normExisting.primaryCategory;
+          existingProduct.categorySlug = normExisting.primarySlug;
+          existingProduct.parentCategorySlug = normExisting.primarySlug;
           existingProduct.subcategory = subcategoryName;
           existingProduct.subcategorySlug = subSlug;
-          existingProduct.categories = [
-            { name: categoryName, slug: catSlug },
-            ...(subcategoryName ? [{ name: subcategoryName, slug: subSlug }] : []),
-          ];
+          existingProduct.categories = normExisting.categories;
           existingProduct.price = price;
           existingProduct.mrp = mrp;
           existingProduct.discount = discount;
@@ -591,18 +595,18 @@ export async function POST(request: NextRequest) {
             counter++;
           }
 
+          const normNew = normalizeCategoryAssignments(categoryName, [], catSlug, subSlug);
+
           await Product.create({
             name,
             slug: uniqueSlug,
             description,
-            category: categoryName,
-            categorySlug: catSlug,
-            parentCategorySlug: catSlug,
+            category: normNew.primaryCategory,
+            categorySlug: normNew.primarySlug,
+            parentCategorySlug: normNew.primarySlug,
             subcategory: subcategoryName,
-            categories: [
-              { name: categoryName, slug: catSlug },
-              ...(subcategoryName ? [{ name: subcategoryName, slug: subSlug }] : []),
-            ],
+            subcategorySlug: subSlug,
+            categories: normNew.categories,
             price,
             mrp,
             discount,

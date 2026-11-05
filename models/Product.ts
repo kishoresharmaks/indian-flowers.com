@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { normalizeCategoryAssignments } from '@/lib/categoryHelpers';
 
 export interface IProductVariant {
   _id?: string;
@@ -185,28 +186,14 @@ ProductSchema.pre('save', function (this: IProduct, next) {
   }
   // Auto-synchronize categories array to eliminate stale or cross-category taxonomy pollution
   if (this.category && this.categorySlug) {
-    const primarySlug = this.categorySlug.toLowerCase().trim();
-    const hasPrimary =
-      Array.isArray(this.categories) &&
-      this.categories.some((c) => (c.slug || '').toLowerCase() === primarySlug);
-
-    if (!hasPrimary || !Array.isArray(this.categories) || this.categories.length === 0) {
-      const syncedCats: Array<{ id?: number; name: string; slug: string }> = [
-        { name: this.category, slug: this.categorySlug },
-      ];
-      if (this.subcategory) {
-        const subSlug =
-          this.subcategorySlug ||
-          this.subcategory
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/[\s_-]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-        syncedCats.push({ name: this.subcategory, slug: subSlug });
-      }
-      this.categories = syncedCats;
-    }
+    const normalized = normalizeCategoryAssignments(
+      this.category,
+      this.categories,
+      this.categorySlug,
+      this.subcategorySlug
+    );
+    this.categories = normalized.categories;
+    this.parentCategorySlug = normalized.primarySlug;
   }
   if (this.mrp && this.price && this.mrp > this.price) {
     this.discount = Math.round(((this.mrp - this.price) / this.mrp) * 100);

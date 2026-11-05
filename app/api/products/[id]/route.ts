@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
+import { normalizeCategoryAssignments } from '@/lib/categoryHelpers';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
 
 export const dynamic = 'force-dynamic';
@@ -158,41 +159,27 @@ export async function PUT(
     }
 
     // Auto-synchronize categories array to eliminate stale cross-category taxonomy pollution
-    if (body.category || body.categorySlug || body.subcategory !== undefined) {
-      const current = await Product.findOne(
-        mongoose.isValidObjectId(id) ? { _id: id } : { slug: id }
-      ).lean();
+    const current = await Product.findOne(
+      mongoose.isValidObjectId(id) ? { _id: id } : { slug: id }
+    ).lean();
 
-      if (current) {
-        const effectiveCat = (body.category || (current as any).category || '').trim();
-        const effectiveCatSlug = (body.categorySlug || (current as any).categorySlug || '').trim();
-        const effectiveSub =
-          body.subcategory !== undefined
-            ? body.subcategory
-            : (current as any).subcategory || '';
-        const effectiveSubSlug =
-          body.subcategorySlug !== undefined
-            ? body.subcategorySlug
-            : (current as any).subcategorySlug || '';
+    if (current) {
+      const effectiveCat = (body.category !== undefined ? body.category : (current as any).category || '').trim();
+      const effectiveCatSlug = (body.categorySlug !== undefined ? body.categorySlug : (current as any).categorySlug || '').trim();
+      const effectiveSubSlug = (body.subcategorySlug !== undefined ? body.subcategorySlug : (current as any).subcategorySlug || '').trim();
+      const rawCategories = body.categories !== undefined ? body.categories : (current as any).categories;
 
-        if (effectiveCat && effectiveCatSlug) {
-          const syncedCategories: Array<{ id?: number; name: string; slug: string }> = [
-            { name: effectiveCat, slug: effectiveCatSlug },
-          ];
-          if (effectiveSub && effectiveSub.trim()) {
-            const subSlug =
-              effectiveSubSlug ||
-              effectiveSub
-                .toString()
-                .toLowerCase()
-                .trim()
-                .replace(/[^\w\s-]/g, '')
-                .replace(/[\s_-]+/g, '-')
-                .replace(/^-+|-+$/g, '');
-            syncedCategories.push({ name: effectiveSub.trim(), slug: subSlug });
-          }
-          body.categories = syncedCategories;
-        }
+      if (effectiveCat) {
+        const normalized = normalizeCategoryAssignments(
+          effectiveCat,
+          rawCategories,
+          effectiveCatSlug,
+          effectiveSubSlug
+        );
+        body.category = normalized.primaryCategory;
+        body.categorySlug = normalized.primarySlug;
+        body.parentCategorySlug = normalized.primarySlug;
+        body.categories = normalized.categories;
       }
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
+import { normalizeCategoryAssignments } from '@/lib/categoryHelpers';
 import { fetchCursorPaginatedProducts, SortOption } from '@/lib/cursorPagination';
 import { captureServerEvent, captureServerException } from '@/lib/telemetry';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
@@ -253,13 +254,12 @@ export async function POST(request: NextRequest) {
       ? subcategory.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '')
       : '';
 
-    const syncedCategories =
-      Array.isArray(categories) && categories.length > 0
-        ? categories
-        : [
-            { name: category || 'General', slug: generatedCatSlug },
-            ...(subcategory ? [{ name: subcategory, slug: generatedSubSlug }] : []),
-          ];
+    const normalized = normalizeCategoryAssignments(
+      category || 'General',
+      categories,
+      generatedCatSlug,
+      generatedSubSlug
+    );
 
     const newProduct = await Product.create({
       name,
@@ -273,10 +273,10 @@ export async function POST(request: NextRequest) {
       discount,
       quantity: numQuantity,
       gst: numGst,
-      category: category || 'General',
-      categorySlug: generatedCatSlug,
-      parentCategorySlug: generatedCatSlug,
-      categories: syncedCategories,
+      category: normalized.primaryCategory,
+      categorySlug: normalized.primarySlug,
+      parentCategorySlug: normalized.primarySlug,
+      categories: normalized.categories,
       tags: Array.isArray(tags) ? tags : [],
       subcategory: subcategory || '',
       subcategorySlug: generatedSubSlug,
