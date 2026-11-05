@@ -111,7 +111,7 @@ export default async function BlogPage() {
       url: siteUrl,
       logo: {
         '@type': 'ImageObject',
-        url: `${siteUrl}/the-indian-flowers-logo.webp`,
+        url: `${siteUrl}/the-indian-flowers-logo.webp?v=2`,
       },
     },
     blogPost: blogs.map((b: any) => ({

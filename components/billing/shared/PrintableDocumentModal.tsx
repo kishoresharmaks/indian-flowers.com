@@ -360,13 +360,13 @@ export default function PrintableDocumentModal({
               {/* Right Column: Company Logo */}
               <div className="text-right flex-shrink-0">
                 <img
-                  src={company.logoUrl || '/the-indian-flowers-logo.webp'}
+                  src={company.logoUrl || '/the-indian-flowers-logo.webp?v=2'}
                   alt={company.name}
                   className="w-24 h-24 object-contain rounded-xl border border-slate-200 bg-white shadow-2xs"
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
                     if (img && img.src.indexOf('the-indian-flowers-logo') === -1) {
-                      img.src = '/the-indian-flowers-logo.webp';
+                      img.src = '/the-indian-flowers-logo.webp?v=2';
                     }
                   }}
                 />

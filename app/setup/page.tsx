@@ -320,8 +320,8 @@ export default function SetupPage() {
       <header className="border-b border-[#E8EDF2] bg-white/90 backdrop-blur-md sticky top-0 z-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-[#0B3B24] flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden p-1.5">
-              <img src="/the-indian-flowers-emblem.webp" alt="The Indian Flowers" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png'; }} />
+            <div className="h-9 w-9 rounded-xl bg-[#FAF6F0] border border-stone-200 flex items-center justify-center shadow-xs overflow-hidden p-1">
+              <img src="/the-indian-flowers-emblem.webp?v=2" alt="The Indian Flowers" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png?v=2'; }} />
             </div>
             <div>
               <div className="flex items-center gap-2">

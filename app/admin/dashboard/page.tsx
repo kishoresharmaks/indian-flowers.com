@@ -3319,11 +3319,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
             <div className="h-16 px-4 border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <img
-                  src="/the-indian-flowers-emblem.webp"
+                  src="/the-indian-flowers-emblem.webp?v=2"
                   alt="The Indian Flowers logo"
                   className="w-9 h-9 object-contain rounded-xl border border-[#E8EDF2]"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png';
+                    (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png?v=2';
                   }}
                 />
                 <div>
@@ -3478,11 +3478,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
         <div className="h-16 sm:h-20 px-4 border-b border-[#E2E8F0] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <img
-              src="/the-indian-flowers-emblem.webp"
+              src="/the-indian-flowers-emblem.webp?v=2"
               alt="The Indian Flowers admin logo"
               className="w-10 h-10 object-contain rounded-xl shadow-xs border border-[#E8EDF2] shrink-0"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png';
+                (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png?v=2';
               }}
             />
             {!isSidebarCollapsed && (

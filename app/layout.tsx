@@ -101,9 +101,9 @@ export function generateMetadata(): Metadata {
     },
   },
   icons: {
-    icon: "/the-indian-flowers-emblem.webp",
-    shortcut: "/the-indian-flowers-emblem.webp",
-    apple: "/the-indian-flowers-emblem.webp",
+    icon: "/the-indian-flowers-emblem.webp?v=2",
+    shortcut: "/the-indian-flowers-emblem.webp?v=2",
+    apple: "/the-indian-flowers-emblem.webp?v=2",
   },
   };
 }
@@ -118,7 +118,7 @@ const ROOT_SCHEMA_GRAPH = {
       name: "Indian-Flowers.com",
       alternateName: ["The Indian Flowers", "Indian Flowers USA"],
       url: "https://indian-flowers.com",
-      logo: "https://indian-flowers.com/the-indian-flowers-logo.webp",
+      logo: "https://indian-flowers.com/the-indian-flowers-logo.webp?v=2",
       image: "https://indian-flowers.com/images/banners/hero-wedding-1920x650.jpg",
       description:
         "Authentic fresh Indian flowers, handcrafted garlands (Jai Mala, wedding garlands, temple garlands), jasmine strands (Mallipoo), pooja leaves, and ceremonial essentials delivered fresh across the United States.",
