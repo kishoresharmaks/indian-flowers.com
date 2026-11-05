@@ -11,7 +11,9 @@
     "test": "node scripts/runTests.js",
     "import:wp": "node scripts/import-woocommerce.mjs",
     "clean:base64": "node scripts/migrate-base64-images.mjs",
-    "sync:categories": "node scripts/sync-category-slugs.mjs"
+    "sync:categories": "node scripts/sync-category-slugs.mjs",
+    "convert:webp": "node scripts/convert-local-images-to-webp.mjs",
+    "convert:webp:db": "node scripts/convert-local-images-to-webp.mjs --update-db"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
