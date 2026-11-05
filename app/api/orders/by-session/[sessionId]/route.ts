@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db';
 import Order from '@/models/Order';
+import { stripe } from '@/lib/stripe';
+import { fulfillStripeCheckoutSession } from '@/lib/stripeFulfillment';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,8 +18,8 @@ export async function GET(
 
     await connectToDatabase();
 
+    // 1. Check if order already persisted in MongoDB
     const order = await Order.findOne({ stripeSessionId: sessionId }).lean();
-
     if (order) {
       return NextResponse.json({
         success: true,
@@ -26,7 +28,29 @@ export async function GET(
       });
     }
 
-    // Order not yet persisted by webhook (reconciliation in progress)
+    // 2. Synchronous On-Demand Reconcile with Stripe
+    // If webhook hasn't arrived (e.g. STRIPE_WEBHOOK_SECRET not set yet or delivery delay),
+    // retrieve the session directly from Stripe. If paid/complete, fulfill immediately!
+    try {
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['line_items', 'line_items.data.price.product'],
+      });
+
+      if (session.payment_status === 'paid' || session.status === 'complete') {
+        const fulfilledOrder = await fulfillStripeCheckoutSession(session);
+        if (fulfilledOrder) {
+          return NextResponse.json({
+            success: true,
+            pending: false,
+            order: fulfilledOrder,
+          });
+        }
+      }
+    } catch (stripeErr: any) {
+      console.warn('[Order By Session] Stripe session retrieve notice:', stripeErr.message);
+    }
+
+    // 3. Order truly unpaid or asynchronous payment pending
     return NextResponse.json(
       {
         success: false,
