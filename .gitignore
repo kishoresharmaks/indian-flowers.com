@@ -36,6 +36,7 @@ scripts/*
 !scripts/migrate-base64-images.mjs
 !scripts/sync-category-slugs.mjs
 !scripts/sync-core-images-to-seo.mjs
+!scripts/convert-local-images-to-webp.mjs
 tests/
 *.py
 *.ps1
