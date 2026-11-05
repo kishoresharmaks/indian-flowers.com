@@ -28,6 +28,7 @@ export interface ParsedImportRow {
   slug?: string;
   description: string;
   category: string;
+  secondaryCategories?: string[];
   subcategory: string;
   price: number;
   mrp: number;
@@ -43,11 +44,13 @@ export interface ParsedImportRow {
   existingProduct?: {
     _id: string;
     name: string;
+    slug?: string;
     price: number;
     mrp: number;
     image: string;
     category?: string;
     subcategory?: string;
+    categories?: Array<{ name: string; slug: string }>;
     quantity?: number;
     gst?: number;
     isActive?: boolean;
@@ -119,20 +122,19 @@ export function sanitizeProductDescription(html: any): string {
   return html
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
     .replace(/<br\s*[\/]?>/gi, ' ')
     .replace(/<\/p>/gi, ' ')
     .replace(/<\/h[1-6]>/gi, ' ')
     .replace(/<\/li>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8216;/g, "'")
-    .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"')
-    .replace(/&quot;/gi, '"')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&#8211;|–/g, '-')
+    .replace(/&#8212;|—/g, '-')
+    .replace(/&#8216;|&#8217;|&apos;|&#039;|'/g, "'")
+    .replace(/&#8220;|&#8221;|&quot;|"/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;|\u00a0/g, ' ')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
     .replace(/[\r\n\t]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -318,7 +320,7 @@ export function parseExcelRowsToImportItems(
     );
     const quantity = Math.max(0, Math.floor(rawQty));
 
-    // 6. Extract Category & Subcategory
+    // 6. Extract Category & Subcategory & Secondary Categories
     const category = (
       rawRow['Category *'] ||
       rawRow['Category'] ||
@@ -328,6 +330,24 @@ export function parseExcelRowsToImportItems(
     )
       .toString()
       .trim();
+
+    const rawSecondary = (
+      rawRow['Secondary Categories (Optional)'] ||
+      rawRow['Secondary Categories'] ||
+      norm.secondarycategoriesoptional ||
+      norm.secondarycategories ||
+      norm.secondarycategory ||
+      ''
+    )
+      .toString()
+      .trim();
+
+    const secondaryCategories: string[] = rawSecondary
+      ? rawSecondary
+          .split(/[,;]/)
+          .map((s: string) => s.trim())
+          .filter(Boolean)
+      : [];
 
     const subcategory = (
       rawRow['Subcategory (Optional)'] ||
@@ -522,10 +542,18 @@ export function parseExcelRowsToImportItems(
       }
     }
 
-    // Duplicate check against existing store products
-    const existing = existingProducts.find(
-      (p) => p && p.name && p.name.trim().toLowerCase() === name.toLowerCase()
-    );
+    // Slug-First Lookup: Match by slug first (preserving canonical URLs and handling title edits), then fallback to name
+    let existing: any = undefined;
+    if (slug) {
+      existing = existingProducts.find(
+        (p) => p && p.slug && p.slug.trim().toLowerCase() === slug.toLowerCase()
+      );
+    }
+    if (!existing && name) {
+      existing = existingProducts.find(
+        (p) => p && p.name && p.name.trim().toLowerCase() === name.toLowerCase()
+      );
+    }
 
     // Image matching from dropped files
     const { file: matchedFile, reason: matchReason } = matchImageForProduct(
@@ -548,6 +576,15 @@ export function parseExcelRowsToImportItems(
       (item) => item.name.trim().toLowerCase() === subcategory.toLowerCase() || item.slug?.toLowerCase() === slugify(subcategory)
     )) issues.push(`Subcategory "${subcategory}" does not belong to "${matchedCategory.name}"`);
 
+    for (const secCat of secondaryCategories) {
+      const matchSec = categories.find(
+        (item) => item.name.trim().toLowerCase() === secCat.toLowerCase() || item.slug?.toLowerCase() === slugify(secCat)
+      );
+      if (!matchSec) {
+        issues.push(`Secondary category "${secCat}" does not exist in the catalog`);
+      }
+    }
+
     const changedFields: string[] = [];
     if (existing) {
       if (normalizeDescriptionText(existing.description) !== normalizeDescriptionText(description)) {
@@ -559,12 +596,34 @@ export function parseExcelRowsToImportItems(
       if (normalizeDescriptionText(existing.subcategory || '').toLowerCase() !== normalizeDescriptionText(subcategory || '').toLowerCase()) {
         changedFields.push('Subcategory');
       }
-      if (Math.abs(Number(existing.price || 0) - Number(price || 0)) >= 0.01) {
+
+      // Diff secondary categories
+      const existingSecList = Array.isArray(existing.categories) && existing.categories.length > 1
+        ? existing.categories.slice(1).map((c: any) => (typeof c === 'string' ? c : c.name || '')).map((s: string) => s.trim().toLowerCase()).filter(Boolean).sort()
+        : [];
+      const incomingSecList = secondaryCategories
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+        .sort();
+
+      const areSecEqual =
+        existingSecList.length === incomingSecList.length &&
+        existingSecList.every((val: string, i: number) => val === incomingSecList[i]);
+
+      if (!areSecEqual) {
+        changedFields.push('Secondary Categories');
+      }
+
+      const existingPrice = Number(existing.price || 0);
+      const incomingPrice = Number(price || 0);
+      if (Math.abs(existingPrice - incomingPrice) >= 0.01) {
         changedFields.push('Price');
       }
       const existingMrp = Number(existing.mrp ?? existing.price ?? 0);
       const incomingMrp = Number(mrp ?? price ?? 0);
-      if (Math.abs(existingMrp - incomingMrp) >= 0.01) {
+      const isExistingMrpPriceEqual = Math.abs(existingMrp - existingPrice) < 0.01;
+      const isIncomingMrpPriceEqual = Math.abs(incomingMrp - incomingPrice) < 0.01;
+      if (!(isExistingMrpPriceEqual && isIncomingMrpPriceEqual) && Math.abs(existingMrp - incomingMrp) >= 0.01) {
         changedFields.push('MRP');
       }
       if (Number(existing.quantity ?? 0) !== Number(quantity ?? 0)) {
@@ -591,6 +650,7 @@ export function parseExcelRowsToImportItems(
       slug,
       description,
       category,
+      secondaryCategories,
       subcategory,
       price,
       mrp,
@@ -607,11 +667,13 @@ export function parseExcelRowsToImportItems(
         ? {
             _id: existing._id,
             name: existing.name,
+            slug: existing.slug,
             price: existing.price,
             mrp: existing.mrp,
             image: existing.image,
             category: existing.category,
             subcategory: existing.subcategory,
+            categories: existing.categories,
             quantity: existing.quantity,
             gst: existing.gst,
             isActive: existing.isActive,

@@ -126,6 +126,82 @@ export async function POST(request: NextRequest) {
       return isNaN(num) ? fallback : num;
     };
 
+    const failedRows: Array<{
+      name: string;
+      slug: string;
+      rowNum: number;
+      reason: string;
+      rawRow: Record<string, any>;
+    }> = [];
+
+    // Preload batch products in a single indexed query by slug and name
+    const batchSlugs = rawRows
+      .map((r: any) => {
+        const norm = normalizeRow(r);
+        const rawSlug = (
+          r['Product Slug'] ||
+          r['Product Slug *'] ||
+          r['Slug'] ||
+          r['Slug *'] ||
+          r['Product slug'] ||
+          r['product_slug'] ||
+          norm.productslug ||
+          norm.slug ||
+          r.slug ||
+          ''
+        ).toString().trim();
+        const rawName = (
+          r['Product Title'] ||
+          r['Product Title *'] ||
+          norm.producttitle ||
+          norm.productname ||
+          norm.name ||
+          r['Product Name *'] ||
+          r['Product Name'] ||
+          ''
+        ).toString().trim();
+        return rawSlug ? slugify(rawSlug) : rawName ? slugify(rawName) : '';
+      })
+      .filter(Boolean);
+
+    const batchNames = rawRows
+      .map((r: any) => {
+        const norm = normalizeRow(r);
+        return (
+          r['Product Title'] ||
+          r['Product Title *'] ||
+          norm.producttitle ||
+          norm.productname ||
+          norm.name ||
+          r['Product Name *'] ||
+          r['Product Name'] ||
+          ''
+        ).toString().trim();
+      })
+      .filter(Boolean);
+
+    const preloadedDocs = await Product.find({
+      $or: [
+        { slug: { $in: batchSlugs } },
+        { name: { $in: batchNames } },
+      ],
+    });
+
+    const preloadedBySlug = new Map<string, any>();
+    const preloadedByName = new Map<string, any>();
+    const allocatedSlugs = new Set<string>();
+
+    preloadedDocs.forEach((doc) => {
+      if (doc.slug) {
+        const s = doc.slug.toLowerCase().trim();
+        preloadedBySlug.set(s, doc);
+        allocatedSlugs.add(s);
+      }
+      if (doc.name) {
+        preloadedByName.set(doc.name.toLowerCase().trim(), doc);
+      }
+    });
+
     for (let index = 0; index < rawRows.length; index++) {
       const originalRow = rawRows[index];
       const row = normalizeRow(originalRow);
@@ -209,6 +285,24 @@ export async function POST(request: NextRequest) {
       )
         .toString()
         .trim();
+
+      const rawSecondary = (
+        originalRow['Secondary Categories (Optional)'] ||
+        originalRow['Secondary Categories'] ||
+        row.secondarycategoriesoptional ||
+        row.secondarycategories ||
+        row.secondarycategory ||
+        ''
+      )
+        .toString()
+        .trim();
+
+      const secondaryCategoriesList = rawSecondary
+        ? rawSecondary
+            .split(/[,;]/)
+            .map((s: string) => s.trim())
+            .filter(Boolean)
+        : [];
 
       // 4. Extract Pricing: Selling Price & MRP
       const rawPrice = parseNum(
@@ -499,15 +593,31 @@ export async function POST(request: NextRequest) {
           : `Row ${rowNum} ("${name}"): subcategory "${subcategoryName}" does not belong to "${matchedCategory.name}"; skipped.`;
         errors.push(reason);
         itemSummaries.push({ name, action: 'skipped', category: categoryName, price: 0, variantsCount: 0, hasImage: false, reason });
+        failedRows.push({ name, slug: finalSlug, rowNum, reason, rawRow: originalRow });
         continue;
       }
 
-      // 8. Find existing product by exact/trimmed case-insensitive name
+      let invalidSecondaryReason = '';
+      for (const secName of secondaryCategoriesList) {
+        const matchSec = categoryMap.get(secName.toLowerCase()) || categoryMap.get(slugify(secName));
+        if (!matchSec) {
+          invalidSecondaryReason = `Row ${rowNum} ("${name}"): secondary category "${secName}" does not exist in the catalog; skipped.`;
+          break;
+        }
+      }
+      if (invalidSecondaryReason) {
+        errors.push(invalidSecondaryReason);
+        itemSummaries.push({ name, action: 'skipped', category: categoryName, price: 0, variantsCount: 0, hasImage: false, reason: invalidSecondaryReason });
+        failedRows.push({ name, slug: finalSlug, rowNum, reason: invalidSecondaryReason, rawRow: originalRow });
+        continue;
+      }
+
+      // 8. Slug-First Lookup: Match preloaded document by slug first, then fallback to name
       try {
-        const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const existingProduct = await Product.findOne({
-          name: { $regex: new RegExp(`^${escapedName}$`, 'i') },
-        });
+        let existingProduct = finalSlug ? preloadedBySlug.get(finalSlug.toLowerCase()) : undefined;
+        if (!existingProduct && name) {
+          existingProduct = preloadedByName.get(name.toLowerCase().trim());
+        }
 
         const isNewImageProvided =
           image &&
@@ -518,6 +628,7 @@ export async function POST(request: NextRequest) {
 
         if (existingProduct) {
           // UPDATE EXISTING PRODUCT
+          // Preserve canonical slug if present; otherwise allocate
           if (!existingProduct.slug) {
             existingProduct.slug = finalSlug;
           }
@@ -529,12 +640,18 @@ export async function POST(request: NextRequest) {
             existingProduct.description = description;
           }
 
+          const secondaryInput = secondaryCategoriesList.length > 0
+            ? secondaryCategoriesList
+            : (existingProduct.categories || []);
+
           const normExisting = normalizeCategoryAssignments(
             categoryName,
-            existingProduct.categories || [],
+            secondaryInput,
             catSlug,
             subSlug
           );
+
+          existingProduct.name = name; // Update name in place (handles typo fixes cleanly!)
           existingProduct.category = normExisting.primaryCategory;
           existingProduct.categorySlug = normExisting.primarySlug;
           existingProduct.parentCategorySlug = normExisting.primarySlug;
@@ -587,15 +704,16 @@ export async function POST(request: NextRequest) {
           const catSlug = matchedCategory?.slug || slugify(categoryName);
           const subSlug = subcategoryName ? slugify(subcategoryName) : '';
 
-          // Ensure unique slug
+          // Guarantee unique slug via allocated batch registry
           let uniqueSlug = finalSlug || `prod-${Date.now()}`;
           let counter = 1;
-          while (await Product.findOne({ slug: uniqueSlug })) {
+          while (allocatedSlugs.has(uniqueSlug.toLowerCase())) {
             uniqueSlug = `${finalSlug}-${counter}`;
             counter++;
           }
+          allocatedSlugs.add(uniqueSlug.toLowerCase());
 
-          const normNew = normalizeCategoryAssignments(categoryName, [], catSlug, subSlug);
+          const normNew = normalizeCategoryAssignments(categoryName, secondaryCategoriesList, catSlug, subSlug);
 
           await Product.create({
             name,
@@ -643,6 +761,13 @@ export async function POST(request: NextRequest) {
           hasImage: false,
           reason: prodErr.message || 'Database error',
         });
+        failedRows.push({
+          name,
+          slug: finalSlug,
+          rowNum,
+          reason: prodErr.message || 'Database error',
+          rawRow: originalRow,
+        });
       }
     }
 
@@ -658,6 +783,7 @@ export async function POST(request: NextRequest) {
       skipped: errors.length,
       errors: errors.length > 0 ? errors : undefined,
       items: itemSummaries,
+      failedRows,
     });
   } catch (error: any) {
     console.error('Bulk import error:', error);

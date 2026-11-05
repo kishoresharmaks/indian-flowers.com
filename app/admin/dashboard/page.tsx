@@ -472,7 +472,15 @@ export default function AdminDashboard() {
     count?: number;
     created?: number;
     updated?: number;
+    skipped?: number;
     errors?: string[];
+    failedRows?: Array<{
+      name: string;
+      slug?: string;
+      rowNum?: number;
+      reason: string;
+      rawRow?: Record<string, any>;
+    }>;
   } | null>(null);
 
 
@@ -2642,59 +2650,153 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       setImportProgressStatus('Preparing product data...');
 
       const rowsToProcess = importEnrichedRows.filter((row) => row.isValid && !row.isUnchanged);
+      const clientInvalidRows = importEnrichedRows.filter((row) => !row.isValid);
+
       if (rowsToProcess.length === 0) {
-        setImportResult({ success: false, message: 'No valid rows to import. Open “Fix required” and correct the highlighted rows.' });
+        if (clientInvalidRows.length > 0) {
+          const clientErrors = clientInvalidRows.map((r) => ({
+            name: r.name,
+            slug: r.slug,
+            rowNum: r.index + 2,
+            reason: r.issues.join('; '),
+            rawRow: r.raw,
+          }));
+          setImportResult({
+            success: false,
+            message: `${clientInvalidRows.length} row(s) require fixes before import. Download the Error Correction Sheet below to view exact issues.`,
+            skipped: clientInvalidRows.length,
+            errors: clientInvalidRows.map((r) => `Row ${r.index + 2} ("${r.name}"): ${r.issues.join('; ')}`),
+            failedRows: clientErrors,
+          });
+        } else {
+          setImportResult({
+            success: false,
+            message: 'All products in this sheet are already up-to-date with your store catalog. 0 changes detected.',
+          });
+        }
         return;
       }
-      const imagesToCompress = rowsToProcess.filter((r) => r.matchedImageFile);
-      let compressedCount = 0;
 
-      const payloadRows = [];
+      // Safe Vercel batch chunking (20-25 items per request to guarantee <3.2MB payload)
+      const BATCH_SIZE = 25;
+      const totalBatches = Math.ceil(rowsToProcess.length / BATCH_SIZE);
+      let totalCreated = 0;
+      let totalUpdated = 0;
+      let totalSkipped = 0;
+      const allErrors: string[] = [];
+      const allFailedRows: Array<{
+        name: string;
+        slug?: string;
+        rowNum?: number;
+        reason: string;
+        rawRow?: Record<string, any>;
+      }> = [];
 
-      for (let i = 0; i < rowsToProcess.length; i++) {
-        const item = rowsToProcess[i];
-        let finalImageBase64 = '';
-
-        if (item.matchedImageFile) {
-          compressedCount++;
-          setImportProgressStatus(
-            `Compressing images on device (${compressedCount}/${imagesToCompress.length}) — ${item.matchedImageFile.name}...`
-          );
-          try {
-            finalImageBase64 = await compressImage(item.matchedImageFile, 800, 0.8);
-          } catch (compErr) {
-            console.error('Image compression failed for', item.matchedImageFile.name, compErr);
-          }
-        }
-
-        payloadRows.push({
-          name: item.name,
-          slug: item.slug || (item.name ? item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : ''),
-          description: item.description,
-          category: item.category,
-          subcategory: item.subcategory,
-          price: item.price,
-          mrp: item.mrp,
-          quantity: item.quantity,
-          gst: item.gst,
-          isTaxable: item.isTaxable,
-          isActive: item.isActive,
-          image: finalImageBase64 || item.imageFilename,
-          variants: item.variants,
+      // Collect client-invalid rows so operator gets a single comprehensive error sheet
+      clientInvalidRows.forEach((r) => {
+        allFailedRows.push({
+          name: r.name,
+          slug: r.slug,
+          rowNum: r.index + 2,
+          reason: r.issues.join('; '),
+          rawRow: r.raw,
         });
-      }
-
-      setImportProgressStatus(`Saving ${payloadRows.length} products to database...`);
-
-      const res = await fetch('/api/products/bulk-import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows: payloadRows }),
       });
 
-      const data = await res.json();
-      setImportResult(data);
-      if (data.success) {
+      for (let b = 0; b < totalBatches; b++) {
+        const batchNum = b + 1;
+        const batchItems = rowsToProcess.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
+        const batchImages = batchItems.filter((it) => it.matchedImageFile);
+
+        // 1. Lazy JIT image compression for this chunk only (prevents browser memory bloat)
+        const batchPayload = [];
+        let batchCompressedCount = 0;
+
+        for (let i = 0; i < batchItems.length; i++) {
+          const item = batchItems[i];
+          let finalImageBase64 = '';
+
+          if (item.matchedImageFile) {
+            batchCompressedCount++;
+            setImportProgressStatus(
+              `Batch ${batchNum}/${totalBatches}: Compressing image ${batchCompressedCount}/${batchImages.length} (${item.matchedImageFile.name})...`
+            );
+            // Yield main UI thread
+            await new Promise((r) => setTimeout(r, 0));
+            try {
+              finalImageBase64 = await compressImage(item.matchedImageFile, 800, 0.8);
+            } catch (compErr) {
+              console.error('Image compression failed for', item.matchedImageFile.name, compErr);
+            }
+          }
+
+          batchPayload.push({
+            name: item.name,
+            slug: item.slug || (item.name ? item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : ''),
+            description: item.description,
+            category: item.category,
+            secondaryCategories: item.secondaryCategories,
+            subcategory: item.subcategory,
+            price: item.price,
+            mrp: item.mrp,
+            quantity: item.quantity,
+            gst: item.gst,
+            isTaxable: item.isTaxable,
+            isActive: item.isActive,
+            image: finalImageBase64 || item.imageFilename,
+            variants: item.variants,
+          });
+        }
+
+        setImportProgressStatus(`Uploading batch ${batchNum} of ${totalBatches} (${batchItems.length} products)...`);
+
+        const res = await fetch('/api/products/bulk-import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows: batchPayload }),
+        });
+
+        const data = await res.json();
+        if (data.success || data.items) {
+          totalCreated += (data.created || 0);
+          totalUpdated += (data.updated || 0);
+          totalSkipped += (data.skipped || 0);
+          if (Array.isArray(data.errors)) {
+            allErrors.push(...data.errors);
+          }
+          if (Array.isArray(data.failedRows)) {
+            allFailedRows.push(...data.failedRows);
+          }
+        } else {
+          allErrors.push(`Batch ${batchNum} failed: ${data.message || 'Server error'}`);
+          totalSkipped += batchItems.length;
+          batchItems.forEach((it) => {
+            allFailedRows.push({
+              name: it.name,
+              slug: it.slug,
+              rowNum: it.index + 2,
+              reason: data.message || 'Batch request failed',
+              rawRow: it.raw,
+            });
+          });
+        }
+      }
+
+      const totalApplied = totalCreated + totalUpdated;
+      setImportResult({
+        success: totalApplied > 0,
+        message: totalApplied > 0
+          ? `Bulk import applied: ${totalCreated} created, ${totalUpdated} updated, ${allErrors.length + clientInvalidRows.length} skipped across ${totalBatches} batch(es).`
+          : `No products were changed. ${allErrors.length + clientInvalidRows.length} item(s) skipped; review the errors below or download the Error Correction Sheet.`,
+        count: totalApplied,
+        created: totalCreated,
+        updated: totalUpdated,
+        skipped: allErrors.length + clientInvalidRows.length,
+        errors: allErrors.length > 0 ? allErrors : undefined,
+        failedRows: allFailedRows.length > 0 ? allFailedRows : undefined,
+      });
+
+      if (totalApplied > 0) {
         await fetchProducts();
         await fetchCategories();
       }
@@ -2707,6 +2809,28 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
       setIsUploadingImport(false);
       setImportProgressStatus('');
     }
+  };
+
+  const handleDownloadErrorCorrectionSheet = () => {
+    if (!importResult?.failedRows || importResult.failedRows.length === 0) return;
+
+    const errorRowsForExport = importResult.failedRows.map((fr) => {
+      const base: Record<string, any> = { ...(fr.rawRow || {}) };
+      if (!base['Product Title'] && !base['Product Title *'] && fr.name) {
+        base['Product Title'] = fr.name;
+      }
+      if (!base['Product Slug'] && fr.slug) {
+        base['Product Slug'] = fr.slug;
+      }
+      base['Import Error Reason'] = fr.reason || 'Validation or database error';
+      return base;
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(errorRowsForExport);
+    XLSX.utils.book_append_sheet(wb, ws, 'Error Correction');
+    const filename = `IndianFlowers_Error_Correction_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
   };
 
   // Delete Category
@@ -9624,6 +9748,11 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                                   {r.category}
                                   {r.subcategory ? ` • ${r.subcategory}` : ''}
                                 </div>
+                                {r.secondaryCategories && r.secondaryCategories.length > 0 && (
+                                  <div className="text-[9px] text-emerald-800/80 font-medium truncate mt-0.5">
+                                    + Sec: {r.secondaryCategories.join(', ')}
+                                  </div>
+                                )}
                                 {!r.isValid && <div className="text-[9px] text-rose-700 font-semibold mt-1">{r.issues.join(' · ')}</div>}
                                 {r.isUpdate && <div className="text-[9px] text-blue-700 font-semibold mt-1">Changes: {r.changedFields.join(', ')}</div>}
                               </td>
@@ -9734,19 +9863,49 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       )}
                       <span>{importResult.message}</span>
                     </div>
+                    {importResult.failedRows && importResult.failedRows.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <span className="text-[11px] text-rose-800 font-semibold">
+                          {importResult.failedRows.length} item(s) require correction. You can download an error correction sheet, update the highlighted issues, and re-upload.
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleDownloadErrorCorrectionSheet}
+                          className="px-3.5 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-extrabold text-[11px] uppercase tracking-wider shadow-sm flex items-center gap-1.5 shrink-0 transition-all active:scale-95"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download Error Sheet (.xlsx)</span>
+                        </button>
+                      </div>
+                    )}
                     {importResult.errors && importResult.errors.length > 0 && (
                       <div className="mt-2 pl-4 border-l-2 border-rose-300 space-y-1 text-[11px]">
                         <span className="font-bold block">Warnings / Skipped:</span>
-                        {importResult.errors.map((err, ei) => (
+                        {importResult.errors.slice(0, 10).map((err, ei) => (
                           <p key={ei}>{err}</p>
                         ))}
+                        {importResult.errors.length > 10 && (
+                          <p className="font-semibold text-rose-900 italic">
+                            ...and {importResult.errors.length - 10} more (see downloaded Error Sheet)
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="pt-2 flex items-center justify-end gap-3">
+                <div className="pt-2 flex items-center justify-end gap-3 flex-wrap">
+                  {importResult?.failedRows && importResult.failedRows.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleDownloadErrorCorrectionSheet}
+                      className="px-4 py-2.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                    >
+                      <Download className="w-4 h-4 text-rose-700" />
+                      <span>Download Error Correction Sheet ({importResult.failedRows.length})</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={resetAndCloseModal}

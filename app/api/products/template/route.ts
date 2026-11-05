@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       { header: 'Category *', key: 'category', width: 28 },
       { header: 'Sales Tax Status', key: 'salesTaxStatus', width: 20 },
       { header: 'Subcategory (Optional)', key: 'subcategory', width: 26 },
+      { header: 'Secondary Categories (Optional)', key: 'secondaryCategories', width: 34 },
       { header: 'Storefront Visibility', key: 'visibility', width: 22 },
       // Separate Variant Columns (Up to 4 in default template)
       { header: 'Variant 1 - Name', key: 'v1_name', width: 24 },
@@ -70,9 +71,9 @@ export async function GET(request: NextRequest) {
         fillArgb = 'FF0E7490'; // Standout Cyan/Teal (Image Filename)
       } else if (colIdx >= 5 && colIdx <= 7) {
         fillArgb = 'FF134633'; // Pricing & Stock (MRP, Selling Price, Quantity)
-      } else if (colIdx >= 8 && colIdx <= 10) {
-        fillArgb = 'FF1C563F'; // Category, Sales Tax Status, Subcategory
-      } else if (colIdx === 11) {
+      } else if (colIdx >= 8 && colIdx <= 11) {
+        fillArgb = 'FF1C563F'; // Category, Sales Tax Status, Subcategory, Secondary Categories
+      } else if (colIdx === 12) {
         fillArgb = 'FF1E3A8A'; // Storefront Visibility
       } else {
         fillArgb = 'FF9F1239'; // Variant columns (Rose Accent)
@@ -275,8 +276,8 @@ export async function GET(request: NextRequest) {
         else if (c === 9) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
         }
-        // Col 11: Storefront Visibility - Center with color
-        else if (c === 11) {
+        // Col 12: Storefront Visibility - Center with color
+        else if (c === 12) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
           if (cell.value === 'Visible') {
             cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF15803D' } };
@@ -388,10 +389,10 @@ export async function GET(request: NextRequest) {
         example: '$75.00 (Price) / $95.00 (MRP)',
       },
       {
-        topic: '5. Categories Reference',
+        topic: '5. Categories Reference & Secondary Categories',
         details:
-          'Check Sheet 2 ("Categories Reference") for valid category and subcategory names. If you enter a new category or subcategory name, the store will automatically create it for you.',
-        example: 'Indian Wedding Garlands',
+          'Check Sheet 2 ("Categories Reference") for valid category and subcategory names. Categories and subcategories are catalog-controlled and must match existing names. You can also specify multiple secondary parent categories in "Secondary Categories (Optional)" separated by commas (e.g. "Temple Garlands, Jasmine Strands").',
+        example: 'Indian Wedding Garlands (Primary) / Temple Garlands (Secondary)',
       },
       {
         topic: '6. Duplicate & Update Protection',

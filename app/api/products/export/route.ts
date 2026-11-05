@@ -77,6 +77,7 @@ function getCatalogColumns(maxVariants: number) {
     { header: 'Category *', key: 'category', width: 28 },
     { header: 'Sales Tax Status', key: 'salesTaxStatus', width: 20 },
     { header: 'Subcategory (Optional)', key: 'subcategory', width: 26 },
+    { header: 'Secondary Categories (Optional)', key: 'secondaryCategories', width: 34 },
     { header: 'Storefront Visibility', key: 'visibility', width: 22 },
   ];
 
@@ -132,9 +133,9 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
       fillArgb = 'FF0E7490'; // Standout Cyan/Teal (Image Filename)
     } else if (colIdx >= 5 && colIdx <= 7) {
       fillArgb = 'FF134633'; // Pricing & Stock (MRP, Selling Price, Quantity)
-    } else if (colIdx >= 8 && colIdx <= 10) {
-      fillArgb = 'FF1C563F'; // Category, Sales Tax Status, Subcategory
-    } else if (colIdx === 11) {
+    } else if (colIdx >= 8 && colIdx <= 11) {
+      fillArgb = 'FF1C563F'; // Category, Sales Tax Status, Subcategory, Secondary Categories
+    } else if (colIdx === 12) {
       fillArgb = 'FF1E3A8A'; // Storefront Visibility
     } else {
       fillArgb = 'FF9F1239'; // Variant columns (Rose Accent)
@@ -179,6 +180,15 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
     const visibility = p.isActive !== false ? 'Visible' : 'Hidden';
     const productSlug = p.slug || (p.name ? slugify(p.name) : '');
 
+    const secondaryCatsFormatted =
+      Array.isArray(p.categories) && p.categories.length > 1
+        ? p.categories
+            .slice(1)
+            .map((c: any) => (typeof c === 'string' ? c : c.name || ''))
+            .filter(Boolean)
+            .join(', ')
+        : '';
+
     const rowData: Record<string, any> = {
       title: p.name || '',
       slug: productSlug,
@@ -190,6 +200,7 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
       category: p.category || 'Indian Wedding Garlands',
       salesTaxStatus: taxStatus,
       subcategory: p.subcategory || '',
+      secondaryCategories: secondaryCatsFormatted,
       visibility: visibility,
     };
 
@@ -262,8 +273,8 @@ function buildProductWorksheet(wb: ExcelJS.Workbook, sheetName: string, products
       else if (c === 9) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
       }
-      // Col 11: Storefront Visibility - Center with color
-      else if (c === 11) {
+      // Col 12: Storefront Visibility - Center with color
+      else if (c === 12) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
         if (cell.value === 'Visible') {
           cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF15803D' } };
