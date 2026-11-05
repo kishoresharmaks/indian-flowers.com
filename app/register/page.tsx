@@ -117,19 +117,27 @@ function RegisterFormContent() {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        if (typeof window !== 'undefined') {
+          try {
+            if (data.customer) {
+              localStorage.setItem('if_customer', JSON.stringify(data.customer));
+            }
+            window.dispatchEvent(new Event('customer-auth-changed'));
+          } catch {}
+        }
         setSuccessMessage('Account registered successfully! Redirecting...');
         if (isFromCheckout) {
           setTimeout(() => {
-            router.push('/?checkout=true');
-          }, 400);
+            window.location.href = '/?checkout=true';
+          }, 300);
         } else if (redirectTarget) {
           setTimeout(() => {
-            router.push(redirectTarget.startsWith('/') ? redirectTarget : `/${redirectTarget}`);
-          }, 400);
+            window.location.href = redirectTarget.startsWith('/') ? redirectTarget : `/${redirectTarget}`;
+          }, 300);
         } else {
           setTimeout(() => {
-            router.push('/account');
-          }, 400);
+            window.location.href = '/account';
+          }, 300);
         }
       } else {
         if (data.errors) {

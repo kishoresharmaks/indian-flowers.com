@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import BrandLogo from './BrandLogo';
 import PredictiveSearch from './search/PredictiveSearch';
 import {
@@ -237,6 +237,7 @@ export default function Header({
   onCustomerChange,
 }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [internalCustomer, setInternalCustomer] = useState<any | null>(null);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
@@ -342,20 +343,31 @@ export default function Header({
   }, [cartItemCount, wishlistCount]);
 
   useEffect(() => {
-    if (customer === undefined) {
-      fetch('/api/customer/me')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.success) {
-            setInternalCustomer(data.customer);
-            if (onCustomerChange) onCustomerChange(data.customer);
-          } else {
-            setInternalCustomer(null);
-          }
-        })
-        .catch(() => setInternalCustomer(null));
-    }
-  }, [customer, onCustomerChange]);
+    const fetchCustomer = () => {
+      if (customer === undefined) {
+        fetch('/api/customer/me')
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.success) {
+              setInternalCustomer(data.customer);
+              if (onCustomerChange) onCustomerChange(data.customer);
+            } else {
+              setInternalCustomer(null);
+            }
+          })
+          .catch(() => setInternalCustomer(null));
+      }
+    };
+
+    fetchCustomer();
+
+    const handleAuthChanged = () => fetchCustomer();
+    window.addEventListener('customer-auth-changed', handleAuthChanged);
+
+    return () => {
+      window.removeEventListener('customer-auth-changed', handleAuthChanged);
+    };
+  }, [customer, onCustomerChange, pathname]);
 
   // Close dropdowns on outside click or touch
   useEffect(() => {

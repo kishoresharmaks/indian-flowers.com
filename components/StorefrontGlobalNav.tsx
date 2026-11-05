@@ -70,23 +70,43 @@ export default function StorefrontGlobalNav() {
     }
   }, []);
 
-  // Initial loads and event listeners
-  useEffect(() => {
-    syncCart();
-    syncWishlist();
+  // Fetch customer profile
+  const refreshCustomer = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('if_customer');
+        if (saved) setCustomer(JSON.parse(saved));
+      } catch {}
+    }
 
-    // Fetch customer profile
-    fetch('/api/customer/me')
+    fetch('/api/customer/me', { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => {
         if (d && d.success && d.customer) {
           setCustomer(d.customer);
+          try { localStorage.setItem('if_customer', JSON.stringify(d.customer)); } catch {}
+        } else if (d && !d.success) {
+          setCustomer(null);
+          try { localStorage.removeItem('if_customer'); } catch {}
         }
       })
       .catch(() => {});
+  }, []);
+
+  // Re-fetch customer on route change
+  useEffect(() => {
+    refreshCustomer();
+  }, [pathname, refreshCustomer]);
+
+  // Initial loads and event listeners
+  useEffect(() => {
+    syncCart();
+    syncWishlist();
+    refreshCustomer();
 
     const handleCartUpdated = () => syncCart();
     const handleWishlistUpdated = () => syncWishlist();
+    const handleAuthChanged = () => refreshCustomer();
     const handleOpenCart = () => setIsCartOpen(true);
     const handleCloseCart = () => setIsCartOpen(false);
     const handleOpenWishlist = () => setIsWishlistOpen(true);
@@ -94,6 +114,7 @@ export default function StorefrontGlobalNav() {
 
     window.addEventListener('cart-updated', handleCartUpdated);
     window.addEventListener('wishlist-updated', handleWishlistUpdated);
+    window.addEventListener('customer-auth-changed', handleAuthChanged);
     window.addEventListener('open-cart', handleOpenCart);
     window.addEventListener('close-cart', handleCloseCart);
     window.addEventListener('open-wishlist', handleOpenWishlist);
@@ -103,13 +124,14 @@ export default function StorefrontGlobalNav() {
     return () => {
       window.removeEventListener('cart-updated', handleCartUpdated);
       window.removeEventListener('wishlist-updated', handleWishlistUpdated);
+      window.removeEventListener('customer-auth-changed', handleAuthChanged);
       window.removeEventListener('open-cart', handleOpenCart);
       window.removeEventListener('close-cart', handleCloseCart);
       window.removeEventListener('open-wishlist', handleOpenWishlist);
       window.removeEventListener('close-wishlist', handleCloseWishlist);
       window.removeEventListener('storage', handleCartUpdated);
     };
-  }, [syncCart, syncWishlist]);
+  }, [syncCart, syncWishlist, refreshCustomer]);
 
   // Ensure drawers are always closed upon any route navigation
   useEffect(() => {
@@ -242,15 +264,38 @@ export default function StorefrontGlobalNav() {
     });
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     setIsCartOpen(false);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('close-cart'));
     }
-    if (!customer) {
+
+    let activeCustomer = customer;
+    if (!activeCustomer && typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('if_customer');
+        if (saved) activeCustomer = JSON.parse(saved);
+      } catch {}
+    }
+
+    if (!activeCustomer) {
+      try {
+        const res = await fetch('/api/customer/me', { cache: 'no-store' });
+        const data = await res.json();
+        if (data && data.success && data.customer) {
+          activeCustomer = data.customer;
+          setCustomer(data.customer);
+          try {
+            localStorage.setItem('if_customer', JSON.stringify(data.customer));
+          } catch {}
+        }
+      } catch {}
+    }
+
+    if (!activeCustomer) {
       router.push('/login?redirect=checkout');
     } else {
-      router.push('/?checkout=true');
+      window.location.href = '/?checkout=true';
     }
   };
 

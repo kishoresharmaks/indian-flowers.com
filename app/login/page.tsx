@@ -20,8 +20,35 @@ function LoginFormContent() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Auto-redirect if already logged in
+  React.useEffect(() => {
+    fetch('/api/customer/me', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && data.customer) {
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('if_customer', JSON.stringify(data.customer));
+              window.dispatchEvent(new Event('customer-auth-changed'));
+            } catch {}
+          }
+          if (isFromCheckout) {
+            window.location.href = '/?checkout=true';
+          } else if (redirectTarget) {
+            router.replace(redirectTarget.startsWith('/') ? redirectTarget : `/${redirectTarget}`);
+          } else {
+            router.replace('/account');
+          }
+        } else {
+          setCheckingSession(false);
+        }
+      })
+      .catch(() => setCheckingSession(false));
+  }, [isFromCheckout, redirectTarget, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,20 +75,28 @@ function LoginFormContent() {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        if (typeof window !== 'undefined') {
+          try {
+            if (data.customer) {
+              localStorage.setItem('if_customer', JSON.stringify(data.customer));
+            }
+            window.dispatchEvent(new Event('customer-auth-changed'));
+          } catch {}
+        }
         setSuccessMessage('Signed in successfully! Redirecting...');
         // If from checkout, redirect back to homepage with ?checkout=true
         if (isFromCheckout) {
           setTimeout(() => {
-            router.push('/?checkout=true');
-          }, 400);
+            window.location.href = '/?checkout=true';
+          }, 300);
         } else if (redirectTarget) {
           setTimeout(() => {
-            router.push(redirectTarget.startsWith('/') ? redirectTarget : `/${redirectTarget}`);
-          }, 400);
+            window.location.href = redirectTarget.startsWith('/') ? redirectTarget : `/${redirectTarget}`;
+          }, 300);
         } else {
           setTimeout(() => {
-            router.push('/account');
-          }, 400);
+            window.location.href = '/account';
+          }, 300);
         }
       } else {
         setErrorMessage(data.message || 'Invalid email or password. Please try again.');
@@ -72,6 +107,18 @@ function LoginFormContent() {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between font-sans">
+        <Header />
+        <main className="flex-1 flex flex-col items-center justify-center p-6">
+          <LotusLoader label="Checking your account session..." fullScreen={false} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between font-sans pb-16 md:pb-0">

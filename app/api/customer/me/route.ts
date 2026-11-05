@@ -40,12 +40,28 @@ export async function GET(request: NextRequest) {
       createdAt: customer.createdAt,
     };
 
+    const headers = {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
+    };
+
     return NextResponse.json({
       success: true,
       customer: safeCustomer,
       loyaltyConfig,
-    });
+    }, { status: 200, headers });
   } catch (error: any) {
-    return NextResponse.json({ success: false, customer: null }, { status: 200 });
+    return NextResponse.json(
+      { success: false, customer: null },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   }
 }

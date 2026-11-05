@@ -81,13 +81,21 @@ export default function GoogleSignInButton({
   };
 
   const handleAuthSuccess = (customer: any) => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (customer) {
+          localStorage.setItem('if_customer', JSON.stringify(customer));
+        }
+        window.dispatchEvent(new Event('customer-auth-changed'));
+      } catch {}
+    }
     if (onSuccess) {
       onSuccess(customer);
     }
     const destination = getSafeRedirectUrl(redirectTarget);
     setTimeout(() => {
-      router.push(destination);
-    }, 400);
+      window.location.href = destination;
+    }, 300);
   };
 
   // Google credential response handler

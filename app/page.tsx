@@ -359,25 +359,41 @@ export default function CustomerStore() {
       });
   }, [router]);
 
-  const handleInitiateCheckout = () => {
+  const handleInitiateCheckout = async () => {
     setIsCartOpen(false);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('close-cart'));
     }
-    if (!customer) {
+
+    let activeCustomer = customer;
+    if (!activeCustomer) {
+      try {
+        const res = await fetch('/api/customer/me');
+        const data = await res.json();
+        if (data && data.success && data.customer) {
+          activeCustomer = data.customer;
+          setCustomer(data.customer);
+          if (data.loyaltyConfig) {
+            setLoyaltyConfig(data.loyaltyConfig);
+          }
+        }
+      } catch {}
+    }
+
+    if (!activeCustomer) {
       router.push('/login?redirect=checkout');
       return;
     }
     setCheckoutForm((prev) => ({
       ...prev,
-      customerName: prev.customerName || customer.name || '',
-      customerPhone: prev.customerPhone || customer.phone || '',
-      customerEmail: prev.customerEmail || customer.email || '',
-      streetAddress: prev.streetAddress || customer.address || '',
-      aptSuite: prev.aptSuite || customer.aptSuite || '',
-      city: prev.city || customer.district || customer.city || '',
-      state: prev.state || customer.state || 'CA',
-      zipCode: prev.zipCode || customer.zipCode || '',
+      customerName: prev.customerName || activeCustomer.name || '',
+      customerPhone: prev.customerPhone || activeCustomer.phone || '',
+      customerEmail: prev.customerEmail || activeCustomer.email || '',
+      streetAddress: prev.streetAddress || activeCustomer.address || '',
+      aptSuite: prev.aptSuite || activeCustomer.aptSuite || '',
+      city: prev.city || activeCustomer.district || activeCustomer.city || '',
+      state: prev.state || activeCustomer.state || 'CA',
+      zipCode: prev.zipCode || activeCustomer.zipCode || '',
     }));
     setIsCheckoutOpen(true);
   };
@@ -388,15 +404,30 @@ export default function CustomerStore() {
     const handleCloseCart = () => setIsCartOpen(false);
     const handleOpenWishlist = () => setIsWishlistOpen(true);
     const handleCloseWishlist = () => setIsWishlistOpen(false);
+    const handleAuthChanged = () => {
+      fetch('/api/customer/me')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success && data.customer) {
+            setCustomer(data.customer);
+            if (data.loyaltyConfig) setLoyaltyConfig(data.loyaltyConfig);
+          }
+        })
+        .catch(() => {});
+    };
+
     window.addEventListener('open-cart', handleOpenCart);
     window.addEventListener('close-cart', handleCloseCart);
     window.addEventListener('open-wishlist', handleOpenWishlist);
     window.addEventListener('close-wishlist', handleCloseWishlist);
+    window.addEventListener('customer-auth-changed', handleAuthChanged);
+
     return () => {
       window.removeEventListener('open-cart', handleOpenCart);
       window.removeEventListener('close-cart', handleCloseCart);
       window.removeEventListener('open-wishlist', handleOpenWishlist);
       window.removeEventListener('close-wishlist', handleCloseWishlist);
+      window.removeEventListener('customer-auth-changed', handleAuthChanged);
     };
   }, []);
 
