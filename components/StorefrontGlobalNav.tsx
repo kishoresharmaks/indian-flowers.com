@@ -29,7 +29,15 @@ export default function StorefrontGlobalNav() {
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
-  const [customer, setCustomer] = useState<any | null>(null);
+  const [customer, setCustomer] = useState<any | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('if_customer');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return null;
+  });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);

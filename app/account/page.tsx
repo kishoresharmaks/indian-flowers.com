@@ -80,6 +80,12 @@ export default function AccountPage() {
       const data = await res.json();
       if (res.ok && data.success && data.customer) {
         setCustomer(data.customer);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('if_customer', JSON.stringify(data.customer));
+            window.dispatchEvent(new Event('customer-auth-changed'));
+          } catch {}
+        }
         if (data.loyaltyConfig) {
           setLoyaltyConfig(data.loyaltyConfig);
         }
@@ -147,6 +153,12 @@ export default function AccountPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setCustomer(data.customer);
+        if (typeof window !== 'undefined' && data.customer) {
+          try {
+            localStorage.setItem('if_customer', JSON.stringify(data.customer));
+            window.dispatchEvent(new Event('customer-auth-changed'));
+          } catch {}
+        }
         setIsEditing(false);
         setEditSuccess('Your profile and shipping details have been updated.');
       } else {

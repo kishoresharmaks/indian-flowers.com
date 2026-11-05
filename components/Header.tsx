@@ -391,11 +391,23 @@ export default function Header({
   const handleSignOut = async () => {
     try {
       await fetch('/api/customer/logout', { method: 'POST' });
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('if_customer');
+          window.dispatchEvent(new Event('customer-auth-changed'));
+        } catch {}
+      }
       setInternalCustomer(null);
       if (onCustomerChange) onCustomerChange(null);
       setIsAccountDropdownOpen(false);
       window.location.href = '/';
     } catch {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('if_customer');
+          window.dispatchEvent(new Event('customer-auth-changed'));
+        } catch {}
+      }
       window.location.href = '/';
     }
   };

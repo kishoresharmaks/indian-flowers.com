@@ -87,7 +87,15 @@ interface TrackedOrder {
 
 export default function CustomerStore() {
   const router = useRouter();
-  const [customer, setCustomer] = useState<any | null>(null);
+  const [customer, setCustomer] = useState<any | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('if_customer');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return null;
+  });
 
   // Dynamic State sourced 100% from MongoDB
   const [products, setProducts] = useState<Product[]>([]);
@@ -317,11 +325,47 @@ export default function CustomerStore() {
       typeof window !== 'undefined' &&
       new URLSearchParams(window.location.search).get('checkout') === 'true';
 
-    fetch('/api/customer/me')
+    // 1. Immediately hydrate from localStorage if available
+    let initialCustomer = customer;
+    if (!initialCustomer && typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('if_customer');
+        if (saved) {
+          initialCustomer = JSON.parse(saved);
+          setCustomer(initialCustomer);
+        }
+      } catch {}
+    }
+
+    if (initialCustomer) {
+      setCheckoutForm((prev) => ({
+        ...prev,
+        customerName: initialCustomer.name || prev.customerName,
+        customerPhone: initialCustomer.phone || prev.customerPhone,
+        customerEmail: initialCustomer.email || prev.customerEmail,
+        streetAddress: initialCustomer.address || prev.streetAddress,
+        aptSuite: initialCustomer.aptSuite || prev.aptSuite,
+        city: initialCustomer.district || initialCustomer.city || prev.city,
+        state: initialCustomer.state || prev.state,
+        zipCode: initialCustomer.zipCode || prev.zipCode,
+      }));
+      if (isCheckoutRedirect) {
+        setIsCheckoutOpen(true);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+
+    // 2. Fresh session verification from server
+    fetch('/api/customer/me', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data && data.success && data.customer) {
           setCustomer(data.customer);
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('if_customer', JSON.stringify(data.customer));
+            } catch {}
+          }
           if (data.loyaltyConfig) {
             setLoyaltyConfig(data.loyaltyConfig);
           }
@@ -340,23 +384,49 @@ export default function CustomerStore() {
             setIsCheckoutOpen(true);
             window.history.replaceState({}, '', window.location.pathname);
           }
-        } else {
-          setCustomer(null);
-          if (isCheckoutRedirect) {
-            setIsCheckoutOpen(false);
-            window.history.replaceState({}, '', window.location.pathname);
-            router.push('/login?redirect=checkout');
+        } else if (data && !data.success) {
+          // Only clear if server explicitly confirms not authenticated AND no local cache
+          if (!initialCustomer) {
+            setCustomer(null);
+            if (isCheckoutRedirect) {
+              setIsCheckoutOpen(false);
+              window.history.replaceState({}, '', window.location.pathname);
+              router.push('/login?redirect=checkout');
+            }
           }
         }
       })
       .catch(() => {
-        setCustomer(null);
-        if (isCheckoutRedirect) {
+        if (!initialCustomer && isCheckoutRedirect) {
           setIsCheckoutOpen(false);
           window.history.replaceState({}, '', window.location.pathname);
           router.push('/login?redirect=checkout');
         }
       });
+
+    // 3. Listen for auth changes across components
+    const handleAuthChanged = () => {
+      fetch('/api/customer/me', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d && d.success && d.customer) {
+            setCustomer(d.customer);
+            try {
+              localStorage.setItem('if_customer', JSON.stringify(d.customer));
+            } catch {}
+          } else if (d && !d.success) {
+            setCustomer(null);
+            try {
+              localStorage.removeItem('if_customer');
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    };
+    window.addEventListener('customer-auth-changed', handleAuthChanged);
+    return () => {
+      window.removeEventListener('customer-auth-changed', handleAuthChanged);
+    };
   }, [router]);
 
   const handleInitiateCheckout = async () => {
@@ -366,13 +436,23 @@ export default function CustomerStore() {
     }
 
     let activeCustomer = customer;
+    if (!activeCustomer && typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('if_customer');
+        if (saved) activeCustomer = JSON.parse(saved);
+      } catch {}
+    }
+
     if (!activeCustomer) {
       try {
-        const res = await fetch('/api/customer/me');
+        const res = await fetch('/api/customer/me', { cache: 'no-store' });
         const data = await res.json();
         if (data && data.success && data.customer) {
           activeCustomer = data.customer;
           setCustomer(data.customer);
+          try {
+            localStorage.setItem('if_customer', JSON.stringify(data.customer));
+          } catch {}
           if (data.loyaltyConfig) {
             setLoyaltyConfig(data.loyaltyConfig);
           }
