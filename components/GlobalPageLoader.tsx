@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import LotusLoader from './LotusLoader';
+import dynamic from 'next/dynamic';
+
+const LotusLoader = dynamic(() => import('./LotusLoader'), { ssr: false });
 
 export default function GlobalPageLoader() {
   const pathname = usePathname();

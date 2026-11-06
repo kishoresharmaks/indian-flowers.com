@@ -143,18 +143,15 @@ export default function HeroSection({
                     {mobileImageUrl && (
                       <source media="(max-width: 639px)" srcSet={mobileImageUrl} />
                     )}
+                    <source media="(min-width: 640px)" srcSet={desktopImageUrl} />
                     <img
                       src={desktopImageUrl}
-                      srcSet={mobileImageUrl ? `${mobileImageUrl} 640w, ${desktopImageUrl} 1920w` : undefined}
-                      sizes="(max-width: 639px) 100vw, 1400px"
                       alt={slide.title || `Indian Flowers Banner ${idx + 1}`}
                       className="w-full h-full object-cover object-center select-none pointer-events-none"
                       loading={idx === 0 ? 'eager' : 'lazy'}
                       decoding="async"
                       // @ts-ignore
                       fetchpriority={idx === 0 ? 'high' : undefined}
-                      // @ts-ignore
-                      fetchPriority={idx === 0 ? 'high' : undefined}
                     />
                   </picture>
                 </div>

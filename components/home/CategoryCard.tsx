@@ -221,7 +221,8 @@ export default function CategoryCard({
           src={imgSrc}
           alt={`${name} collection`}
           fill
-          sizes="(max-width: 640px) 75vw, (max-width: 1024px) 250px, 280px"
+          sizes="(max-width: 640px) 240px, (max-width: 1024px) 250px, 260px"
+          quality={70}
           loading="lazy"
           onError={() => setImgSrc(DEFAULT_FLORAL_PLACEHOLDER)}
           className="w-full h-full object-cover object-center rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"

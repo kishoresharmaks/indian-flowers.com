@@ -1727,12 +1727,12 @@ export default function CustomerStoreClient({
               {/* Right Side: Clear, Crisp Image Canvas */}
               <div className="w-full sm:w-[44%] relative min-h-[220px] sm:min-h-full overflow-hidden">
                 <img
-                  src="/images/banners/occasion-wedding-garlands-opt.webp"
+                  src="/images/banners/occasion-wedding-garlands-opt.webp?v=2"
                   alt="Wedding &amp; Temple Garlands"
                   loading="lazy"
                   decoding="async"
-                  width={684}
-                  height={385}
+                  width={500}
+                  height={282}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
                 <div className="hidden sm:block absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#FAF5ED] to-transparent pointer-events-none" />
@@ -1774,12 +1774,12 @@ export default function CustomerStoreClient({
               {/* Right Side: Clear, Crisp Image Canvas */}
               <div className="w-full sm:w-[42%] relative min-h-[220px] sm:min-h-full overflow-hidden">
                 <img
-                  src="/images/banners/occasion-pooja-box-opt.webp"
+                  src="/images/banners/occasion-pooja-box-opt.webp?v=2"
                   alt="Pooja Flowers &amp; Temple Decor"
                   loading="lazy"
                   decoding="async"
-                  width={684}
-                  height={385}
+                  width={500}
+                  height={282}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
                 <div className="hidden sm:block absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#FDF6F2] to-transparent pointer-events-none" />

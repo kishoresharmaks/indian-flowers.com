@@ -33,20 +33,22 @@ async function optimizeDirectory(dirPath) {
 
       try {
         const stats = fs.statSync(fullPath);
-        // Skip files smaller than 35KB as they are already lightweight
-        if (stats.size < 35 * 1024) continue;
+        const isBannerDir = dirPath.includes('banners');
+        const isCategoryDir = dirPath.includes('categories');
+        const isMobile = entry.name.toLowerCase().includes('mobile') || entry.name.toLowerCase().includes('750');
+        const minSizeThreshold = (isBannerDir || isCategoryDir) ? 25 * 1024 : 35 * 1024;
+        if (stats.size < minSizeThreshold) continue;
 
         const buffer = fs.readFileSync(fullPath);
         const meta = await sharp(buffer).metadata();
         if (!meta.width || !meta.height) continue;
 
-        const isMobile = entry.name.toLowerCase().includes('mobile') || dirPath.includes('banners');
-        const maxAllowedWidth = isMobile ? 750 : 1200;
+        const maxAllowedWidth = isMobile ? 750 : (isCategoryDir ? 600 : (isBannerDir ? 1400 : 1200));
+        const quality = isMobile ? 74 : (isCategoryDir ? 72 : (isBannerDir ? 74 : 78));
 
         // If dimensions or file size exceed recommended targets
-        if (meta.width > maxAllowedWidth || stats.size > 40 * 1024) {
+        if (meta.width > maxAllowedWidth || stats.size > minSizeThreshold) {
           const targetWidth = Math.min(meta.width, maxAllowedWidth);
-          const quality = isMobile ? 75 : 80;
 
           let pipeline = sharp(buffer).rotate().resize({
             width: targetWidth,
