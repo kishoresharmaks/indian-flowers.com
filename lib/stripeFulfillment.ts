@@ -186,15 +186,34 @@ export async function fulfillStripeCheckoutSession(session: Stripe.Checkout.Sess
 
     console.log(`[Stripe Fulfillment] Order ${createdOrder.orderId} created for session ${session.id}`);
 
-    // Asynchronous Order Confirmation Email (via active email provider)
+    // Asynchronous Order Confirmation Email (via active email provider with brand template)
     if (orderData.customerEmail) {
       try {
         const { sendEmailViaMsg91 } = await import('@/lib/msg91');
+        const { renderOrderConfirmationEmail } = await import('@/lib/emailTemplate');
+        
+        const rendered = renderOrderConfirmationEmail({
+          orderId: createdOrder.orderId,
+          customerName: orderData.customerName,
+          deliveryDate: orderData.deliveryDate,
+          totalAmount: orderData.totalAmount,
+          items: (orderData.items || []).map((i: any) => ({
+            name: i.name || i.title || 'Fresh Floral Item',
+            quantity: Number(i.quantity) || 1,
+            price: Number(i.price) || 0,
+            variant: i.variant?.name || i.variantName,
+          })),
+          subtotal: orderData.subtotal,
+          shippingFee: orderData.shippingFee,
+          tax: orderData.totalTax,
+          shippingAddress: orderData.shippingAddress || fullShippingAddress,
+        });
+
         sendEmailViaMsg91({
           to: [{ name: orderData.customerName, email: orderData.customerEmail }],
-          subject: `Order Confirmation #${createdOrder.orderId} - Indian-Flowers.com`,
-          htmlContent: `<p>Dear ${orderData.customerName},</p><p>Thank you for ordering with <strong>Indian-Flowers.com</strong>! Your payment has been received and your order <strong>#${createdOrder.orderId}</strong> has been confirmed.</p><p><strong>Delivery Date:</strong> ${orderData.deliveryDate || 'Guaranteed Fresh Delivery'}<br/><strong>Total Amount:</strong> $${orderData.totalAmount.toFixed(2)}</p><p>Best regards,<br/>The Indian Flowers Team</p>`,
-          textContent: `Dear ${orderData.customerName},\n\nThank you for ordering with Indian-Flowers.com! Your payment has been received and your order #${createdOrder.orderId} has been confirmed.\n\nDelivery Date: ${orderData.deliveryDate || 'Guaranteed Fresh Delivery'}\nTotal Amount: $${orderData.totalAmount.toFixed(2)}\n\nBest regards,\nThe Indian Flowers Team`,
+          subject: rendered.subject,
+          htmlContent: rendered.html,
+          textContent: rendered.text,
         }).catch((e: any) =>
           console.warn('[Stripe Fulfillment] Non-critical email send failure:', e.message)
         );

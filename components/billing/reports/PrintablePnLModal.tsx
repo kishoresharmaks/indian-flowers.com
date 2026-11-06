@@ -243,7 +243,7 @@ export default function PrintablePnLModal({
                 <img
                   src={company.logoUrl}
                   alt={company.name}
-                  className="w-24 h-24 object-contain rounded-xl border border-slate-200 bg-white shadow-2xs"
+                  className="h-14 w-auto max-w-[150px] object-contain rounded-xl border border-slate-200 bg-white shadow-2xs p-1"
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
                     if (img && img.src.indexOf('the-indian-flowers-logo') === -1) {

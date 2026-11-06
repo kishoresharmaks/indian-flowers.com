@@ -7,6 +7,14 @@
 import connectToDatabase from '@/lib/db';
 import EmailLog, { IEmailLog } from '@/models/EmailLog';
 import EmailConfig, { IEmailConfig } from '@/models/EmailConfig';
+import {
+  renderCustomInquiryConfirmationEmail,
+  renderContactFormConfirmationEmail,
+  renderManualReplyEmail,
+  renderEmailLayout,
+  SUPPORT_EMAIL,
+  SUPPORT_WHATSAPP,
+} from './emailTemplate';
 
 export interface EmailRecipient {
   name: string;
@@ -713,89 +721,27 @@ export async function sendFloralInquiryConfirmationEmail({
   budget?: string;
   inquiryId: string;
 }) {
-  const safeCustomerName = escapeHtml(customerName);
-  const safeOccasion = escapeHtml(occasion);
-  const safeEventDate = escapeHtml(eventDate);
-  const safeCityState = escapeHtml(cityState);
-  const safeBudget = escapeHtml(budget);
-  const safePhone = escapeHtml(customerPhone);
-  const safeRequirements = escapeHtml(requirements);
-  const safeInquiryId = escapeHtml(inquiryId);
+  const rendered = renderCustomInquiryConfirmationEmail({
+    customerName,
+    customerPhone,
+    cityState,
+    eventDate,
+    occasion,
+    requirements,
+    budget,
+    inquiryId,
+  });
 
-  const subject = `Your Custom Floral Request Received [${safeInquiryId}] - Indian-Flowers.com`;
-
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${subject}</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #FAF6F0; color: #111827; margin: 0; padding: 20px; }
-    .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #E5E7EB; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .header { background: #0B3B24; padding: 28px 24px; text-align: center; color: #ffffff; }
-    .header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-    .header p { margin: 6px 0 0; color: #8FE7B8; font-size: 13px; font-weight: 500; }
-    .body { padding: 28px 24px; }
-    .badge { display: inline-block; background: #EAF5EE; color: #0B3B24; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
-    .details { background: #FAF9F6; border: 1px solid #E5E7EB; border-radius: 12px; padding: 18px; margin: 20px 0; }
-    .details-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #E5E7EB; font-size: 13px; }
-    .details-row:last-child { border-bottom: none; }
-    .label { color: #6B7280; font-weight: 500; }
-    .value { color: #111827; font-weight: 600; text-align: right; }
-    .notice { background: #FEF3C7; border-left: 4px solid #D97706; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #92400E; margin-top: 20px; }
-    .footer { text-align: center; padding: 20px 24px; font-size: 11px; color: #9CA3AF; border-top: 1px solid #F3F4F6; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="header">
-      <h1>The Indian Flowers</h1>
-      <p>Fresh Indian Flowers & Handcrafted Garlands Delivered Across USA</p>
-    </div>
-    <div class="body">
-      <div class="badge">Inquiry Reference: ${safeInquiryId}</div>
-      <p style="font-size: 15px; margin-top: 0;">Dear <strong>${safeCustomerName}</strong>,</p>
-      <p style="font-size: 13.5px; line-height: 1.6; color: #374151;">
-        Thank you for submitting your custom floral inquiry for your upcoming celebration. Our master garland artisan and floral coordinator have received your request and will review your requirements.
-      </p>
-
-      <div class="details">
-        <div class="details-row"><span class="label">Inquiry ID:</span><span class="value">${safeInquiryId}</span></div>
-        <div class="details-row"><span class="label">Occasion:</span><span class="value">${safeOccasion}</span></div>
-        <div class="details-row"><span class="label">Event / Delivery Date:</span><span class="value">${safeEventDate}</span></div>
-        <div class="details-row"><span class="label">Delivery Location:</span><span class="value">${safeCityState}</span></div>
-        ${safeBudget ? `<div class="details-row"><span class="label">Estimated Budget:</span><span class="value">${safeBudget}</span></div>` : ''}
-        <div class="details-row"><span class="label">Phone / WhatsApp:</span><span class="value">${safePhone}</span></div>
-      </div>
-
-      <p style="font-size: 13px; font-weight: 600; color: #111827; margin-bottom: 4px;">Floral Specifications:</p>
-      <p style="font-size: 13px; background: #F9FAFB; padding: 12px; border-radius: 8px; border: 1px solid #E5E7EB; line-height: 1.6; color: #4B5563; margin-top: 0;">
-        ${safeRequirements}
-      </p>
-
-      <div class="notice">
-        <strong>Important Lead Time Note:</strong> All custom wedding garlands and temple malas are handcrafted with freshly imported flowers and delivered via FedEx or Southwest cold-chain priority dispatch. Please allow at least 1 week advance notice for bespoke designs.
-      </div>
-
-      <p style="font-size: 13px; line-height: 1.6; color: #374151; margin-top: 24px;">
-        Need immediate assistance? Feel free to call us at <strong>+1 (909) 379-3678</strong>, WhatsApp us at <strong>+1 (909) 834-1722</strong> or email <strong>indianflowersorder@gmail.com</strong> quoting reference <strong>${safeInquiryId}</strong>.
-      </p>
-    </div>
-    <div class="footer">
-      The Indian Flowers LLC &bull; 14922 Bobcat Lane, Fontana, CA 92336, USA<br>
-      Nationwide Priority Overnight Delivery via FedEx and Southwest &bull; All Prices in USD ($)
-    </div>
-  </div>
-</body>
-</html>
-`;
+  const subject = rendered.subject;
+  const htmlContent = rendered.html;
+  const textContent = rendered.text;
 
   // Send to Customer
   const customerResult = await sendEmailViaMsg91({
     to: [{ name: customerName, email: customerEmail }],
     subject,
     htmlContent,
+    textContent,
     type: 'CUSTOM_ORDER_CONFIRMATION',
     metadata: { inquiryId, occasion, eventDate },
     variables: {
@@ -808,7 +754,17 @@ export async function sendFloralInquiryConfirmationEmail({
     },
   });
 
-  // Also notify Store Admin
+  // Also notify Store Admin for Custom Floral Inquiry
+  const safeInquiryId = escapeHtml(inquiryId);
+  const safeCustomerName = escapeHtml(customerName);
+  const safeCustomerEmail = escapeHtml(customerEmail);
+  const safeCustomerPhone = escapeHtml(customerPhone);
+  const safeCityState = escapeHtml(cityState);
+  const safeEventDate = escapeHtml(eventDate);
+  const safeOccasion = escapeHtml(occasion);
+  const safeRequirements = escapeHtml(requirements);
+  const safeBudget = budget ? escapeHtml(budget) : '';
+
   const config = await getEffectiveEmailConfig();
   await sendEmailViaMsg91({
     to: [{ name: 'Indian Flowers Admin', email: config.adminEmail }],
@@ -819,8 +775,8 @@ export async function sendFloralInquiryConfirmationEmail({
       <h2>New Custom Floral Inquiry</h2>
       <p><strong>Inquiry ID:</strong> ${safeInquiryId}</p>
       <p><strong>Name:</strong> ${safeCustomerName}</p>
-      <p><strong>Email:</strong> ${escapeHtml(customerEmail)}</p>
-      <p><strong>Phone:</strong> ${safePhone}</p>
+      <p><strong>Email:</strong> ${safeCustomerEmail}</p>
+      <p><strong>Phone:</strong> ${safeCustomerPhone}</p>
       <p><strong>City/State:</strong> ${safeCityState}</p>
       <p><strong>Event Date:</strong> ${safeEventDate}</p>
       <p><strong>Occasion:</strong> ${safeOccasion}</p>
@@ -852,66 +808,38 @@ export async function sendContactFormConfirmationEmail({
   eventDate?: string;
   referenceId: string;
 }) {
-  const safeName = escapeHtml(name);
-  const safeEmail = escapeHtml(email);
-  const safePhone = escapeHtml(phone);
-  const safeSubject = escapeHtml(subject);
-  const safeMessage = escapeHtml(message);
-  const safeEventDate = escapeHtml(eventDate);
-  const safeRefId = escapeHtml(referenceId);
+  const rendered = renderContactFormConfirmationEmail({
+    name,
+    email,
+    phone,
+    subject,
+    message,
+    referenceId,
+  });
 
-  const emailSubject = `We Received Your Message [${safeRefId}] - Indian-Flowers.com`;
-
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${emailSubject}</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #FAF6F0; color: #111827; margin: 0; padding: 20px; }
-    .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #E5E7EB; overflow: hidden; }
-    .header { background: #0B3B24; padding: 24px; text-align: center; color: #ffffff; }
-    .header h1 { margin: 0; font-size: 20px; font-weight: 700; }
-    .body { padding: 24px; font-size: 13.5px; line-height: 1.6; color: #374151; }
-    .details { background: #FAF9F6; border: 1px solid #E5E7EB; border-radius: 10px; padding: 14px; margin: 16px 0; font-size: 13px; }
-    .footer { text-align: center; padding: 16px; font-size: 11px; color: #9CA3AF; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="header">
-      <h1>The Indian Flowers</h1>
-    </div>
-    <div class="body">
-      <p>Hi <strong>${safeName}</strong>,</p>
-      <p>Thank you for contacting Indian-Flowers.com. We have received your inquiry (Reference: <strong>${safeRefId}</strong>) regarding <em>${safeSubject}</em>.</p>
-      <div class="details">
-        <p><strong>Your Message:</strong></p>
-        <p style="white-space: pre-line; color: #4B5563;">${safeMessage}</p>
-        ${safeEventDate ? `<p><strong>Target Event Date:</strong> ${safeEventDate}</p>` : ''}
-      </div>
-      <p>A member of our team will get back to you within 24 hours.</p>
-      <p>Urgent inquiries: Please call or text us at <strong>+1 (909) 379-3678</strong>.</p>
-    </div>
-    <div class="footer">
-      The Indian Flowers LLC &bull; Fontana, CA 92336, USA
-    </div>
-  </div>
-</body>
-</html>
-`;
+  const emailSubject = rendered.subject;
+  const htmlContent = rendered.html;
+  const textContent = rendered.text;
 
   // Send to Customer
   const customerResult = await sendEmailViaMsg91({
     to: [{ name, email }],
     subject: emailSubject,
     htmlContent,
+    textContent,
     type: 'CONTACT_CONFIRMATION',
     metadata: { referenceId, userSubject: subject, eventDate },
   });
 
-  // Also notify Store Admin
+  // Also notify Store Admin for Contact Inquiry
+  const safeRefId = escapeHtml(referenceId);
+  const safeSubject = escapeHtml(subject);
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safePhone = escapeHtml(phone);
+  const safeEventDate = eventDate ? escapeHtml(eventDate) : '';
+  const safeMessage = escapeHtml(message);
+
   const config = await getEffectiveEmailConfig();
   await sendEmailViaMsg91({
     to: [{ name: 'Indian Flowers Admin', email: config.adminEmail }],
@@ -950,53 +878,20 @@ export async function sendManualReplyEmail({
   inquiryReference?: string;
 }): Promise<Msg91EmailResult> {
   const config = await getEffectiveEmailConfig();
-  const safeRecipientName = escapeHtml(recipientName);
-  const safeMessageBody = escapeHtml(messageBody);
-
-  const formattedSubject = inquiryReference && !subject.includes(inquiryReference)
-    ? `Re: [${escapeHtml(inquiryReference)}] ${subject}`
-    : subject;
-
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${formattedSubject}</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #FAF6F0; color: #111827; margin: 0; padding: 20px; }
-    .card { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #E5E7EB; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .header { background: #0B3B24; padding: 24px; text-align: center; color: #ffffff; }
-    .header h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
-    .body { padding: 28px 24px; font-size: 14px; line-height: 1.65; color: #1F2937; }
-    .message-content { white-space: pre-wrap; font-size: 14px; color: #374151; margin: 20px 0; padding: 16px; background: #F9FAFB; border-left: 4px solid #0B3B24; border-radius: 8px; }
-    .signature { margin-top: 24px; font-size: 13px; color: #4B5563; white-space: pre-line; border-top: 1px solid #E5E7EB; padding-top: 16px; }
-    .footer { text-align: center; padding: 18px; font-size: 11px; color: #9CA3AF; border-top: 1px solid #F3F4F6; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="header">
-      <h1>The Indian Flowers</h1>
-    </div>
-    <div class="body">
-      <p style="margin-top: 0;">Dear <strong>${safeRecipientName || 'Valued Customer'}</strong>,</p>
-      <div class="message-content">${safeMessageBody}</div>
-      <div class="signature">${config.replySignature}</div>
-    </div>
-    <div class="footer">
-      The Indian Flowers LLC &bull; 14922 Bobcat Lane, Fontana, CA 92336 &bull; (909) 379-3678<br>
-      Fresh Indian Flowers & Handcrafted Temple / Wedding Garlands Delivered Nationwide
-    </div>
-  </div>
-</body>
-</html>
-`;
+  const rendered = renderManualReplyEmail({
+    recipientName,
+    messageBody: config.replySignature
+      ? `${messageBody}\n\n${config.replySignature}`
+      : messageBody,
+    inquiryReference,
+    subject,
+  });
 
   return sendEmailViaMsg91({
     to: [{ name: recipientName, email: to }],
-    subject: formattedSubject,
-    htmlContent,
+    subject: rendered.subject,
+    htmlContent: rendered.html,
+    textContent: rendered.text,
     type: 'MANUAL_REPLY',
     metadata: { inquiryReference },
   });
@@ -1018,49 +913,38 @@ export async function sendTestEmail(targetEmail: string): Promise<Msg91EmailResu
   const senderName = isBrevo ? (config.brevoFromName || config.fromName) : isSmtp ? (config.smtpFromName || config.fromName) : config.fromName;
   const subject = `${providerLabel} Email Integration Test - The Indian Flowers`;
 
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${subject}</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; color: #0F172A; margin: 0; padding: 24px; }
-    .card { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
-    .header { background: #0B3B24; padding: 24px; text-align: center; color: #ffffff; }
-    .body { padding: 24px; font-size: 13.5px; line-height: 1.6; }
-    .success-box { background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 14px; margin: 16px 0; color: #065F46; }
-    .meta { font-family: monospace; font-size: 12px; background: #F1F5F9; padding: 12px; border-radius: 8px; margin-top: 14px; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="header">
-      <h2 style="margin: 0; font-size: 20px;">The Indian Flowers</h2>
-      <p style="margin: 4px 0 0; font-size: 12px; color: #8FE7B8;">Email Service Diagnostic Test</p>
+  const contentHtml = `
+    <h2 class="text-title" style="margin: 0 0 10px; font-size: 20px; font-weight: 700; color: #0B3B24; letter-spacing: -0.02em;">
+      Email Service Diagnostic Test
+    </h2>
+    <div style="background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; color: #065F46; font-size: 13.5px; line-height: 1.5;">
+      <strong>✓ Email Dispatch Successful!</strong><br>
+      Your ${providerLabel} credentials in The Indian Flowers Admin Panel are connected and active.
     </div>
-    <div class="body">
-      <div class="success-box">
-        <strong>✓ Email Dispatch Successful!</strong><br>
-        Your ${providerLabel} credentials in The Indian Flowers Admin Panel are connected and working properly.
-      </div>
-      <div class="meta">
-        <strong>Gateway:</strong> ${providerLabel}<br>
-        <strong>Sender:</strong> ${escapeHtml(senderName)} &lt;${escapeHtml(senderEmail)}&gt;<br>
-        ${isBrevo ? `<strong>Endpoint:</strong> https://api.brevo.com/v3/smtp/email<br>` : isSmtp ? `<strong>Host:</strong> ${escapeHtml(config.smtpHost || '')}:${config.smtpPort || 587}<br>` : `<strong>Domain:</strong> ${escapeHtml(config.domain)}<br>`}
-        <strong>Timestamp:</strong> ${new Date().toISOString()}<br>
-        <strong>Destination:</strong> ${escapeHtml(targetEmail)}
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-`;
+
+    <!-- Diagnostic Metadata Table -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FAF9F6; border: 1px solid #E5E7EB; border-radius: 10px; padding: 14px; font-family: monospace; font-size: 12px; color: #374151; margin-bottom: 16px;">
+      <tr><td style="padding: 4px 0;"><strong>Gateway:</strong> ${providerLabel}</td></tr>
+      <tr><td style="padding: 4px 0;"><strong>Sender:</strong> ${escapeHtml(senderName)} &lt;${escapeHtml(senderEmail)}&gt;</td></tr>
+      <tr><td style="padding: 4px 0;">${isBrevo ? '<strong>Endpoint:</strong> https://api.brevo.com/v3/smtp/email' : isSmtp ? `<strong>Host:</strong> ${escapeHtml(config.smtpHost || '')}:${config.smtpPort || 587}` : `<strong>Domain:</strong> ${escapeHtml(config.domain)}`}</td></tr>
+      <tr><td style="padding: 4px 0;"><strong>Timestamp:</strong> ${new Date().toISOString()}</td></tr>
+      <tr><td style="padding: 4px 0;"><strong>Destination:</strong> ${escapeHtml(targetEmail)}</td></tr>
+    </table>
+  `;
+
+  const layout = renderEmailLayout({
+    preheader: `Email test successful via ${providerLabel}.`,
+    headerBadge: 'System Diagnostic',
+    headerTitle: subject,
+    contentHtml,
+    contentText: `Email Dispatch Successful!\nGateway: ${providerLabel}\nSender: ${senderName} <${senderEmail}>\nTimestamp: ${new Date().toISOString()}`,
+  });
 
   return sendEmailViaMsg91({
     to: [{ name: 'Store Administrator', email: targetEmail }],
     subject,
-    htmlContent,
+    htmlContent: layout.html,
+    textContent: layout.text,
     type: 'TEST_EMAIL',
     metadata: { testDispatch: true, gateway: config.provider },
   });

@@ -23,6 +23,11 @@ async function optimizeDirectory(dirPath) {
       const ext = path.extname(entry.name).toLowerCase();
       if (!validExts.includes(ext)) continue;
 
+      // Safeguard official brand assets and logos from resizing
+      if (entry.name.toLowerCase().includes('logo') || entry.name.toLowerCase().includes('brand')) {
+        continue;
+      }
+
       // Skip duplicate PNG/JPEG files if a corresponding WebP already exists
       if (ext !== '.webp') {
         const correspondingWebp = fullPath.replace(/\.(png|jpe?g)$/i, '.webp');
@@ -36,15 +41,15 @@ async function optimizeDirectory(dirPath) {
         const isBannerDir = dirPath.includes('banners');
         const isCategoryDir = dirPath.includes('categories');
         const isMobile = entry.name.toLowerCase().includes('mobile') || entry.name.toLowerCase().includes('750');
-        const minSizeThreshold = (isBannerDir || isCategoryDir) ? 25 * 1024 : 35 * 1024;
+        const minSizeThreshold = isCategoryDir ? 10 * 1024 : isBannerDir ? 15 * 1024 : 25 * 1024;
         if (stats.size < minSizeThreshold) continue;
 
         const buffer = fs.readFileSync(fullPath);
         const meta = await sharp(buffer).metadata();
         if (!meta.width || !meta.height) continue;
 
-        const maxAllowedWidth = isMobile ? 750 : (isCategoryDir ? 600 : (isBannerDir ? 1400 : 1200));
-        const quality = isMobile ? 74 : (isCategoryDir ? 72 : (isBannerDir ? 74 : 78));
+        const maxAllowedWidth = isMobile ? 750 : isCategoryDir ? 480 : isBannerDir ? 1400 : 800;
+        const quality = isMobile ? 70 : isCategoryDir ? 68 : isBannerDir ? 72 : 75;
 
         // If dimensions or file size exceed recommended targets
         if (meta.width > maxAllowedWidth || stats.size > minSizeThreshold) {

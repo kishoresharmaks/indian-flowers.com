@@ -26,6 +26,11 @@ function cleanDirectory(dir) {
       count += sub.count;
       bytesReclaimed += sub.bytesReclaimed;
     } else if (entry.isFile() && /\.(png|jpe?g)$/i.test(entry.name)) {
+      // Never delete critical brand assets or logos
+      if (entry.name.toLowerCase().includes('logo') || entry.name.toLowerCase().includes('brand')) {
+        continue;
+      }
+
       const webpPath = fullPath.replace(/\.(png|jpe?g)$/i, '.webp');
 
       if (fs.existsSync(webpPath)) {

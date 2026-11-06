@@ -49,37 +49,37 @@ export default function BrandLogo({
   const isDark = variant === 'dark';
 
   // Height sizing for the official logo
-  // Mobile heights (h-11 = 44px) ensure crisp visibility and full legibility on mobile
-  // Desktop heights (md:h-14 lg:h-16 xl:h-[70px]) provide prominent, prestigious branding
+  // The official horizontal brand logo has an aspect ratio of 24:7 (480x140)
+  // Scaled height classes provide prominent, crystal-sharp branding across viewports
   const logoHeightClasses = {
-    sm: 'h-8 sm:h-9 md:h-10 max-h-[40px]',
-    md: 'h-11 sm:h-12 md:h-14 lg:h-16 xl:h-[70px] max-h-[72px]',
-    lg: 'h-14 sm:h-16 md:h-18 lg:h-20 xl:h-[84px] max-h-[88px]',
+    sm: 'h-7 sm:h-8 md:h-9 max-h-[36px]',
+    md: 'h-9 sm:h-10 md:h-11 lg:h-12 xl:h-[50px] max-h-[52px]',
+    lg: 'h-11 sm:h-12 md:h-14 lg:h-16 xl:h-[60px] max-h-[64px]',
   }[size];
 
   const content = isDark ? (
     <div className="inline-flex items-center px-3 py-1.5 bg-[#FAF6F0] rounded-xl border border-white/20 shadow-xs group-hover:shadow-sm transition-all">
       <img
-        src="/the-indian-flowers-logo-sm.webp?v=5"
+        src="/the-indian-flowers-logo-sm.webp?v=7"
         alt={storeName}
-        width={76}
-        height={70}
-        className={`${logoHeightClasses} w-auto object-contain aspect-[692/640] ${imgClassName}`}
+        width={151}
+        height={44}
+        className={`${logoHeightClasses} w-auto object-contain aspect-[24/7] ${imgClassName}`}
         onError={(e) => {
-          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo-opt.webp?v=5';
+          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo-opt.webp?v=7';
         }}
       />
     </div>
   ) : (
     <div className="inline-flex flex-col items-start">
       <img
-        src="/the-indian-flowers-logo-sm.webp?v=5"
+        src="/the-indian-flowers-logo-sm.webp?v=7"
         alt={storeName}
-        width={76}
-        height={70}
-        className={`${logoHeightClasses} w-auto object-contain aspect-[692/640] transition-transform duration-200 group-hover:scale-102 ${imgClassName}`}
+        width={151}
+        height={44}
+        className={`${logoHeightClasses} w-auto object-contain aspect-[24/7] transition-transform duration-200 group-hover:scale-102 ${imgClassName}`}
         onError={(e) => {
-          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo-opt.webp?v=5';
+          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo-opt.webp?v=7';
         }}
       />
       {showTagline && (

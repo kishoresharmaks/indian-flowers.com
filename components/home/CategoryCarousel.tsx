@@ -79,11 +79,20 @@ export default function CategoryCarousel({
     const el = scrollContainerRef.current;
     if (!el) return;
 
-    checkScrollState();
+    // Defer initial layout geometry read to avoid forced synchronous reflow during page boot
+    const idleId = typeof window !== 'undefined' && 'requestIdleCallback' in window
+      ? (window as any).requestIdleCallback(() => checkScrollState(), { timeout: 1500 })
+      : setTimeout(() => checkScrollState(), 600);
+
     el.addEventListener('scroll', checkScrollState, { passive: true });
     window.addEventListener('resize', checkScrollState, { passive: true });
 
     return () => {
+      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(idleId);
+      } else {
+        clearTimeout(idleId);
+      }
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       el.removeEventListener('scroll', checkScrollState);
       window.removeEventListener('resize', checkScrollState);

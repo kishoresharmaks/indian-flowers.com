@@ -55,10 +55,27 @@ export default function ProductCarousel({
   }, []);
 
   useEffect(() => {
-    checkScroll();
+    // Defer initial layout geometry read to avoid forced synchronous reflow during page boot
+    const idleId = typeof window !== 'undefined' && 'requestIdleCallback' in window
+      ? (window as any).requestIdleCallback(() => checkScroll(), { timeout: 1500 })
+      : setTimeout(() => checkScroll(), 600);
+
+    const track = trackRef.current;
+    if (track) {
+      track.addEventListener('scroll', checkScroll, { passive: true });
+    }
     window.addEventListener('resize', checkScroll, { passive: true });
+
     return () => {
+      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(idleId);
+      } else {
+        clearTimeout(idleId);
+      }
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (track) {
+        track.removeEventListener('scroll', checkScroll);
+      }
       window.removeEventListener('resize', checkScroll);
     };
   }, [checkScroll, products.length]);

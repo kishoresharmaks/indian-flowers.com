@@ -1727,7 +1727,7 @@ export default function CustomerStoreClient({
               {/* Right Side: Clear, Crisp Image Canvas */}
               <div className="w-full sm:w-[44%] relative min-h-[220px] sm:min-h-full overflow-hidden">
                 <img
-                  src="/images/banners/occasion-wedding-garlands-opt.webp?v=2"
+                  src="/images/banners/occasion-wedding-garlands-opt.webp?v=5"
                   alt="Wedding &amp; Temple Garlands"
                   loading="lazy"
                   decoding="async"
@@ -1774,7 +1774,7 @@ export default function CustomerStoreClient({
               {/* Right Side: Clear, Crisp Image Canvas */}
               <div className="w-full sm:w-[42%] relative min-h-[220px] sm:min-h-full overflow-hidden">
                 <img
-                  src="/images/banners/occasion-pooja-box-opt.webp?v=2"
+                  src="/images/banners/occasion-pooja-box-opt.webp?v=5"
                   alt="Pooja Flowers &amp; Temple Decor"
                   loading="lazy"
                   decoding="async"

@@ -1,3 +1,4 @@
+import { preload } from 'react-dom';
 import connectToDatabase from '@/lib/db';
 import Banner from '@/models/Banner';
 import CustomerStoreClient from '@/components/home/CustomerStoreClient';
@@ -22,6 +23,15 @@ export default async function CustomerStorePage() {
   const firstSlide = initialBanners[0];
   const desktopImageUrl = firstSlide?.image || firstSlide?.bgImage || '/images/banners/b1.jpg';
   const mobileImageUrl = firstSlide?.mobileImage || desktopImageUrl;
+
+  if (mobileImageUrl) {
+    // @ts-ignore
+    preload(mobileImageUrl, { as: 'image', fetchPriority: 'high' });
+  }
+  if (desktopImageUrl && desktopImageUrl !== mobileImageUrl) {
+    // @ts-ignore
+    preload(desktopImageUrl, { as: 'image', fetchPriority: 'high' });
+  }
 
   return (
     <>

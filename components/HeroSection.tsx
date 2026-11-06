@@ -149,7 +149,7 @@ export default function HeroSection({
                       alt={slide.title || `Indian Flowers Banner ${idx + 1}`}
                       className="w-full h-full object-cover object-center select-none pointer-events-none"
                       loading={idx === 0 ? 'eager' : 'lazy'}
-                      decoding="async"
+                      decoding={idx === 0 ? 'sync' : 'async'}
                       // @ts-ignore
                       fetchpriority={idx === 0 ? 'high' : undefined}
                     />
