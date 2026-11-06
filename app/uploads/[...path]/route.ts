@@ -54,6 +54,25 @@ export async function GET(
             await stat(altWebp);
             filePath = altWebp;
           } catch {
+            // Fallback 3: In non-production or when missing locally, fetch from live production CDN
+            try {
+              const remoteUrl = `https://indian-flowers.com/uploads/${safeSegments.join('/')}`;
+              const remoteRes = await fetch(remoteUrl);
+              if (remoteRes.ok) {
+                const arrayBuffer = await remoteRes.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const ext = path.extname(safeSegments[safeSegments.length - 1]).toLowerCase();
+                const contentType = MIME_TYPES[ext] || remoteRes.headers.get('content-type') || 'application/octet-stream';
+                return new NextResponse(buffer, {
+                  status: 200,
+                  headers: {
+                    'Content-Type': contentType,
+                    'Cache-Control': 'public, max-age=31536000, immutable',
+                  },
+                });
+              }
+            } catch {}
+
             return new NextResponse('File not found', { status: 404 });
           }
         }

@@ -152,6 +152,12 @@ export default function HeroSection({
                       decoding={idx === 0 ? 'sync' : 'async'}
                       // @ts-ignore
                       fetchpriority={idx === 0 ? 'high' : undefined}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes('b1.jpg') && !target.src.includes('b1.webp')) {
+                          target.src = '/images/banners/b1.jpg';
+                        }
+                      }}
                     />
                   </picture>
                 </div>

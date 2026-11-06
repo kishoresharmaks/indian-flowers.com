@@ -58,11 +58,11 @@ function AdminLoginForm() {
       <div className="text-center space-y-3">
         <div className="flex justify-center">
           <img
-            src="/the-indian-flowers-logo.webp?v=2"
+            src="/the-indian-flowers-logo.png?v=9"
             alt="The Indian Flowers logo"
-            className="h-16 w-auto object-contain"
+            className="h-16 w-auto object-contain aspect-[24/7]"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.png?v=2';
+              (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.webp?v=9';
             }}
           />
         </div>

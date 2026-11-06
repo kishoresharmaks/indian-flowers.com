@@ -1,26 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import dynamic from 'next/dynamic';
-
-const LotusLoader = dynamic(() => import('./LotusLoader'), { ssr: false });
+import LotusLoader from './LotusLoader';
 
 export default function GlobalPageLoader() {
   const pathname = usePathname();
-
-  // Only show loading animation for private customer account area
-  // Never block the public storefront (/, /shop, /product) to guarantee instant FCP,
-  // 0ms LCP delay, and eliminate forced reflows.
-  const isEligiblePage = Boolean(pathname?.startsWith('/account'));
   const isAdmin = Boolean(pathname && (pathname.startsWith('/admin') || pathname.startsWith('/setup')));
 
-  const [visible, setVisible] = useState(isEligiblePage && !isAdmin);
+  const [visible, setVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
+  const prevPathRef = useRef(pathname);
+  const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Dismiss loader immediately upon client mount to unblock First Contentful Paint & visual rendering
+  const clearSafetyTimeout = () => {
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
+  };
+
+  // 1. Initial Page Load Entrance Animation
   useEffect(() => {
-    if (!isEligiblePage || isAdmin) {
+    if (isAdmin) {
       setVisible(false);
       return;
     }
@@ -29,14 +31,118 @@ export default function GlobalPageLoader() {
       setIsFading(true);
       const hideTimer = setTimeout(() => {
         setVisible(false);
-      }, 200);
+      }, 450);
       return () => clearTimeout(hideTimer);
-    }, 100);
+    }, 750);
 
     return () => clearTimeout(timer);
-  }, []); // Only runs on full page mount / reload
+  }, [isAdmin]);
 
-  if (isAdmin || !isEligiblePage || !visible) return null;
+  // 2. Route Transition Detection (when pathname updates)
+  useEffect(() => {
+    if (isAdmin) return;
+
+    if (prevPathRef.current !== pathname) {
+      prevPathRef.current = pathname;
+      clearSafetyTimeout();
+
+      setVisible(true);
+      setIsFading(false);
+
+      const timer = setTimeout(() => {
+        setIsFading(true);
+        const hideTimer = setTimeout(() => {
+          setVisible(false);
+        }, 450);
+        return () => clearTimeout(hideTimer);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, isAdmin]);
+
+  // 3. Instant Link Click Interceptor for Client Navigation
+  useEffect(() => {
+    if (isAdmin) return;
+
+    const handleLinkClick = (e: MouseEvent) => {
+      if (
+        e.defaultPrevented ||
+        e.button !== 0 ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.shiftKey ||
+        e.altKey
+      ) {
+        return;
+      }
+
+      const target = (e.target as HTMLElement)?.closest('a');
+      if (!target) return;
+      const href = target.getAttribute('href');
+
+      if (
+        href &&
+        href.startsWith('/') &&
+        !href.startsWith('/#') &&
+        !href.startsWith('//') &&
+        !href.startsWith('/admin') &&
+        !href.startsWith('/setup') &&
+        !href.startsWith('/api') &&
+        target.target !== '_blank' &&
+        !target.hasAttribute('download')
+      ) {
+        const currentPath = window.location.pathname;
+        const targetPath = href.split('?')[0].split('#')[0];
+        if (targetPath !== currentPath) {
+          clearSafetyTimeout();
+          setVisible(true);
+          setIsFading(false);
+
+          // Failsafe: hide loader after 3.5s if route transition doesn't complete
+          safetyTimeoutRef.current = setTimeout(() => {
+            setIsFading(true);
+            setTimeout(() => setVisible(false), 450);
+          }, 3500);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleLinkClick, { capture: true });
+    return () => {
+      document.removeEventListener('click', handleLinkClick, { capture: true });
+      clearSafetyTimeout();
+    };
+  }, [isAdmin]);
+
+  // 4. Custom Window Events for Manual Triggering
+  useEffect(() => {
+    const handleShow = () => {
+      clearSafetyTimeout();
+      setIsFading(false);
+      setVisible(true);
+    };
+
+    const handleHide = () => {
+      clearSafetyTimeout();
+      setIsFading(true);
+      setTimeout(() => setVisible(false), 450);
+    };
+
+    window.addEventListener('show-lotus-loader', handleShow);
+    window.addEventListener('hide-lotus-loader', handleHide);
+
+    return () => {
+      window.removeEventListener('show-lotus-loader', handleShow);
+      window.removeEventListener('hide-lotus-loader', handleHide);
+    };
+  }, []);
+
+  if (isAdmin || !visible) return null;
+
+  const label = pathname?.startsWith('/account')
+    ? 'Loading your account'
+    : 'Loading fresh flowers';
 
   return (
     <div
@@ -48,10 +154,7 @@ export default function GlobalPageLoader() {
         pointerEvents: isFading ? 'none' : 'auto',
       }}
     >
-      <LotusLoader
-        label={pathname?.startsWith('/account') ? 'Loading your account' : 'Loading fresh flowers'}
-        fullScreen={true}
-      />
+      <LotusLoader label={label} fullScreen={true} />
     </div>
   );
 }

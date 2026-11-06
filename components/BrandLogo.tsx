@@ -52,38 +52,38 @@ export default function BrandLogo({
   // The official horizontal brand logo has an aspect ratio of 24:7 (480x140)
   // Scaled height classes provide prominent, crystal-sharp branding across viewports
   const logoHeightClasses = {
-    sm: 'h-7 sm:h-8 md:h-9 max-h-[36px]',
-    md: 'h-9 sm:h-10 md:h-11 lg:h-12 xl:h-[50px] max-h-[52px]',
-    lg: 'h-11 sm:h-12 md:h-14 lg:h-16 xl:h-[60px] max-h-[64px]',
+    sm: 'h-9 sm:h-10 max-h-[42px]',
+    md: 'h-12 sm:h-13 md:h-15 lg:h-[66px] xl:h-[72px] max-h-[76px]',
+    lg: 'h-14 sm:h-16 md:h-18 lg:h-[76px] xl:h-[84px] max-h-[88px]',
   }[size];
 
   const content = isDark ? (
-    <div className="inline-flex items-center px-3 py-1.5 bg-[#FAF6F0] rounded-xl border border-white/20 shadow-xs group-hover:shadow-sm transition-all">
+    <div className="inline-flex items-center px-3.5 py-2 bg-[#FAF6F0] rounded-2xl border border-white/20 shadow-xs group-hover:shadow-sm transition-all">
       <img
-        src="/the-indian-flowers-logo-sm.webp?v=7"
+        src="/the-indian-flowers-logo.png?v=9"
         alt={storeName}
-        width={151}
-        height={44}
+        width={240}
+        height={70}
         className={`${logoHeightClasses} w-auto object-contain aspect-[24/7] ${imgClassName}`}
         onError={(e) => {
-          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo-opt.webp?v=7';
+          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.webp?v=9';
         }}
       />
     </div>
   ) : (
     <div className="inline-flex flex-col items-start">
       <img
-        src="/the-indian-flowers-logo-sm.webp?v=7"
+        src="/the-indian-flowers-logo.png?v=9"
         alt={storeName}
-        width={151}
-        height={44}
+        width={240}
+        height={70}
         className={`${logoHeightClasses} w-auto object-contain aspect-[24/7] transition-transform duration-200 group-hover:scale-102 ${imgClassName}`}
         onError={(e) => {
-          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo-opt.webp?v=7';
+          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.webp?v=9';
         }}
       />
       {showTagline && (
-        <span className="text-[10px] sm:text-[10.5px] font-medium text-stone-500 tracking-wide mt-0.5 truncate">
+        <span className="text-[11px] sm:text-xs font-semibold text-stone-600 tracking-wide mt-1 truncate">
           {storeTagline}
         </span>
       )}
