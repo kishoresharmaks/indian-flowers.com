@@ -109,16 +109,7 @@ export default function HeroSection({
     ? 'aspect-[750/850] sm:aspect-[2.4/1] md:aspect-[2.9/1] lg:aspect-[3.4/1] xl:aspect-[3.6/1] max-h-[440px] sm:max-h-[360px] lg:max-h-[380px] xl:max-h-[400px]'
     : 'aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.9/1] lg:aspect-[3.4/1] xl:aspect-[3.6/1] max-h-[340px] sm:max-h-[360px] lg:max-h-[380px] xl:max-h-[400px]';
 
-  // Sized placeholder during initial loading with matching rounded border corners
-  if (loading && (!slides || slides.length === 0)) {
-    return (
-      <section className="w-full bg-[#FAF6F0] py-1.5 sm:py-2 md:py-3">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`w-full ${sliderAspectClass} rounded-2xl sm:rounded-3xl lg:rounded-[26px] bg-stone-200/60 animate-pulse border border-stone-200/80`} />
-        </div>
-      </section>
-    );
-  }
+  // Always render activeSlides directly to guarantee immediate LCP image discovery and 0ms load delay
 
   return (
     <section className="w-full bg-[#FAF6F0] py-1.5 sm:py-2 md:py-3">
@@ -159,7 +150,9 @@ export default function HeroSection({
                       loading={idx === 0 ? 'eager' : 'lazy'}
                       decoding="async"
                       // @ts-ignore
-                      fetchPriority={idx === 0 ? 'high' : 'auto'}
+                      fetchpriority={idx === 0 ? 'high' : undefined}
+                      // @ts-ignore
+                      fetchPriority={idx === 0 ? 'high' : undefined}
                     />
                   </picture>
                 </div>

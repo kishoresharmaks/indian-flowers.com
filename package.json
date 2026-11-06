@@ -14,6 +14,7 @@
     "sync:categories": "node scripts/sync-category-slugs.mjs",
     "convert:webp": "node scripts/convert-local-images-to-webp.mjs",
     "convert:webp:db": "node scripts/convert-local-images-to-webp.mjs --update-db",
+    "optimize:images": "node scripts/optimize-server-images.js",
     "sanitize:images": "node scripts/sanitize-db-image-urls.mjs"
   },
   "dependencies": {

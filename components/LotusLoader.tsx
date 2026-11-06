@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import styles from './LotusLoader.module.css';
 
 interface LotusLoaderProps {
   label?: string;
@@ -13,36 +14,36 @@ export default function LotusLoader({
 }: LotusLoaderProps) {
   return (
     <div
-      className={`lotus-loader ${fullScreen ? '' : '!relative !min-h-[340px] !w-full !z-10'}`}
+      className={`${styles.lotusLoader} ${fullScreen ? '' : styles.lotusLoaderRelative}`}
       role="status"
       aria-label={label}
     >
-      <div className="lotus-orbit">
-        <span className="orbit-dot dot-1" />
-        <span className="orbit-dot dot-2" />
-        <span className="orbit-dot dot-3" />
-        <span className="orbit-dot dot-4" />
+      <div className={styles.lotusOrbit}>
+        <span className={`${styles.orbitDot} ${styles.dot1}`} />
+        <span className={`${styles.orbitDot} ${styles.dot2}`} />
+        <span className={`${styles.orbitDot} ${styles.dot3}`} />
+        <span className={`${styles.orbitDot} ${styles.dot4}`} />
       </div>
 
-      <div className="lotus-flower">
-        <span className="lotus-petal" style={{ ['--i' as any]: 0 }} />
-        <span className="lotus-petal" style={{ ['--i' as any]: 1 }} />
-        <span className="lotus-petal" style={{ ['--i' as any]: 2 }} />
-        <span className="lotus-petal" style={{ ['--i' as any]: 3 }} />
-        <span className="lotus-petal" style={{ ['--i' as any]: 4 }} />
-        <span className="lotus-petal" style={{ ['--i' as any]: 5 }} />
-        <span className="lotus-petal" style={{ ['--i' as any]: 6 }} />
-        <span className="lotus-petal" style={{ ['--i' as any]: 7 }} />
+      <div className={styles.lotusFlower}>
+        <span className={styles.lotusPetal} style={{ ['--i' as any]: 0 }} />
+        <span className={styles.lotusPetal} style={{ ['--i' as any]: 1 }} />
+        <span className={styles.lotusPetal} style={{ ['--i' as any]: 2 }} />
+        <span className={styles.lotusPetal} style={{ ['--i' as any]: 3 }} />
+        <span className={styles.lotusPetal} style={{ ['--i' as any]: 4 }} />
+        <span className={styles.lotusPetal} style={{ ['--i' as any]: 5 }} />
+        <span className={styles.lotusPetal} style={{ ['--i' as any]: 6 }} />
+        <span className={styles.lotusPetal} style={{ ['--i' as any]: 7 }} />
 
-        <div className="lotus-core">
+        <div className={styles.lotusCore}>
           <span />
         </div>
       </div>
 
-      <div className="lotus-shadow" />
-      <p className="lotus-label">
+      <div className={styles.lotusShadow} />
+      <p className={styles.lotusLabel}>
         {label}
-        <span className="loading-dots" />
+        <span className={styles.loadingDots} />
       </p>
     </div>
   );

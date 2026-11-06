@@ -38,6 +38,7 @@ scripts/*
 !scripts/sync-core-images-to-seo.mjs
 !scripts/convert-local-images-to-webp.mjs
 !scripts/sanitize-db-image-urls.mjs
+!scripts/optimize-server-images.js
 tests/
 *.py
 *.ps1

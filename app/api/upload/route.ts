@@ -59,10 +59,15 @@ export async function POST(req: NextRequest) {
     if (isRasterImage) {
       finalFilename = `${Date.now()}-${baseName}.webp`;
       try {
+        const isMobileBanner = folder === 'banners' && (baseName.includes('mobile') || baseName.includes('750'));
+        const maxWidth = isMobileBanner ? 750 : (folder === 'banners' ? 1400 : 1200);
+        const maxHeight = isMobileBanner ? 950 : 1400;
+        const quality = isMobileBanner ? 78 : 80;
+
         finalBuffer = await sharp(buffer)
           .rotate() // Auto-orient based on smartphone EXIF
-          .resize({ width: 1400, height: 1400, fit: 'inside', withoutEnlargement: true })
-          .webp({ quality: 82, effort: 4 })
+          .resize({ width: maxWidth, height: maxHeight, fit: 'inside', withoutEnlargement: true })
+          .webp({ quality, effort: 4 })
           .toBuffer();
       } catch (sharpErr) {
         console.warn('[Upload] Sharp compression fallback:', sharpErr);
