@@ -23,6 +23,14 @@ async function optimizeDirectory(dirPath) {
       const ext = path.extname(entry.name).toLowerCase();
       if (!validExts.includes(ext)) continue;
 
+      // Skip duplicate PNG/JPEG files if a corresponding WebP already exists
+      if (ext !== '.webp') {
+        const correspondingWebp = fullPath.replace(/\.(png|jpe?g)$/i, '.webp');
+        if (fs.existsSync(correspondingWebp)) {
+          continue;
+        }
+      }
+
       try {
         const stats = fs.statSync(fullPath);
         // Skip files smaller than 35KB as they are already lightweight

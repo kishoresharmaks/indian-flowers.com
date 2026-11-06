@@ -39,6 +39,7 @@ scripts/*
 !scripts/convert-local-images-to-webp.mjs
 !scripts/sanitize-db-image-urls.mjs
 !scripts/optimize-server-images.js
+!scripts/cleanup-duplicate-images.mjs
 tests/
 *.py
 *.ps1

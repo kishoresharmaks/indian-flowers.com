@@ -37,13 +37,26 @@ export async function GET(
     try {
       await stat(filePath);
     } catch {
-      // Fallback check in uploads root if deployed in standalone mode
-      const altPath = path.join(process.cwd(), 'uploads', ...safeSegments);
+      // Fallback 1: If requested as .png/.jpg/.jpeg but modern .webp exists
+      const webpPath = filePath.replace(/\.(png|jpe?g)$/i, '.webp');
       try {
-        await stat(altPath);
-        filePath = altPath;
+        await stat(webpPath);
+        filePath = webpPath;
       } catch {
-        return new NextResponse('File not found', { status: 404 });
+        // Fallback 2: Check in uploads root if deployed in standalone mode
+        const altPath = path.join(process.cwd(), 'uploads', ...safeSegments);
+        try {
+          await stat(altPath);
+          filePath = altPath;
+        } catch {
+          const altWebp = altPath.replace(/\.(png|jpe?g)$/i, '.webp');
+          try {
+            await stat(altWebp);
+            filePath = altWebp;
+          } catch {
+            return new NextResponse('File not found', { status: 404 });
+          }
+        }
       }
     }
 
