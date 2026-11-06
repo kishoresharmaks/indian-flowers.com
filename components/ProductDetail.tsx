@@ -226,7 +226,7 @@ export default function ProductDetail({
             >
               <span>Home</span>
             </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-stone-400 mx-1.5 shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-stone-500 mx-1.5 shrink-0" />
             <Link
               href="/#products-section"
               className="hover:text-[#0B3B24] transition-colors shrink-0"
@@ -235,7 +235,7 @@ export default function ProductDetail({
             </Link>
             {product.category && (
               <>
-                <ChevronRight className="w-3.5 h-3.5 text-stone-400 mx-1.5 shrink-0" />
+                <ChevronRight className="w-3.5 h-3.5 text-stone-500 mx-1.5 shrink-0" />
                 <Link
                   href={`/#products-section?category=${encodeURIComponent(product.category)}`}
                   className="hover:text-[#0B3B24] transition-colors shrink-0"
@@ -244,7 +244,7 @@ export default function ProductDetail({
                 </Link>
               </>
             )}
-            <ChevronRight className="w-3.5 h-3.5 text-stone-400 mx-1.5 shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-stone-500 mx-1.5 shrink-0" />
             <span className="text-stone-900 font-semibold truncate max-w-[180px] sm:max-w-xs shrink-0">
               {product.name}
             </span>
@@ -446,7 +446,7 @@ export default function ProductDetail({
                   </span>
                   {displayMrp > displayPrice && (
                     <>
-                      <span className="text-base sm:text-lg text-stone-400 line-through tabular-nums font-normal">
+                      <span className="text-base sm:text-lg text-stone-500 line-through tabular-nums font-normal">
                         {formatCurrency(displayMrp)}
                       </span>
                       <span className="px-2.5 py-1 rounded-full bg-rose-50 text-[#ed2353] border border-rose-200/80 text-xs font-bold uppercase tracking-wider">
@@ -538,7 +538,7 @@ export default function ProductDetail({
                           {formatCurrency(v.price)}
                         </div>
                         {v.mrp > v.price && (
-                          <div className="text-[10px] text-stone-400 line-through tabular-nums">
+                          <div className="text-[10px] text-stone-500 line-through tabular-nums">
                             {formatCurrency(v.mrp)}
                           </div>
                         )}

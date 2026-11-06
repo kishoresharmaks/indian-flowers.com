@@ -527,17 +527,17 @@ export default function Footer({
               </p>
 
               {/* Direct Contact Details */}
-              <div className="text-xs text-white/85 space-y-1.5 pt-0.5 font-normal">
+              <div className="text-xs text-white/85 space-y-1 pt-0.5 font-normal">
                 <a
                   href={`tel:${phoneDigits}`}
-                  className="flex items-center gap-2 hover:text-[#8FE7B8] transition-colors"
+                  className="flex items-center gap-2 hover:text-[#8FE7B8] transition-colors py-1 min-h-[32px]"
                 >
                   <Phone className="w-3.5 h-3.5 text-[#8FE7B8] shrink-0" />
                   <span>{contactPhone}</span>
                 </a>
                 <a
                   href={`mailto:${contactEmail}`}
-                  className="flex items-center gap-2 hover:text-[#8FE7B8] transition-colors"
+                  className="flex items-center gap-2 hover:text-[#8FE7B8] transition-colors py-1 min-h-[32px]"
                 >
                   <Mail className="w-3.5 h-3.5 text-[#8FE7B8] shrink-0" />
                   <span className="truncate">{contactEmail}</span>
@@ -554,11 +554,11 @@ export default function Footer({
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-7 h-7 rounded-full bg-white/10 hover:bg-[#8FE7B8]/20 hover:text-[#8FE7B8] flex items-center justify-center transition-colors text-white"
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-[#8FE7B8]/20 hover:text-[#8FE7B8] flex items-center justify-center transition-colors text-white"
                       aria-label={item.ariaLabel}
                       title={item.name}
                     >
-                      <IconComponent className="w-3.5 h-3.5" />
+                      <IconComponent className="w-4 h-4" />
                     </a>
                   );
                 })}
@@ -570,27 +570,27 @@ export default function Footer({
               <h4 className="font-semibold text-xs uppercase tracking-wider text-[#8FE7B8]">
                 Quick Links &amp; Shop
               </h4>
-              <ul className="space-y-1.5 text-xs text-white/75 font-normal">
+              <ul className="space-y-1 text-xs text-white/75 font-normal">
                 <li>
-                  <Link href="/about" className="hover:text-white transition-colors flex items-center gap-1.5 font-medium text-emerald-200">
+                  <Link href="/about" className="hover:text-white transition-colors flex items-center gap-1.5 font-medium text-emerald-200 py-1 min-h-[28px]">
                     <ArrowRight className="w-3 h-3 text-[#8FE7B8]" />
                     <span>About Our Story</span>
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="hover:text-white transition-colors flex items-center gap-1.5 font-medium text-emerald-200">
+                  <Link href="/contact" className="hover:text-white transition-colors flex items-center gap-1.5 font-medium text-emerald-200 py-1 min-h-[28px]">
                     <ArrowRight className="w-3 h-3 text-[#8FE7B8]" />
                     <span>Contact Us</span>
                   </Link>
                 </li>
                 <li>
-                  <Link href="/blog" className="hover:text-white transition-colors flex items-center gap-1.5 font-medium text-emerald-200">
+                  <Link href="/blog" className="hover:text-white transition-colors flex items-center gap-1.5 font-medium text-emerald-200 py-1 min-h-[28px]">
                     <ArrowRight className="w-3 h-3 text-[#8FE7B8]" />
                     <span>Floral Blog &amp; Guides</span>
                   </Link>
                 </li>
                 <li>
-                  <Link href="/#products-section" onClick={() => handleCategoryClick('All')} className="hover:text-white transition-colors">
+                  <Link href="/#products-section" onClick={() => handleCategoryClick('All')} className="hover:text-white transition-colors block py-1 min-h-[28px]">
                     All Fresh Flowers
                   </Link>
                 </li>
@@ -599,19 +599,19 @@ export default function Footer({
                     {onSelectCategory ? (
                       <button
                         onClick={() => handleCategoryClick(cat.name)}
-                        className="hover:text-white transition-colors text-left"
+                        className="hover:text-white transition-colors text-left block w-full py-1 min-h-[28px]"
                       >
                         {cat.name}
                       </button>
                     ) : (
-                      <Link href={`/?category=${encodeURIComponent(cat.name)}#products-section`} className="hover:text-white transition-colors">
+                      <Link href={`/?category=${encodeURIComponent(cat.name)}#products-section`} className="hover:text-white transition-colors block py-1 min-h-[28px]">
                         {cat.name}
                       </Link>
                     )}
                   </li>
                 ))}
                 <li>
-                  <Link href="/#custom-orders-section" className="hover:text-white transition-colors">
+                  <Link href="/#custom-orders-section" className="hover:text-white transition-colors block py-1 min-h-[28px]">
                     Custom Wedding Orders
                   </Link>
                 </li>
@@ -623,50 +623,50 @@ export default function Footer({
               <h4 className="font-semibold text-xs uppercase tracking-wider text-[#8FE7B8]">
                 Customer Care &amp; Legal
               </h4>
-              <ul className="space-y-1.5 text-xs text-white/75 font-normal">
+              <ul className="space-y-1 text-xs text-white/75 font-normal">
                 {onTrackOrderClick ? (
                   <li>
                     <button
                       onClick={onTrackOrderClick}
-                      className="hover:text-white transition-colors text-left"
+                      className="hover:text-white transition-colors text-left block w-full py-1 min-h-[28px]"
                     >
                       Track Your Order
                     </button>
                   </li>
                 ) : (
                   <li>
-                    <Link href="/?action=track" className="hover:text-white transition-colors">
+                    <Link href="/?action=track" className="hover:text-white transition-colors block py-1 min-h-[28px]">
                       Track Your Order
                     </Link>
                   </li>
                 )}
                 <li>
-                  <Link href="/policy/shipping-policy" className="hover:text-white transition-colors">
+                  <Link href="/policy/shipping-policy" className="hover:text-white transition-colors block py-1 min-h-[28px]">
                     USA Shipping &amp; Overnight Delivery
                   </Link>
                 </li>
                 <li>
-                  <Link href="/policy/refund-policy" className="hover:text-white transition-colors">
+                  <Link href="/policy/refund-policy" className="hover:text-white transition-colors block py-1 min-h-[28px]">
                     24-Hour Freshness Guarantee
                   </Link>
                 </li>
                 <li>
-                  <Link href="/policy/privacy-policy" className="hover:text-white transition-colors">
+                  <Link href="/policy/privacy-policy" className="hover:text-white transition-colors block py-1 min-h-[28px]">
                     Privacy Policy (CCPA/CPRA)
                   </Link>
                 </li>
                 <li>
-                  <Link href="/policy/terms-and-conditions" className="hover:text-white transition-colors">
+                  <Link href="/policy/terms-and-conditions" className="hover:text-white transition-colors block py-1 min-h-[28px]">
                     Terms &amp; Conditions
                   </Link>
                 </li>
                 <li>
-                  <Link href="/policy/disclaimer" className="hover:text-white transition-colors">
+                  <Link href="/policy/disclaimer" className="hover:text-white transition-colors block py-1 min-h-[28px]">
                     Disclaimer &amp; Disclosures
                   </Link>
                 </li>
                 <li>
-                  <Link href="/policy/cookie-policy" className="hover:text-white transition-colors">
+                  <Link href="/policy/cookie-policy" className="hover:text-white transition-colors block py-1 min-h-[28px]">
                     Cookie &amp; Tracking Policy
                   </Link>
                 </li>
@@ -674,7 +674,7 @@ export default function Footer({
                   <button
                     type="button"
                     onClick={handleOpenCookiePreferences}
-                    className="hover:text-white transition-colors text-left"
+                    className="hover:text-white transition-colors text-left block w-full py-1 min-h-[28px]"
                   >
                     Cookie Preferences
                   </button>

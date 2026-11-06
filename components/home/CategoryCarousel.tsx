@@ -235,12 +235,16 @@ export default function CategoryCarousel({
                   type="button"
                   onClick={() => handleDotClick(dotIdx)}
                   aria-label={`Go to ${cat.name}`}
-                  className={`transition-all duration-300 rounded-full cursor-pointer ${
-                    isActive
-                      ? 'w-7 h-2.5 bg-[#0B3B24] shadow-xs'
-                      : 'w-2.5 h-2.5 bg-stone-300 hover:bg-stone-400'
-                  }`}
-                />
+                  className="p-1.5 -m-1 flex items-center justify-center min-w-[28px] min-h-[28px] cursor-pointer"
+                >
+                  <span
+                    className={`transition-all duration-300 rounded-full block ${
+                      isActive
+                        ? 'w-7 h-2.5 bg-[#0B3B24] shadow-xs'
+                        : 'w-2.5 h-2.5 bg-stone-300 hover:bg-stone-400'
+                    }`}
+                  />
+                </button>
               );
             })
           ) : (

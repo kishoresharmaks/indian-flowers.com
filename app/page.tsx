@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { dispatchItemAdded } from '@/components/ItemAddedNotification';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,16 +16,18 @@ import type { CategoryItem } from '@/components/home/CategoryCarousel';
 import ProductCarousel from '@/components/ProductCarousel';
 import FloralCornerDecorations from '@/components/FloralCornerDecorations';
 import ProductCard, { Product, ProductVariant } from '@/components/ProductCard';
-import ProductQuickViewModal from '@/components/ProductQuickViewModal';
 import Footer from '@/components/Footer';
-import CartDrawer from '@/components/CartDrawer';
 import { IDeliveryMode, DEFAULT_DELIVERY_MODES } from '@/lib/delivery';
-import WishlistDrawer from '@/components/WishlistDrawer';
-import CustomOrderSection from '@/components/CustomOrderSection';
 import FloatingCartBar from '@/components/FloatingCartBar';
 import EventDeliveryChecker from '@/components/home/EventDeliveryChecker';
-import ColdChainStorySection from '@/components/home/ColdChainStorySection';
-import CustomerReviewsSection from '@/components/home/CustomerReviewsSection';
+
+// Performance Code Splitting: Lazy-load off-screen drawers, modals and heavy below-the-fold sections
+const ProductQuickViewModal = dynamic(() => import('@/components/ProductQuickViewModal'), { ssr: false });
+const CartDrawer = dynamic(() => import('@/components/CartDrawer'), { ssr: false });
+const WishlistDrawer = dynamic(() => import('@/components/WishlistDrawer'), { ssr: false });
+const CustomOrderSection = dynamic(() => import('@/components/CustomOrderSection'), { ssr: true });
+const ColdChainStorySection = dynamic(() => import('@/components/home/ColdChainStorySection'), { ssr: true });
+const CustomerReviewsSection = dynamic(() => import('@/components/home/CustomerReviewsSection'), { ssr: false });
 import {
   ShoppingBag,
   Search,
@@ -1713,8 +1716,10 @@ export default function CustomerStore() {
               {/* Right Side: Clear, Crisp Image Canvas */}
               <div className="w-full sm:w-[44%] relative min-h-[220px] sm:min-h-full overflow-hidden">
                 <img
-                  src="/images/banners/occasion-wedding-garlands.jpg"
+                  src="/images/banners/occasion-wedding-garlands.webp"
                   alt="Wedding &amp; Temple Garlands"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
                 <div className="hidden sm:block absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#FAF5ED] to-transparent pointer-events-none" />
@@ -1756,8 +1761,10 @@ export default function CustomerStore() {
               {/* Right Side: Clear, Crisp Image Canvas */}
               <div className="w-full sm:w-[42%] relative min-h-[220px] sm:min-h-full overflow-hidden">
                 <img
-                  src="/images/banners/occasion-pooja-box.jpg"
+                  src="/images/banners/occasion-pooja-box.webp"
                   alt="Pooja Flowers &amp; Temple Decor"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
                 <div className="hidden sm:block absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#FDF6F2] to-transparent pointer-events-none" />

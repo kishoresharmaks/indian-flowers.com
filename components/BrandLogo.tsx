@@ -11,11 +11,13 @@ export interface LotusIconProps {
 export function LotusIcon({ className = 'w-6 h-6 sm:w-7 sm:h-7' }: LotusIconProps) {
   return (
     <img
-      src="/the-indian-flowers-emblem.webp?v=2"
+      src="/the-indian-flowers-emblem-sm.webp?v=3"
       alt="The Indian Flowers Emblem"
+      width={32}
+      height={32}
       className={`${className} object-contain`}
       onError={(e) => {
-        (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.png?v=2';
+        (e.target as HTMLImageElement).src = '/the-indian-flowers-emblem.webp?v=2';
       }}
     />
   );
@@ -58,22 +60,26 @@ export default function BrandLogo({
   const content = isDark ? (
     <div className="inline-flex items-center px-3 py-1.5 bg-[#FAF6F0] rounded-xl border border-white/20 shadow-xs group-hover:shadow-sm transition-all">
       <img
-        src="/the-indian-flowers-logo.webp?v=2"
+        src="/the-indian-flowers-logo-sm.webp?v=3"
         alt={storeName}
+        width={76}
+        height={70}
         className={`${logoHeightClasses} w-auto object-contain aspect-[692/640] ${imgClassName}`}
         onError={(e) => {
-          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.png?v=2';
+          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.webp?v=2';
         }}
       />
     </div>
   ) : (
     <div className="inline-flex flex-col items-start">
       <img
-        src="/the-indian-flowers-logo.webp?v=2"
+        src="/the-indian-flowers-logo-sm.webp?v=3"
         alt={storeName}
+        width={76}
+        height={70}
         className={`${logoHeightClasses} w-auto object-contain aspect-[692/640] transition-transform duration-200 group-hover:scale-102 ${imgClassName}`}
         onError={(e) => {
-          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.png?v=2';
+          (e.target as HTMLImageElement).src = '/the-indian-flowers-logo.webp?v=2';
         }}
       />
       {showTagline && (

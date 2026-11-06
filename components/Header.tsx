@@ -679,7 +679,7 @@ export default function Header({
                       <span className="text-[11.5px] font-semibold text-stone-800 max-w-[85px] truncate hidden md:inline">
                         {activeCustomer.name ? activeCustomer.name.split(' ')[0] : 'Account'}
                       </span>
-                      <ChevronDown className="w-3 h-3 text-stone-400" />
+                      <ChevronDown className="w-3 h-3 text-stone-600" />
                     </button>
                   ) : (
                     <Link
@@ -756,7 +756,7 @@ export default function Header({
                   type="button"
                   onClick={handleCartClick}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50/80 hover:bg-emerald-100/90 border border-emerald-200/70 text-[#0B3B24] transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
-                  aria-label="Open Shopping Cart"
+                  aria-label={`Cart (${activeCartCount} items)`}
                   title="Shopping cart"
                 >
                   <div className="relative flex items-center justify-center">
@@ -849,7 +849,7 @@ export default function Header({
                             className={`w-3.5 h-3.5 transition-transform duration-200 ${
                               isOpen
                                 ? 'rotate-180 text-inherit'
-                                : 'text-stone-400 group-hover:text-[#0B3B24]'
+                                : 'text-stone-600 group-hover:text-[#0B3B24]'
                             }`}
                           />
                         )}
@@ -1232,7 +1232,7 @@ export default function Header({
                 <Truck className="w-4 h-4 text-[#0B3B24]" />
                 <span>Track Your Order</span>
               </span>
-              <ChevronRight className="w-4 h-4 text-stone-400" />
+              <ChevronRight className="w-4 h-4 text-stone-600" />
             </button>
           </div>
 
@@ -1256,7 +1256,7 @@ export default function Header({
 
           {/* Social Links */}
           <div className="pt-3 border-t border-stone-100">
-            <p className="text-[10px] font-bold tracking-wider uppercase text-stone-400 mb-2">
+            <p className="text-[10px] font-bold tracking-wider uppercase text-stone-600 mb-2">
               Follow Us
             </p>
             <div className="flex items-center gap-3">

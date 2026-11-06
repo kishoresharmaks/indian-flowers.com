@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          'Cache-Control': 'no-store, max-age=0',
+          'Cache-Control': isAuthenticatedAdmin(request) ? 'no-store, max-age=0' : 'public, s-maxage=120, stale-while-revalidate=300',
         },
       }
     );

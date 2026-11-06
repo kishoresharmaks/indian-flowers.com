@@ -189,7 +189,6 @@ export default function CategoryCard({
       href={categoryHref}
       data-category-card
       onClick={onClick}
-      aria-label={`Browse ${name} category`}
       className={`group/card relative flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border transition-all duration-300 text-left cursor-pointer select-none snap-center sm:snap-start bg-gradient-to-b ${
         theme.bgGradient
       } ${theme.borderColor} ${theme.hoverBorder} ${
@@ -232,9 +231,9 @@ export default function CategoryCard({
       {/* Bottom Content Area: Category Name + Subtitle + Circular Arrow Action */}
       <div className="pt-2.5 sm:pt-3 flex items-end justify-between gap-2 min-w-0 mt-auto">
         <div className="min-w-0 flex-1">
-          <h4 className="text-[14px] sm:text-[15px] md:text-[16px] font-extrabold text-[#111827] group-hover/card:text-[#0B3B24] transition-colors leading-[1.3] tracking-tight line-clamp-2">
+          <h3 className="text-[14px] sm:text-[15px] md:text-[16px] font-extrabold text-[#111827] group-hover/card:text-[#0B3B24] transition-colors leading-[1.3] tracking-tight line-clamp-2">
             {name}
-          </h4>
+          </h3>
           <p className="text-[11px] sm:text-xs text-stone-500 font-medium truncate mt-0.5">
             {theme.preview}
           </p>

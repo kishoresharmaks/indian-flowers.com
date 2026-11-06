@@ -26,8 +26,8 @@ interface HeroSectionProps {
 
 const DEFAULT_SLIDES: HeroSlide[] = [
   {
-    image: '/images/banners/b1.jpg',
-    mobileImage: '/images/banners/b1.jpg',
+    image: '/images/banners/b1.webp',
+    mobileImage: '/images/banners/b1.webp',
     title: 'Indian Wedding Garlands & Fresh Pooja Flowers',
     link: '#products-section',
   },
@@ -158,6 +158,8 @@ export default function HeroSection({
                       className="w-full h-full object-cover object-center select-none pointer-events-none"
                       loading={idx === 0 ? 'eager' : 'lazy'}
                       decoding="async"
+                      // @ts-ignore
+                      fetchPriority={idx === 0 ? 'high' : 'auto'}
                     />
                   </picture>
                 </div>
@@ -206,13 +208,17 @@ export default function HeroSection({
                     e.stopPropagation();
                     setCurrentSlide(idx);
                   }}
-                  className={`transition-all duration-300 rounded-full cursor-pointer ${
-                    currentSlide === idx
-                      ? 'w-6 h-2 bg-[#0B3B24]'
-                      : 'w-2 h-2 bg-stone-300 hover:bg-stone-400'
-                  }`}
+                  className="p-1.5 -m-1 flex items-center justify-center min-w-[28px] min-h-[28px] cursor-pointer"
                   aria-label={`Go to slide ${idx + 1}`}
-                />
+                >
+                  <span
+                    className={`transition-all duration-300 rounded-full block ${
+                      currentSlide === idx
+                        ? 'w-6 h-2 bg-[#0B3B24]'
+                        : 'w-2 h-2 bg-stone-300 hover:bg-stone-400'
+                    }`}
+                  />
+                </button>
               ))}
             </div>
           )}

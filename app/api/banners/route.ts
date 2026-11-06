@@ -8,9 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await connectToDatabase();
-    try {
-      await Banner.createIndexes();
-    } catch (e) {}
+    
 
     const banners = await Banner.find({ active: { $ne: false } })
       .sort({ order: 1, createdAt: -1 })
@@ -20,7 +18,7 @@ export async function GET() {
       { success: true, count: banners.length, data: banners },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=30',
+          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
         },
       }
     );

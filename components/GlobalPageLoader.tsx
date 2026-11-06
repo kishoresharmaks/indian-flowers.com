@@ -17,7 +17,7 @@ export default function GlobalPageLoader() {
   const [visible, setVisible] = useState(isEligiblePage && !isAdmin);
   const [isFading, setIsFading] = useState(false);
 
-  // Full page load timer: exactly 3 seconds for Home and Accounts pages
+  // Dismiss loader immediately upon client mount to unblock First Contentful Paint & visual rendering
   useEffect(() => {
     if (!isEligiblePage || isAdmin) {
       setVisible(false);
@@ -28,9 +28,9 @@ export default function GlobalPageLoader() {
       setIsFading(true);
       const hideTimer = setTimeout(() => {
         setVisible(false);
-      }, 450);
+      }, 200);
       return () => clearTimeout(hideTimer);
-    }, 3000);
+    }, 100);
 
     return () => clearTimeout(timer);
   }, []); // Only runs on full page mount / reload

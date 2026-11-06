@@ -29,7 +29,14 @@ export async function GET(request: NextRequest) {
     }
 
     const categories = await Category.find(filter).sort({ order: 1, name: 1 }).lean();
-    return NextResponse.json({ success: true, count: categories.length, data: categories });
+    return NextResponse.json(
+      { success: true, count: categories.length, data: categories },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, message: error.message || 'Failed to fetch categories' },

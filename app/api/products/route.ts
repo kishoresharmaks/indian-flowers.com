@@ -152,20 +152,46 @@ export async function GET(request: Request) {
 
     const filter = conditions.length > 0 ? { $and: conditions } : {};
 
-    // Ensure database indexes exist
-    try {
-      await Product.createIndexes();
-    } catch (idxErr) {
-      // Ignore index creation warnings if already created
-    }
+    // Performance Optimization: Restrict payload projection for storefront homepage
+    const projection = forHome
+      ? {
+          _id: 1,
+          name: 1,
+          slug: 1,
+          price: 1,
+          salePrice: 1,
+          mrp: 1,
+          image: 1,
+          images: 1,
+          category: 1,
+          categorySlug: 1,
+          categories: 1,
+          subcategory: 1,
+          isAvailable: 1,
+          inStock: 1,
+          stock: 1,
+          rating: 1,
+          reviewsCount: 1,
+          badges: 1,
+          variants: 1,
+          isFeatured: 1,
+          hideFromHome: 1,
+          isSeoLanding: 1,
+          createdAt: 1,
+        }
+      : {};
 
-    const products = await Product.find(filter).sort({ createdAt: -1 }).allowDiskUse(true).lean();
+    const products = await Product.find(filter, projection).sort({ createdAt: -1 }).allowDiskUse(true).lean();
+
+    const cacheHeader = includeInactive
+      ? 'no-store, no-cache, must-revalidate, proxy-revalidate'
+      : 'public, s-maxage=60, stale-while-revalidate=300';
 
     return NextResponse.json(
       { success: true, count: products.length, data: products },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Cache-Control': cacheHeader,
         },
       }
     );

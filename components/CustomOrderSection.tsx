@@ -235,10 +235,12 @@ export default function CustomOrderSection() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-medium text-gray-700 block mb-1">
+                      <label htmlFor="custom-customer-name" className="text-xs font-medium text-gray-700 block mb-1">
                         Full Name *
                       </label>
                       <input
+                        id="custom-customer-name"
+                        aria-label="Full Name"
                         type="text"
                         required
                         placeholder="e.g. Priya Sharma"
@@ -249,10 +251,12 @@ export default function CustomOrderSection() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-gray-700 block mb-1">
+                      <label htmlFor="custom-customer-phone" className="text-xs font-medium text-gray-700 block mb-1">
                         Phone Number (WhatsApp Preferred) *
                       </label>
                       <input
+                        id="custom-customer-phone"
+                        aria-label="Phone Number (WhatsApp Preferred)"
                         type="tel"
                         required
                         placeholder="+1 (510) 555-0199"
@@ -265,10 +269,12 @@ export default function CustomOrderSection() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-medium text-gray-700 block mb-1">
+                      <label htmlFor="custom-customer-email" className="text-xs font-medium text-gray-700 block mb-1">
                         Email Address *
                       </label>
                       <input
+                        id="custom-customer-email"
+                        aria-label="Email Address"
                         type="email"
                         required
                         placeholder="priya@example.com"
@@ -279,10 +285,12 @@ export default function CustomOrderSection() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-gray-700 block mb-1">
+                      <label htmlFor="custom-city-state" className="text-xs font-medium text-gray-700 block mb-1">
                         Delivery City &amp; State (US) *
                       </label>
                       <input
+                        id="custom-city-state"
+                        aria-label="Delivery City & State (US)"
                         type="text"
                         required
                         placeholder="e.g. San Jose, CA"
@@ -295,10 +303,12 @@ export default function CustomOrderSection() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-medium text-gray-700 block mb-1">
+                      <label htmlFor="custom-event-date" className="text-xs font-medium text-gray-700 block mb-1">
                         Ceremony / Event Date * <span className="text-[10.5px] text-stone-500 font-normal">(Min 10-day notice)</span>
                       </label>
                       <input
+                        id="custom-event-date"
+                        aria-label="Ceremony / Event Date"
                         type="date"
                         required
                         min={getMinDeliveryDateString(MIN_DELIVERY_LEAD_DAYS)}
@@ -318,10 +328,12 @@ export default function CustomOrderSection() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-gray-700 block mb-1">
+                      <label htmlFor="custom-occasion-type" className="text-xs font-medium text-gray-700 block mb-1">
                         Occasion Type *
                       </label>
                       <select
+                        id="custom-occasion-type"
+                        aria-label="Occasion Type"
                         value={formData.occasion}
                         onChange={(e) => setFormData({ ...formData, occasion: e.target.value })}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal bg-white"
@@ -338,10 +350,12 @@ export default function CustomOrderSection() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                    <label htmlFor="custom-budget-range" className="text-xs font-medium text-gray-700 block mb-1">
                       Estimated Budget Range (USD)
                     </label>
                     <select
+                      id="custom-budget-range"
+                      aria-label="Estimated Budget Range (USD)"
                       value={formData.budget}
                       onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#0B3B24] font-normal bg-white"
@@ -355,10 +369,12 @@ export default function CustomOrderSection() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                    <label htmlFor="custom-floral-requirements" className="text-xs font-medium text-gray-700 block mb-1">
                       Floral Requirements &amp; Specifications *
                     </label>
                     <textarea
+                      id="custom-floral-requirements"
+                      aria-label="Floral Requirements & Specifications"
                       required
                       rows={3}
                       placeholder="Please specify garland lengths (e.g. 2x 4ft rose petal Jai Malas), flower types (marigold, red rose petals, jasmine, lotus), color preferences, or any venue timing notes."

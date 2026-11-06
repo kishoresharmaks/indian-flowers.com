@@ -9,15 +9,15 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
-    try {
-      await Review.createIndexes();
-    } catch (e) {}
 
     const { searchParams } = new URL(request.url);
     const fetchAll = searchParams.get('all') === 'true';
     const filter = fetchAll && isAuthenticatedAdmin(request) ? {} : { featured: { $ne: false } };
+    const projection = fetchAll
+      ? {}
+      : { _id: 1, customerName: 1, location: 1, comment: 1, rating: 1, productName: 1, featured: 1, order: 1, createdAt: 1 };
 
-    let reviews = await Review.find(filter)
+    let reviews = await Review.find(filter, projection)
       .sort({ order: 1, createdAt: -1 })
       .lean();
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
               order: idx + 1,
             }))
           );
-          reviews = await Review.find({ featured: { $ne: false } })
+          reviews = await Review.find({ featured: { $ne: false } }, projection)
             .sort({ order: 1, createdAt: -1 })
             .lean();
         } catch (seedErr) {
@@ -53,11 +53,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      count: reviews.length,
-      data: reviews,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        count: reviews.length,
+        data: reviews,
+      },
+      {
+        headers: {
+          'Cache-Control': fetchAll ? 'no-store' : 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, message: error.message || 'Failed to fetch reviews', data: DEFAULT_CUSTOMER_REVIEWS },

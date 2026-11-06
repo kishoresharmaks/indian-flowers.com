@@ -156,10 +156,12 @@ export default function EventDeliveryChecker({ onCheckSuccess }: EventDeliveryCh
                 <div className="relative flex items-center bg-stone-50 hover:bg-stone-100/70 rounded-xl border border-stone-200/90 focus-within:border-[#0B3B24] focus-within:ring-2 focus-within:ring-[#0B3B24]/15 px-2.5 sm:px-3 py-1.5 sm:py-2 sm:w-52 transition-all min-h-[42px] sm:min-h-[44px]">
                   <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#0B3B24] shrink-0 mr-1.5 sm:mr-2" />
                   <div className="flex-1 min-w-0">
-                    <span className="block text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider text-stone-500 leading-none mb-0.5 truncate">
+                    <label htmlFor="delivery-event-date" className="block text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider text-stone-600 leading-none mb-0.5 truncate cursor-pointer">
                       Event Date
-                    </span>
+                    </label>
                     <input
+                      id="delivery-event-date"
+                      aria-label="Event Date"
                       type="date"
                       min={minDeliveryDate}
                       value={eventDate}
@@ -173,16 +175,18 @@ export default function EventDeliveryChecker({ onCheckSuccess }: EventDeliveryCh
                 <div className="relative flex items-center bg-stone-50 hover:bg-stone-100/70 rounded-xl border border-stone-200/90 focus-within:border-[#0B3B24] focus-within:ring-2 focus-within:ring-[#0B3B24]/15 px-2.5 sm:px-3 py-1.5 sm:py-2 sm:w-36 transition-all min-h-[42px] sm:min-h-[44px]">
                   <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#0B3B24] shrink-0 mr-1.5 sm:mr-2" />
                   <div className="flex-1 min-w-0">
-                    <span className="block text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider text-stone-500 leading-none mb-0.5">
+                    <label htmlFor="delivery-zip-code" className="block text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider text-stone-600 leading-none mb-0.5 cursor-pointer">
                       US ZIP Code
-                    </span>
+                    </label>
                     <input
+                      id="delivery-zip-code"
+                      aria-label="US ZIP Code"
                       type="text"
                       maxLength={5}
                       placeholder="e.g. 94538"
                       value={zipCode}
                       onChange={(e) => handleZipChange(e.target.value)}
-                      className="w-full text-xs sm:text-[13px] font-semibold text-stone-900 bg-transparent outline-none placeholder:text-stone-400 p-0"
+                      className="w-full text-xs sm:text-[13px] font-semibold text-stone-900 bg-transparent outline-none placeholder:text-stone-500 p-0"
                     />
                   </div>
                 </div>

@@ -270,7 +270,7 @@ export default function ProductCard({
       <div className="flex flex-1 flex-col p-2.5 sm:p-3 justify-between">
         <div>
           {/* Product Category Eyebrow */}
-          <div className="text-[10px] sm:text-[11px] text-stone-400 font-medium tracking-wide uppercase truncate max-w-full text-left mb-0.5">
+          <div className="text-[10px] sm:text-[11px] text-stone-600 font-semibold tracking-wide uppercase truncate max-w-full text-left mb-0.5">
             {product.category || 'Indian Wedding Garlands'}
           </div>
 
@@ -300,7 +300,7 @@ export default function ProductCard({
                   {formatCurrency(currentPrice)}
                 </span>
                 {originalPrice > currentPrice && (
-                  <span className="text-[10px] sm:text-[11px] text-stone-400 line-through font-normal tabular-nums whitespace-nowrap -mt-0.5">
+                  <span className="text-[10px] sm:text-[11px] text-stone-500 line-through font-normal tabular-nums whitespace-nowrap -mt-0.5">
                     {formatCurrency(originalPrice)}
                   </span>
                 )}
