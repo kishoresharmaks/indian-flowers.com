@@ -15,7 +15,7 @@ interface MobileBottomNavProps {
 }
 
 export function WhatsAppFloatingButton({
-  phone = '+1 (909) 379-3678',
+  phone = '+1 (909) 834-1722',
   className = '',
 }: {
   phone?: string;

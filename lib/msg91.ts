@@ -779,7 +779,7 @@ export async function sendFloralInquiryConfirmationEmail({
       </div>
 
       <p style="font-size: 13px; line-height: 1.6; color: #374151; margin-top: 24px;">
-        Need immediate assistance? Feel free to call or WhatsApp us at <strong>+1 (909) 379-3678</strong> or email <strong>indianflowersorder@gmail.com</strong> quoting reference <strong>${safeInquiryId}</strong>.
+        Need immediate assistance? Feel free to call us at <strong>+1 (909) 379-3678</strong>, WhatsApp us at <strong>+1 (909) 834-1722</strong> or email <strong>indianflowersorder@gmail.com</strong> quoting reference <strong>${safeInquiryId}</strong>.
       </p>
     </div>
     <div class="footer">

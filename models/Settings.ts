@@ -79,6 +79,7 @@ const SettingsSchema: Schema = new Schema(
     domain: { type: String, default: 'indian-flowers.com' },
     contactEmail: { type: String, default: 'indianflowersorder@gmail.com' },
     contactPhone: { type: String, default: '+1 (909) 379-3678' },
+    whatsappPhone: { type: String, default: '+1 (909) 834-1722' },
     currency: { type: String, default: 'USD' },
     locale: { type: String, default: 'en-US' },
     timezone: { type: String, default: 'America/Los_Angeles' },

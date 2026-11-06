@@ -688,7 +688,7 @@ export default function ProductDetail({
 
               {/* WhatsApp Florist Concierge CTA */}
               <a
-                href={`https://wa.me/19093793678?text=${encodeURIComponent(
+                href={`https://wa.me/19098341722?text=${encodeURIComponent(
                   isCustomOrder
                     ? `Namaste! I would like to inquire about placing a custom order for ${product.name}${activeVariant ? ` (${activeVariant.name})` : ''} for my upcoming event.`
                     : `Namaste! I would like to inquire about ordering ${product.name} (${formatCurrency(

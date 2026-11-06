@@ -18,6 +18,7 @@ export interface CompanyConfig {
     zipCode: string;
     country: string;
     phone: string;
+    whatsappPhone?: string;
     email: string;
     aboutText?: string;
     otherLocations?: string[];
@@ -55,6 +56,7 @@ export const getCompanyConfig = (overrideSettings?: Partial<CompanyConfig>): Com
     zipCode: overrideSettings?.zipCode || process.env.NEXT_PUBLIC_COMPANY_ZIP || '92336',
     country: overrideSettings?.country || process.env.NEXT_PUBLIC_COMPANY_COUNTRY || 'United States',
     phone: overrideSettings?.phone || process.env.NEXT_PUBLIC_COMPANY_PHONE || '+1 (909) 379-3678',
+    whatsappPhone: overrideSettings?.whatsappPhone || process.env.NEXT_PUBLIC_COMPANY_WHATSAPP || '+1 (909) 834-1722',
     email: overrideSettings?.email || process.env.NEXT_PUBLIC_COMPANY_EMAIL || 'indianflowersorder@gmail.com',
     aboutText: overrideSettings?.aboutText || "We pride ourselves on delivering fresh and quality garlands that exceed our customer’s expectations with every order. From the moment a customer places an order with us, we prioritize their satisfaction by ensuring prompt delivery of our finest garlands. Our commitment to freshness and quality shines through in every garland we create, reflecting our dedication to excellent garlands.",
     otherLocations: overrideSettings?.otherLocations || ['6893 Alverno ln, Inver Grove Heights, MN 55077'],

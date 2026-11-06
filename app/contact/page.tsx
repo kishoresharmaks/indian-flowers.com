@@ -113,6 +113,26 @@ export default function ContactPage() {
 
                   <div className="space-y-4 text-xs sm:text-sm text-stone-700">
                     <a
+                      href="https://wa.me/19098341722"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-start gap-3.5 p-3 rounded-2xl hover:bg-[#F4F8F4] transition-colors group"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-emerald-50 text-[#0B3B24] flex items-center justify-center shrink-0 border border-emerald-100 group-hover:scale-105 transition-transform">
+                        <MessageSquare className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold text-stone-400 block uppercase tracking-wider">
+                          WhatsApp Support
+                        </span>
+                        <span className="text-sm font-bold text-stone-900 group-hover:text-[#0B3B24]">
+                          +1 (909) 834-1722
+                        </span>
+                        <span className="text-[11px] text-stone-500 block">Mon – Sun: 7:00 AM – 8:00 PM PST</span>
+                      </div>
+                    </a>
+
+                    <a
                       href="tel:+19093793678"
                       className="flex items-start gap-3.5 p-3 rounded-2xl hover:bg-[#F4F8F4] transition-colors group"
                     >
@@ -121,12 +141,12 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <span className="text-xs font-semibold text-stone-400 block uppercase tracking-wider">
-                          Phone &amp; WhatsApp
+                          Phone Call
                         </span>
                         <span className="text-sm font-bold text-stone-900 group-hover:text-[#0B3B24]">
                           +1 (909) 379-3678
                         </span>
-                        <span className="text-[11px] text-stone-500 block">Mon – Sun: 7:00 AM – 8:00 PM PST</span>
+                        <span className="text-[11px] text-stone-500 block">Toll-Free Customer Support</span>
                       </div>
                     </a>
 

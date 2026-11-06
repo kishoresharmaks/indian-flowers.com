@@ -22,7 +22,7 @@ const URGENT_PHONE = '+1 (909) 379-3678';
 const URGENT_PHONE_SHORT = '(909) 379-3678';
 const URGENT_TEL = 'tel:+19093793678';
 const URGENT_WHATSAPP =
-  'https://wa.me/19093793678?text=Hello%20Indian%20Flowers,%20I%20have%20an%20urgent%20event%20order%20and%20need%20fresh%20flowers%20within%2010%20days.';
+  'https://wa.me/19098341722?text=Hello%20Indian%20Flowers,%20I%20have%20an%20urgent%20event%20order%20and%20need%20fresh%20flowers%20within%2010%20days.';
 
 export default function EventDeliveryChecker({ onCheckSuccess }: EventDeliveryCheckerProps) {
   const [eventDate, setEventDate] = useState('');

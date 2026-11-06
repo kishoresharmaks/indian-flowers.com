@@ -21,6 +21,7 @@ import {
   ShoppingBag,
   FileText,
   Lock,
+  MessageCircle,
 } from 'lucide-react';
 
 interface FooterProps {
@@ -534,6 +535,15 @@ export default function Footer({
                 >
                   <Phone className="w-3.5 h-3.5 text-[#8FE7B8] shrink-0" />
                   <span>{contactPhone}</span>
+                </a>
+                <a
+                  href="https://wa.me/19098341722"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover:text-[#8FE7B8] transition-colors py-1 min-h-[32px]"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-[#8FE7B8] shrink-0" />
+                  <span>WhatsApp: +1 (909) 834-1722</span>
                 </a>
                 <a
                   href={`mailto:${contactEmail}`}
