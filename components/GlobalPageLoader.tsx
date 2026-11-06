@@ -7,11 +7,10 @@ import LotusLoader from './LotusLoader';
 export default function GlobalPageLoader() {
   const pathname = usePathname();
 
-  // ONLY show loading animation on full page reload / initial load for:
-  // 1. Home page ('/')
-  // 2. Accounts page ('/account')
-  // NEVER for product view popup cards, cart drawer, product details, or other routes
-  const isEligiblePage = pathname === '/' || pathname === '/account' || Boolean(pathname?.startsWith('/account'));
+  // Only show loading animation for private customer account area
+  // Never block the public storefront (/, /shop, /product) to guarantee instant FCP,
+  // 0ms LCP delay, and eliminate forced reflows.
+  const isEligiblePage = Boolean(pathname?.startsWith('/account'));
   const isAdmin = Boolean(pathname && (pathname.startsWith('/admin') || pathname.startsWith('/setup')));
 
   const [visible, setVisible] = useState(isEligiblePage && !isAdmin);

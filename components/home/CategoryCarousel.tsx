@@ -30,44 +30,49 @@ export default function CategoryCarousel({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const rafRef = useRef<number | null>(null);
 
   const isSmallCatalog = categories.length <= 4;
 
   // Track scroll position to update active index and arrow visibility
+  // Uses requestAnimationFrame to prevent forced synchronous reflow / layout thrashing
   const checkScrollState = useCallback(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      const el = scrollContainerRef.current;
+      if (!el) return;
 
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      const maxScroll = Math.max(0, scrollWidth - clientWidth);
 
-    setCanScrollLeft(scrollLeft > 10);
-    setCanScrollRight(maxScroll > 10 && scrollLeft < maxScroll - 10);
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(maxScroll > 10 && scrollLeft < maxScroll - 10);
 
-    if (categories.length <= 1 || maxScroll <= 0) {
-      setActiveIndex(0);
-      return;
-    }
+      if (categories.length <= 1 || maxScroll <= 0) {
+        setActiveIndex(0);
+        return;
+      }
 
-    // Start boundary
-    if (scrollLeft <= 12) {
-      setActiveIndex(0);
-      return;
-    }
+      // Start boundary
+      if (scrollLeft <= 12) {
+        setActiveIndex(0);
+        return;
+      }
 
-    // End boundary: ensure the very last dot is active when scrolled to the end
-    if (scrollLeft >= maxScroll - 15) {
-      setActiveIndex(categories.length - 1);
-      return;
-    }
+      // End boundary: ensure the very last dot is active when scrolled to the end
+      if (scrollLeft >= maxScroll - 15) {
+        setActiveIndex(categories.length - 1);
+        return;
+      }
 
-    // Calculate proportional active dot index across total categories
-    const progress = Math.min(1, Math.max(0, scrollLeft / maxScroll));
-    const computedIndex = Math.min(
-      categories.length - 1,
-      Math.max(0, Math.round(progress * (categories.length - 1)))
-    );
-    setActiveIndex(computedIndex);
+      // Calculate proportional active dot index across total categories
+      const progress = Math.min(1, Math.max(0, scrollLeft / maxScroll));
+      const computedIndex = Math.min(
+        categories.length - 1,
+        Math.max(0, Math.round(progress * (categories.length - 1)))
+      );
+      setActiveIndex(computedIndex);
+    });
   }, [categories.length]);
 
   useEffect(() => {
@@ -75,25 +80,15 @@ export default function CategoryCarousel({
     if (!el) return;
 
     checkScrollState();
-    const timer = setTimeout(checkScrollState, 150);
     el.addEventListener('scroll', checkScrollState, { passive: true });
-    window.addEventListener('resize', checkScrollState);
-
-    let resizeObserver: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined') {
-      resizeObserver = new ResizeObserver(() => {
-        checkScrollState();
-      });
-      resizeObserver.observe(el);
-    }
+    window.addEventListener('resize', checkScrollState, { passive: true });
 
     return () => {
-      clearTimeout(timer);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       el.removeEventListener('scroll', checkScrollState);
       window.removeEventListener('resize', checkScrollState);
-      if (resizeObserver) resizeObserver.disconnect();
     };
-  }, [checkScrollState, categories]);
+  }, [checkScrollState]);
 
   // Scroll by card stride (approx 1 card + gap or 75% client width)
   const handleScroll = (direction: 'left' | 'right') => {

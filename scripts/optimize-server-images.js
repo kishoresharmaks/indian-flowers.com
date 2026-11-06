@@ -44,9 +44,9 @@ async function optimizeDirectory(dirPath) {
         const maxAllowedWidth = isMobile ? 750 : 1200;
 
         // If dimensions or file size exceed recommended targets
-        if (meta.width > maxAllowedWidth || stats.size > 50 * 1024) {
+        if (meta.width > maxAllowedWidth || stats.size > 40 * 1024) {
           const targetWidth = Math.min(meta.width, maxAllowedWidth);
-          const quality = isMobile ? 78 : 80;
+          const quality = isMobile ? 75 : 80;
 
           let pipeline = sharp(buffer).rotate().resize({
             width: targetWidth,
@@ -55,9 +55,9 @@ async function optimizeDirectory(dirPath) {
           });
 
           if (ext === '.webp') {
-            pipeline = pipeline.webp({ quality, effort: 4 });
+            pipeline = pipeline.webp({ quality, effort: 6 });
           } else if (ext === '.png') {
-            pipeline = pipeline.webp({ quality, effort: 4 });
+            pipeline = pipeline.webp({ quality, effort: 6 });
           } else {
             pipeline = pipeline.jpeg({ quality, mozjpeg: true });
           }

@@ -37,24 +37,31 @@ export default function ProductCarousel({
   className = '',
 }: ProductCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const checkScroll = () => {
-    const el = trackRef.current;
-    if (!el) return;
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    const nextLeft = scrollLeft > 10;
-    const nextRight = scrollLeft < scrollWidth - clientWidth - 10;
-    setCanScrollLeft((prev) => (prev !== nextLeft ? nextLeft : prev));
-    setCanScrollRight((prev) => (prev !== nextRight ? nextRight : prev));
-  };
+  const checkScroll = React.useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      const el = trackRef.current;
+      if (!el) return;
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      const nextLeft = scrollLeft > 10;
+      const nextRight = scrollLeft < scrollWidth - clientWidth - 10;
+      setCanScrollLeft((prev) => (prev !== nextLeft ? nextLeft : prev));
+      setCanScrollRight((prev) => (prev !== nextRight ? nextRight : prev));
+    });
+  }, []);
 
   useEffect(() => {
     checkScroll();
-    window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
-  }, [products.length]);
+    window.addEventListener('resize', checkScroll, { passive: true });
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [checkScroll, products.length]);
 
   const handleScroll = (direction: 'left' | 'right') => {
     const el = trackRef.current;
