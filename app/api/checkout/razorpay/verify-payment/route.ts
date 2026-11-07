@@ -404,6 +404,68 @@ export async function POST(request: Request) {
       paymentId: razorpay_payment_id,
     });
 
+    // Asynchronous Customer Order Confirmation Email
+    if (customerEmail) {
+      try {
+        const { sendEmailViaMsg91 } = await import('@/lib/msg91');
+        const { renderOrderConfirmationEmail } = await import('@/lib/emailTemplate');
+        const rendered = renderOrderConfirmationEmail({
+          orderId: createdOrder?.orderId || orderId,
+          customerName: customerName.trim(),
+          deliveryDate,
+          totalAmount: createdOrder?.totalAmount || totalAmount,
+          items: (items || []).map((i: any) => ({
+            name: i.name || i.title || 'Fresh Floral Item',
+            quantity: Number(i.quantity) || 1,
+            price: Number(i.price) || 0,
+            variant: i.variantName || i.variant?.name,
+          })),
+          subtotal,
+          shippingFee: safeShippingFee,
+          tax: calculatedTax,
+          shippingAddress: fullShippingAddress,
+        });
+
+        sendEmailViaMsg91({
+          to: [{ name: customerName.trim(), email: customerEmail.trim() }],
+          subject: rendered.subject,
+          htmlContent: rendered.html,
+          textContent: rendered.text,
+        }).catch((e: any) =>
+          console.warn('[Razorpay Verify] Non-critical customer email send failure:', e?.message || e)
+        );
+      } catch {
+        // Optional
+      }
+    }
+
+    // Asynchronous Admin Order Alert Email (11-column tabular layout to adminNotificationEmail via active provider)
+    try {
+      const { sendAdminOrderAlertEmail } = await import('@/lib/msg91');
+      sendAdminOrderAlertEmail({
+        orderId: createdOrder?.orderId || orderId,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        customerEmail: customerEmail.trim(),
+        orderDate: createdOrder?.createdAt || new Date(),
+        deliveryDate,
+        deliveryMethod: deliveryMode?.name || 'FedEx Priority Overnight',
+        deliveryMode,
+        shippingAddress: fullShippingAddress,
+        items,
+        subtotal,
+        shippingFee: safeShippingFee,
+        totalTax: calculatedTax,
+        totalAmount: createdOrder?.totalAmount || totalAmount,
+        paymentMethod: 'Razorpay',
+        paymentStatus: 'Paid',
+      }).catch((e: any) =>
+        console.warn('[Razorpay Verify] Non-critical admin email send failure:', e?.message || e)
+      );
+    } catch {
+      // Optional
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Payment verified and order created successfully.',

@@ -754,36 +754,36 @@ export async function sendFloralInquiryConfirmationEmail({
     },
   });
 
-  // Also notify Store Admin for Custom Floral Inquiry
-  const safeInquiryId = escapeHtml(inquiryId);
-  const safeCustomerName = escapeHtml(customerName);
-  const safeCustomerEmail = escapeHtml(customerEmail);
-  const safeCustomerPhone = escapeHtml(customerPhone);
-  const safeCityState = escapeHtml(cityState);
-  const safeEventDate = escapeHtml(eventDate);
-  const safeOccasion = escapeHtml(occasion);
-  const safeRequirements = escapeHtml(requirements);
-  const safeBudget = budget ? escapeHtml(budget) : '';
+  // Also notify Store Admin for Custom Floral Inquiry with the 11-column tabular matrix
+  try {
+    const config = await getEffectiveEmailConfig();
+    const { renderAdminCustomOrderAlertEmail } = await import('./emailTemplate');
+    const adminRendered = renderAdminCustomOrderAlertEmail({
+      inquiryId,
+      customerName,
+      customerPhone,
+      customerEmail,
+      cityState,
+      eventDate,
+      occasion,
+      requirements,
+      budget,
+      createdAt: new Date(),
+    });
 
-  const config = await getEffectiveEmailConfig();
-  await sendEmailViaMsg91({
-    to: [{ name: 'Indian Flowers Admin', email: config.adminEmail }],
-    subject: `[NEW INQUIRY ${safeInquiryId}] ${safeOccasion} - ${safeCustomerName}`,
-    type: 'CUSTOM_ORDER_ADMIN_ALERT',
-    metadata: { inquiryId, occasion, eventDate },
-    htmlContent: `
-      <h2>New Custom Floral Inquiry</h2>
-      <p><strong>Inquiry ID:</strong> ${safeInquiryId}</p>
-      <p><strong>Name:</strong> ${safeCustomerName}</p>
-      <p><strong>Email:</strong> ${safeCustomerEmail}</p>
-      <p><strong>Phone:</strong> ${safeCustomerPhone}</p>
-      <p><strong>City/State:</strong> ${safeCityState}</p>
-      <p><strong>Event Date:</strong> ${safeEventDate}</p>
-      <p><strong>Occasion:</strong> ${safeOccasion}</p>
-      <p><strong>Budget:</strong> ${safeBudget || 'N/A'}</p>
-      <p><strong>Requirements:</strong><br>${safeRequirements.replace(/\n/g, '<br>')}</p>
-    `,
-  });
+    sendEmailViaMsg91({
+      to: [{ name: 'Indian Flowers Admin', email: config.adminEmail }],
+      subject: adminRendered.subject,
+      htmlContent: adminRendered.html,
+      textContent: adminRendered.text,
+      type: 'CUSTOM_ORDER_ADMIN_ALERT',
+      metadata: { inquiryId, occasion, eventDate },
+    }).catch((e: any) =>
+      console.warn('[Custom Order Admin Alert] Non-critical dispatch failure:', e?.message || e)
+    );
+  } catch (adminErr: any) {
+    console.warn('[Custom Order Admin Alert] Error building admin notification:', adminErr?.message || adminErr);
+  }
 
   return customerResult;
 }
@@ -954,3 +954,88 @@ export async function sendTestEmail(targetEmail: string): Promise<Msg91EmailResu
  * Universal alias for transactional email dispatching
  */
 export const sendTransactionalEmail = sendEmailViaMsg91;
+
+/**
+ * Asynchronously format and dispatch the 11-Column Admin Order Alert email to adminNotificationEmail
+ * using the active email provider (Brevo, SMTP, or MSG91).
+ * Completely non-blocking so checkout completion / webhooks are never delayed.
+ */
+export async function sendAdminOrderAlertEmail(orderData: {
+  orderId: string;
+  customerName: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  orderDate?: string | Date;
+  deliveryDate?: string;
+  deliveryMethod?: string;
+  deliveryMode?: any;
+  shippingAddress?: string;
+  items?: any[];
+  subtotal?: number;
+  shippingFee?: number;
+  totalTax?: number;
+  tax?: number;
+  totalAmount: number;
+  paymentMethod?: string;
+  paymentStatus?: string;
+}): Promise<void> {
+  if (!orderData || !orderData.orderId) return;
+
+  // Run asynchronously in background without blocking caller
+  Promise.resolve().then(async () => {
+    try {
+      const config = await getEffectiveEmailConfig();
+      const targetAdminEmail = (config.adminEmail || 'indianflowersorder@gmail.com').trim();
+
+      const { renderAdminOrderAlertEmail } = await import('./emailTemplate');
+
+      const deliveryMethodName =
+        orderData.deliveryMethod ||
+        orderData.deliveryMode?.name ||
+        orderData.deliveryMode?.type ||
+        'FedEx Priority Overnight';
+
+      const items = (orderData.items || []).map((i: any) => ({
+        name: i.name || i.productTitle || i.title || 'Fresh Floral Item',
+        quantity: Number(i.quantity) || 1,
+        price: Number(i.price) || 0,
+        variant: i.variantName || i.variant?.name || '',
+        description: i.description || '',
+      }));
+
+      const rendered = renderAdminOrderAlertEmail({
+        orderId: orderData.orderId,
+        customerName: orderData.customerName,
+        customerPhone: orderData.customerPhone,
+        customerEmail: orderData.customerEmail,
+        orderDate: orderData.orderDate || new Date(),
+        deliveryDate: orderData.deliveryDate,
+        deliveryMethod: deliveryMethodName,
+        shippingAddress: orderData.shippingAddress,
+        items,
+        subtotal: orderData.subtotal,
+        shippingFee: orderData.shippingFee,
+        tax: orderData.tax !== undefined ? orderData.tax : orderData.totalTax,
+        totalAmount: orderData.totalAmount,
+        paymentMethod: orderData.paymentMethod,
+        paymentStatus: orderData.paymentStatus || 'Paid',
+      });
+
+      await sendEmailViaMsg91({
+        to: [{ name: 'Indian Flowers Admin', email: targetAdminEmail }],
+        subject: rendered.subject,
+        htmlContent: rendered.html,
+        textContent: rendered.text,
+        type: 'ORDER_ADMIN_ALERT',
+        metadata: {
+          orderId: orderData.orderId,
+          customerName: orderData.customerName,
+          totalAmount: orderData.totalAmount,
+          itemCount: items.length,
+        },
+      });
+    } catch (err: any) {
+      console.warn('[Admin Order Alert] Non-critical background dispatch failure:', err?.message || err);
+    }
+  });
+}

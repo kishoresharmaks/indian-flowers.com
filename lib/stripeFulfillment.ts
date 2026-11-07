@@ -222,6 +222,33 @@ export async function fulfillStripeCheckoutSession(session: Stripe.Checkout.Sess
       }
     }
 
+    // Asynchronous Admin Order Alert Email (11-column tabular layout to adminNotificationEmail via active provider)
+    try {
+      const { sendAdminOrderAlertEmail } = await import('@/lib/msg91');
+      sendAdminOrderAlertEmail({
+        orderId: createdOrder.orderId,
+        customerName: orderData.customerName,
+        customerPhone: orderData.customerPhone,
+        customerEmail: orderData.customerEmail,
+        orderDate: createdOrder.createdAt || new Date(),
+        deliveryDate: orderData.deliveryDate,
+        deliveryMethod: orderData.deliveryMode?.name || orderData.deliveryMode?.type || 'FedEx Priority Overnight',
+        deliveryMode: orderData.deliveryMode,
+        shippingAddress: orderData.shippingAddress || fullShippingAddress,
+        items: orderData.items,
+        subtotal: orderData.subtotal,
+        shippingFee: orderData.shippingFee,
+        totalTax: orderData.totalTax,
+        totalAmount: orderData.totalAmount,
+        paymentMethod: 'Stripe',
+        paymentStatus: 'Paid',
+      }).catch((e: any) =>
+        console.warn('[Stripe Fulfillment] Non-critical admin email send failure:', e?.message || e)
+      );
+    } catch {
+      // Optional
+    }
+
     return createdOrder.toObject ? createdOrder.toObject() : createdOrder;
   } catch (txError: any) {
     if (dbSession) {

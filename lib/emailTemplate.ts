@@ -20,13 +20,14 @@ export interface EmailLayoutOptions {
   headerTitle?: string;
   contentHtml: string;
   contentText?: string;
+  maxWidth?: number;
 }
 
 /**
  * Master Responsive Email Skeleton with Dual Light/Dark Mode and Outlook MSO Support
  */
 export function renderEmailLayout(options: EmailLayoutOptions): { html: string; text: string } {
-  const { preheader = '', headerBadge = '', headerTitle = 'The Indian Flowers', contentHtml, contentText = '' } = options;
+  const { preheader = '', headerBadge = '', headerTitle = 'The Indian Flowers', contentHtml, contentText = '', maxWidth = 600 } = options;
 
   const html = `<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -90,9 +91,9 @@ export function renderEmailLayout(options: EmailLayoutOptions): { html: string; 
     <tr>
       <td align="center">
         <!--[if (gte mso 9)|(IE)]>
-        <table width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td>
+        <table width="${maxWidth}" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td>
         <![endif]-->
-        <table role="presentation" class="email-card" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #E5E7EB; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+        <table role="presentation" class="email-card" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: ${maxWidth}px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #E5E7EB; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
           
           <!-- Brand Header with Logo -->
           <tr>
@@ -558,6 +559,470 @@ export function renderManualReplyEmail(options: {
 
   return {
     subject: finalSubject,
+    html: layout.html,
+    text: layout.text,
+  };
+}
+
+/**
+ * Intelligent Expected Shipment Date Calculation
+ * Fresh garlands and jasmine require cold-chain transport.
+ * Standard FedEx Overnight dispatches 1 business day before delivery.
+ * 2-Day or Cargo freight dispatches 2 business days before delivery.
+ * Sunday transit hold protection bumps dispatch back to Friday.
+ */
+export function calculateExpectedShipmentDate(
+  requestedDeliveryDateStr?: string,
+  deliveryModeName?: string
+): string {
+  if (!requestedDeliveryDateStr || !requestedDeliveryDateStr.trim()) {
+    const nextBizDay = new Date();
+    nextBizDay.setDate(nextBizDay.getDate() + 1);
+    if (nextBizDay.getDay() === 0) nextBizDay.setDate(nextBizDay.getDate() + 1);
+    if (nextBizDay.getDay() === 6) nextBizDay.setDate(nextBizDay.getDate() + 2);
+    return nextBizDay.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+
+  const deliveryDate = new Date(requestedDeliveryDateStr);
+  if (isNaN(deliveryDate.getTime())) {
+    return requestedDeliveryDateStr;
+  }
+
+  const modeLower = (deliveryModeName || '').toLowerCase();
+  const leadDays = modeLower.includes('2-day') || modeLower.includes('cargo') ? 2 : 1;
+
+  const shipmentDate = new Date(deliveryDate);
+  shipmentDate.setDate(shipmentDate.getDate() - leadDays);
+
+  // Cold-chain weekend hold protection:
+  // Carrier transit hubs do not move priority perishables on Sunday.
+  if (shipmentDate.getDay() === 0) {
+    shipmentDate.setDate(shipmentDate.getDate() - 2);
+  } else if (shipmentDate.getDay() === 6) {
+    shipmentDate.setDate(shipmentDate.getDate() - 1);
+  }
+
+  return shipmentDate.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+export interface AdminOrderAlertItem {
+  name: string;
+  quantity: number;
+  price: number;
+  variant?: string;
+  description?: string;
+}
+
+export interface AdminOrderAlertOptions {
+  orderId: string;
+  customerName: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  orderDate?: string | Date;
+  deliveryDate?: string;
+  deliveryMethod?: string;
+  shippingAddress?: string;
+  items: AdminOrderAlertItem[];
+  subtotal?: number;
+  shippingFee?: number;
+  tax?: number;
+  totalAmount: number;
+  paymentMethod?: string;
+  paymentStatus?: string;
+}
+
+/**
+ * 6. Admin Storefront Order Alert Template with 11-Column Tabular Matrix
+ */
+export function renderAdminOrderAlertEmail(options: AdminOrderAlertOptions): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const safeCustomerName = escapeHtml(options.customerName || 'Customer');
+  const safeOrderId = escapeHtml(options.orderId);
+  const safeCustomerPhone = escapeHtml(options.customerPhone || 'N/A');
+  const safeCustomerEmail = escapeHtml(options.customerEmail || '');
+  const safeDeliveryMethod = escapeHtml(options.deliveryMethod || 'FedEx Priority Overnight');
+  const safeDeliveryDate = escapeHtml(options.deliveryDate || 'Guaranteed Fresh Delivery');
+  const safeAddress = escapeHtml(options.shippingAddress || 'Customer shipping address not provided');
+  const safePaymentMethod = escapeHtml(options.paymentMethod || 'CreditCard');
+  const safePaymentStatus = escapeHtml(options.paymentStatus || 'Paid');
+
+  // Format Order Date
+  let safeOrderDate: string;
+  if (options.orderDate instanceof Date) {
+    safeOrderDate = options.orderDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } else if (typeof options.orderDate === 'string' && options.orderDate.trim()) {
+    const parsed = new Date(options.orderDate);
+    safeOrderDate = !isNaN(parsed.getTime())
+      ? parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : options.orderDate;
+  } else {
+    safeOrderDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Calculate Expected Shipment Date
+  const expectedShipmentDate = calculateExpectedShipmentDate(options.deliveryDate, options.deliveryMethod);
+  const safeShipmentDate = escapeHtml(expectedShipmentDate);
+
+  const itemsList = options.items && options.items.length > 0 ? options.items : [
+    { name: 'Fresh Floral Order', quantity: 1, price: options.totalAmount, variant: '', description: '' },
+  ];
+
+  // Build the 11-Column Table Rows
+  const tableRowsHtml = itemsList
+    .map((item, idx) => {
+      const bg = idx % 2 === 0 ? '#FFFFFF' : '#F9FAFB';
+      const itemTotal = (Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2);
+      const itemDesc = item.variant || item.description || 'Fresh Handcrafted';
+
+      return `
+        <tr style="background-color: ${bg}; border-bottom: 1px solid #E5E7EB;">
+          <td style="padding: 10px 8px; color: #111827; font-weight: 600; white-space: nowrap; border: 1px solid #E5E7EB;">
+            ${safeCustomerName}
+          </td>
+          <td align="center" style="padding: 10px 8px; color: #111827; font-weight: 700; border: 1px solid #E5E7EB;">
+            ${item.quantity}
+          </td>
+          <td style="padding: 10px 8px; color: #111827; font-weight: 600; min-width: 130px; border: 1px solid #E5E7EB;">
+            ${escapeHtml(item.name)}
+          </td>
+          <td style="padding: 10px 8px; color: #4B5563; font-size: 11.5px; min-width: 120px; border: 1px solid #E5E7EB;">
+            ${escapeHtml(itemDesc)}
+          </td>
+          <td style="padding: 10px 8px; color: #374151; white-space: nowrap; border: 1px solid #E5E7EB;">
+            ${safeDeliveryMethod}
+          </td>
+          <td style="padding: 10px 8px; color: #374151; white-space: nowrap; border: 1px solid #E5E7EB;">
+            ${safeOrderDate}
+          </td>
+          <td style="padding: 10px 8px; background-color: #F0FDF4; color: #0B3B24; font-weight: 700; border: 1px solid #BBF7D0; white-space: nowrap;">
+            ${safeDeliveryDate}
+          </td>
+          <td style="padding: 10px 8px; background-color: #FEF3C7; color: #92400E; font-weight: 700; border: 1px solid #FDE68A; white-space: nowrap;">
+            ${safeShipmentDate}
+          </td>
+          <td style="padding: 10px 8px; background-color: #F0FDF4; border: 1px solid #BBF7D0; white-space: nowrap;">
+            <strong style="color: #0B3B24;">${safeCustomerPhone}</strong><br/>
+            <span style="font-size: 11px; color: #4B5563;">${safeCustomerEmail}</span>
+          </td>
+          <td style="padding: 10px 8px; background-color: #F0FDF4; color: #0B3B24; font-weight: 700; border: 1px solid #BBF7D0; white-space: nowrap;">
+            #${safeOrderId}
+          </td>
+          <td align="right" style="padding: 10px 8px; color: #0B3B24; font-weight: 700; white-space: nowrap; border: 1px solid #E5E7EB;">
+            $${itemTotal}
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const contentHtml = `
+    <!-- Admin Header Banner -->
+    <div style="background-color: #EAF5EE; border-left: 4px solid #0B3B24; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #0B3B24; letter-spacing: 0.08em;">
+              New Order Received &bull; Storefront Alert
+            </div>
+            <div style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 4px;">
+              Order #${safeOrderId} &mdash; $${options.totalAmount.toFixed(2)} USD
+            </div>
+            <div style="font-size: 12.5px; color: #4B5563; margin-top: 2px;">
+              Customer: <strong>${safeCustomerName}</strong> (${safeCustomerPhone}) &bull; Paid via ${safePaymentMethod} (${safePaymentStatus})
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- 11-Column Tabular Matrix with Horizontal Scroll Wrapper -->
+    <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 24px; border: 1px solid #E5E7EB; border-radius: 10px; background-color: #FFFFFF;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; min-width: 860px; border-collapse: collapse; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; font-size: 12px;">
+        <thead>
+          <tr style="background-color: #0B3B24; color: #FFFFFF;">
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Customer Name</th>
+            <th align="center" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">QuantityOrdered</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; min-width: 130px;">Item Name</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; min-width: 120px;">Item Desc</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Delivery Method</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Order Date</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background-color: #072919; color: #8FE7B8; border-bottom: 2px solid #041B10; white-space: nowrap;">CF.Delivery Date</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Expected Shipment Date</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background-color: #072919; color: #8FE7B8; border-bottom: 2px solid #041B10; white-space: nowrap;">CF.Contact</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background-color: #072919; color: #8FE7B8; border-bottom: 2px solid #041B10; white-space: nowrap;">CF.Order Number</th>
+            <th align="right" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Item Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRowsHtml}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Order Financial & Delivery Metadata -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px;">
+      <tr>
+        <td valign="top" style="width: 55%; padding-right: 14px;">
+          <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #6B7280; letter-spacing: 0.05em; margin-bottom: 6px;">
+            Destination &amp; Fulfillment Address
+          </div>
+          <div style="font-size: 13px; line-height: 1.6; color: #1F2937; background-color: #FAF9F6; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px;">
+            <strong>${safeCustomerName}</strong><br/>
+            ${safeAddress}<br/>
+            Phone: <strong>${safeCustomerPhone}</strong><br/>
+            Email: ${safeCustomerEmail}
+          </div>
+        </td>
+        <td valign="top" style="width: 45%; padding-left: 14px;">
+          <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #6B7280; letter-spacing: 0.05em; margin-bottom: 6px;">
+            Financial Summary
+          </div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px; background-color: #FAF9F6; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px;">
+            ${options.subtotal !== undefined ? `
+            <tr>
+              <td style="padding: 3px 0; color: #6B7280;">Subtotal:</td>
+              <td align="right" style="padding: 3px 0; font-weight: 600; color: #111827;">$${options.subtotal.toFixed(2)}</td>
+            </tr>` : ''}
+            ${options.shippingFee !== undefined ? `
+            <tr>
+              <td style="padding: 3px 0; color: #6B7280;">Shipping (${safeDeliveryMethod}):</td>
+              <td align="right" style="padding: 3px 0; font-weight: 600; color: #111827;">$${options.shippingFee.toFixed(2)}</td>
+            </tr>` : ''}
+            ${options.tax !== undefined && options.tax > 0 ? `
+            <tr>
+              <td style="padding: 3px 0; color: #6B7280;">Sales Tax:</td>
+              <td align="right" style="padding: 3px 0; font-weight: 600; color: #111827;">$${options.tax.toFixed(2)}</td>
+            </tr>` : ''}
+            <tr style="border-top: 1px solid #E5E7EB;">
+              <td style="padding: 6px 0 0; font-weight: 700; color: #0B3B24;">Total (USD):</td>
+              <td align="right" style="padding: 6px 0 0; font-size: 15px; font-weight: 800; color: #0B3B24;">$${options.totalAmount.toFixed(2)}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Admin CTA Button -->
+    <div style="text-align: center; margin: 24px 0 10px;">
+      <a href="https://indian-flowers.com/admin/dashboard" target="_blank" style="display: inline-block; background-color: #0B3B24; color: #FFFFFF; font-size: 13px; font-weight: 700; text-decoration: none; padding: 12px 28px; border-radius: 8px; letter-spacing: 0.02em;">
+        Manage Order in Admin Dashboard &rarr;
+      </a>
+    </div>
+  `;
+
+  const text = `[NEW ORDER] #${options.orderId} - ${options.customerName} ($${options.totalAmount.toFixed(2)})\n\nCustomer: ${options.customerName}\nPhone: ${options.customerPhone || 'N/A'}\nEmail: ${options.customerEmail || 'N/A'}\nRequested Delivery: ${options.deliveryDate || 'N/A'}\nExpected Shipment: ${expectedShipmentDate}\nTotal Paid: $${options.totalAmount.toFixed(2)} USD\n\nShipping Address:\n${options.shippingAddress || 'N/A'}\n\nManage in Admin: https://indian-flowers.com/admin/dashboard`;
+
+  const subject = `[NEW ORDER #${safeOrderId}] ${safeCustomerName} - $${options.totalAmount.toFixed(2)} (Delivery: ${safeDeliveryDate})`;
+
+  const layout = renderEmailLayout({
+    preheader: `New order #${options.orderId} received from ${options.customerName} ($${options.totalAmount.toFixed(2)} USD). Delivery: ${options.deliveryDate || 'Fresh Delivery'}`,
+    headerBadge: `Store Alert &bull; #${options.orderId}`,
+    headerTitle: subject,
+    maxWidth: 920,
+    contentHtml,
+    contentText: text,
+  });
+
+  return {
+    subject,
+    html: layout.html,
+    text: layout.text,
+  };
+}
+
+export interface AdminCustomOrderAlertOptions {
+  inquiryId: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  productTitle?: string;
+  variantName?: string;
+  quantity?: number;
+  occasion?: string;
+  eventDate?: string;
+  deliveryDate?: string;
+  cityState?: string;
+  address?: string;
+  requirements?: string;
+  budget?: string;
+  createdAt?: string | Date;
+}
+
+/**
+ * 7. Admin Custom Order Inquiry Alert Template with 11-Column Tabular Matrix
+ */
+export function renderAdminCustomOrderAlertEmail(options: AdminCustomOrderAlertOptions): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const safeCustomerName = escapeHtml(options.customerName || 'Customer');
+  const safeInquiryId = escapeHtml(options.inquiryId);
+  const safeCustomerPhone = escapeHtml(options.customerPhone || 'N/A');
+  const safeCustomerEmail = escapeHtml(options.customerEmail || '');
+  const safeItemName = escapeHtml(options.productTitle || options.occasion || 'Custom Floral / Garland Request');
+  const safeItemDesc = escapeHtml(
+    `${options.variantName ? options.variantName + ' | ' : ''}${options.requirements || 'Bespoke handcrafting specifications'}`
+  );
+  const safeDeliveryMethod = escapeHtml(
+    options.cityState ? `Cold-Chain: ${options.cityState}` : 'Cold-Chain Overnight / Cargo'
+  );
+  const targetDateStr = options.deliveryDate || options.eventDate || '';
+  const safeDeliveryDate = escapeHtml(targetDateStr || 'TBD with Customer');
+  const expectedShipmentDate = calculateExpectedShipmentDate(targetDateStr, safeDeliveryMethod);
+  const safeShipmentDate = escapeHtml(expectedShipmentDate);
+  const safeQuantity = options.quantity || 1;
+  const safeBudget = escapeHtml(options.budget || 'Custom Quote');
+
+  let safeOrderDate: string;
+  if (options.createdAt instanceof Date) {
+    safeOrderDate = options.createdAt.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } else if (typeof options.createdAt === 'string' && options.createdAt.trim()) {
+    const parsed = new Date(options.createdAt);
+    safeOrderDate = !isNaN(parsed.getTime())
+      ? parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : options.createdAt;
+  } else {
+    safeOrderDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  const tableRowHtml = `
+    <tr style="background-color: #FFFFFF; border-bottom: 1px solid #E5E7EB;">
+      <td style="padding: 10px 8px; color: #111827; font-weight: 600; white-space: nowrap; border: 1px solid #E5E7EB;">
+        ${safeCustomerName}
+      </td>
+      <td align="center" style="padding: 10px 8px; color: #111827; font-weight: 700; border: 1px solid #E5E7EB;">
+        ${safeQuantity}
+      </td>
+      <td style="padding: 10px 8px; color: #111827; font-weight: 600; min-width: 130px; border: 1px solid #E5E7EB;">
+        ${safeItemName}
+      </td>
+      <td style="padding: 10px 8px; color: #4B5563; font-size: 11.5px; min-width: 130px; border: 1px solid #E5E7EB;">
+        ${safeItemDesc}
+      </td>
+      <td style="padding: 10px 8px; color: #374151; white-space: nowrap; border: 1px solid #E5E7EB;">
+        ${safeDeliveryMethod}
+      </td>
+      <td style="padding: 10px 8px; color: #374151; white-space: nowrap; border: 1px solid #E5E7EB;">
+        ${safeOrderDate}
+      </td>
+      <td style="padding: 10px 8px; background-color: #F0FDF4; color: #0B3B24; font-weight: 700; border: 1px solid #BBF7D0; white-space: nowrap;">
+        ${safeDeliveryDate}
+      </td>
+      <td style="padding: 10px 8px; background-color: #FEF3C7; color: #92400E; font-weight: 700; border: 1px solid #FDE68A; white-space: nowrap;">
+        ${safeShipmentDate}
+      </td>
+      <td style="padding: 10px 8px; background-color: #F0FDF4; border: 1px solid #BBF7D0; white-space: nowrap;">
+        <strong style="color: #0B3B24;">${safeCustomerPhone}</strong><br/>
+        <span style="font-size: 11px; color: #4B5563;">${safeCustomerEmail}</span>
+      </td>
+      <td style="padding: 10px 8px; background-color: #F0FDF4; color: #0B3B24; font-weight: 700; border: 1px solid #BBF7D0; white-space: nowrap;">
+        #${safeInquiryId}
+      </td>
+      <td align="right" style="padding: 10px 8px; color: #0B3B24; font-weight: 700; white-space: nowrap; border: 1px solid #E5E7EB;">
+        ${safeBudget}
+      </td>
+    </tr>
+  `;
+
+  const contentHtml = `
+    <!-- Custom Inquiry Header Banner -->
+    <div style="background-color: #EAF5EE; border-left: 4px solid #0B3B24; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #0B3B24; letter-spacing: 0.08em;">
+              New Custom Floral Inquiry &bull; Action Required
+            </div>
+            <div style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 4px;">
+              Inquiry #${safeInquiryId} &mdash; ${safeCustomerName}
+            </div>
+            <div style="font-size: 12.5px; color: #4B5563; margin-top: 2px;">
+              Occasion: <strong>${escapeHtml(options.occasion || 'Special Celebration')}</strong> &bull; Event Date: <strong>${safeDeliveryDate}</strong>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- 11-Column Tabular Matrix with Horizontal Scroll Wrapper -->
+    <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 24px; border: 1px solid #E5E7EB; border-radius: 10px; background-color: #FFFFFF;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; min-width: 860px; border-collapse: collapse; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; font-size: 12px;">
+        <thead>
+          <tr style="background-color: #0B3B24; color: #FFFFFF;">
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Customer Name</th>
+            <th align="center" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">QuantityOrdered</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; min-width: 130px;">Item Name</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; min-width: 120px;">Item Desc</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Delivery Method</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Order Date</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background-color: #072919; color: #8FE7B8; border-bottom: 2px solid #041B10; white-space: nowrap;">CF.Delivery Date</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Expected Shipment Date</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background-color: #072919; color: #8FE7B8; border-bottom: 2px solid #041B10; white-space: nowrap;">CF.Contact</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background-color: #072919; color: #8FE7B8; border-bottom: 2px solid #041B10; white-space: nowrap;">CF.Order Number</th>
+            <th align="right" style="padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #072919; white-space: nowrap;">Item Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRowHtml}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Requirements Detail Box -->
+    <div style="margin-bottom: 20px;">
+      <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #6B7280; letter-spacing: 0.05em; margin-bottom: 6px;">
+        Detailed Floral Requirements
+      </div>
+      <div style="font-size: 13px; line-height: 1.6; color: #1F2937; background-color: #FAF9F6; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px;">
+        ${escapeHtml(options.requirements || 'No additional specifications provided.').replace(/\n/g, '<br/>')}
+      </div>
+    </div>
+
+    <!-- Admin CTA Button -->
+    <div style="text-align: center; margin: 24px 0 10px;">
+      <a href="https://indian-flowers.com/admin/dashboard" target="_blank" style="display: inline-block; background-color: #0B3B24; color: #FFFFFF; font-size: 13px; font-weight: 700; text-decoration: none; padding: 12px 28px; border-radius: 8px; letter-spacing: 0.02em;">
+        Review &amp; Quote Inquiry in Admin Dashboard &rarr;
+      </a>
+    </div>
+  `;
+
+  const text = `[NEW CUSTOM INQUIRY] #${options.inquiryId} - ${options.customerName}\n\nCustomer: ${options.customerName}\nPhone: ${options.customerPhone}\nEmail: ${options.customerEmail}\nOccasion: ${options.occasion || 'N/A'}\nEvent Date: ${targetDateStr || 'N/A'}\nExpected Shipment: ${expectedShipmentDate}\nDestination: ${options.cityState || options.address || 'N/A'}\nBudget: ${options.budget || 'Custom Quote'}\n\nRequirements:\n${options.requirements || 'N/A'}\n\nManage in Admin: https://indian-flowers.com/admin/dashboard`;
+
+  const subject = `[NEW CUSTOM INQUIRY #${safeInquiryId}] ${safeCustomerName} - ${escapeHtml(options.occasion || 'Floral Request')} (Date: ${safeDeliveryDate})`;
+
+  const layout = renderEmailLayout({
+    preheader: `New custom floral inquiry #${options.inquiryId} from ${options.customerName} for ${options.occasion || 'celebration'}. Event date: ${targetDateStr || 'TBD'}`,
+    headerBadge: `Custom Inquiry &bull; #${options.inquiryId}`,
+    headerTitle: subject,
+    maxWidth: 920,
+    contentHtml,
+    contentText: text,
+  });
+
+  return {
+    subject,
     html: layout.html,
     text: layout.text,
   };
