@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { getSiteUrl } from "@/lib/siteUrl";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import StorefrontGlobalNav from "@/components/StorefrontGlobalNav";
 import TawkChat from "@/components/TawkChat";
@@ -17,10 +16,14 @@ const plusJakartaSans = localFont({
   weight: "400 800",
 });
 
-export const dynamic = 'force-dynamic';
+const CANONICAL_SITE_URL = (
+  process.env.CANONICAL_SITE_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://indian-flowers.com"
+).replace(/\/$/, "");
 
 export function generateMetadata(): Metadata {
-  const siteUrl = getSiteUrl();
+  const siteUrl = CANONICAL_SITE_URL;
   return {
   title: {
     default: "Indian-Flowers.com — Fresh Indian Flowers, Garlands & Pooja Essentials in USA",
@@ -206,7 +209,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const siteUrl = getSiteUrl();
+  const siteUrl = CANONICAL_SITE_URL;
   return (
     <html lang="en" className={`${plusJakartaSans.variable} font-sans`}>
       <head>

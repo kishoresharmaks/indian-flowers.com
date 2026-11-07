@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import connectToDatabase from '@/lib/db';
 import Banner from '@/models/Banner';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
@@ -56,6 +57,12 @@ export async function POST(request: NextRequest) {
       order: order || 0,
       active: true,
     });
+    try {
+      revalidatePath('/');
+    } catch (e) {
+      console.warn('[revalidatePath] Homepage cache purge warning:', e);
+    }
+
     return NextResponse.json({ success: true, data: banner }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(

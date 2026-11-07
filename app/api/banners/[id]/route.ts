@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import connectToDatabase from '@/lib/db';
 import Banner from '@/models/Banner';
 import { isAuthenticatedAdmin, unauthenticatedResponse } from '@/lib/authCheck';
@@ -26,6 +27,12 @@ export async function PUT(
       );
     }
 
+    try {
+      revalidatePath('/');
+    } catch (e) {
+      console.warn('[revalidatePath] Homepage cache purge warning:', e);
+    }
+
     return NextResponse.json(
       { success: true, message: 'Banner updated successfully', data: updatedBanner },
       { status: 200 }
@@ -51,6 +58,12 @@ export async function DELETE(
         { success: false, message: 'Banner not found' },
         { status: 404 }
       );
+    }
+
+    try {
+      revalidatePath('/');
+    } catch (e) {
+      console.warn('[revalidatePath] Homepage cache purge warning:', e);
     }
 
     return NextResponse.json(

@@ -4,7 +4,7 @@ import Banner from '@/models/Banner';
 import CustomerStoreClient from '@/components/home/CustomerStoreClient';
 import { HeroSlide } from '@/components/HeroSection';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function CustomerStorePage() {
   let initialBanners: HeroSlide[] = [];
