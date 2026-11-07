@@ -87,7 +87,7 @@ export default function TawkChat({
         desktop: {
           position: 'bl',
           xOffset: 24,
-          yOffset: 96,
+          yOffset: 92,
         },
         mobile: {
           position: 'bl',
@@ -174,10 +174,10 @@ export default function TawkChat({
   }
 
   // Fallback concierge trigger button (visible when Property ID is being configured or loading)
-  // Stacked exactly on the left side above WhatsApp
+  // Stacked cleanly on the left side above WhatsApp
   return (
     <div
-      className="fixed bottom-[72px] left-4 md:bottom-[96px] md:left-6 z-40 transition-all duration-300"
+      className="fixed bottom-[72px] left-4 md:bottom-[92px] md:left-6 z-40 transition-all duration-300"
       style={{ display: config.enabled ? 'block' : 'none' }}
     >
       <button
@@ -200,14 +200,39 @@ export default function TawkChat({
         }}
         aria-label="Live Florist Chat"
         title="Live Florist Chat (Online)"
-        className="flex h-[42px] md:h-[46px] items-center gap-2 rounded-full bg-gradient-to-r from-[#0B3B24] to-[#134633] text-white px-3.5 md:px-4 text-xs font-semibold shadow-[0_8px_20px_rgba(11,59,36,0.35)] border-2 border-white/90 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+        className="group flex items-center cursor-pointer active:scale-95 transition-all duration-200 h-[42px] px-3.5 gap-2 rounded-full bg-gradient-to-r from-[#0B3B24] to-[#134633] text-white text-xs font-semibold shadow-[0_8px_20px_rgba(11,59,36,0.35)] border-2 border-white/90 hover:scale-105 md:h-[52px] md:px-4 md:py-2 md:gap-3 md:rounded-full md:border md:border-white/30 md:shadow-[0_10px_28px_rgba(11,59,36,0.35),0_2px_8px_rgba(0,0,0,0.1)] md:hover:border-white/60 md:hover:shadow-[0_14px_36px_rgba(11,59,36,0.5)] md:hover:-translate-y-0.5 md:hover:scale-100"
       >
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+        {/* Mobile View (Preserved exactly as-is) */}
+        <span className="flex md:hidden items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+          </span>
+          <MessageSquare className="w-4 h-4 text-emerald-300" />
+          <span className="tracking-wide">Live Chat</span>
         </span>
-        <MessageSquare className="w-4 h-4 text-emerald-300" />
-        <span className="tracking-wide">Live Chat</span>
+
+        {/* Desktop View (Refined brand concierge) */}
+        <div className="hidden md:flex items-center gap-3">
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white/10 border border-white/20 text-emerald-300 shadow-inner group-hover:scale-105 transition-transform">
+            <MessageSquare className="w-4 h-4 fill-emerald-400/20 stroke-[2.2]" />
+            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 border border-[#0B3B24]" />
+            </span>
+          </div>
+          <div className="flex flex-col text-left leading-none">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-[13px] font-bold text-white tracking-tight">Live Chat</span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                Online
+              </span>
+            </div>
+            <span className="text-[11px] font-medium text-emerald-100/75 tracking-normal">
+              Talk to a Florist
+            </span>
+          </div>
+        </div>
       </button>
     </div>
   );

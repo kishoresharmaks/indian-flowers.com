@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Store, Heart, ShoppingBag, User, ChevronUp } from 'lucide-react';
+import { Store, Heart, ShoppingBag, User } from 'lucide-react';
 
 interface MobileBottomNavProps {
   cartCount?: number;
@@ -60,37 +60,6 @@ export function WhatsAppFloatingButton({
         <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-stone-900/90" />
       </span>
     </a>
-  );
-}
-
-export function ScrollToTopButton() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const checkScroll = () => {
-      const nextVisible = window.scrollY > 300;
-      setVisible((prev) => (prev !== nextVisible ? nextVisible : prev));
-    };
-    window.addEventListener('scroll', checkScroll, { passive: true });
-    return () => window.removeEventListener('scroll', checkScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  if (!visible) return null;
-
-  return (
-    <button
-      type="button"
-      onClick={scrollToTop}
-      aria-label="Scroll to top"
-      className="fixed bottom-[134px] right-5.5 z-40 flex h-9 w-9 items-center justify-center rounded-full bg-white text-stone-700 shadow-[0_2px_10px_rgba(0,0,0,0.15)] border border-stone-200 hover:bg-[#0B3B24] hover:text-white transition-all active:scale-90 cursor-pointer md:bottom-24 md:right-7.5"
-      title="Back to top"
-    >
-      <ChevronUp className="w-5 h-5 stroke-[2.2]" />
-    </button>
   );
 }
 
@@ -216,9 +185,8 @@ export default function MobileBottomNav({
         </button>
       </nav>
 
-      {/* Floating WhatsApp and Scroll to Top buttons */}
+      {/* Floating WhatsApp button */}
       <WhatsAppFloatingButton />
-      <ScrollToTopButton />
     </>
   );
 }
