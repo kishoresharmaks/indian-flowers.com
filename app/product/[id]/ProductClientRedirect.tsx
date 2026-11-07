@@ -358,7 +358,7 @@ export default function ProductClientRedirect({
           loading={loading}
           relatedProducts={relatedProducts}
           onRelatedProductAddToCart={handleAddRelatedToCart}
-          onRelatedProductClick={(prod) => router.push(`/product/${prod._id}`)}
+          onRelatedProductClick={(prod) => router.push(`/product/${prod.slug || prod._id}`)}
         />
       </main>
       <Footer />

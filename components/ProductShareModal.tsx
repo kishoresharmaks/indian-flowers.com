@@ -9,6 +9,7 @@ import {
   Mail,
   ExternalLink,
   MessageCircle,
+  MessageSquare,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { DEFAULT_FLORAL_PLACEHOLDER } from '@/lib/placeholderImage';
@@ -75,9 +76,12 @@ export default function ProductShareModal() {
   if (!isOpen || !product) return null;
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://indian-flowers.com';
-  const shareUrl = `${origin}/product/${product._id}`;
-  const shareTitle = `${product.name} — Indian-Flowers.com`;
-  const shareText = `Order fresh ${product.name} online from Indian-Flowers.com! Authentic fresh Indian flowers & handcrafted temple garlands delivered across USA.`;
+  const productSlug = product.slug || product._id;
+  const shareUrl = `${origin}/product/${productSlug}`;
+  const priceText = product.price && product.price > 0 ? formatCurrency(product.price) : 'Price on Request';
+  const shareTitle = `${product.name} — ${priceText} | Indian-Flowers.com`;
+  // Clean share text: name, price, and URL only (image is rendered automatically via OpenGraph)
+  const shareText = `${product.name} — ${priceText}\n\n${shareUrl}`;
 
   const handleCopyLink = async () => {
     try {
@@ -104,7 +108,7 @@ export default function ProductShareModal() {
       try {
         await navigator.share({
           title: shareTitle,
-          text: shareText,
+          text: `${product.name} — ${priceText}`,
           url: shareUrl,
         });
       } catch (err: any) {
@@ -123,8 +127,17 @@ export default function ProductShareModal() {
       bg: 'bg-[#25D366] hover:bg-[#20bd5a] text-white',
       border: 'border-emerald-300',
       action: () => {
-        const text = `${shareText}\n\n🛒 Order now: ${shareUrl}`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+      },
+    },
+    {
+      name: 'iMessage',
+      icon: MessageSquare,
+      bg: 'bg-[#34C759] hover:bg-[#2db84f] text-white',
+      border: 'border-emerald-300',
+      action: () => {
+        // Universal mobile SMS/iMessage URI scheme
+        window.location.href = `sms:?&body=${encodeURIComponent(shareText)}`;
       },
     },
     {
@@ -146,7 +159,7 @@ export default function ProductShareModal() {
       bg: 'bg-black hover:bg-stone-800 text-white',
       border: 'border-stone-700',
       action: () => {
-        const tweetText = `Order fresh ${product.name} online from Indian-Flowers.com! Delivered fresh across USA.`;
+        const tweetText = `${product.name} — ${priceText}`;
         window.open(
           `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`,
           '_blank',
@@ -160,8 +173,8 @@ export default function ProductShareModal() {
       bg: 'bg-[#0B3B24] hover:bg-[#134633] text-white',
       border: 'border-emerald-800',
       action: () => {
-        const subject = `Fresh Indian Flowers: ${product.name}`;
-        const body = `Hi,\n\nI thought you might love this fresh floral item on Indian-Flowers.com:\n\n${product.name}\nPrice: ${formatCurrency(product.price)}\n\nOrder here: ${shareUrl}\n\nFresh flowers, wedding garlands, and pooja essentials delivered fresh across USA!`;
+        const subject = `${product.name} — ${priceText}`;
+        const body = `${product.name} — ${priceText}\n\n${shareUrl}`;
         window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       },
     },
@@ -244,7 +257,7 @@ export default function ProductShareModal() {
             <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-2">
               Share via
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {shareChannels.map((ch) => {
                 const IconComp = ch.icon;
                 return (

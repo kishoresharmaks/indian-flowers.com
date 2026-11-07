@@ -173,12 +173,14 @@ export default function ProductCard({
       return;
     }
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://indian-flowers.com';
-    const shareUrl = `${origin}/product/${product._id}`;
+    const productSlug = product.slug || product._id;
+    const shareUrl = `${origin}/product/${productSlug}`;
+    const priceText = product.price && product.price > 0 ? formatCurrency(product.price) : 'Price on Request';
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
         await navigator.share({
-          title: `${product.name} — Indian-Flowers.com`,
-          text: `Order fresh ${product.name} online from Indian-Flowers.com! Fresh Indian Flowers & Garlands delivered across USA.`,
+          title: `${product.name} — ${priceText} | Indian-Flowers.com`,
+          text: `${product.name} — ${priceText}`,
           url: shareUrl,
         });
         return;

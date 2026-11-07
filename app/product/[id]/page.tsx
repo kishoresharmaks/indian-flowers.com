@@ -55,10 +55,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? ` (MRP: ${formatCurrency(product.mrp)})`
         : '';
 
-    const title = `${product.name} — Indian-Flowers.com USA`;
+    const title = `${product.name} — ${priceText} | Indian-Flowers.com`;
     const description = isCustomOrder
-      ? `Order fresh handcrafted ${product.name} online (Price on Request). Bespoke Indian flowers and handcrafted garlands delivered fresh across the United States.`
-      : `Order fresh ${product.name} online for ${priceText}${mrpText}. Authentic Indian flowers and handcrafted garlands delivered fresh across the United States.`;
+      ? `Order fresh handcrafted ${product.name} online (Price on Request). Authentic fresh Indian flowers & handcrafted temple garlands delivered across USA.`
+      : `Order fresh ${product.name} online for ${priceText}${mrpText}. Authentic fresh Indian flowers & handcrafted temple garlands delivered across USA.`;
     const productImageUrl = product.image
       ? product.image.startsWith('http')
         ? product.image
@@ -66,6 +66,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : fallbackImage;
 
     const canonicalSlug = product.slug || cleanId;
+    const imageExtension = (productImageUrl.split('?')[0].split('.').pop() || '').toLowerCase();
+    const imageMimeType =
+      imageExtension === 'png'
+        ? 'image/png'
+        : imageExtension === 'webp'
+        ? 'image/webp'
+        : 'image/jpeg';
 
     return {
       title,
@@ -83,16 +90,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         canonical: `${siteUrl}/product/${canonicalSlug}`,
       },
       openGraph: {
-        title: `${product.name} | Indian-Flowers.com`,
+        title: `${product.name} — ${priceText} | Indian-Flowers.com`,
         description,
         url: `${siteUrl}/product/${canonicalSlug}`,
         siteName: 'Indian-Flowers.com',
         images: [
           {
             url: productImageUrl,
+            secureUrl: productImageUrl,
             width: 800,
             height: 800,
-            alt: product.name,
+            alt: `${product.name} — ${priceText}`,
+            type: imageMimeType,
           },
         ],
         locale: 'en_US',
@@ -102,7 +111,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${product.name} — Indian-Flowers.com`,
+        title: `${product.name} — ${priceText} | Indian-Flowers.com`,
         description,
         images: [productImageUrl],
       },
