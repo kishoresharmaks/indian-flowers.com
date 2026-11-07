@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { calculateExpectedShipmentDate } from '../dateUtils';
 
 // Helper to format currency numbers to 2 decimal places
 const round2 = (val: number | undefined | null) => Math.round((Number(val) || 0) * 100) / 100;
@@ -270,7 +271,81 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
     { wch: 22 }, // Transaction Ref
   ];
 
-  XLSX.utils.book_append_sheet(wb, ws1, 'Orders Master List');
+  // Sheet 1: Operations Fulfillment & Dispatch Matrix (Exact Operational Style)
+  const matrixHeader = [
+    ['INDIAN-FLOWERS.COM — FULFILLMENT & DISPATCH MATRIX'],
+    [filterSummary],
+    ['Customer-wise item packing & cold-chain delivery schedule strictly formatted in USD ($). Powered by NEXUS CMS Enterprise.'],
+    [],
+    [
+      'Customer Name',
+      'QuantityOrdered',
+      'Item Name',
+      'Item Desc',
+      'Delivery Method',
+      'Order Date',
+      'CF.Delivery Date',
+      'Expected Shipment Date',
+      'CF.Contact',
+      'CF.Order Number',
+      'Item Total',
+    ],
+  ];
+
+  const matrixRows: any[] = [];
+  orders.forEach((ord) => {
+    const custName = ord.customerName || 'N/A';
+    const deliveryMethod =
+      ord.deliveryMode?.name ||
+      ord.deliveryMode?.type ||
+      ord.deliveryMethod ||
+      (ord.orderType === 'POS' ? 'In-Store Pickup' : 'FedEx Priority Overnight');
+    const orderDate = formatDateOnly(ord.createdAt);
+    const cfDeliveryDate = ord.deliveryDate || '';
+    const expectedShipmentDate = calculateExpectedShipmentDate(ord.deliveryDate, deliveryMethod);
+    const cfContact = ord.customerPhone
+      ? ord.customerEmail
+        ? `${ord.customerPhone} / ${ord.customerEmail}`
+        : ord.customerPhone
+      : ord.customerEmail || '';
+    const cfOrderNumber = ord.orderId || ord._id;
+
+    (ord.items || []).forEach((it: any) => {
+      const qty = Number(it.quantity) || 1;
+      const unitPrice = round2(it.price || 0);
+      const itemTotal = round2(unitPrice * qty);
+      const itemDesc = it.variantName || it.description || '';
+
+      matrixRows.push([
+        custName,
+        qty,
+        it.name || 'Product',
+        itemDesc,
+        deliveryMethod,
+        orderDate,
+        cfDeliveryDate,
+        expectedShipmentDate,
+        cfContact,
+        cfOrderNumber,
+        itemTotal,
+      ]);
+    });
+  });
+
+  const wsMatrix = XLSX.utils.aoa_to_sheet([...matrixHeader, ...matrixRows]);
+  wsMatrix['!cols'] = [
+    { wch: 28 }, // Customer Name
+    { wch: 18 }, // QuantityOrdered
+    { wch: 34 }, // Item Name
+    { wch: 30 }, // Item Desc
+    { wch: 24 }, // Delivery Method
+    { wch: 14 }, // Order Date
+    { wch: 18 }, // CF.Delivery Date
+    { wch: 24 }, // Expected Shipment Date
+    { wch: 30 }, // CF.Contact
+    { wch: 22 }, // CF.Order Number
+    { wch: 14 }, // Item Total
+  ];
 
   // Sheet 2: Itemized Line Items Breakdown
   const lineItemHeader = [
@@ -291,6 +366,12 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
       'Refund Status',
       'Payment Status',
       'Order Status',
+      'Delivery Date',
+      'Delivery Method',
+      'Phone No',
+      'Expected Shipment Date',
+      'Customer Email',
+      'Shipping Address',
     ],
   ];
 
@@ -306,6 +387,13 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
         : ord.status === 'Returned'
         ? 'Returned'
         : 'None';
+
+    const deliveryMethod =
+      ord.deliveryMode?.name ||
+      ord.deliveryMode?.type ||
+      ord.deliveryMethod ||
+      (ord.orderType === 'POS' ? 'In-Store Pickup' : 'FedEx Priority Overnight');
+    const expectedShipmentDate = calculateExpectedShipmentDate(ord.deliveryDate, deliveryMethod);
 
     (ord.items || []).forEach((it: any) => {
       const unitPrice = round2(it.price || 0);
@@ -325,28 +413,43 @@ export function generateOrdersWorkbook(orders: any[], filters: OrdersExportFilte
         refundTag,
         ord.paymentStatus || 'Pending',
         ord.status || 'Pending',
+        ord.deliveryDate || 'N/A',
+        deliveryMethod,
+        ord.customerPhone || '',
+        expectedShipmentDate,
+        ord.customerEmail || '',
+        ord.streetAddress || ord.shippingAddress || '',
       ]);
     });
   });
 
   const ws2 = XLSX.utils.aoa_to_sheet([...lineItemHeader, ...lineItemRows]);
   ws2['!cols'] = [
-    { wch: 16 },
-    { wch: 22 },
-    { wch: 14 },
-    { wch: 24 },
-    { wch: 35 },
-    { wch: 18 },
-    { wch: 16 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 10 },
+    { wch: 18 }, // Order ID
+    { wch: 22 }, // Order Placed Date
+    { wch: 14 }, // Channel
+    { wch: 24 }, // Customer Name
+    { wch: 35 }, // Product Name
+    { wch: 18 }, // Variant
+    { wch: 16 }, // Quantity Ordered
+    { wch: 14 }, // Unit Price ($)
+    { wch: 14 }, // Line Total ($)
+    { wch: 10 }, // Taxable
     { wch: 16 }, // Refund Status
-    { wch: 16 },
-    { wch: 16 },
+    { wch: 16 }, // Payment Status
+    { wch: 16 }, // Order Status
+    { wch: 16 }, // Delivery Date
+    { wch: 22 }, // Delivery Method
+    { wch: 16 }, // Phone No
+    { wch: 24 }, // Expected Shipment Date
+    { wch: 26 }, // Customer Email
+    { wch: 34 }, // Shipping Address
   ];
 
+  // Append sheets in order: 1. Fulfillment Matrix, 2. Itemized Line Items, 3. Orders Master List
+  XLSX.utils.book_append_sheet(wb, wsMatrix, 'Fulfillment Matrix');
   XLSX.utils.book_append_sheet(wb, ws2, 'Itemized Line Items');
+  XLSX.utils.book_append_sheet(wb, ws1, 'Orders Master List');
 
   const filenameDate = (filters.startDate || new Date().toISOString().slice(0, 10)).replace(/-/g, '');
   return {

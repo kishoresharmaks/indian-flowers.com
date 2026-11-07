@@ -18,6 +18,7 @@ import {
   Layers,
   Clock,
   Sparkles,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 interface ConsolidatedPackingModalProps {
@@ -455,6 +456,75 @@ export default function ConsolidatedPackingModal({
     printWindow.document.close();
   };
 
+  // Export to Excel (.xlsx) in Fulfillment Matrix format
+  const handleExportExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      const { calculateExpectedShipmentDate } = await import('@/lib/dateUtils');
+
+      const rows: any[] = [];
+      filteredOrders.forEach((ord: any) => {
+        const custName = ord.customerName || 'N/A';
+        const deliveryMethod =
+          ord.deliveryMode?.name ||
+          ord.deliveryMode?.type ||
+          ord.deliveryMethod ||
+          (ord.orderType === 'POS' ? 'In-Store Pickup' : 'FedEx Priority Overnight');
+        const orderDate = ord.createdAt ? new Date(ord.createdAt).toISOString().slice(0, 10) : '';
+        const cfDeliveryDate = ord.deliveryDate || '';
+        const expectedShipmentDate = calculateExpectedShipmentDate(ord.deliveryDate, deliveryMethod);
+        const cfContact = ord.customerPhone
+          ? ord.customerEmail
+            ? `${ord.customerPhone} / ${ord.customerEmail}`
+            : ord.customerPhone
+          : ord.customerEmail || '';
+        const cfOrderNumber = ord.orderId || ord._id;
+
+        (ord.items || []).forEach((it: any) => {
+          const qty = Number(it.quantity) || 1;
+          const unitPrice = Number(it.price) || 0;
+          const itemTotal = Math.round(unitPrice * qty * 100) / 100;
+          const itemDesc = it.variantName || it.description || '';
+
+          rows.push({
+            'Customer Name': custName,
+            'QuantityOrdered': qty,
+            'Item Name': it.name || 'Product',
+            'Item Desc': itemDesc,
+            'Delivery Method': deliveryMethod,
+            'Order Date': orderDate,
+            'CF.Delivery Date': cfDeliveryDate,
+            'Expected Shipment Date': expectedShipmentDate,
+            'CF.Contact': cfContact,
+            'CF.Order Number': cfOrderNumber,
+            'Item Total': itemTotal,
+          });
+        });
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 28 },
+        { wch: 18 },
+        { wch: 34 },
+        { wch: 30 },
+        { wch: 24 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 24 },
+        { wch: 30 },
+        { wch: 22 },
+        { wch: 14 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Fulfillment Matrix');
+      const filenameDate = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `IndianFlowers_Fulfillment_Matrix_${filenameDate}.xlsx`);
+    } catch (err) {
+      console.error('Failed to export fulfillment matrix Excel:', err);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -717,6 +787,17 @@ export default function ConsolidatedPackingModal({
               >
                 <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
                 <span>WhatsApp</span>
+              </button>
+
+              {/* Export Excel Button */}
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="px-3.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
+                title="Download Excel (.xlsx) with Customer Name, Qty, Item Name, Delivery Method, CF.Delivery Date, Expected Shipment Date, CF.Contact, CF.Order Number, and Item Total"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Export Excel (.xlsx)</span>
               </button>
 
               {/* Print Slip Button */}

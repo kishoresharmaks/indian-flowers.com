@@ -6,6 +6,8 @@
  */
 
 import { escapeHtml } from './msg91';
+import { calculateExpectedShipmentDate } from './dateUtils';
+export { calculateExpectedShipmentDate };
 
 export const EMAIL_LOGO_URL = 'https://indian-flowers.com/the-indian-flowers-logo.png';
 export const SUPPORT_EMAIL = 'indianflowers2020@gmail.com';
@@ -562,57 +564,6 @@ export function renderManualReplyEmail(options: {
     html: layout.html,
     text: layout.text,
   };
-}
-
-/**
- * Intelligent Expected Shipment Date Calculation
- * Fresh garlands and jasmine require cold-chain transport.
- * Standard FedEx Overnight dispatches 1 business day before delivery.
- * 2-Day or Cargo freight dispatches 2 business days before delivery.
- * Sunday transit hold protection bumps dispatch back to Friday.
- */
-export function calculateExpectedShipmentDate(
-  requestedDeliveryDateStr?: string,
-  deliveryModeName?: string
-): string {
-  if (!requestedDeliveryDateStr || !requestedDeliveryDateStr.trim()) {
-    const nextBizDay = new Date();
-    nextBizDay.setDate(nextBizDay.getDate() + 1);
-    if (nextBizDay.getDay() === 0) nextBizDay.setDate(nextBizDay.getDate() + 1);
-    if (nextBizDay.getDay() === 6) nextBizDay.setDate(nextBizDay.getDate() + 2);
-    return nextBizDay.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  }
-
-  const deliveryDate = new Date(requestedDeliveryDateStr);
-  if (isNaN(deliveryDate.getTime())) {
-    return requestedDeliveryDateStr;
-  }
-
-  const modeLower = (deliveryModeName || '').toLowerCase();
-  const leadDays = modeLower.includes('2-day') || modeLower.includes('cargo') ? 2 : 1;
-
-  const shipmentDate = new Date(deliveryDate);
-  shipmentDate.setDate(shipmentDate.getDate() - leadDays);
-
-  // Cold-chain weekend hold protection:
-  // Carrier transit hubs do not move priority perishables on Sunday.
-  if (shipmentDate.getDay() === 0) {
-    shipmentDate.setDate(shipmentDate.getDate() - 2);
-  } else if (shipmentDate.getDay() === 6) {
-    shipmentDate.setDate(shipmentDate.getDate() - 1);
-  }
-
-  return shipmentDate.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
 }
 
 export interface AdminOrderAlertItem {

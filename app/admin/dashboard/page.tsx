@@ -4850,8 +4850,18 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                       className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
                     >
                       <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>Reports &amp; Excel Export</span>
+                      <span>Reports &amp; Custom Filters</span>
                     </button>
+
+                    <a
+                      href="/api/admin/reports?type=orders&format=excel&download=true"
+                      download
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+                      title="Directly download Orders Excel (.xlsx) with Fulfillment Matrix and Itemized Line Items"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Export Orders (.xlsx)</span>
+                    </a>
                     <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl shrink-0">
                       <button
                         type="button"
