@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { getSiteUrl } from "@/lib/siteUrl";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import StorefrontGlobalNav from "@/components/StorefrontGlobalNav";
+import TawkChat from "@/components/TawkChat";
 import GlobalPageLoader from "@/components/GlobalPageLoader";
 import ProductShareModal from "@/components/ProductShareModal";
 import "./globals.css";
@@ -227,6 +228,7 @@ export default function RootLayout({
         <GlobalPageLoader />
         {children}
         <StorefrontGlobalNav />
+        <TawkChat />
         <CookieConsentBanner />
         <ProductShareModal />
       </body>

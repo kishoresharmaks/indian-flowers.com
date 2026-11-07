@@ -44,6 +44,10 @@ export interface CompanyConfig {
     manufacturing?: string;
     certifications?: string;
     bankIfsc?: string;
+    // Tawk.to Live Chat Widget Configuration
+    tawkEnabled?: boolean;
+    tawkPropertyId?: string;
+    tawkWidgetId?: string;
 }
 
 export const getCompanyConfig = (overrideSettings?: Partial<CompanyConfig>): CompanyConfig => ({
@@ -90,6 +94,9 @@ export const getCompanyConfig = (overrideSettings?: Partial<CompanyConfig>): Com
     manufacturing: overrideSettings?.manufacturing || process.env.NEXT_PUBLIC_COMPANY_MANUFACTURING || '',
     certifications: overrideSettings?.certifications || process.env.NEXT_PUBLIC_COMPANY_CERTIFICATIONS || '',
     bankIfsc: overrideSettings?.bankIfsc || process.env.NEXT_PUBLIC_COMPANY_BANK_IFSC || '',
+    tawkEnabled: overrideSettings?.tawkEnabled !== false && process.env.NEXT_PUBLIC_TAWK_ENABLED !== 'false',
+    tawkPropertyId: overrideSettings?.tawkPropertyId || process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID || '',
+    tawkWidgetId: overrideSettings?.tawkWidgetId || process.env.NEXT_PUBLIC_TAWK_WIDGET_ID || 'default',
 });
 
 /**

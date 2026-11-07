@@ -61,6 +61,10 @@ export interface ISettings extends Document {
   fedexCompanyName?: string;
   fedexContactName?: string;
   fedexEmail?: string;
+  // Tawk.to Live Chat Widget Configuration
+  tawkEnabled?: boolean;
+  tawkPropertyId?: string;
+  tawkWidgetId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -117,6 +121,10 @@ const SettingsSchema: Schema = new Schema(
     fedexCompanyName: { type: String, default: 'Malar Traders' },
     fedexContactName: { type: String, default: 'George Joseph' },
     fedexEmail: { type: String, default: 'indianflowers2020@gmail.com' },
+    // Tawk.to Live Chat Widget Configuration Defaults
+    tawkEnabled: { type: Boolean, default: true },
+    tawkPropertyId: { type: String, default: '' },
+    tawkWidgetId: { type: String, default: 'default' },
     // Delivery Modes & Shipping Configuration
     deliveryModes: {
       type: [

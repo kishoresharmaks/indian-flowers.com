@@ -827,6 +827,10 @@ export default function AdminDashboard() {
     fedexCompanyName: 'Malar Traders',
     fedexContactName: 'George Joseph',
     fedexEmail: 'indianflowers2020@gmail.com',
+    // Tawk.to Live Chat Widget Configuration Defaults
+    tawkEnabled: true,
+    tawkPropertyId: '',
+    tawkWidgetId: 'default',
   });
 
   // FedEx Live Rate Tester State
@@ -1266,6 +1270,9 @@ export default function AdminDashboard() {
           fedexCompanyName: data.data.fedexCompanyName || 'Malar Traders',
           fedexContactName: data.data.fedexContactName || 'George Joseph',
           fedexEmail: data.data.fedexEmail || 'indianflowers2020@gmail.com',
+          tawkEnabled: data.data.tawkEnabled !== false,
+          tawkPropertyId: data.data.tawkPropertyId || '',
+          tawkWidgetId: data.data.tawkWidgetId || 'default',
         });
       }
     } catch (err) {
@@ -6575,6 +6582,60 @@ const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<strin
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+
+                {/* Tawk.to Live Chat Widget Configuration */}
+                <div className="space-y-4 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-white p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-[#163B5C] flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 text-emerald-600" />
+                        Tawk.to Live Chat Widget
+                      </h3>
+                      <p className="text-xs text-[#64748B] mt-0.5">
+                        Live customer support chat widget loaded on the left side, stacked cleanly above the WhatsApp icon.
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                      <input
+                        type="checkbox"
+                        checked={paymentSettings.tawkEnabled}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, tawkEnabled: e.target.checked })}
+                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 accent-emerald-600"
+                      />
+                      <span className="text-xs font-bold text-emerald-900">Tawk.to Active</span>
+                    </label>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Tawk.to Property ID
+                      <input
+                        type="text"
+                        value={paymentSettings.tawkPropertyId}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, tawkPropertyId: e.target.value })}
+                        placeholder="e.g. 64a1b2c3d4e5f6..."
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-emerald-600"
+                      />
+                      <span className="text-[10px] text-gray-500 font-normal mt-0.5 block">
+                        Direct Chat Link: embed.tawk.to/<strong>[PROPERTY_ID]</strong>/[WIDGET_ID]
+                      </span>
+                    </label>
+
+                    <label className="text-xs font-bold text-[#163B5C]">
+                      Tawk.to Widget ID
+                      <input
+                        type="text"
+                        value={paymentSettings.tawkWidgetId}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, tawkWidgetId: e.target.value })}
+                        placeholder="default or 1h2j3k4l5"
+                        className="mt-1.5 w-full rounded-xl border border-[#E8EDF2] bg-white px-3 py-2 text-sm font-medium outline-none focus:border-emerald-600"
+                      />
+                      <span className="text-[10px] text-gray-500 font-normal mt-0.5 block">
+                        Default widget identifier is usually <code className="bg-gray-100 px-1 py-0.5 rounded">default</code>
+                      </span>
+                    </label>
                   </div>
                 </div>
 

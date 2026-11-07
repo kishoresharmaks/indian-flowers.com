@@ -96,6 +96,11 @@ export async function POST(request: NextRequest) {
     if (typeof body.fedexContactName === 'string') updateFields.fedexContactName = body.fedexContactName.trim();
     if (typeof body.fedexEmail === 'string') updateFields.fedexEmail = body.fedexEmail.trim();
 
+    // Tawk.to Live Chat Configuration
+    if (typeof body.tawkEnabled === 'boolean') updateFields.tawkEnabled = body.tawkEnabled;
+    if (typeof body.tawkPropertyId === 'string') updateFields.tawkPropertyId = body.tawkPropertyId.trim();
+    if (typeof body.tawkWidgetId === 'string') updateFields.tawkWidgetId = body.tawkWidgetId.trim();
+
     // Delivery Modes Configuration
     if (Array.isArray(body.deliveryModes)) {
       updateFields.deliveryModes = body.deliveryModes.map((dm: any, idx: number) => ({
