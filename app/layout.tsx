@@ -101,9 +101,15 @@ export function generateMetadata(): Metadata {
     },
   },
   icons: {
-    icon: "/the-indian-flowers-emblem.webp?v=2",
-    shortcut: "/the-indian-flowers-emblem.webp?v=2",
-    apple: "/the-indian-flowers-emblem.webp?v=2",
+    icon: [
+      { url: "/favicon.ico?v=5", sizes: "any" },
+      { url: "/the-indian-flowers-emblem-sm.webp?v=5", sizes: "128x128", type: "image/webp" },
+      { url: "/the-indian-flowers-emblem.png?v=5", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico?v=5",
+    apple: [
+      { url: "/apple-touch-icon.png?v=5", sizes: "180x180", type: "image/png" },
+    ],
   },
   };
 }
