@@ -14,18 +14,3 @@ if (process.env.CLEAN_BUILD === '1') {
     }
   }
 }
-
-// Automatically optimize any oversized server-stored uploads during build
-try {
-  const { run: runImageOptimizer } = require('./optimize-server-images');
-  runImageOptimizer()
-    .then(() => {
-      console.log('[prebuild] Server images check complete.');
-    })
-    .catch((err) => {
-      console.warn('[prebuild] Non-fatal image optimizer warning:', err.message);
-    });
-} catch (err) {
-  // Graceful fallback if sharp or optimizer is unavailable
-}
-
